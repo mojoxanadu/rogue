@@ -1,0 +1,7 @@
+node_modules/
+old_ignore_these/
+
+# scratch / runtime
+/tmp/
+*.log
+.DS_Store
