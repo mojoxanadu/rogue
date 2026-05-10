@@ -16,6 +16,7 @@ import {
   extractFlash,
 } from './vpnSession.js';
 import { GOContactSearch } from './GOContactSearch.js';
+import { GOMessaging }    from './GOMessaging.js';
 
 // --- Site-specific config ---------------------------------------------------
 const LOGIN_URL    = 'https://sso.gtlconnect.com/users/sign_in';
@@ -87,7 +88,7 @@ async function login(sess) {
   return { finalUrl, finalHtml };
 }
 
-async function walkthrough(sess /*, postLogin */) {
+async function demoGOContactSearch(sess /*, postLogin */) {
   // Demo of GOContactSearch: list states, list Indiana facilities, run a
   // 3-character inmate-name search against the first facility, and print
   // a summary. The class talks to public pay.gettingout.com endpoints, so
@@ -117,7 +118,84 @@ async function walkthrough(sess /*, postLogin */) {
   }
 }
 
+async function demoGOMessaging(sess /*, postLogin */) {
+  // Demo of GOMessaging: read-only walkthrough of the message center.
+  // Authenticates via OAuth-PKCE against sso.gtlconnect.com (which works
+  // because the preceding SSO login already seeded _usso_session), then
+  // hits messaging.gtlconnect.com for contacts, balance, and incoming
+  // messages for the first contact. No state-changing calls.
+  const msg = new GOMessaging(sess);
+
+  console.log('\n[*] GOMessaging.authenticate() (OAuth-PKCE)');
+  await msg.authenticate();
+  console.log(`[+] access_token acquired (${msg.accessToken.length} chars)`);
+
+  console.log('\n[*] GOMessaging.getContacts()');
+  const contacts = await msg.getContacts();
+  console.log(`[+] ${contacts.length} contact(s)`);
+  for (const c of contacts) {
+    console.log(`     id=${c.contactId}  ${c.fullName.padEnd(24)} fac=${c.facilityId}  status=${c.status}  approvedMessaging=${c.approvedMessaging}`);
+  }
+  if (contacts.length === 0) {
+    console.log('[!] no contacts; skipping balance + messages');
+    return;
+  }
+
+  const first = contacts[0];
+  console.log(`\n[*] GOMessaging.getBalance() (via ${first.fullName})`);
+  const balance = await msg.getBalance({ contactId: first.contactId });
+  console.log(`[+] balance: $${balance}`);
+
+  console.log(`\n[*] GOMessaging.getIncomingMessages(${first.contactId} /* ${first.fullName} */)`);
+  const incoming = await msg.getIncomingMessages(first.contactId);
+  console.log(`[+] ${incoming.length} incoming message(s)`);
+  for (const m of incoming) {
+    const date = m.sentAt ? new Date(m.sentAt).toISOString().slice(0, 10) : '?';
+    console.log(`     [${date}] ${m.sender}: ${m.body}`);
+  }
+}
+
+const DEMOS = {
+  GOContactSearch: demoGOContactSearch,
+  GOMessaging:     demoGOMessaging,
+};
+
+function parseDemoArg(argv) {
+  // Accepts: --demo GOMessaging   or   --demo=GOMessaging
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === '--demo' || a === '-d') return argv[i + 1] ?? null;
+    if (a.startsWith('--demo=')) return a.slice('--demo='.length);
+    if (a === '--help' || a === '-h') return '__help__';
+  }
+  return null;
+}
+
+function printHelp() {
+  const names = Object.keys(DEMOS).join(' | ');
+  console.log(`Usage: node gettingout.js --demo <${names}>`);
+  console.log('');
+  console.log('Demos:');
+  console.log('  GOContactSearch  Public pay.gettingout.com search (states → facilities → inmates).');
+  console.log('  GOMessaging      Authenticated read-only message-center walkthrough');
+  console.log('                   (contacts, balance, incoming messages).');
+  console.log('');
+  console.log('Both demos share the same SSO login + VPN-pinned session.');
+}
+
 async function main() {
+  const demoArg = parseDemoArg(process.argv.slice(2));
+  if (demoArg === '__help__' || demoArg === null) {
+    printHelp();
+    process.exit(demoArg === '__help__' ? 0 : 1);
+  }
+  const demoFn = DEMOS[demoArg];
+  if (!demoFn) {
+    console.error(`Unknown --demo "${demoArg}". Available: ${Object.keys(DEMOS).join(', ')}`);
+    printHelp();
+    process.exit(1);
+  }
+
   // my.viapath.com sends only the leaf cert and omits its DigiCert
   // intermediate; bundle it so Node can complete the chain.
   const sess = new VpnSession({
@@ -127,7 +205,8 @@ async function main() {
   console.log(`[+] Egress IP confirmed: ${egress}`);
 
   const postLogin = await login(sess);
-  await walkthrough(sess, postLogin);
+  console.log(`\n[*] Running demo: ${demoArg}`);
+  await demoFn(sess, postLogin);
 
   sess.shutdown();
   if (sess.vpnDown) process.exit(2);
