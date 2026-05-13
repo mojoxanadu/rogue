@@ -1,0 +1,9 @@
+{
+  "_comment": "Test files are deliberately CommonJS (require/module.exports) — no package.json, no ESM, no install dependencies. This config tells TS/Pyright that's intentional and silences the [80001] 'may be converted to an ES module' hint.",
+  "compilerOptions": {
+    "module": "commonjs",
+    "checkJs": false,
+    "noEmit": true
+  },
+  "include": ["**/*.js"]
+}
