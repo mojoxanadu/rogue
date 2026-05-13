@@ -1,0 +1,5 @@
+{
+  "include": ["."],
+  "exclude": ["raw", "__pycache__", "src"],
+  "extraPaths": ["."]
+}
