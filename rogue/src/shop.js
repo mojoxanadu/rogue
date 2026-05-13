@@ -1754,7 +1754,7 @@
     } else if(step === 2) {
       if(player.gp >= 10) {
         changeGold(-10);
-        logMsg("<span style='color:var(--success)'>🍺 You buy a grog for 10g. It tastes like... well, it tastes like grog.</span>");
+        logMsg(`<span style='color:var(--success)'>${ItemDef.iconOf('wateredDownBeer')} You buy a grog for 10g. It tastes like... well, it tastes like grog.</span>`);
         logMsg("<span style='color:#88FF88'>The pirates sing: 'Yo ho yo ho, a pirate's life for me!'</span>");
         player.grogTurns = (player.grogTurns || 0) + 1;
         if(typeof QuestEngine !== 'undefined') QuestEngine.emit('custom', { id: 'bought_grog', grogs_bought: player.grogTurns });
@@ -1851,7 +1851,7 @@
       player.causticGrogQuest = true;
       player.hasRedHerring = false;
       player.hasGrogIngredients = false;
-      logMsg("<span style='color:var(--success)'>🍺 You start the Caustic Grog Quest!</span>");
+      logMsg(`<span style='color:var(--success)'>${ItemDef.iconOf('wateredDownBeer')} You start the Caustic Grog Quest!</span>`);
       logMsg("<span style='color:#88FF88'>Find the cook, distract him, and get the ingredients for caustic grog.</span>");
     }
     
@@ -1863,10 +1863,10 @@
       <p><em>"The cook is very protective of his recipe. You'll need to distract him somehow."</em></p>
       <p style="font-size:11px; color:#888;">Find a red herring to distract the cook.</p>
       ${player.hasRedHerring 
-        ? `<button onclick="distractCook()" style="margin-top:8px;">🐟 Use the Red Herring to distract the cook</button>`
+        ? `<button onclick="distractCook()" style="margin-top:8px;">${ItemDef.iconOf('redHerring')} Use the Red Herring to distract the cook</button>`
         : `<p style="color:var(--warning); font-size:12px;">You need a Red Herring first. Check the fishing spots near the beach.</p>`}
       ${player.hasGrogIngredients 
-        ? `<button onclick="makeCausticGrog()" style="margin-top:8px;">🍺 Make the Caustic Grog</button>`
+        ? `<button onclick="makeCausticGrog()" style="margin-top:8px;">${ItemDef.iconOf('wateredDownBeer')} Make the Caustic Grog</button>`
         : ''}
       <button onclick="hideOverlay(); advanceTurn(1)" style="margin-top:12px;">Leave</button>`;
     showOverlay();
@@ -1886,7 +1886,7 @@
       <p style="font-size:60px; margin:5px 0;">👨‍🍳🐟</p>
       <p><em>"A RED HERRING! Oh no! I must investigate this immediately!"</em></p>
       <p style="font-size:11px; color:#888;">The cook runs off to investigate the fish. Now's your chance!</p>
-      <button onclick="stealGrogIngredients()" style="margin-top:8px;">🍺 Steal the grog ingredients</button>
+      <button onclick="stealGrogIngredients()" style="margin-top:8px;">${ItemDef.iconOf('wateredDownBeer')} Steal the grog ingredients</button>
       <button onclick="hideOverlay(); advanceTurn(1)">Flee!</button>`;
     setTimeout(() => playVoiceClip('voice_caustic_cook'), 30);
   };
@@ -1894,14 +1894,14 @@
   window.stealGrogIngredients = () => {
     player.hasGrogIngredients = true;
     if(typeof QuestEngine !== 'undefined') QuestEngine.emit('custom', { id: 'stole_grog_ingredients' });
-    logMsg("<span style='color:var(--success)'>🍺 You grab the grog ingredients while the cook is distracted!</span>");
+    logMsg(`<span style='color:var(--success)'>${ItemDef.iconOf('wateredDownBeer')} You grab the grog ingredients while the cook is distracted!</span>`);
     logMsg("<span style='color:#88FF88'>Now you can make the legendary Caustic Grog!</span>");
     
     let m = document.getElementById('modal-content');
     m.innerHTML = `<h2>🍺 Ingredients Acquired!</h2>
       <p style="font-size:60px; margin:5px 0;">🍺✨</p>
       <p><em>"You have the ingredients! Now mix them to create the legendary Caustic Grog!"</em></p>
-      <button onclick="makeCausticGrog()" style="margin-top:8px;">🍺 Make the Caustic Grog</button>
+      <button onclick="makeCausticGrog()" style="margin-top:8px;">${ItemDef.iconOf('wateredDownBeer')} Make the Caustic Grog</button>
       <button onclick="hideOverlay(); advanceTurn(1)">Leave</button>`;
     setTimeout(() => playVoiceClip('voice_caustic_ingredients'), 30);
   };
@@ -1952,7 +1952,7 @@
     if(!player.hasRedHerring) {
       player.hasRedHerring = true;
       if(typeof QuestEngine !== 'undefined') QuestEngine.emit('custom', { id: 'found_red_herring' });
-      logMsg("<span style='color:var(--success)'>🐟 You catch a Red Herring! It smells... suspicious.</span>");
+      logMsg(`<span style='color:var(--success)'>${ItemDef.iconOf('redHerring')} You catch a Red Herring! It smells... suspicious.</span>`);
       
       let empty = inventory.findIndex(i => i === null);
       if(empty !== -1) {
@@ -2113,7 +2113,7 @@
     }
     else if(step === 'wisdom') {
       let hint = GRUE_HINTS[Math.floor(Math.random() * GRUE_HINTS.length)];
-      let hasCandles = inventory.some(i => i && i.icon === '🕯️');
+      let hasCandles = inventory.some(i => i && i.itemName === 'candle');
       m.innerHTML = `<h2>🧌 On the Subject of Darkness</h2>
         <p style="color:#ccc; font-size:12px; margin:8px 0;">"${hint}"</p>
         ${!hasCandles ? '<p style="color:var(--warning); font-size:12px;">"You have no light. Take these. Do not thank me. Gratitude disrupts my concentration."</p>' : ''}
