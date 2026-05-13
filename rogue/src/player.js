@@ -15,9 +15,9 @@
 //  quickslot row; the bag panel shows all 30. Drags between the two
 //  views are slot moves within this same array.
 //
-//  (NOTE: identifier still named `inventoryx` mid-refactor; phase 3
+//  (NOTE: identifier still named `inventory` mid-refactor; phase 3
 //  renames to `inventory` after all callers are updated.)
-const inventoryx = new Array(30).fill(null);
+const inventory = new Array(30).fill(null);
 
 // ─── Player Object ──────────────────────────────────────────
 //  Single source of truth for all runtime player properties.
@@ -80,9 +80,9 @@ function setPlayerDefaults() {
   player.spells = {};
   player.equipped = { head: null, chest: '🎽', legs: '🩲', feet: '🩴', leftHand: null, rightHand: null };
   player.learnedInsults = []; player.learnedRetorts = []; player.startingClass = null;
-  // Number of inventoryx slots mirrored in the HUD quickslot row. Future
+  // Number of inventory slots mirrored in the HUD quickslot row. Future
   // boons will raise this from a starting value (planned: 5) up to the
-  // full inventoryx size. All quickslot rendering and key bindings must
+  // full inventory size. All quickslot rendering and key bindings must
   // read this — never hardcode 10.
   player.quickslotCount = 10;
 }

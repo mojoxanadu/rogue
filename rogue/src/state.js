@@ -12,7 +12,7 @@
     1. CONSTANTS – tunable numeric parameters (hunger, speed, XP, etc.)
     2. Canvas & Tile definitions
     3. TALENT_TREES – progression trees for character development
-    4. Game‑state variables (currentLevel, theMap, inventoryx, etc.)
+    4. Game‑state variables (currentLevel, theMap, inventory, etc.)
     5. Player object – the player's persistent stats and flags
     6. MONSTER_DEF – definitions of all enemy types
     7. ITEM_DEF – definitions of all item types
@@ -122,7 +122,7 @@
   let questTimer = { active: false, time: 0, label: "", callback: null }; 
   let levelCache = {}; 
   const logInfo = { count: 0 };
-  // inventoryx, inventoryx, player, setPlayerDefaults, changeGold, PlayerSprites
+  // inventory, inventory, player, setPlayerDefaults, changeGold, PlayerSprites
   // → moved to src/player.js (K5 refactor)
   const assets = { sprites: {}, sounds: {}, minigames: {}, movies: {} };
   window.assets = assets; // Make assets globally accessible for video/image loading

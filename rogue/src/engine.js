@@ -138,7 +138,7 @@
     }
   }
 
-  // Auto-loot: immediately dump corpse loot into inventoryx
+  // Auto-loot: immediately dump corpse loot into inventory
   function autoLootCorpse(corpseIdx) {
     let c = corpses[corpseIdx];
     if(!c || !c.loot || c.loot.length === 0) return;
@@ -151,7 +151,7 @@
         let def = ITEM_DEF[item.icon];
         if(def && def.stackable) {
           let maxStack = def.maxStack || 10;
-          let stackSlot = inventoryx.find(s => s && s.icon === item.icon && (s.qty || 1) < maxStack);
+          let stackSlot = inventory.find(s => s && s.icon === item.icon && (s.qty || 1) < maxStack);
           if(stackSlot) {
             let can = maxStack - (stackSlot.qty || 1);
             let add = Math.min(can, item.qty || 1);
@@ -160,14 +160,14 @@
             placed = (item.qty || 0) <= 0;
           }
         }
-        // Try inventoryx
-        let slot = inventoryx.findIndex(s => s === null);
+        // Try inventory
+        let slot = inventory.findIndex(s => s === null);
         if(!placed && slot !== -1) {
-          inventoryx[slot] = { icon: item.icon, qty: item.qty || 1 };
+          inventory[slot] = { icon: item.icon, qty: item.qty || 1 };
           placed = true;
         }
-        // Try inventoryx and bags
-        if(!placed) placed = tryPlaceInPouch(item);
+        // Try inventory and bags
+        if(!placed) placed = tryPlaceInInventory(item);
         if(!placed) remaining.push(item);
       }
     });
@@ -175,19 +175,19 @@
     if(remaining.length > 0) {
       logMsg(`Auto-loot: some items couldn't fit, left on corpse.`);
     }
-    renderInventory(); renderPouch(); updateUI();
+    renderQuickslots(); renderInventory(); updateUI();
   }
 
-  // Try to place an item in inventoryx or inside a bag
-  function tryPlaceInPouch(item) {
+  // Try to place an item in inventory or inside a bag
+  function tryPlaceInInventory(item) {
     const def = ITEM_DEF[item.icon] || { stackable:false };
     const qty = item.qty || 1;
 
-    // Stack in existing inventoryx slots first
+    // Stack in existing inventory slots first
     if(def.stackable) {
       const maxStack = def.maxStack || 10;
-      for(let i = 0; i < inventoryx.length; i++) {
-        const s = inventoryx[i];
+      for(let i = 0; i < inventory.length; i++) {
+        const s = inventory[i];
         if(s && s.icon === item.icon && (s.qty || 1) < maxStack) {
           const can = maxStack - (s.qty || 1);
           const add = Math.min(can, qty);
@@ -199,15 +199,15 @@
       }
     }
 
-    // Direct inventoryx slot
-    let pSlot = inventoryx.findIndex(s => s === null);
+    // Direct inventory slot
+    let pSlot = inventory.findIndex(s => s === null);
     if(pSlot !== -1) {
-      inventoryx[pSlot] = { icon: item.icon, qty: item.qty || 1 };
+      inventory[pSlot] = { icon: item.icon, qty: item.qty || 1 };
       return true;
     }
     // Inside a bag
-    for(let i = 0; i < inventoryx.length; i++) {
-      let bag = inventoryx[i];
+    for(let i = 0; i < inventory.length; i++) {
+      let bag = inventory[i];
       if(bag && ITEM_DEF[bag.icon] && ITEM_DEF[bag.icon].type === 'bag') {
         if(!bag.contents) bag.contents = new Array(ITEM_DEF[bag.icon].bagSlots || 3).fill(null);
         if(def.stackable) {
@@ -254,7 +254,7 @@
         html += `<p style="color:var(--warning); font-size:11px;">⚠️ Your keen senses warn you: a ${nearEnemy.type} lurks nearby. Loot carefully!</p>`;
       }
     }
-    html += `<p style="color:#888; font-size:11px;">Drag items to inventoryx or click Loot All (Ctrl+Click for quick loot)</p>`;
+    html += `<p style="color:#888; font-size:11px;">Drag items to inventory or click Loot All (Ctrl+Click for quick loot)</p>`;
     html += `<div id="loot-grid" style="display:grid; grid-template-columns: repeat(${Math.min(c.loot.length, 6)}, 1fr); gap:4px; margin:10px 0;">`;
 
     c.loot.forEach((item, idx) => {
@@ -293,12 +293,12 @@
         changeGold(item.qty, { x: c.x, y: c.y, floatText: true });
         didLoot = true;
       } else {
-        let slot = inventoryx.findIndex(s => s === null);
+        let slot = inventory.findIndex(s => s === null);
         if(slot !== -1) {
-          inventoryx[slot] = { icon: item.icon, qty: item.qty || 1 };
+          inventory[slot] = { icon: item.icon, qty: item.qty || 1 };
           didLoot = true;
         } else {
-          let placed = tryPlaceInPouch(item);
+          let placed = tryPlaceInInventory(item);
           if(placed) { didLoot = true; }
           else remaining.push(item);
         }
@@ -314,7 +314,7 @@
       logMsg(`Looted everything from the ${c.name}.`);
     }
     hideOverlay();
-    renderInventory(); renderPouch(); updateUI(); drawMap();
+    renderQuickslots(); renderInventory(); updateUI(); drawMap();
   };
 
   // Take single item from corpse
@@ -326,13 +326,13 @@
       changeGold(item.qty, { x: c.x, y: c.y, floatText: true });
       c.loot.splice(itemIdx, 1);
     } else {
-      let slot = inventoryx.findIndex(s => s === null);
+      let slot = inventory.findIndex(s => s === null);
       if(slot !== -1) {
-        inventoryx[slot] = { icon: item.icon, qty: item.qty || 1 };
+        inventory[slot] = { icon: item.icon, qty: item.qty || 1 };
         c.loot.splice(itemIdx, 1);
         Sound.clink();
       } else {
-        let placed = tryPlaceInPouch(item);
+        let placed = tryPlaceInInventory(item);
         if(placed) {
           c.loot.splice(itemIdx, 1);
           Sound.clink();
@@ -343,7 +343,7 @@
         }
       }
     }
-    renderInventory(); renderPouch(); updateUI();
+    renderQuickslots(); renderInventory(); updateUI();
     if(c.loot.length > 0) openLootWindow(corpseIdx);
     else { hideOverlay(); drawMap(); }
   };
@@ -481,9 +481,9 @@
     window._cainHealedThisVisit = false; // E6: reset Cain heal on new game
     window._activeBombs = []; // E16: reset active bombs on new game
     
-    // Reset inventoryx and inventoryx
-    for(let i = 0; i < inventoryx.length; i++) inventoryx[i] = null;
-    for(let i = 0; i < inventoryx.length; i++) inventoryx[i] = null;
+    // Reset inventory and inventory
+    for(let i = 0; i < inventory.length; i++) inventory[i] = null;
+    for(let i = 0; i < inventory.length; i++) inventory[i] = null;
     
     // Close overlay
     hideOverlay();
@@ -494,8 +494,8 @@
     // Generate fresh map
     initMap(50);
     calculateFOV();
+    renderQuickslots();
     renderInventory();
-    renderPouch();
     drawMap();
     updateUI();
     
@@ -1312,12 +1312,12 @@
   }
 
   function thiefSteal(thiefIdx) {
-    let items = inventoryx.filter(i => i !== null);
+    let items = inventory.filter(i => i !== null);
     if (items.length > 0) {
-      let idx = inventoryx.indexOf(items[Math.floor(Math.random()*items.length)]);
-      let stolen = inventoryx[idx];
+      let idx = inventory.indexOf(items[Math.floor(Math.random()*items.length)]);
+      let stolen = inventory[idx];
       stolenItems.push(stolen);
-      inventoryx[idx] = null;
+      inventory[idx] = null;
       logMsg(`<span style='color:var(--error)'>The Thief pickpocketed your ${ITEM_DEF[stolen.icon].name}!</span>`);
       // #13: Play internal dialog voice line on pickpocket
       let stolenVoices = ['voice_internal_stolen_0', 'voice_internal_stolen_1', 'voice_internal_stolen_2'];
@@ -1330,7 +1330,7 @@
       }
       document.getElementById('modal-content').innerHTML = `<h2>🧤 PICKPOCKETED</h2>${modalPortraitHTML('npc_thief_modal', '🧤')}<p>The Thief stole your <strong>${ITEM_DEF[stolen.icon].name}</strong>!</p><button onclick="hideOverlay()">Drat!</button>`;
       showOverlay();
-      renderInventory(); updateUI();
+      renderQuickslots(); updateUI();
     }
   }
 
@@ -1470,10 +1470,10 @@
   };
 
   function die() {
-    let crystalIdx = inventoryx.findIndex(i => i && i.icon === '💎💠');
+    let crystalIdx = inventory.findIndex(i => i && i.icon === '💎💠');
     if (crystalIdx !== -1) {
       logMsg("Crystal Shatters!");
-      inventoryx[crystalIdx] = null;
+      inventory[crystalIdx] = null;
       player.hp = player.maxHp; updateUI(); return;
     }
     // B41: Capture the last relevant game log message to display in the death modal
@@ -1545,11 +1545,11 @@
       if(player.talents && player.talents['autoLoot']) {
         logMsg(`<span style='color:var(--success)'>Your Scavenger instincts kick in! You automatically loot the Ifrit.</span>`);
         ifritLoot.forEach(item => {
-          let slot = inventoryx.findIndex(s => s === null);
-          if(slot !== -1) inventoryx[slot] = {icon: item.icon, qty: item.qty};
-          else tryPlaceInPouch(item);
+          let slot = inventory.findIndex(s => s === null);
+          if(slot !== -1) inventory[slot] = {icon: item.icon, qty: item.qty};
+          else tryPlaceInInventory(item);
         });
-        renderInventory(); renderPouch(); updateUI();
+        renderQuickslots(); renderInventory(); updateUI();
       } else {
         createCorpse(e.x, e.y, e.type, e.stats, ifritLoot);
       }
@@ -1759,12 +1759,12 @@
           if(item.icon === '🪙') {
             changeGold(item.qty, { x: e.x, y: e.y, floatText: true });
           } else {
-            let slot = inventoryx.findIndex(s => s === null);
-            if(slot !== -1) { inventoryx[slot] = {icon: item.icon, qty: item.qty || 1}; }
-            else tryPlaceInPouch(item);
+            let slot = inventory.findIndex(s => s === null);
+            if(slot !== -1) { inventory[slot] = {icon: item.icon, qty: item.qty || 1}; }
+            else tryPlaceInInventory(item);
           }
         });
-        renderInventory(); renderPouch(); updateUI();
+        renderQuickslots(); renderInventory(); updateUI();
       } else {
         createCorpse(e.x, e.y, e.type, e.stats, corpseLoot);
       }
@@ -1843,11 +1843,11 @@
         if(player.talents && player.talents['autoLoot']) {
           logMsg(`<span style='color:var(--success)'>Your Scavenger instincts kick in! You automatically loot the Ifrit.</span>`);
           ifritLoot.forEach(item => {
-            let slot = inventoryx.findIndex(s => s === null);
-            if(slot !== -1) inventoryx[slot] = {icon: item.icon, qty: item.qty};
-            else tryPlaceInPouch(item);
+            let slot = inventory.findIndex(s => s === null);
+            if(slot !== -1) inventory[slot] = {icon: item.icon, qty: item.qty};
+            else tryPlaceInInventory(item);
           });
-          renderInventory(); renderPouch(); updateUI();
+          renderQuickslots(); renderInventory(); updateUI();
         } else {
           createCorpse(e.x, e.y, e.type, e.stats, ifritLoot);
         }
@@ -2512,7 +2512,7 @@
       // If player has the Brass Bottle (from safe cracking quest), genie offers a wish.
       // Otherwise, it attacks as a boss fight.
       if(npc.type === 'genie' && npc.isGenieGuardian) {
-        const hasBottle = inventoryx.some(i => i && i.icon === '🏺') || inventoryx.some(i => i && i.icon === '🏺');
+        const hasBottle = inventory.some(i => i && i.icon === '🏺') || inventory.some(i => i && i.icon === '🏺');
         if(hasBottle) {
           // Genie offers a wish instead of fighting
           let m = document.getElementById('modal-content');
@@ -2964,7 +2964,7 @@
     let machine = machines.find(m => m.x === mx && m.y === my);
     if(!machine) return;
 
-    let beadCount = inventoryx.reduce((sum, i) => sum + (i && i.icon === '📿' ? (i.qty || 1) : 0), 0);
+    let beadCount = inventory.reduce((sum, i) => sum + (i && i.icon === '📿' ? (i.qty || 1) : 0), 0);
 
     let m = document.getElementById('modal-content');
     Sound.machine();
@@ -3008,15 +3008,15 @@
 
     // Consume beads
     let toConsume = machine.beadCost;
-    for(let i = 0; i < inventoryx.length && toConsume > 0; i++) {
-      if(inventoryx[i] && inventoryx[i].icon === '📿') {
-        let take = Math.min(inventoryx[i].qty || 1, toConsume);
-        inventoryx[i].qty = (inventoryx[i].qty || 1) - take;
+    for(let i = 0; i < inventory.length && toConsume > 0; i++) {
+      if(inventory[i] && inventory[i].icon === '📿') {
+        let take = Math.min(inventory[i].qty || 1, toConsume);
+        inventory[i].qty = (inventory[i].qty || 1) - take;
         toConsume -= take;
-        if(inventoryx[i].qty <= 0) inventoryx[i] = null;
+        if(inventory[i].qty <= 0) inventory[i] = null;
       }
     }
-    renderInventory();
+    renderQuickslots();
     Sound.machine();
 
     logMsg(`<span style='color:#74B9FF'>⚙️ You insert ${machine.beadCost} bead${machine.beadCost>1?'s':''} into the ${machine.name}...</span>`);

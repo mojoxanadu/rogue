@@ -246,7 +246,7 @@
     Step 2: Player can ask about the "Constitutional Convention" he's organizing.
             → If INT >= 13: hint about needing 1000g or a crown item (👑)
     Step 3: Player gives 1000g or has 👑:
-            → Dennis hands over a scroll  📜 (add to inventoryx)
+            → Dennis hands over a scroll  📜 (add to inventory)
             → QuestEngine.advance('q_dennis_convention', { progress: 20 })
             → awardAchievement('convention')
 
