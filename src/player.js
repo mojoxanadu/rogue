@@ -78,7 +78,11 @@ function setPlayerDefaults() {
   player.speedMod = 1.0;
   player.statusEffects = {};
   player.spells = {};
-  player.equipped = { head: null, chest: '🎽', legs: '🩲', feet: '🩴', leftHand: null, rightHand: null };
+  // Equipped item slots. VALUES are camelCase item names (matching keys in
+  // the ItemDefs registry), NOT emoji icons. Each slot holds at most one
+  // item — equip slots are item instances, not stacks. Drags between
+  // inventory stacks and equip slots take/place one unit at a time.
+  player.equipped = { head: null, chest: 'runningShirt', legs: 'briefs', feet: 'sandals', leftHand: null, rightHand: null };
   player.learnedInsults = []; player.learnedRetorts = []; player.startingClass = null;
   // Number of inventory slots mirrored in the HUD quickslot row. Future
   // boons will raise this from a starting value (planned: 5) up to the
@@ -300,9 +304,9 @@ function getPlayerPrimaryHand() {
  */
 function getPlayerHitRate() {
   let hitRate = player.hitRate;
-  Object.values(player.equipped).forEach(ic => {
-    if(ic) {
-      let def = (typeof ITEM_DEF !== 'undefined') ? ITEM_DEF[ic] : null;
+  Object.values(player.equipped).forEach(name => {
+    if(name) {
+      let def = (typeof ItemDefs !== 'undefined') ? ItemDefs[name] : null;
       if(def) hitRate += (def.hitRateBonus || 0);
     }
   });
@@ -328,9 +332,9 @@ function getPlayerHits(enemy) {
 function getPlayerDmg() {
   let baseDmg  = player.baseDmg  || CONSTANTS.PLAYER_UNARMED_BASE_DMG;
   let dmgBonus = player.meleeDmgBonus || 0;
-  Object.values(player.equipped).forEach(ic => {
-    if(ic) {
-      let def = (typeof ITEM_DEF !== 'undefined') ? ITEM_DEF[ic] : null;
+  Object.values(player.equipped).forEach(name => {
+    if(name) {
+      let def = (typeof ItemDefs !== 'undefined') ? ItemDefs[name] : null;
       if(!def) return;
       if(def.type === "weapon") baseDmg  = (def.baseDmg || 0);
       if(def.meleeDmgBonus)    dmgBonus += def.meleeDmgBonus;

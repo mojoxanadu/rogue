@@ -156,7 +156,7 @@
         statusUI.innerText = `DIARRHEA${turns ? ` (${turns})` : ''}`;
         statusUI.className = "chip danger";
         player._exhaustedWarnFired = false;
-      } else if(player.equipped && (player.equipped.rightHand === '💍' || player.equipped.leftHand === '💍')) {
+      } else if(player.equipped && (player.equipped.rightHand === 'ringOfMidas' || player.equipped.leftHand === 'ringOfMidas')) {
         statusUI.style.display = 'block';
         statusUI.innerText = 'MIDAS TOUCH';
         statusUI.className = 'chip';
@@ -187,14 +187,25 @@
     Object.keys(player.equipped).forEach(slot => {
       const el = document.getElementById(`eq${slot}`);
       if(el) {
-        const icon = player.equipped[slot];
+        const name  = player.equipped[slot];
+        const def   = name ? ItemDefs[name] : null;
         const label = slotLabels[slot] || slot;
-        const itemName = icon && ITEM_DEF[icon] ? ITEM_DEF[icon].name : '';
-        el.innerHTML = `<div class="equip-label">${label}</div><span style="font-size:24px;">${icon || ''}</span>`;
-        el.title = itemName;
-        // K6: Make filled slots draggable; always accept drops from inventory/inventory
-        el.draggable = !!icon;
-        el.ondragstart = icon ? (e) => equipSlotDragStart(e, slot) : null;
+        // Build via textContent rather than innerHTML — values come from
+        // ItemDefs (trusted) but the slot label could be any string; safer
+        // not to rely on string-template HTML construction here.
+        el.replaceChildren();
+        const labelEl = document.createElement('div');
+        labelEl.className   = 'equip-label';
+        labelEl.textContent = label;
+        const iconEl = document.createElement('span');
+        iconEl.style.fontSize = '24px';
+        iconEl.textContent    = def ? def.icon : '';
+        el.appendChild(labelEl);
+        el.appendChild(iconEl);
+        el.title = def ? def.displayName : '';
+        // K6: Make filled slots draggable; always accept drops from inventory
+        el.draggable = !!name;
+        el.ondragstart = name ? (e) => equipSlotDragStart(e, slot) : null;
         el.ondragover = (e) => equipSlotDragOver(e, slot);
         el.ondrop = (e) => equipSlotDrop(e, slot);
         el.style.cursor = icon ? 'grab' : '';
@@ -1105,28 +1116,29 @@
         try { dragData = JSON.parse(raw); } catch(_) {}
         if (dragData && dragData.source === 'equip') {
           const slotName = dragData.slot;
-          const equippedIcon = player.equipped[slotName];
-          if (equippedIcon) {
+          const equippedName = player.equipped[slotName];   // camelCase name
+          const equippedDef  = equippedName ? ItemDefs[equippedName] : null;
+          if (equippedName) {
             const tgtArr = targetSource === 'inv' ? inventory : inventory;
             const targetItem = tgtArr[targetIdx];
             if (targetItem === null) {
-              // Drop to empty slot — unequip
-              tgtArr[targetIdx] = { icon: equippedIcon, qty: 1 };
+              // Drop to empty slot — unequip (new stack of qty 1)
+              tgtArr[targetIdx] = new ItemStack(equippedName, 1);
               player.equipped[slotName] = null;
-              logMsg(`Unequipped ${ITEM_DEF[equippedIcon]?.name || equippedIcon}.`);
+              logMsg(`Unequipped ${equippedDef?.displayName || equippedName}.`);
               swapEquip(-1, slotName);
             } else {
               // Swap — check if target item fits the slot
-              const targetDef = ITEM_DEF[targetItem.icon];
+              const targetDef = ItemDefs[targetItem.itemName];
               const fitsSlot = targetDef && (
                 (slotName === 'leftHand' && (targetDef.type === 'weapon' || targetDef.slot === 'leftHand')) ||
                 (slotName === 'rightHand' && (targetDef.type === 'weapon' || targetDef.slot === 'rightHand')) ||
                 (targetDef.slot === slotName)
               );
               if (fitsSlot) {
-                tgtArr[targetIdx] = { icon: equippedIcon, qty: 1 };
-                player.equipped[slotName] = targetItem.icon;
-                logMsg(`Swapped ${ITEM_DEF[equippedIcon]?.name || equippedIcon} with ${targetDef?.name || targetItem.icon}.`);
+                tgtArr[targetIdx] = new ItemStack(equippedName, 1);
+                player.equipped[slotName] = targetItem.itemName;
+                logMsg(`Swapped ${equippedDef?.displayName || equippedName} with ${targetDef?.displayName || targetItem.itemName}.`);
                 swapEquip(-1, slotName);
               } else {
                 logMsg(`${targetDef?.name || targetItem.icon} doesn't fit the ${slotName} slot.`);
@@ -1262,7 +1274,7 @@
     event.dataTransfer.setData('text/plain', JSON.stringify({
       source: 'equip',
       slot: slotName,
-      icon: player.equipped[slotName]
+      itemName: player.equipped[slotName]   // camelCase name (post-icon-migration)
     }));
     event.dataTransfer.effectAllowed = 'move';
   };
@@ -1498,13 +1510,13 @@
     // combined with whatever they have equipped at the moment.
     let currentBaseDmg = CONSTANTS.PLAYER_UNARMED_BASE_DMG;
     let meleeDmgMsg = `${currentBaseDmg} (unarmed)`;
-    Object.values(player.equipped).forEach(ic => { 
-      if(ic) { 
-        let d = ITEM_DEF[ic]; 
+    Object.values(player.equipped).forEach(name => {
+      if(name) {
+        let d = ItemDefs[name];
         if(!d) return;
         if(d.type === "weapon") {
           currentBaseDmg = (d.baseDmg || 0);
-          meleeDmgMsg = `${currentBaseDmg} (${d.name})`;
+          meleeDmgMsg = `${currentBaseDmg} (${d.displayName})`;
         }
       }
     });

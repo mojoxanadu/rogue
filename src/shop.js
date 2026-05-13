@@ -1234,7 +1234,7 @@
           <button onclick="dennisSpeak('government')">Discuss government</button>
           <button onclick="dennisSpeak('weapons')">Ask about the bow</button>
           <button onclick="dennisSpeak('quest')">Ask for useful advice</button>
-          ${(player.equipped.head === '👑' || player.gp > 1000)
+          ${(player.equipped.head === 'crownOfNoodlyAppendages' || player.gp > 1000)
             ? `<button onclick="getConvention()">Request constitutional convention</button>`
             : ''}
         </div>`;

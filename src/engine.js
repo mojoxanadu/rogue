@@ -1885,7 +1885,7 @@
       return;
     }
 
-    if(getPlayerPrimaryHand() === '🪗') {
+    if(getPlayerPrimaryHand() === 'accordion') {
       // Using Accordion in battle.
       Sound.polka();
       logMsg(`<span style='color:var(--warning)'>You strike up a catastrophic little polka at the ${e.type}. It hurts nobody and improves nothing.</span>`);
@@ -2884,18 +2884,16 @@
       return;
     }
     // Check if any equipped item has durability to repair
-    let hasEquipped = Object.values(player.equipped || {}).some(ic => ic !== null);
+    let hasEquipped = Object.values(player.equipped || {}).some(name => name !== null);
     if(!hasEquipped) {
       logMsg("<span style='color:#aaa'>🧑‍🔧 Griswold: \"Your equipment is in fine shape already! Come back when something needs fixing.\"</span>");
       return;
     }
     changeGold(-50);
     // Restore durability on all equipped items (if durability system exists)
-    Object.values(player.equipped || {}).forEach(ic => {
-      if(ic && ITEM_DEF[ic]) {
-        let def = ITEM_DEF[ic];
-        if(def.durability !== undefined) def.durability = def.maxDurability || 100;
-      }
+    Object.values(player.equipped || {}).forEach(name => {
+      const def = name ? ItemDefs[name] : null;
+      if(def && def.durability !== undefined) def.durability = def.maxDurability || 100;
     });
     addFloatingText(player.x, player.y, '🔨 REPAIRED', '#fc0', 16);
     logMsg("<span style='color:var(--success)'>🧑‍🔧 Griswold hammers away for a moment. \"There! Good as new. Well, good as it's going to get.\"</span>");
