@@ -65,9 +65,39 @@ class ItemDef {
 
   /** True if this def represents a carryable container (a bag). */
   isContainer() {
-    return this.type === 'bag' || (this.bagSlots && this.bagSlots > 0);
+    return this.type === 'bag' || this.bagSlots > 0;
+  }
+
+  // ─── Static helpers ────────────────────────────────────────
+  //  The class is the front door for catalog operations. Free
+  //  functions like a global `iconOf` would pollute the global
+  //  namespace and collide with future *_Def patterns.
+
+  /**
+   * Look up an item's display icon (emoji) by its camelCase name.
+   * Returns '?' for unknown names rather than throwing — caller
+   * gets a visible breadcrumb at the render site.
+   *
+   * Used to interpolate icons into UI/log strings, e.g.:
+   *   logMsg(`Picked up ${ItemDef.iconOf('oldBoot')}!`)
+   */
+  static iconOf(name) {
+    const def = (typeof ItemDefs !== 'undefined') ? ItemDefs[name] : null;
+    return def ? def.icon : '?';
+  }
+
+  /**
+   * Reverse lookup: emoji → ItemDef. Used during the migration
+   * period when call sites still hold emoji literals. Returns null
+   * for icons not in the catalog.
+   *
+   * Backed by ItemDef._byIcon (populated by items_registry.js).
+   */
+  static byIcon(icon) {
+    return ItemDef._byIcon[icon] || null;
   }
 }
+ItemDef._byIcon = {};
 
 
 // ─── ItemStack ───────────────────────────────────────────────
@@ -122,6 +152,27 @@ class ItemStack {
     this.qty += moved;
     return moved;
   }
+
+  // ─── Static factory (migration helper) ─────────────────────
+  /**
+   * Build an ItemStack from a legacy emoji + qty pair. Existing
+   * call sites today write `{ icon: '🥾', qty: 1 }`; this factory
+   * lets them migrate to ItemStack instances in one mechanical
+   * step. Once all call sites are converted, code can construct
+   * via `new ItemStack('oldBoot', 1)` and this factory falls out
+   * of use.
+   *
+   * If the icon isn't in the catalog, returns a stack whose
+   * itemName is the icon itself (so the data isn't lost) and
+   * logs a warning. That lets migration proceed without halting
+   * on icons that haven't been added to ITEM_DEF yet.
+   */
+  static fromIcon(icon, qty = NON_STACKABLE_QTY) {
+    const def = ItemDef.byIcon(icon);
+    if (def) return new ItemStack(def.name, qty);
+    console.warn(`ItemStack.fromIcon: no def for icon '${icon}', using icon as itemName`);
+    return new ItemStack(icon, qty);
+  }
 }
 
 
@@ -150,36 +201,45 @@ class Container extends ItemStack {
     this.slots = new Array(def.bagSlots).fill(null);
   }
 
-  /** Iterator over (container, slotIndex, stack-or-null) including nested containers. */
-  *walkSlots() {
-    for (let i = 0; i < this.slots.length; i++) {
-      yield { container: this, idx: i, stack: this.slots[i] };
-      const s = this.slots[i];
-      if (s instanceof Container) {
-        yield* s.walkSlots();
-      }
-    }
-  }
-
   /**
    * Find an existing ItemStack of `itemName` with room for more units.
-   * Returns the stack, or null. Searches this container's slots
-   * recursively (into nested containers).
+   * Returns the stack, or null. Breadth-first: this container's own
+   * slots are searched in full before recursing into any nested
+   * containers, so items consolidate at the top level before being
+   * tucked into bags.
    */
   findRoom(itemName) {
-    for (const { stack } of this.walkSlots()) {
-      if (stack && stack.itemName === itemName && stack.hasRoom()) return stack;
+    // Same level first.
+    for (const s of this.slots) {
+      if (s && !(s instanceof Container) && s.itemName === itemName && s.hasRoom()) return s;
+    }
+    // Then recurse, in slot order.
+    for (const s of this.slots) {
+      if (s instanceof Container) {
+        const found = s.findRoom(itemName);
+        if (found) return found;
+      }
     }
     return null;
   }
 
   /**
-   * Find the first empty slot anywhere in this container or any
-   * nested container. Returns `{ container, idx }` or null.
+   * Find the first empty slot. Breadth-first across containers (this
+   * container's own slots are exhausted before recursing into nested
+   * ones) — so dropping an item lands in the player's main inventory
+   * if there's room, only tucking into bags as overflow.
+   *
+   * Returns `{ container, idx }` or null.
    */
   findFreeSlot() {
-    for (const { container, idx, stack } of this.walkSlots()) {
-      if (stack === null) return { container, idx };
+    for (let i = 0; i < this.slots.length; i++) {
+      if (this.slots[i] === null) return { container: this, idx: i };
+    }
+    for (const s of this.slots) {
+      if (s instanceof Container) {
+        const r = s.findFreeSlot();
+        if (r) return r;
+      }
     }
     return null;
   }

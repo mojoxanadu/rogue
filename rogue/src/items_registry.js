@@ -44,12 +44,16 @@ function _toCamelCase(displayName) {
       (collisions[name] = collisions[name] || []).push({ icon, existing: ItemDefs[name].icon });
       continue;
     }
-    ItemDefs[name] = new ItemDef({
+    const def = new ItemDef({
       ...spec,
       name,
       displayName: spec.name,
       icon,
     });
+    ItemDefs[name] = def;
+    // Reverse map: emoji → def. Used by ItemDef.byIcon() and
+    // ItemStack.fromIcon() during the migration period.
+    ItemDef._byIcon[icon] = def;
   }
   const colCount = Object.keys(collisions).length;
   if (colCount > 0) {
