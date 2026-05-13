@@ -93,6 +93,24 @@ Document each tweak here so design team knows where to drop files.
 |-------------------|-----------------------------------------|---------------------------------|---------------------------------------------------------|
 | Pixelify Sans Bold| `fonts/static/PixelifySans-Bold.ttf`    | `raw/fonts/PixelifySans-Bold.ttf` | `static/` was an upstream font-archive artifact, not meaningful here |
 
+## Testing discipline
+
+- **`make test` is `node --test tests/`.** Uses Node's built-in test runner
+  plus a small `tests/_harness.js` that loads `src/*.js` into a sandboxed
+  VM context. Zero install dependencies, `src/` stays pristine — no
+  CommonJS exports or test-only shims in the concatenated artifact.
+- **Build the suite as the code grows; never let it lag.** When you find
+  yourself reaching for `node -e` to "just check this works," capture
+  it as a test in `tests/` instead. Ad-hoc verification produces no
+  lasting asset; the same regression caught at the keyboard today is
+  invisible tomorrow. The first `make test` run caught two real bugs
+  (`isContainer()` truthiness, depth-vs-breadth slot search) that the
+  earlier transient checks had missed.
+- **Failure-path tests matter.** Cover unknown names, wrong types,
+  empty containers, etc. Happy-path tests alone leave regressions
+  hiding in the edge cases.
+- **`make test` must be green at every commit.** Never push with red tests.
+
 ## Constraints
 
 - **No ES modules.** The game ships as one self-contained HTML file —

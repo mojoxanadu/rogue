@@ -8,6 +8,7 @@
 #   make all          dev + release
 #   make check        diff release against $(SNAPSHOT) modulo timestamps
 #   make lint         node --check every <script> block in dev_build.html
+#   make test         node:test runner against tests/*.test.js
 #   make clean        wipe artifacts (keeps raw/ and src/)
 
 include config
@@ -19,7 +20,7 @@ SNAPSHOT  ?= @HEAD:rogue/roguelike.html
 
 PY_SHARED := config.py build_files.py
 
-.PHONY: all dev assets release check lint clean
+.PHONY: all dev assets release check lint test clean
 .DEFAULT_GOAL := dev
 
 dev: dev_build.html
@@ -44,6 +45,9 @@ check: $(RELEASE) check.py
 
 lint: dev_build.html lint.py
 	python3 lint.py dev_build.html
+
+test:
+	node --test tests/
 
 clean:
 	rm -f dev_build.html assets.json roguelike.html roguelike_build*.html raw/title_rendered.png
