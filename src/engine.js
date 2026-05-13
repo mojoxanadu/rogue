@@ -126,7 +126,9 @@
         // Loot drops to floor
         if(c.loot && c.loot.length > 0) {
           c.loot.forEach(item => {
-            if(item.icon === '🪙') {
+            // Gold loot: plain object with no itemName. Real items are
+            // ItemStack instances (have .itemName).
+            if(!item.itemName && item.icon === '🪙') {
               changeGold(item.qty);
             } else {
               itemsOnGround.push({ x: c.x, y: c.y, icon: item.icon });

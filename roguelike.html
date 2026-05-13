@@ -2,7 +2,7 @@
   ╔══════════════════════════════════════════════════════════════╗
   ║  ROGUELIKE: THE ULTIMATE QUEST — Build 762                    ║
   ╠══════════════════════════════════════════════════════════════╣
-  ║  Built: 2026-05-13 12:28:03                                 ║
+  ║  Built: 2026-05-13 12:32:57                                 ║
   ║  Files: 30                                                  ║
   ║  Assets: 1                                                  ║
   ╠══════════════════════════════════════════════════════════════╣
@@ -30,9 +30,9 @@
   ║    quests_qfg.js (src/quests_qfg.js, modified: 2026-05-13 10:07)║
   ║    quest_engine.js (src/quest_engine.js, modified: 2026-05-13 10:07)║
   ║    boundary_data.js (src/boundary_data.js, modified: 2026-05-13 10:07)║
-  ║    map.js (src/map.js, modified: 2026-05-13 10:07)           ║
+  ║    map.js (src/map.js, modified: 2026-05-13 12:32)           ║
   ║    mechanics.js (src/mechanics.js, modified: 2026-05-13 12:25)║
-  ║    engine.js (src/engine.js, modified: 2026-05-13 12:27)     ║
+  ║    engine.js (src/engine.js, modified: 2026-05-13 12:32)     ║
   ║    shop.js (src/shop.js, modified: 2026-05-13 12:25)         ║
   ║    webgl_fx.js (src/webgl_fx.js, modified: 2026-05-13 10:07) ║
   ║    render.js (src/render.js, modified: 2026-05-13 10:07)     ║
@@ -10441,7 +10441,7 @@ window.BOUNDARY_DATA = {
 
 // ═══ END: boundary_data.js ═══
 
-// ═══ BEGIN: map.js (src/map.js, modified: 2026-05-13 10:07) ═══
+// ═══ BEGIN: map.js (src/map.js, modified: 2026-05-13 12:32) ═══
   /*
   MAP MODULE – PROCEDURAL GENERATION AND SCENE MANAGEMENT
   ========================================================
@@ -11309,7 +11309,7 @@ window.BOUNDARY_DATA = {
         enemies.push({ x: fencePos.x, y: fencePos.y, type: "fence", stats: {...MONSTER_DEF["fence"]} });
         let corpsePos = findNearbyFloorTile(leftyPos.x, leftyPos.y, 4, reserved);
         if(corpsePos && typeof createCorpse === 'function') {
-          createCorpse(corpsePos.x, corpsePos.y, 'busker', { icon: '🧑‍🎤' }, [{ icon: '🪗', qty: 1 }, { icon: '📎', qty: 1 }]);
+          createCorpse(corpsePos.x, corpsePos.y, 'busker', { icon: '🧑‍🎤' }, [new ItemStack('accordion', 1), new ItemStack('paperclip', 1)]);
           let buskerCorpse = corpses[corpses.length - 1];
           if(buskerCorpse) {
             buskerCorpse.name = 'busker corpse';
@@ -12282,31 +12282,42 @@ window.BOUNDARY_DATA = {
       }
       // Build a multi-item loot pile for the chest (right-click to loot)
       let chestLoot = [];
-      if (roll < 0.35) chestLoot.push({icon:'🗡️', qty:1});
-      else if (roll < 0.50) chestLoot.push({icon:'🛡️', qty:1});
-      else if (roll < 0.62) chestLoot.push({icon:'🧪', qty:1});
-      else if (roll < 0.74) chestLoot.push({icon:'🕯️', qty:1});
-      else if (roll < 0.82) chestLoot.push({icon: randomBag(player.level), qty:1});
-      else if (roll < 0.90) chestLoot.push({icon:'📃', qty:1});
-      else if (roll < 0.97) chestLoot.push({icon:'🌀', qty:1});
-      else chestLoot.push({icon:'🗝️', qty:1});
+      if (roll < 0.35)      chestLoot.push(new ItemStack('sword', 1));
+      else if (roll < 0.50) chestLoot.push(new ItemStack('shield', 1));
+      else if (roll < 0.62) chestLoot.push(new ItemStack('healthPotion', 1));
+      else if (roll < 0.74) chestLoot.push(new ItemStack('candle', 1));
+      else if (roll < 0.82) chestLoot.push(ItemStack.fromIcon(randomBag(player.level), 1));
+      else if (roll < 0.90) chestLoot.push(new ItemStack('identifyScroll', 1));
+      else if (roll < 0.97) chestLoot.push(new ItemStack('townPortalScroll', 1));
+      else                  chestLoot.push(new ItemStack('key', 1));
       // 30% chance of bonus item in chest
       if (Math.random() < 0.3) {
         let bonus = ['🧪','🕯️','🍕','🍖','💰','📃'];
-        chestLoot.push({icon: bonus[Math.floor(Math.random() * bonus.length)], qty:1});
+        chestLoot.push(ItemStack.fromIcon(bonus[Math.floor(Math.random() * bonus.length)], 1));
       }
-      // 8% chance of coin bonus
+      // 8% chance of coin bonus.
+      // NOTE: gold loot stays as a plain { icon: '🪙', qty: N } object, NOT
+      // an ItemStack. Gold is a separate concept from inventory items; the
+      // pickup handlers route gold (icon: '🪙', no itemName) to changeGold().
+      // A future refactor could replace this with { gold: N } for clarity.
       if (Math.random() < 0.08) {
-        chestLoot.push({icon:'🪙', qty: 10 + Math.floor(Math.random() * 30 * currentLevel)});
+        chestLoot.push({ icon: '🪙', qty: 10 + Math.floor(Math.random() * 30 * currentLevel) });
       }
       // Create as a "chest" corpse for right-click looting
       if(typeof createCorpse === 'function' && typeof window.autoLootEnabled !== 'undefined') {
         if(window.autoLootEnabled && player.talents && player.talents['autoLoot']) {
           chestLoot.forEach(item => {
-            if(item.icon === '🪙') { changeGold(item.qty); }
-            else { let s = inventory.findIndex(s => s === null); if(s !== -1) inventory[s] = {icon:item.icon, qty:item.qty}; else if(typeof tryPlaceInInventory==='function') tryPlaceInInventory(item); }
+            // Gold loot: plain object with no itemName. Real items are
+            // ItemStack instances (have .itemName).
+            if(!item.itemName && item.icon === '🪙') {
+              changeGold(item.qty);
+            } else {
+              let s = inventory.findIndex(s => s === null);
+              if(s !== -1) inventory[s] = new ItemStack(item.itemName, item.qty);
+              else if(typeof tryPlaceInInventory === 'function') tryPlaceInInventory(item);
+            }
           });
-          if(!chestLoot.some(item => item.icon === '🪙')) Sound.clink();
+          if(!chestLoot.some(item => !item.itemName && item.icon === '🪙')) Sound.clink();
         } else {
           createCorpse(x, y, 'chest', {icon:'📦', name:'Chest'}, chestLoot);
         }
@@ -13646,7 +13657,7 @@ window.BOUNDARY_DATA = {
 
 // ═══ END: mechanics.js ═══
 
-// ═══ BEGIN: engine.js (src/engine.js, modified: 2026-05-13 12:27) ═══
+// ═══ BEGIN: engine.js (src/engine.js, modified: 2026-05-13 12:32) ═══
   /*
   ENGINE MODULE – CORE GAME LOOPS, AI, AND COMBAT
   ================================================
@@ -13775,7 +13786,9 @@ window.BOUNDARY_DATA = {
         // Loot drops to floor
         if(c.loot && c.loot.length > 0) {
           c.loot.forEach(item => {
-            if(item.icon === '🪙') {
+            // Gold loot: plain object with no itemName. Real items are
+            // ItemStack instances (have .itemName).
+            if(!item.itemName && item.icon === '🪙') {
               changeGold(item.qty);
             } else {
               itemsOnGround.push({ x: c.x, y: c.y, icon: item.icon });

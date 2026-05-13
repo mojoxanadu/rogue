@@ -142,6 +142,26 @@ test('Lock: mechanics.js items resolve to expected camelCase names', () => {
   }
 });
 
+test('Lock: map.js items resolve to expected camelCase names', () => {
+  const ctx = buildRegistry({
+    '🪗': { name: 'Accordion',         type: 'weapon', stackable: false },
+    '📎': { name: 'Paperclip',         type: 'useless', stackable: true },
+    '🗡️': { name: 'Sword',             type: 'weapon', stackable: false },
+    '🛡️': { name: 'Shield',            type: 'armor',  stackable: false },
+    '🧪': { name: 'Health Potion',     type: 'potion', stackable: true, maxStack: 99 },
+    '🕯️': { name: 'Candle',            type: 'light',  stackable: true, maxStack: 99 },
+    '📃': { name: 'Identify Scroll',   type: 'scroll', stackable: true, maxStack: 99 },
+    '🌀': { name: 'Town Portal Scroll', type: 'scroll', stackable: true, maxStack: 99 },
+    '🗝️': { name: 'Key',               type: 'key',    stackable: true },
+  });
+  // Names referenced in map.js chest-loot rolls and busker corpse loot.
+  for (const n of ['accordion', 'paperclip',
+                   'sword', 'shield', 'healthPotion', 'candle',
+                   'identifyScroll', 'townPortalScroll', 'key']) {
+    assert.ok(ctx.ItemDefs[n], `${n} missing — map.js loot drops will break`);
+  }
+});
+
 test('Lock: shop.js items resolve to expected camelCase names', () => {
   const ctx = buildRegistry({
     '🧴':   { name: 'Prophylactic',             type: 'useless', maxStack: 1,  maxGP: 0 },
