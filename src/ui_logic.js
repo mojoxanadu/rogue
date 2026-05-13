@@ -11,7 +11,7 @@
   2. Logging system – timestamped message display with auto‑scroll
   3. Save/load system – JSON serialization with XOR obfuscation, file download/upload
   4. Draggable modal management – mouse drag‑and‑drop for movable windows
-  5. Inventory & pouch rendering – visual grids with drag‑and‑drop between inventory/pouch
+  5. Inventory & inventoryx rendering – visual grids with drag‑and‑drop between inventory/inventoryx
   6. Stat & talent panels – allocation UI, talent tree display, spell management
   7. Debug/cheat functions – god mode, warp, add items, edit stats, toggle encryption
   8. Asset loader – import external sprite/sound packs via JSON file
@@ -192,7 +192,7 @@
         const itemName = icon && ITEM_DEF[icon] ? ITEM_DEF[icon].name : '';
         el.innerHTML = `<div class="equip-label">${label}</div><span style="font-size:24px;">${icon || ''}</span>`;
         el.title = itemName;
-        // K6: Make filled slots draggable; always accept drops from inventory/pouch
+        // K6: Make filled slots draggable; always accept drops from inventory/inventoryx
         el.draggable = !!icon;
         el.ondragstart = icon ? (e) => equipSlotDragStart(e, slot) : null;
         el.ondragover = (e) => equipSlotDragOver(e, slot);
@@ -240,7 +240,7 @@
       }
     });
 
-    const pouchModal = document.getElementById('pouch-modal');
+    const pouchModal = document.getElementById('inventoryx-modal');
     if(pouchModal && pouchModal.style.display === 'flex') renderPouch();
 
     // Bug 8/9/10: Show bubbles only when orb fill > 10%
@@ -686,7 +686,7 @@
     if(el.style.display === 'flex') {
       if(id === 'stats-modal') { showStatsTab('stats'); }
       if(id === 'magic-modal') showMagic();
-      if(id === 'pouch-modal') renderPouch();
+      if(id === 'inventoryx-modal') renderPouch();
       if(id === 'asset-viewer-modal') showAssetViewer();
       if(id === 'achieve-modal') showAchievements();
       if(id === 'quest-modal') showQuestLog();
@@ -817,7 +817,7 @@
     let name = ITEM_DEF[item.icon]?.name || item.icon;
     const def = ITEM_DEF[item.icon];
     const canEquip = def && (def.slot || def.type === 'weapon' || def.type === 'armor');
-    const freePouch = pouch.findIndex(s => s === null);
+    const freePouch = inventoryx.findIndex(s => s === null);
     menu.innerHTML = `
       <div style="padding:4px 12px; color:var(--primary); font-size:11px; border-bottom:1px solid #444; margin-bottom:2px;">${item.icon} ${name}</div>
       <div style="padding:6px 12px; cursor:pointer; font-size:12px;" onmouseover="this.style.background='#4A4458'" onmouseout="this.style.background=''"
@@ -846,8 +846,8 @@
   };
 
   window.handlePouchClick = (i) => {
-    if(dropMode) { itemsOnGround.push({ x: player.x, y: player.y, icon: pouch[i].icon }); decrementPouch(i); dropMode = false; renderPouch(); return; }
-    if(pouch[i]) logMsg(`Pouch[${i}]: ${ITEM_DEF[pouch[i].icon]?.name || pouch[i].icon}`);
+    if(dropMode) { itemsOnGround.push({ x: player.x, y: player.y, icon: inventoryx[i].icon }); decrementPouch(i); dropMode = false; renderPouch(); return; }
+    if(inventoryx[i]) logMsg(`Pouch[${i}]: ${ITEM_DEF[inventoryx[i].icon]?.name || inventoryx[i].icon}`);
   };
 
   window._openBagPanel = null;
@@ -857,10 +857,10 @@
   };
 
   function renderAttachedBagPanel() {
-    const panel = document.getElementById('pouch-bag-panel');
-    const header = document.getElementById('pouch-bag-panel-header');
-    const subtitle = document.getElementById('pouch-bag-panel-subtitle');
-    const grid = document.getElementById('pouch-bag-panel-grid');
+    const panel = document.getElementById('inventoryx-bag-panel');
+    const header = document.getElementById('inventoryx-bag-panel-header');
+    const subtitle = document.getElementById('inventoryx-bag-panel-subtitle');
+    const grid = document.getElementById('inventoryx-bag-panel-grid');
     if(!panel || !header || !subtitle || !grid) return;
 
     const openBag = window._openBagPanel;
@@ -870,7 +870,7 @@
       return;
     }
 
-    const sourceArr = openBag.source === 'inv' ? inventory : pouch;
+    const sourceArr = openBag.source === 'inv' ? inventory : inventoryx;
     const bag = sourceArr[openBag.idx];
     const bagDef = bag && ITEM_DEF[bag.icon];
     if(!bag || !bagDef || bagDef.type !== 'bag') {
@@ -891,15 +891,15 @@
       const cell = document.createElement('div');
       cell.style.cssText = 'min-height:42px; border-radius:8px; border:1px solid rgba(219,199,167,0.18); background:rgba(0,0,0,0.22); display:flex; align-items:center; justify-content:center; position:relative;';
 
-      // B6: All bag slots accept drops from inventory/pouch
+      // B6: All bag slots accept drops from inventory/inventoryx
       cell.addEventListener('dragover', allowDrop);
       cell.addEventListener('drop', (e) => {
         e.preventDefault();
-        if(window.draggedSource === 'inv' || window.draggedSource === 'pouch') {
-          const srcArr = window.draggedSource === 'inv' ? inventory : pouch;
+        if(window.draggedSource === 'inv' || window.draggedSource === 'inventoryx') {
+          const srcArr = window.draggedSource === 'inv' ? inventory : inventoryx;
           const srcItem = srcArr[window.draggedItemIdx];
           if(!srcItem) return;
-          const destArr = openBag.source === 'inv' ? inventory : pouch;
+          const destArr = openBag.source === 'inv' ? inventory : inventoryx;
           const destBag = destArr[openBag.idx];
           if(!destBag || !destBag.contents) return;
           // Swap: if slot is occupied, put displaced item back to src slot
@@ -943,7 +943,7 @@
   }
 
   window.renderPouch = () => {
-    const grid = document.getElementById('pouch-grid');
+    const grid = document.getElementById('inventoryx-grid');
     if(!grid) return;
     grid.innerHTML = '';
     // Row 0: inventory quickslots (keys 1-0) with hotkey numbers
@@ -985,21 +985,21 @@
       };
       grid.appendChild(slot);
     }
-    // Rows 1-3: pouch stash slots (30 slots)
+    // Rows 1-3: inventoryx stash slots (30 slots)
     for(let i=0; i<30; i++) {
-      let item = pouch[i], slot = document.createElement('div');
+      let item = inventoryx[i], slot = document.createElement('div');
       slot.className = 'inv-slot'; slot.style.width='36px'; slot.style.height='36px'; slot.style.fontSize='16px'; slot.style.minWidth='0';
       slot.style.borderRadius='6px'; slot.style.margin='1px';
       slot.draggable = item ? true : false;
-      if(item) slot.addEventListener('dragstart', (e) => handleDragStart(e, 'pouch', i));
+      if(item) slot.addEventListener('dragstart', (e) => handleDragStart(e, 'inventoryx', i));
       slot.addEventListener('dragover', allowDrop);
-      slot.addEventListener('drop', (e) => handleDropItem(e, 'pouch', i));
+      slot.addEventListener('drop', (e) => handleDropItem(e, 'inventoryx', i));
       if(item) {
         const itemDef = ITEM_DEF[item.icon];
         const isBag = itemDef && itemDef.type === 'bag';
         slot.innerHTML = item.icon;
         if(item.qty > 1) slot.innerHTML += `<span class="qty">${item.qty}</span>`;
-        if(isBag && window._openBagPanel && window._openBagPanel.source === 'pouch' && window._openBagPanel.idx === i) {
+        if(isBag && window._openBagPanel && window._openBagPanel.source === 'inventoryx' && window._openBagPanel.idx === i) {
           slot.style.borderColor = '#dbc7a7';
           slot.style.boxShadow = '0 0 10px rgba(219,199,167,0.2)';
         }
@@ -1035,13 +1035,13 @@
   window.handleDragStart = (e, source, idx) => { window.draggedSource = source; window.draggedItemIdx = idx; e.dataTransfer.setData('text/plain', idx); };
   window.allowDrop = (e) => { e.preventDefault(); };
 
-  // Drag any inventory/floor/loot item onto the pouch icon — auto-find open slot
+  // Drag any inventory/floor/loot item onto the inventoryx icon — auto-find open slot
   window.dropToPouch = (e) => {
     e.preventDefault();
     let item = null;
-    // B6: From bag panel drag — move item to pouch
+    // B6: From bag panel drag — move item to inventoryx
     if(window.draggedSource === 'bag' && window._dragBagSource != null && window._dragBagIdx != null) {
-      const bagArr = window._dragBagSource === 'inv' ? inventory : pouch;
+      const bagArr = window._dragBagSource === 'inv' ? inventory : inventoryx;
       const bag = bagArr[window._dragBagIdx];
       const bagSlotIdx = window.draggedItemIdx;
       if(bag && bag.contents && bag.contents[bagSlotIdx]) {
@@ -1049,7 +1049,7 @@
         let placed = tryPlaceInPouch(bagItem);
         if(placed) {
           bag.contents[bagSlotIdx] = null;
-          logMsg(`${bagItem.icon} stashed in pouch from bag.`);
+          logMsg(`${bagItem.icon} stashed in inventoryx from bag.`);
           if(typeof Sound !== 'undefined') Sound.clink();
         } else {
           logMsg("Pouch and all bags are full!");
@@ -1067,7 +1067,7 @@
         let placed = tryPlaceInPouch(item);
         if(placed) {
           inventory[window.draggedItemIdx] = null;
-          logMsg(`${item.icon} stashed in pouch.`);
+          logMsg(`${item.icon} stashed in inventoryx.`);
           Sound.clink();
         } else {
           logMsg("Pouch and all bags are full!");
@@ -1084,7 +1084,7 @@
         let placed = tryPlaceInPouch(lootItem);
         if(placed) {
           c.loot.splice(window._lootDrag.itemIdx, 1);
-          logMsg(`${lootItem.icon} stashed in pouch.`);
+          logMsg(`${lootItem.icon} stashed in inventoryx.`);
           Sound.clink();
         } else {
           logMsg("Pouch and all bags are full!");
@@ -1096,7 +1096,7 @@
   };
   window.handleDropItem = (e, targetSource, targetIdx) => {
     e.preventDefault();
-    // K6: Handle drag FROM an equipped paper doll slot → inventory/pouch slot
+    // K6: Handle drag FROM an equipped paper doll slot → inventory/inventoryx slot
     {
       let raw = null;
       try { raw = e.dataTransfer.getData('text/plain'); } catch(_) {}
@@ -1107,7 +1107,7 @@
           const slotName = dragData.slot;
           const equippedIcon = player.equipped[slotName];
           if (equippedIcon) {
-            const tgtArr = targetSource === 'inv' ? inventory : pouch;
+            const tgtArr = targetSource === 'inv' ? inventory : inventoryx;
             const targetItem = tgtArr[targetIdx];
             if (targetItem === null) {
               // Drop to empty slot — unequip
@@ -1140,14 +1140,14 @@
         }
       }
     }
-    // B6: Handle drag from bag panel slot → inventory/pouch slot
+    // B6: Handle drag from bag panel slot → inventory/inventoryx slot
     if(window.draggedSource === 'bag' && window._dragBagSource != null && window._dragBagIdx != null) {
-      const bagArr = window._dragBagSource === 'inv' ? inventory : pouch;
+      const bagArr = window._dragBagSource === 'inv' ? inventory : inventoryx;
       const bag = bagArr[window._dragBagIdx];
       const bagSlotIdx = window.draggedItemIdx;
       if(bag && bag.contents && bag.contents[bagSlotIdx]) {
         const bagItem = bag.contents[bagSlotIdx];
-        const tgtArr = targetSource === 'inv' ? inventory : pouch;
+        const tgtArr = targetSource === 'inv' ? inventory : inventoryx;
         const displaced = tgtArr[targetIdx];
         tgtArr[targetIdx] = { icon: bagItem.icon, qty: bagItem.qty || 1 };
         // Put displaced item (if any) into the bag slot we dragged from
@@ -1160,12 +1160,12 @@
       renderInventory(); renderPouch(); updateUI();
       return;
     }
-    // Handle loot drag from corpse window → inventory/pouch slot
+    // Handle loot drag from corpse window → inventory/inventoryx slot
     if(window.draggedSource === 'loot' && window._lootDrag) {
       let c = corpses[window._lootDrag.corpseIdx];
       if(c && c.loot && c.loot[window._lootDrag.itemIdx]) {
         let lootItem = c.loot[window._lootDrag.itemIdx];
-        let tgtArr = targetSource === 'inv' ? inventory : pouch;
+        let tgtArr = targetSource === 'inv' ? inventory : inventoryx;
         let displaced = tgtArr[targetIdx];
         tgtArr[targetIdx] = { icon: lootItem.icon, qty: lootItem.qty || 1 };
         c.loot.splice(window._lootDrag.itemIdx, 1);
@@ -1173,7 +1173,7 @@
           // Try to put displaced item back somewhere
           let freeInv = inventory.findIndex(s => s === null);
           if(freeInv !== -1) inventory[freeInv] = displaced;
-          else { let fp = pouch.findIndex(s => s === null); if(fp !== -1) pouch[fp] = displaced; else itemsOnGround.push({x: player.x, y: player.y, icon: displaced.icon}); }
+          else { let fp = inventoryx.findIndex(s => s === null); if(fp !== -1) inventoryx[fp] = displaced; else itemsOnGround.push({x: player.x, y: player.y, icon: displaced.icon}); }
         }
         logMsg(`${lootItem.icon} moved to ${targetSource}.`);
         Sound.clink();
@@ -1183,8 +1183,8 @@
       return;
     }
     if(window.draggedItemIdx !== null && window.draggedSource !== null) {
-      let srcArr = window.draggedSource === 'inv' ? inventory : pouch;
-      let tgtArr = targetSource === 'inv' ? inventory : pouch;
+      let srcArr = window.draggedSource === 'inv' ? inventory : inventoryx;
+      let tgtArr = targetSource === 'inv' ? inventory : inventoryx;
       let tgtItem = tgtArr[targetIdx];
       let srcItem = srcArr[window.draggedItemIdx];
       // Bug 33: If target slot has a bag, try to add dragged item into the bag
@@ -1227,19 +1227,19 @@
 
   window.handleDrop = (e, slot) => {
     e.preventDefault();
-    // #31: Allow drag from either inventory or pouch to equip slot
-    if(window.draggedItemIdx !== null && (window.draggedSource === 'inv' || window.draggedSource === 'pouch')) {
-      if(window.draggedSource === 'pouch') {
-        // Move from pouch to inventory temp slot, then equip
-        let pouchItem = pouch[window.draggedItemIdx];
+    // #31: Allow drag from either inventory or inventoryx to equip slot
+    if(window.draggedItemIdx !== null && (window.draggedSource === 'inv' || window.draggedSource === 'inventoryx')) {
+      if(window.draggedSource === 'inventoryx') {
+        // Move from inventoryx to inventory temp slot, then equip
+        let pouchItem = inventoryx[window.draggedItemIdx];
         if(pouchItem) {
           let freeInv = inventory.findIndex(s => s === null);
           if(freeInv !== -1) {
             inventory[freeInv] = pouchItem;
-            pouch[window.draggedItemIdx] = null;
+            inventoryx[window.draggedItemIdx] = null;
             swapEquip(freeInv, slot);
           } else {
-            logMsg("Inventory full — can't equip from pouch.");
+            logMsg("Inventory full — can't equip from inventoryx.");
           }
         }
       } else {
@@ -1267,7 +1267,7 @@
     event.dataTransfer.effectAllowed = 'move';
   };
 
-  // Allow dragging inventory/pouch items INTO a paper doll slot
+  // Allow dragging inventory/inventoryx items INTO a paper doll slot
   window.equipSlotDragOver = function(event, slotName) {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'move';
@@ -1286,13 +1286,13 @@
     let dragData = null;
     if (raw) { try { dragData = JSON.parse(raw); } catch(_) {} }
 
-    if (dragData && (dragData.source === 'inventory' || dragData.source === 'pouch')) {
+    if (dragData && (dragData.source === 'inventory' || dragData.source === 'inventoryx')) {
       // Explicit JSON source (future-proof / from new drag start format)
-      srcArr = dragData.source === 'inventory' ? inventory : pouch;
+      srcArr = dragData.source === 'inventory' ? inventory : inventoryx;
       fromIdx = dragData.idx;
-    } else if (window.draggedItemIdx !== null && (window.draggedSource === 'inv' || window.draggedSource === 'pouch')) {
-      // Legacy global variable drag system (existing inventory/pouch drag)
-      srcArr = window.draggedSource === 'inv' ? inventory : pouch;
+    } else if (window.draggedItemIdx !== null && (window.draggedSource === 'inv' || window.draggedSource === 'inventoryx')) {
+      // Legacy global variable drag system (existing inventory/inventoryx drag)
+      srcArr = window.draggedSource === 'inv' ? inventory : inventoryx;
       fromIdx = window.draggedItemIdx;
     } else {
       // Nothing we can handle
@@ -1511,7 +1511,7 @@
     // See if player happens to be carrying anything unequipped
     // that could improve their combat stats if it were.
     let considerEquip = false;
-    [inventory, pouch].forEach(arr => {
+    [inventory, inventoryx].forEach(arr => {
       arr.forEach(item => {
         if(!item) return;
         let def = ITEM_DEF[item.icon];
@@ -2155,7 +2155,7 @@
     if (!def) { logMsg(`Unknown item: "${icon}"`); return; }
     let slot = inventory.findIndex(i => i === null);
     if (slot !== -1) { inventory[slot] = { icon }; }
-    else { slot = pouch.findIndex(i => i === null); if (slot !== -1) pouch[slot] = { icon }; else itemsOnGround.push({x: player.x, y: player.y, icon}); }
+    else { slot = inventoryx.findIndex(i => i === null); if (slot !== -1) inventoryx[slot] = { icon }; else itemsOnGround.push({x: player.x, y: player.y, icon}); }
     logMsg(`Added ${def.name} to ${slot !== -1 ? 'inventory' : 'ground'}.`);
     renderInventory(); updateUI();
   };

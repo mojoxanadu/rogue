@@ -166,7 +166,7 @@
           inventory[slot] = { icon: item.icon, qty: item.qty || 1 };
           placed = true;
         }
-        // Try pouch and bags
+        // Try inventoryx and bags
         if(!placed) placed = tryPlaceInPouch(item);
         if(!placed) remaining.push(item);
       }
@@ -178,16 +178,16 @@
     renderInventory(); renderPouch(); updateUI();
   }
 
-  // Try to place an item in pouch or inside a bag
+  // Try to place an item in inventoryx or inside a bag
   function tryPlaceInPouch(item) {
     const def = ITEM_DEF[item.icon] || { stackable:false };
     const qty = item.qty || 1;
 
-    // Stack in existing pouch slots first
+    // Stack in existing inventoryx slots first
     if(def.stackable) {
       const maxStack = def.maxStack || 10;
-      for(let i = 0; i < pouch.length; i++) {
-        const s = pouch[i];
+      for(let i = 0; i < inventoryx.length; i++) {
+        const s = inventoryx[i];
         if(s && s.icon === item.icon && (s.qty || 1) < maxStack) {
           const can = maxStack - (s.qty || 1);
           const add = Math.min(can, qty);
@@ -199,15 +199,15 @@
       }
     }
 
-    // Direct pouch slot
-    let pSlot = pouch.findIndex(s => s === null);
+    // Direct inventoryx slot
+    let pSlot = inventoryx.findIndex(s => s === null);
     if(pSlot !== -1) {
-      pouch[pSlot] = { icon: item.icon, qty: item.qty || 1 };
+      inventoryx[pSlot] = { icon: item.icon, qty: item.qty || 1 };
       return true;
     }
     // Inside a bag
-    for(let i = 0; i < pouch.length; i++) {
-      let bag = pouch[i];
+    for(let i = 0; i < inventoryx.length; i++) {
+      let bag = inventoryx[i];
       if(bag && ITEM_DEF[bag.icon] && ITEM_DEF[bag.icon].type === 'bag') {
         if(!bag.contents) bag.contents = new Array(ITEM_DEF[bag.icon].bagSlots || 3).fill(null);
         if(def.stackable) {
@@ -481,9 +481,9 @@
     window._cainHealedThisVisit = false; // E6: reset Cain heal on new game
     window._activeBombs = []; // E16: reset active bombs on new game
     
-    // Reset inventory and pouch
+    // Reset inventory and inventoryx
     for(let i = 0; i < inventory.length; i++) inventory[i] = null;
-    for(let i = 0; i < pouch.length; i++) pouch[i] = null;
+    for(let i = 0; i < inventoryx.length; i++) inventoryx[i] = null;
     
     // Close overlay
     hideOverlay();
@@ -2512,7 +2512,7 @@
       // If player has the Brass Bottle (from safe cracking quest), genie offers a wish.
       // Otherwise, it attacks as a boss fight.
       if(npc.type === 'genie' && npc.isGenieGuardian) {
-        const hasBottle = inventory.some(i => i && i.icon === '🏺') || pouch.some(i => i && i.icon === '🏺');
+        const hasBottle = inventory.some(i => i && i.icon === '🏺') || inventoryx.some(i => i && i.icon === '🏺');
         if(hasBottle) {
           // Genie offers a wish instead of fighting
           let m = document.getElementById('modal-content');

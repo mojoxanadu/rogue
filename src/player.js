@@ -12,9 +12,9 @@
 // ─── Inventory & Pouch ───────────────────────────────────────
 //  These parallel arrays hold item stacks or null for empty slots.
 //  inventory: 10 slots accessible from the main panel.
-//  pouch:     30 slots accessible from the pouch/bag panel.
+//  inventoryx:     30 slots accessible from the inventoryx/bag panel.
 const inventory = new Array(10).fill(null);
-const pouch     = new Array(30).fill(null);
+const inventoryx     = new Array(30).fill(null);
 
 // ─── Player Object ──────────────────────────────────────────
 //  Single source of truth for all runtime player properties.

@@ -122,7 +122,7 @@
   let questTimer = { active: false, time: 0, label: "", callback: null }; 
   let levelCache = {}; 
   const logInfo = { count: 0 };
-  // inventory, pouch, player, setPlayerDefaults, changeGold, PlayerSprites
+  // inventory, inventoryx, player, setPlayerDefaults, changeGold, PlayerSprites
   // → moved to src/player.js (K5 refactor)
   const assets = { sprites: {}, sounds: {}, minigames: {}, movies: {} };
   window.assets = assets; // Make assets globally accessible for video/image loading
