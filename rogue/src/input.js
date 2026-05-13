@@ -222,7 +222,7 @@ const hBtn = document.getElementById('hamburgerBtn');
       currentScene,
       player: _debugDeepClone(player),
       inventory: _debugDeepClone(inventory),
-      pouch: _debugDeepClone(pouch),
+      inventoryx: _debugDeepClone(inventoryx),
       theMap: _debugDeepClone(theMap),
       darkMap: _debugDeepClone(darkMap),
       explored: _debugDeepClone(explored),
@@ -249,8 +249,8 @@ const hBtn = document.getElementById('hamburgerBtn');
     Object.assign(player, snap.player || {});
     inventory.length = 0;
     (snap.inventory || []).forEach(v => inventory.push(v));
-    pouch.length = 0;
-    (snap.pouch || []).forEach(v => pouch.push(v));
+    inventoryx.length = 0;
+    (snap.inventoryx || []).forEach(v => inventoryx.push(v));
 
     theMap = _debugDeepClone(snap.theMap || []);
     darkMap = _debugDeepClone(snap.darkMap || []);
@@ -1324,17 +1324,17 @@ const hBtn = document.getElementById('hamburgerBtn');
         logMsg && logMsg("You are a Spellcaster! 2 MP, Illumination known, Robe equipped.");
       } else if (selClass === 'rogue') {
         player.startingClass = 'rogue';
-        if (!player.pouch) player.pouch = [];
-        // Place lockpicking tools in first empty pouch slot
-        const pouchSlot = player.pouch.findIndex(s => !s || !s.icon);
+        if (!player.inventoryx) player.inventoryx = [];
+        // Place lockpicking tools in first empty inventoryx slot
+        const pouchSlot = player.inventoryx.findIndex(s => !s || !s.icon);
         if (pouchSlot >= 0) {
-          player.pouch[pouchSlot] = { icon: '🔐', qty: 1 };
+          player.inventoryx[pouchSlot] = { icon: '🔐', qty: 1 };
         } else {
-          player.pouch.push({ icon: '🔐', qty: 1 });
+          player.inventoryx.push({ icon: '🔐', qty: 1 });
         }
         if (!player.talents) player.talents = {};
         player.talents.lockpicking = true;
-        logMsg && logMsg("You are a Rogue! Lockpicking Tools in pouch, Lockpicking Talent gained.");
+        logMsg && logMsg("You are a Rogue! Lockpicking Tools in inventoryx, Lockpicking Talent gained.");
       }
       
       debugLog("Calculating FOV...");
@@ -1343,7 +1343,7 @@ const hBtn = document.getElementById('hamburgerBtn');
       debugLog("Rendering inventory...");
       renderInventory();
       
-      debugLog("Rendering pouch...");
+      debugLog("Rendering inventoryx...");
       renderPouch();
       
       debugLog("Drawing map...");
@@ -1769,18 +1769,18 @@ const hBtn = document.getElementById('hamburgerBtn');
         }
         if((state || 0) === 0) {
           // Check if player has a key
-          let hasKey = inventory.some(i => i && i.icon === '🗝️') || (player.pouch && player.pouch.some(i => i && i.icon === '🗝️'));
+          let hasKey = inventory.some(i => i && i.icon === '🗝️') || (player.inventoryx && player.inventoryx.some(i => i && i.icon === '🗝️'));
           if(hasKey) {
-            // Use key from inventory first, then pouch
+            // Use key from inventory first, then inventoryx
             let keyIdx = inventory.findIndex(i => i && i.icon === '🗝️');
             if(keyIdx !== -1) {
               inventory[keyIdx].qty--;
               if(inventory[keyIdx].qty <= 0) inventory[keyIdx] = null;
             } else {
-              let pouchIdx = player.pouch.findIndex(i => i && i.icon === '🗝️');
+              let pouchIdx = player.inventoryx.findIndex(i => i && i.icon === '🗝️');
               if(pouchIdx !== -1) {
-                player.pouch[pouchIdx].qty--;
-                if(player.pouch[pouchIdx].qty <= 0) player.pouch[pouchIdx] = null;
+                player.inventoryx[pouchIdx].qty--;
+                if(player.inventoryx[pouchIdx].qty <= 0) player.inventoryx[pouchIdx] = null;
               }
             }
             chestStates[chestKey] = 2; // opened
@@ -1877,7 +1877,7 @@ const hBtn = document.getElementById('hamburgerBtn');
         let placed = tryPlaceInPouch(item);
         if(placed) {
           itemsOnGround.splice(itemIdx, 1);
-          logMsg(`Picked up ${item.icon} (to pouch)`);
+          logMsg(`Picked up ${item.icon} (to inventoryx)`);
           Sound.clink();
           handleCupcakePickup(item.icon);
         } else {
@@ -1900,7 +1900,7 @@ const hBtn = document.getElementById('hamburgerBtn');
     moveEast:   ['d', 'arrowright'],
     attack:     [' '],
     rest:       ['z'],
-    pouch:      ['i', 'p'],
+    inventoryx:      ['i', 'p'],
     equip:      ['e'],
     stats:      ['c'],
     magic:      ['m'],
@@ -2091,7 +2091,7 @@ const hBtn = document.getElementById('hamburgerBtn');
     else if(keyMatches('moveWest', key)) movePlayer(-1, 0);
     else if(keyMatches('moveEast', key)) movePlayer(1, 0);
     else if(key === 'escape') toggleMenu();
-    else if(keyMatches('pouch', key)) toggleModal('pouch-modal');
+    else if(keyMatches('inventoryx', key)) toggleModal('inventoryx-modal');
     else if(keyMatches('equip', key)) toggleModal('equip-modal');
     else if(keyMatches('stats', key)) toggleModal('stats-modal');
     else if(keyMatches('magic', key)) toggleModal('magic-modal');

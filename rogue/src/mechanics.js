@@ -9,11 +9,11 @@
   1. Item click handling – weapon/armor equipping, food/potion consumption, scroll reading
   2. Special item logic – Holy Hand Grenade (timed modal), Boots of Blinding Speed, Potion of Newt
   3. Monty Python events – Witch Trial (duck‑based justice), Killer Rabbit grenade sequence
-  4. Inventory management – pickup, stacking, pouch overflow, greed traps
+  4. Inventory management – pickup, stacking, inventoryx overflow, greed traps
   5. Equipment swapping – stat recalculation (damage, dodge rate)
 
   The functions here are called from ui_logic.js (handleItemClick) and from the game loop
-  (pickupItems). They update the global inventory, pouch, player.equipped, and enemy arrays.
+  (pickupItems). They update the global inventory, inventoryx, player.equipped, and enemy arrays.
 */
   // #38: Helper — show blue +MP floating text above player
   function showMpGain(amount) {
@@ -81,8 +81,8 @@
       let idx = inventory.findIndex(item => item && ITEM_DEF[item.icon] && ITEM_DEF[item.icon].name.toLowerCase() === name);
       if(idx === -1) idx = inventory.findIndex(item => item && item.icon.toLowerCase().includes(name));
       if(idx !== -1) { handleItemClick(idx); return; }
-      // Try pouch
-      let pidx = pouch.findIndex(item => item && ITEM_DEF[item.icon] && ITEM_DEF[item.icon].name.toLowerCase() === name);
+      // Try inventoryx
+      let pidx = inventoryx.findIndex(item => item && ITEM_DEF[item.icon] && ITEM_DEF[item.icon].name.toLowerCase() === name);
       if(pidx !== -1) { handlePouchUse(pidx); }
     } else if((m = action.match(/^CAST\s+(\w+)$/i))) {
       castSpell(m[1].toLowerCase());
@@ -102,17 +102,17 @@
     }
   }
   function handlePouchUse(idx) {
-    let item = pouch[idx]; if(!item) return;
+    let item = inventoryx[idx]; if(!item) return;
     let def = ITEM_DEF[item.icon]; if(!def) return;
     // Move to free inventory slot, then use
     let freeSlot = inventory.findIndex(s => s === null);
-    if(freeSlot !== -1) { inventory[freeSlot] = item; pouch[idx] = null; handleItemClick(freeSlot); }
+    if(freeSlot !== -1) { inventory[freeSlot] = item; inventoryx[idx] = null; handleItemClick(freeSlot); }
   }
 
   // === Open a bag / expansion bag ===
-  // openBagFromSource: source = 'inv' or 'pouch', idx = slot index
+  // openBagFromSource: source = 'inv' or 'inventoryx', idx = slot index
   function openBagFromSource(source, idx) {
-    let arr = source === 'inv' ? inventory : pouch;
+    let arr = source === 'inv' ? inventory : inventoryx;
     let item = arr[idx];
     if(!item) return;
     let def = ITEM_DEF[item.icon];
@@ -131,22 +131,22 @@
     }
     Sound.chestOpen();
     window._openBagPanel = { source, idx };
-    const pouchModal = document.getElementById('pouch-modal');
+    const pouchModal = document.getElementById('inventoryx-modal');
     if(pouchModal && (pouchModal.style.display === 'none' || pouchModal.style.display === '')) {
       pouchModal.style.display = 'flex';
     }
     renderPouch();
   }
 
-  // Legacy wrapper: openBag(idx) works for pouch (backward compat)
-  function openBag(idx) { openBagFromSource('pouch', idx); }
+  // Legacy wrapper: openBag(idx) works for inventoryx (backward compat)
+  function openBag(idx) { openBagFromSource('inventoryx', idx); }
 
   // Public entry points
-  window.openBagInPouch = function(idx) { openBagFromSource('pouch', idx); };
+  window.openBagInPouch = function(idx) { openBagFromSource('inventoryx', idx); };
   window.openBagInInventory = function(idx) { openBagFromSource('inv', idx); };
 
   window.takeItemFromBagSource = (source, bagIdx, itemIdx) => {
-    let arr = source === 'inv' ? inventory : pouch;
+    let arr = source === 'inv' ? inventory : inventoryx;
     let bag = arr[bagIdx];
     if(!bag || !bag.contents || !bag.contents[itemIdx]) return;
     let taken = bag.contents[itemIdx];
@@ -158,12 +158,12 @@
       let def = ITEM_DEF[taken.icon];
       logMsg(`Took ${taken.icon} ${def ? def.name : ''} from bag.`);
     } else {
-      // Try pouch
-      let pSlot = pouch.findIndex((s, i) => s === null && !(source === 'pouch' && i === bagIdx));
+      // Try inventoryx
+      let pSlot = inventoryx.findIndex((s, i) => s === null && !(source === 'inventoryx' && i === bagIdx));
       if(pSlot !== -1) {
-        pouch[pSlot] = { icon: taken.icon, qty: taken.qty || 1 };
+        inventoryx[pSlot] = { icon: taken.icon, qty: taken.qty || 1 };
         bag.contents[itemIdx] = null;
-        logMsg(`Took ${taken.icon} to pouch (inventory full).`);
+        logMsg(`Took ${taken.icon} to inventoryx (inventory full).`);
       } else {
         itemsOnGround.push({ x: player.x, y: player.y, icon: taken.icon });
         bag.contents[itemIdx] = null;
@@ -177,7 +177,7 @@
   };
 
   // Legacy wrapper
-  window.takeItemFromBag = (bagIdx, itemIdx) => { window.takeItemFromBagSource('pouch', bagIdx, itemIdx); };
+  window.takeItemFromBag = (bagIdx, itemIdx) => { window.takeItemFromBagSource('inventoryx', bagIdx, itemIdx); };
 
   // Generate a random bag appropriate for the given level
   window.randomBag = (playerLevel) => {
@@ -465,7 +465,7 @@
         } else {
           let freeSlot = inventory.findIndex(s => s === null);
           if(freeSlot !== -1) inventory[freeSlot] = residue;
-          else { let fp = pouch.findIndex(s => s === null); if(fp !== -1) pouch[fp] = residue; else itemsOnGround.push({x: player.x, y: player.y, icon: '✨'}); }
+          else { let fp = inventoryx.findIndex(s => s === null); if(fp !== -1) inventoryx[fp] = residue; else itemsOnGround.push({x: player.x, y: player.y, icon: '✨'}); }
         }
         logMsg("<span style='color:#888; font-style:italic;'>The scroll crumbles to magic residue.</span>");
         renderInventory(); renderPouch(); updateUI();
@@ -508,11 +508,11 @@
         inventory[slot] = {icon: '🧪', qty: 1};
         logMsg("<span style='color:var(--success)'>🫖 The Magic Teapot brews a Health Potion!</span>");
       } else {
-        // Try pouch
-        let pSlot = pouch.findIndex(i => i === null);
+        // Try inventoryx
+        let pSlot = inventoryx.findIndex(i => i === null);
         if(pSlot !== -1) {
-          pouch[pSlot] = {icon: '🧪', qty: 1};
-          logMsg("<span style='color:var(--success)'>🫖 The Magic Teapot brews a Health Potion! (stashed in pouch)</span>");
+          inventoryx[pSlot] = {icon: '🧪', qty: 1};
+          logMsg("<span style='color:var(--success)'>🫖 The Magic Teapot brews a Health Potion! (stashed in inventoryx)</span>");
         } else {
           itemsOnGround.push({x: player.x, y: player.y, icon: '🧪'});
           logMsg("<span style='color:var(--success)'>🫖 The Magic Teapot brews a Health Potion! (dropped at feet)</span>");
@@ -625,12 +625,12 @@
         if(!stacked) {
           if(def.stackable) {
             let maxStack = def.maxStack || 10;
-            let ps = pouch.find(i => i && i.icon === item.icon && (i.qty || 1) < maxStack);
+            let ps = inventoryx.find(i => i && i.icon === item.icon && (i.qty || 1) < maxStack);
             if(ps) { ps.qty = (ps.qty || 1) + 1; stacked = true; }
           }
           if(!stacked) {
-            let pIdx = pouch.findIndex(i => i === null);
-            if(pIdx !== -1) { pouch[pIdx] = {icon: item.icon, qty: 1}; stacked = true; logMsg(`Stashed ${item.icon} in Pouch.`); }
+            let pIdx = inventoryx.findIndex(i => i === null);
+            if(pIdx !== -1) { inventoryx[pIdx] = {icon: item.icon, qty: 1}; stacked = true; logMsg(`Stashed ${item.icon} in Pouch.`); }
           }
         }
 
@@ -668,13 +668,13 @@
   function countItemByIcon(icon) {
     let total = 0;
     inventory.forEach(item => { if(item && item.icon === icon) total += item.qty || 1; });
-    pouch.forEach(item => { if(item && item.icon === icon) total += item.qty || 1; });
+    inventoryx.forEach(item => { if(item && item.icon === icon) total += item.qty || 1; });
     return total;
   }
 
   function consumeItemByIcon(icon, qty = 1) {
     let remaining = qty;
-    [inventory, pouch].forEach(arr => {
+    [inventory, inventoryx].forEach(arr => {
       for(let i = 0; i < arr.length && remaining > 0; i++) {
         let item = arr[i];
         if(!item || item.icon !== icon) continue;
@@ -1182,9 +1182,9 @@
   };
 
   function decrementPouch(idx) {
-    if(!pouch[idx]) return;
-    pouch[idx].qty--;
-    if(pouch[idx].qty <= 0) pouch[idx] = null;
+    if(!inventoryx[idx]) return;
+    inventoryx[idx].qty--;
+    if(inventoryx[idx].qty <= 0) inventoryx[idx] = null;
     renderPouch();
   }
 

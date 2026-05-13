@@ -12,7 +12,7 @@
      Librarian/bookstore (spellbooks, Grue lore), Fence (stolen goods),
      Lefty's Bar (whiskey, mystery woman encounter)
   3. Transaction handling – buying items, selling to fence, buying back stolen items
-  4. Inventory management – automatic pouch stashing when inventory is full
+  4. Inventory management – automatic inventoryx stashing when inventory is full
   5. Quest progression – Dennis' political commentary, safety warnings
 
   openShop() is the engine.js-facing entry point; openStore() is the internal renderer.
@@ -229,7 +229,7 @@
     let def = ITEM_DEF[icon] || {};
     let remaining = qty;
     let nextInventory = inventory.map(item => item ? { ...item } : null);
-    let nextPouch = pouch.map(item => item ? { ...item } : null);
+    let nextPouch = inventoryx.map(item => item ? { ...item } : null);
     if(def.stackable) {
       const maxStack = def.maxStack || 10;
       [nextInventory, nextPouch].forEach(arr => {
@@ -254,7 +254,7 @@
     });
     if(remaining > 0) return false;
     inventory.splice(0, inventory.length, ...nextInventory);
-    pouch.splice(0, pouch.length, ...nextPouch);
+    inventoryx.splice(0, inventoryx.length, ...nextPouch);
     if(typeof renderInventory === 'function') renderInventory();
     if(typeof renderPouch === 'function') renderPouch();
     return true;
@@ -393,7 +393,7 @@
     }
     else if(step === 1) {
       // Application fee: 10 cockroach legs
-      let hasLegs = pouch.some(i => i && i.icon === '🦗') || inventory.some(i => i && i.icon === '🦗');
+      let hasLegs = inventoryx.some(i => i && i.icon === '🦗') || inventory.some(i => i && i.icon === '🦗');
       m.innerHTML = `<h2>🏪 Application Fee</h2>
         ${npcFaceHTML('npc_apu', '🧔🏿', 'apu')}
         <p>🧔🏿‍♂️ "First, we need to verify your commitment. The application fee is 10 cockroach legs."</p>
@@ -522,7 +522,7 @@
       out.push(item.icon);
     };
     inventory.forEach(pushIfNeeded);
-    pouch.forEach(pushIfNeeded);
+    inventoryx.forEach(pushIfNeeded);
     return out;
   }
 
@@ -1106,7 +1106,7 @@
                const def = ITEM_DEF[icon];
                return `<button onclick="identifyOneItem('${icon}')" style="width:100%; margin-top:4px;">Identify ${icon} ${def ? def.name : 'Item'} (1g)</button>`;
              }).join('')
-           : `<div style="margin-top:6px; color:#888; font-size:12px;">Everything in your inventory and pouch is already identified.</div>`;
+           : `<div style="margin-top:6px; color:#888; font-size:12px;">Everything in your inventory and inventoryx is already identified.</div>`;
          html = `<div style="padding:8px;">
            <p style="margin-top:0;">Deckard Cain peers at your belongings with the weight of three very long afternoons.</p>
            <button onclick="bulkIdentify()" style="width:100%;">Identify All (100g)</button>
@@ -1657,8 +1657,8 @@
       if(idx !== -1) { arr[idx] = null; return true; }
       return false;
     };
-    if(!consumeBottle(inventory)) consumeBottle(pouch);
-    if(!consumeBottle(pouch)) {
+    if(!consumeBottle(inventory)) consumeBottle(inventoryx);
+    if(!consumeBottle(inventoryx)) {
       // Also check bags
       inventory.forEach(item => {
         if(item && item.contents) {
