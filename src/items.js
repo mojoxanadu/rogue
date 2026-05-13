@@ -27,9 +27,11 @@
 // ============================================================
 
 // ─── Constants (no magic numbers) ─────────────────────────────
-//   STACKABLE_DEFAULT_MAX_QTY — if an ItemDef has stackable=true
-//   but does not specify maxStack, this is the cap. The game uses
-//   99 as the default for most stackable items (food, ammo).
+//   STACKABLE_DEFAULT_MAX_QTY — fallback when a stackable item's
+//   spec omits maxStack. The game uses 99 as the default cap for
+//   most stackable items (food, ammo).
+//   NON_STACKABLE_QTY — a stack of a non-stackable item is always
+//   exactly one unit (maxStack=1).
 const STACKABLE_DEFAULT_MAX_QTY = 99;
 const NON_STACKABLE_QTY = 1;
 
@@ -58,9 +60,13 @@ class ItemDef {
     if (!spec.displayName)          throw new Error(`ItemDef ${spec.name} requires a displayName`);
     if (!spec.type)                 throw new Error(`ItemDef ${spec.name} requires a type`);
     Object.assign(this, spec);
-    this.stackable = !!spec.stackable;
-    if (this.stackable && !spec.maxStack) this.maxStack = STACKABLE_DEFAULT_MAX_QTY;
-    if (!this.stackable)                  this.maxStack = NON_STACKABLE_QTY;
+    // maxStack is the single source of truth for stack capacity.
+    // Legacy data may carry a `stackable` boolean — fold it into
+    // maxStack and discard, so the def has no redundant fields.
+    if (spec.maxStack === undefined) {
+      this.maxStack = spec.stackable ? STACKABLE_DEFAULT_MAX_QTY : NON_STACKABLE_QTY;
+    }
+    delete this.stackable;
   }
 
   /** True if this def represents a carryable container (a bag). */
@@ -134,10 +140,13 @@ class ItemStack {
     return this.def ? this.def.displayName : this.itemName;
   }
 
-  /** True if this stack can absorb more of the same item. */
+  /**
+   * True if this stack can absorb more of the same item.
+   * Non-stackable items have maxStack=1 by construction, so they
+   * are never "has room" once placed.
+   */
   hasRoom() {
-    if (!this.def || !this.def.stackable) return false;
-    return this.qty < this.def.maxStack;
+    return !!this.def && this.qty < this.def.maxStack;
   }
 
   /**
@@ -146,8 +155,9 @@ class ItemStack {
    * the stack fills up). Caller handles the remainder.
    */
   addQty(count) {
-    if (!this.def || !this.def.stackable || count <= 0) return 0;
+    if (!this.def || count <= 0) return 0;
     const room = this.def.maxStack - this.qty;
+    if (room <= 0) return 0;
     const moved = Math.min(room, count);
     this.qty += moved;
     return moved;

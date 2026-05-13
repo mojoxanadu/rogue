@@ -45,16 +45,21 @@ test('ItemDef copies arbitrary spec properties for back-compat', () => {
   assert.equal(def.customField, 'whatever');
 });
 
-test('ItemDef: stackable defaults to maxStack=99; non-stackable forces maxStack=1', () => {
+test('ItemDef: maxStack is the single source for stack capacity', () => {
   const { ItemDef } = loadSrc('items.js');
-  const a = new ItemDef({ name:'a', icon:'A', displayName:'A', type:'food', stackable:true });
-  assert.equal(a.maxStack, 99);
+  // Explicit maxStack wins
+  const explicit = new ItemDef({ name:'e', icon:'E', displayName:'E', type:'food', maxStack:25 });
+  assert.equal(explicit.maxStack, 25);
 
-  const b = new ItemDef({ name:'b', icon:'B', displayName:'B', type:'food', stackable:true, maxStack:25 });
-  assert.equal(b.maxStack, 25);
+  // Legacy stackable:true → folded into maxStack=99 default, stackable discarded
+  const legacy = new ItemDef({ name:'a', icon:'A', displayName:'A', type:'food', stackable:true });
+  assert.equal(legacy.maxStack, 99);
+  assert.equal(legacy.stackable, undefined, 'stackable should not be exposed on instance');
 
-  const c = new ItemDef({ name:'c', icon:'C', displayName:'C', type:'weapon' }); // not stackable
-  assert.equal(c.maxStack, 1);
+  // Legacy stackable:false (or omitted) → maxStack=1
+  const nonStackable = new ItemDef({ name:'c', icon:'C', displayName:'C', type:'weapon' });
+  assert.equal(nonStackable.maxStack, 1);
+  assert.equal(nonStackable.stackable, undefined);
 });
 
 test('ItemDef.isContainer true for bag type or bagSlots>0', () => {
