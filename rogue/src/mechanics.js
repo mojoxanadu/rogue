@@ -667,27 +667,24 @@
     renderQuickslots(); 
   }
 
-  function countItemByIcon(icon) {
+  function countItemByName(name) {
     let total = 0;
-    inventory.forEach(item => { if(item && item.icon === icon) total += item.qty ?? 1; });
-    inventory.forEach(item => { if(item && item.icon === icon) total += item.qty ?? 1; });
+    inventory.forEach(item => { if(item && item.itemName === name) total += item.qty ?? 1; });
     return total;
   }
 
-  function consumeItemByIcon(icon, qty = 1) {
+  function consumeItemByName(name, qty = 1) {
     let remaining = qty;
-    [inventory, inventory].forEach(arr => {
-      for(let i = 0; i < arr.length && remaining > 0; i++) {
-        let item = arr[i];
-        if(!item || item.icon !== icon) continue;
-        let stackQty = item.qty ?? 1;
-        let used = Math.min(stackQty, remaining);
-        stackQty -= used;
-        remaining -= used;
-        if(stackQty <= 0) arr[i] = null;
-        else item.qty = stackQty;
-      }
-    });
+    for(let i = 0; i < inventory.length && remaining > 0; i++) {
+      let item = inventory[i];
+      if(!item || item.itemName !== name) continue;
+      let stackQty = item.qty ?? 1;
+      let used = Math.min(stackQty, remaining);
+      stackQty -= used;
+      remaining -= used;
+      if(stackQty <= 0) inventory[i] = null;
+      else item.qty = stackQty;
+    }
     if(typeof renderQuickslots === 'function') renderQuickslots();
     if(typeof renderInventory === 'function') renderInventory();
     return remaining === 0;
@@ -993,8 +990,8 @@
       logMsg("You need a ranged weapon equipped.");
       return false;
     }
-    if(weaponDef.ammoIcon && countItemByIcon(weaponDef.ammoIcon) <= 0) {
-      logMsg(`<span style='color:var(--error)'>Out of ${ITEM_DEF[weaponDef.ammoIcon]?.name || 'ammo'}.</span>`);
+    if(weaponDef.ammoName && countItemByName(weaponDef.ammoName) <= 0) {
+      logMsg(`<span style='color:var(--error)'>Out of ${ItemDefs[weaponDef.ammoName]?.displayName ?? 'ammo'}.</span>`);
       return false;
     }
     if(weaponDef.manaCost && player.mp < weaponDef.manaCost) {
@@ -1016,8 +1013,8 @@
     let dist = Math.sqrt(dx * dx + dy * dy);
     if(dist < 1) { logMsg("Aim away from your own face."); return; }
     if(dist > (weaponDef.range ?? 8)) { logMsg(`Too far! (max ${weaponDef.range ?? 8} tiles)`); return; }
-    if(weaponDef.ammoIcon && !consumeItemByIcon(weaponDef.ammoIcon, 1)) {
-      logMsg(`<span style='color:var(--error)'>Out of ${ITEM_DEF[weaponDef.ammoIcon]?.name || 'ammo'}.</span>`);
+    if(weaponDef.ammoName && !consumeItemByName(weaponDef.ammoName, 1)) {
+      logMsg(`<span style='color:var(--error)'>Out of ${ItemDefs[weaponDef.ammoName]?.displayName ?? 'ammo'}.</span>`);
       return;
     }
     if(weaponDef.manaCost) {

@@ -75,6 +75,14 @@ test('Registry: two defs can share an icon (gold + uniqueCoin both use 🪙)', (
   assert.equal(ctx.ItemDef.byIcon('🪙').name, 'uniqueCoin');
 });
 
+test("Lock: 'arrows' exists for Bow.ammoName lookup", () => {
+  const ctx = buildRegistry({
+    '➶': { name: 'Arrows', type: 'ammo', stackable: true, maxStack: 99 },
+  });
+  assert.ok(ctx.ItemDefs.arrows,
+    "arrows missing — Bow's ammoName='arrows' will look up undefined; ranged attack will see no ammo");
+});
+
 test('Lock: gold is wealth with pickupTo=gp', () => {
   const ctx = buildRegistry({
     '🪙': { name: 'Gold', type: 'wealth', maxStack: 9999, pickupTo: 'gp' },
