@@ -74,6 +74,30 @@ test('Registry: camelCase collisions keep the first def, warn on the rest', (t) 
 //   ever renames the underlying "name" field, these tests catch it before
 //   players hit a silent broken item.
 
+test('Lock: player.equipped default values exist as camelCase ItemDefs', () => {
+  // player.js setPlayerDefaults seeds equip slots with these item names.
+  // If state.js renames any, equipped values silently fall out of sync
+  // with the registry → render shows '?' for that slot.
+  const ctx = buildRegistry({
+    '🎽': { name: 'Running Shirt', type: 'armor', slot: 'chest', stackable: false },
+    '🩲': { name: 'Briefs',        type: 'armor', slot: 'legs',  stackable: false },
+    '🩴': { name: 'Sandals',       type: 'armor', slot: 'feet',  stackable: false },
+    '🗡️': { name: 'Sword',         type: 'weapon', stackable: false },
+    '🥻': { name: 'Robe',          type: 'armor', slot: 'chest', stackable: false },
+    '🥾': { name: 'Old Boot',      type: 'armor', slot: 'feet',  stackable: false },
+    '👑': { name: 'Crown of Noodly Appendages', type: 'armor', slot: 'head', stackable: false },
+    '💍': { name: 'Ring of Midas', type: 'armor', slot: 'rightHand', stackable: false },
+    '🪗': { name: 'Accordion',     type: 'weapon', stackable: false },
+  });
+  for (const n of ['runningShirt', 'briefs', 'sandals',   // defaults
+                   'sword', 'robe', 'oldBoot',            // starting class equipment
+                   'crownOfNoodlyAppendages',             // shop.js: dennis convention check
+                   'ringOfMidas',                         // ui_logic.js: Midas Touch warning
+                   'accordion']) {                        // engine.js: getPlayerPrimaryHand check
+    assert.ok(ctx.ItemDefs[n], `${n} missing — player.equipped will break`);
+  }
+});
+
 test('Lock: input.js class-init items resolve to expected camelCase names', () => {
   const ctx = buildRegistry({
     '🥾': { name: 'Old Boot',          type: 'armor', slot: 'feet',  stackable: false },

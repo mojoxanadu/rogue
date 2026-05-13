@@ -2,7 +2,7 @@
   ╔══════════════════════════════════════════════════════════════╗
   ║  ROGUELIKE: THE ULTIMATE QUEST — Build 762                    ║
   ╠══════════════════════════════════════════════════════════════╣
-  ║  Built: 2026-05-13 11:59:33                                 ║
+  ║  Built: 2026-05-13 12:28:03                                 ║
   ║  Files: 30                                                  ║
   ║  Assets: 1                                                  ║
   ╠══════════════════════════════════════════════════════════════╣
@@ -14,9 +14,9 @@
   ║    state.js (src/state.js, modified: 2026-05-13 11:52)       ║
   ║    items.js (src/items.js, modified: 2026-05-13 11:30)       ║
   ║    items_registry.js (src/items_registry.js, modified: 2026-05-13 10:40)║
-  ║    player.js (src/player.js, modified: 2026-05-13 10:07)     ║
+  ║    player.js (src/player.js, modified: 2026-05-13 12:24)     ║
   ║    limerick_api.js (src/limerick_api.js, modified: 2026-05-13 10:07)║
-  ║    ui_logic.js (src/ui_logic.js, modified: 2026-05-13 10:07) ║
+  ║    ui_logic.js (src/ui_logic.js, modified: 2026-05-13 12:27) ║
   ║    quests_base.js (src/quests_base.js, modified: 2026-05-13 10:07)║
   ║    quests_monkey_island.js (src/quests_monkey_island.js, modified: 2026-05-13 10:07)║
   ║    quests_monty_python.js (src/quests_monty_python.js, modified: 2026-05-13 10:07)║
@@ -31,12 +31,12 @@
   ║    quest_engine.js (src/quest_engine.js, modified: 2026-05-13 10:07)║
   ║    boundary_data.js (src/boundary_data.js, modified: 2026-05-13 10:07)║
   ║    map.js (src/map.js, modified: 2026-05-13 10:07)           ║
-  ║    mechanics.js (src/mechanics.js, modified: 2026-05-13 11:59)║
-  ║    engine.js (src/engine.js, modified: 2026-05-13 10:07)     ║
-  ║    shop.js (src/shop.js, modified: 2026-05-13 11:48)         ║
+  ║    mechanics.js (src/mechanics.js, modified: 2026-05-13 12:25)║
+  ║    engine.js (src/engine.js, modified: 2026-05-13 12:27)     ║
+  ║    shop.js (src/shop.js, modified: 2026-05-13 12:25)         ║
   ║    webgl_fx.js (src/webgl_fx.js, modified: 2026-05-13 10:07) ║
   ║    render.js (src/render.js, modified: 2026-05-13 10:07)     ║
-  ║    input.js (src/input.js, modified: 2026-05-13 11:13)       ║
+  ║    input.js (src/input.js, modified: 2026-05-13 12:24)       ║
   ╚══════════════════════════════════════════════════════════════╝
 -->
 
@@ -3197,7 +3197,7 @@ window.ItemDefs = ItemDefs;
 
 // ═══ END: items_registry.js ═══
 
-// ═══ BEGIN: player.js (src/player.js, modified: 2026-05-13 10:07) ═══
+// ═══ BEGIN: player.js (src/player.js, modified: 2026-05-13 12:24) ═══
 // ============================================================
 //  PLAYER MODULE  –  src/player.js
 //  Centralizes all player state, defaults, and core functions.
@@ -3278,7 +3278,11 @@ function setPlayerDefaults() {
   player.speedMod = 1.0;
   player.statusEffects = {};
   player.spells = {};
-  player.equipped = { head: null, chest: '🎽', legs: '🩲', feet: '🩴', leftHand: null, rightHand: null };
+  // Equipped item slots. VALUES are camelCase item names (matching keys in
+  // the ItemDefs registry), NOT emoji icons. Each slot holds at most one
+  // item — equip slots are item instances, not stacks. Drags between
+  // inventory stacks and equip slots take/place one unit at a time.
+  player.equipped = { head: null, chest: 'runningShirt', legs: 'briefs', feet: 'sandals', leftHand: null, rightHand: null };
   player.learnedInsults = []; player.learnedRetorts = []; player.startingClass = null;
   // Number of inventory slots mirrored in the HUD quickslot row. Future
   // boons will raise this from a starting value (planned: 5) up to the
@@ -3500,9 +3504,9 @@ function getPlayerPrimaryHand() {
  */
 function getPlayerHitRate() {
   let hitRate = player.hitRate;
-  Object.values(player.equipped).forEach(ic => {
-    if(ic) {
-      let def = (typeof ITEM_DEF !== 'undefined') ? ITEM_DEF[ic] : null;
+  Object.values(player.equipped).forEach(name => {
+    if(name) {
+      let def = (typeof ItemDefs !== 'undefined') ? ItemDefs[name] : null;
       if(def) hitRate += (def.hitRateBonus || 0);
     }
   });
@@ -3528,9 +3532,9 @@ function getPlayerHits(enemy) {
 function getPlayerDmg() {
   let baseDmg  = player.baseDmg  || CONSTANTS.PLAYER_UNARMED_BASE_DMG;
   let dmgBonus = player.meleeDmgBonus || 0;
-  Object.values(player.equipped).forEach(ic => {
-    if(ic) {
-      let def = (typeof ITEM_DEF !== 'undefined') ? ITEM_DEF[ic] : null;
+  Object.values(player.equipped).forEach(name => {
+    if(name) {
+      let def = (typeof ItemDefs !== 'undefined') ? ItemDefs[name] : null;
       if(!def) return;
       if(def.type === "weapon") baseDmg  = (def.baseDmg || 0);
       if(def.meleeDmgBonus)    dmgBonus += def.meleeDmgBonus;
@@ -3611,7 +3615,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
 
 // ═══ END: limerick_api.js ═══
 
-// ═══ BEGIN: ui_logic.js (src/ui_logic.js, modified: 2026-05-13 10:07) ═══
+// ═══ BEGIN: ui_logic.js (src/ui_logic.js, modified: 2026-05-13 12:27) ═══
   /*
   UI_LOGIC MODULE – USER INTERFACE, SAVE/LOAD, AND DEBUG SYSTEMS
   ===============================================================
@@ -3770,7 +3774,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
         statusUI.innerText = `DIARRHEA${turns ? ` (${turns})` : ''}`;
         statusUI.className = "chip danger";
         player._exhaustedWarnFired = false;
-      } else if(player.equipped && (player.equipped.rightHand === '💍' || player.equipped.leftHand === '💍')) {
+      } else if(player.equipped && (player.equipped.rightHand === 'ringOfMidas' || player.equipped.leftHand === 'ringOfMidas')) {
         statusUI.style.display = 'block';
         statusUI.innerText = 'MIDAS TOUCH';
         statusUI.className = 'chip';
@@ -3801,14 +3805,25 @@ window.getPlayerCritRate     = getPlayerCritRate;
     Object.keys(player.equipped).forEach(slot => {
       const el = document.getElementById(`eq${slot}`);
       if(el) {
-        const icon = player.equipped[slot];
+        const name  = player.equipped[slot];
+        const def   = name ? ItemDefs[name] : null;
         const label = slotLabels[slot] || slot;
-        const itemName = icon && ITEM_DEF[icon] ? ITEM_DEF[icon].name : '';
-        el.innerHTML = `<div class="equip-label">${label}</div><span style="font-size:24px;">${icon || ''}</span>`;
-        el.title = itemName;
-        // K6: Make filled slots draggable; always accept drops from inventory/inventory
-        el.draggable = !!icon;
-        el.ondragstart = icon ? (e) => equipSlotDragStart(e, slot) : null;
+        // Build via textContent rather than innerHTML — values come from
+        // ItemDefs (trusted) but the slot label could be any string; safer
+        // not to rely on string-template HTML construction here.
+        el.replaceChildren();
+        const labelEl = document.createElement('div');
+        labelEl.className   = 'equip-label';
+        labelEl.textContent = label;
+        const iconEl = document.createElement('span');
+        iconEl.style.fontSize = '24px';
+        iconEl.textContent    = def ? def.icon : '';
+        el.appendChild(labelEl);
+        el.appendChild(iconEl);
+        el.title = def ? def.displayName : '';
+        // K6: Make filled slots draggable; always accept drops from inventory
+        el.draggable = !!name;
+        el.ondragstart = name ? (e) => equipSlotDragStart(e, slot) : null;
         el.ondragover = (e) => equipSlotDragOver(e, slot);
         el.ondrop = (e) => equipSlotDrop(e, slot);
         el.style.cursor = icon ? 'grab' : '';
@@ -4719,28 +4734,29 @@ window.getPlayerCritRate     = getPlayerCritRate;
         try { dragData = JSON.parse(raw); } catch(_) {}
         if (dragData && dragData.source === 'equip') {
           const slotName = dragData.slot;
-          const equippedIcon = player.equipped[slotName];
-          if (equippedIcon) {
+          const equippedName = player.equipped[slotName];   // camelCase name
+          const equippedDef  = equippedName ? ItemDefs[equippedName] : null;
+          if (equippedName) {
             const tgtArr = targetSource === 'inv' ? inventory : inventory;
             const targetItem = tgtArr[targetIdx];
             if (targetItem === null) {
-              // Drop to empty slot — unequip
-              tgtArr[targetIdx] = { icon: equippedIcon, qty: 1 };
+              // Drop to empty slot — unequip (new stack of qty 1)
+              tgtArr[targetIdx] = new ItemStack(equippedName, 1);
               player.equipped[slotName] = null;
-              logMsg(`Unequipped ${ITEM_DEF[equippedIcon]?.name || equippedIcon}.`);
+              logMsg(`Unequipped ${equippedDef?.displayName || equippedName}.`);
               swapEquip(-1, slotName);
             } else {
               // Swap — check if target item fits the slot
-              const targetDef = ITEM_DEF[targetItem.icon];
+              const targetDef = ItemDefs[targetItem.itemName];
               const fitsSlot = targetDef && (
                 (slotName === 'leftHand' && (targetDef.type === 'weapon' || targetDef.slot === 'leftHand')) ||
                 (slotName === 'rightHand' && (targetDef.type === 'weapon' || targetDef.slot === 'rightHand')) ||
                 (targetDef.slot === slotName)
               );
               if (fitsSlot) {
-                tgtArr[targetIdx] = { icon: equippedIcon, qty: 1 };
-                player.equipped[slotName] = targetItem.icon;
-                logMsg(`Swapped ${ITEM_DEF[equippedIcon]?.name || equippedIcon} with ${targetDef?.name || targetItem.icon}.`);
+                tgtArr[targetIdx] = new ItemStack(equippedName, 1);
+                player.equipped[slotName] = targetItem.itemName;
+                logMsg(`Swapped ${equippedDef?.displayName || equippedName} with ${targetDef?.displayName || targetItem.itemName}.`);
                 swapEquip(-1, slotName);
               } else {
                 logMsg(`${targetDef?.name || targetItem.icon} doesn't fit the ${slotName} slot.`);
@@ -4876,7 +4892,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
     event.dataTransfer.setData('text/plain', JSON.stringify({
       source: 'equip',
       slot: slotName,
-      icon: player.equipped[slotName]
+      itemName: player.equipped[slotName]   // camelCase name (post-icon-migration)
     }));
     event.dataTransfer.effectAllowed = 'move';
   };
@@ -5112,13 +5128,13 @@ window.getPlayerCritRate     = getPlayerCritRate;
     // combined with whatever they have equipped at the moment.
     let currentBaseDmg = CONSTANTS.PLAYER_UNARMED_BASE_DMG;
     let meleeDmgMsg = `${currentBaseDmg} (unarmed)`;
-    Object.values(player.equipped).forEach(ic => { 
-      if(ic) { 
-        let d = ITEM_DEF[ic]; 
+    Object.values(player.equipped).forEach(name => {
+      if(name) {
+        let d = ItemDefs[name];
         if(!d) return;
         if(d.type === "weapon") {
           currentBaseDmg = (d.baseDmg || 0);
-          meleeDmgMsg = `${currentBaseDmg} (${d.name})`;
+          meleeDmgMsg = `${currentBaseDmg} (${d.displayName})`;
         }
       }
     });
@@ -12368,7 +12384,7 @@ window.BOUNDARY_DATA = {
 
 // ═══ END: map.js ═══
 
-// ═══ BEGIN: mechanics.js (src/mechanics.js, modified: 2026-05-13 11:59) ═══
+// ═══ BEGIN: mechanics.js (src/mechanics.js, modified: 2026-05-13 12:25) ═══
 /*
   MECHANICS MODULE – INVENTORY, ITEMS, AND SPECIAL ACTIONS
   =========================================================
@@ -13565,32 +13581,38 @@ window.BOUNDARY_DATA = {
     // K6: idx === -1 means "just recalculate stats from current equipped state"
     // (used by drag-to-unequip / slot-swap paths that manage inventory themselves)
     if (idx !== -1) {
-      let item = inventory[idx], cur = player.equipped[slot];
-      // #34: Allow unequipping to a null/empty inventory slot
-      player.equipped[slot] = item ? item.icon : null;
-      inventory[idx] = cur ? ItemStack.fromIcon(cur, 1) : null;
+      // Swap one unit from the inventory stack with the equipped slot.
+      // Equipped slots are item INSTANCES (single units), inventory slots are
+      // stacks. Equippable items are non-stackable (maxStack=1), so the stack
+      // is always qty=1 — taking one effectively empties the slot. The
+      // previously-equipped item (if any) is placed in the now-empty slot
+      // as a fresh single-unit stack.
+      const stack = inventory[idx];
+      const prevEquipped = player.equipped[slot];   // camelCase name or null
+      player.equipped[slot] = stack ? stack.itemName : null;
+      inventory[idx] = prevEquipped ? new ItemStack(prevEquipped, 1) : null;
     }
     // Recalculate combat stats from all equipment
     let totalDmg = CONSTANTS.PLAYER_UNARMED_BASE_DMG;
     let totalEvade = CONSTANTS.PLAYER_INITIAL_DODGE_RATE;
     let speedBonus = 0;
-    Object.values(player.equipped).forEach(ic => { 
-      if(ic) { 
-        let d = ITEM_DEF[ic]; 
+    Object.values(player.equipped).forEach(name => {
+      if(name) {
+        let d = ItemDefs[name];
         if(!d) return;
         if(d.type === "weapon") totalDmg = (d.baseDmg || 0);
         totalEvade += (d.evadePercent||0);
         // Boots of Blinding Speed
-        if(ic === ItemDef.iconOf('bootsOfBlindingSpeed')) {
+        if(name === 'bootsOfBlindingSpeed') {
           speedBonus = 1;
           player.blind = true;
           logMsg(`<span style='color:var(--warning)'>${ItemDef.iconOf('bootsOfBlindingSpeed')} The Boots of Blinding Speed make everything blur!</span>`);
           logMsg("<span style='color:var(--success)'>You feel incredibly fast!</span>");
         }
-      } 
+      }
     });
     // Remove blind if boots unequipped
-    if(player.equipped.feet !== ItemDef.iconOf('bootsOfBlindingSpeed') && player.blind) {
+    if(player.equipped.feet !== 'bootsOfBlindingSpeed' && player.blind) {
       player.blind = false;
       logMsg("<span style='color:var(--primary)'>Your vision clears.</span>");
     }
@@ -13599,23 +13621,24 @@ window.BOUNDARY_DATA = {
     renderQuickslots(); updateUI();
     // Log equipped message only when an actual inventory item was swapped in
     if (idx !== -1) {
-      let equippedIcon = player.equipped[slot];
-      let itemDef = equippedIcon ? ITEM_DEF[equippedIcon] : null;
-      if(itemDef) logMsg(`<span style='color:var(--success)'>Equipped ${itemDef.name} to ${slot}.</span>`);
+      const equippedName = player.equipped[slot];
+      const equippedDef  = equippedName ? ItemDefs[equippedName] : null;
+      if(equippedDef) logMsg(`<span style='color:var(--success)'>Equipped ${equippedDef.displayName} to ${slot}.</span>`);
     }
   }
 
   // #34: Unequip from equip slot to ground when inventory is full
   window.unequipToGround = (slot) => {
-    const cur = player.equipped[slot];
+    const cur = player.equipped[slot];  // camelCase name
     if(!cur) return;
+    const def = ItemDefs[cur];
     const freeSlot = inventory.findIndex(s => s === null);
     if(freeSlot !== -1) {
-      inventory[freeSlot] = ItemStack.fromIcon(cur, 1);
-      logMsg(`<span style='color:var(--success)'>Unequipped ${ITEM_DEF[cur]?.name || cur} to inventory.</span>`);
+      inventory[freeSlot] = new ItemStack(cur, 1);
+      logMsg(`<span style='color:var(--success)'>Unequipped ${def?.displayName || cur} to inventory.</span>`);
     } else {
-      itemsOnGround.push({ x: player.x, y: player.y, icon: cur });
-      logMsg(`<span style='color:var(--warning)'>Inventory full — ${ITEM_DEF[cur]?.name || cur} dropped at your feet.</span>`);
+      itemsOnGround.push({ x: player.x, y: player.y, icon: def?.icon || '?' });
+      logMsg(`<span style='color:var(--warning)'>Inventory full — ${def?.displayName || cur} dropped at your feet.</span>`);
     }
     player.equipped[slot] = null;
     renderQuickslots(); updateUI();
@@ -13623,7 +13646,7 @@ window.BOUNDARY_DATA = {
 
 // ═══ END: mechanics.js ═══
 
-// ═══ BEGIN: engine.js (src/engine.js, modified: 2026-05-13 10:07) ═══
+// ═══ BEGIN: engine.js (src/engine.js, modified: 2026-05-13 12:27) ═══
   /*
   ENGINE MODULE – CORE GAME LOOPS, AI, AND COMBAT
   ================================================
@@ -15511,7 +15534,7 @@ window.BOUNDARY_DATA = {
       return;
     }
 
-    if(getPlayerPrimaryHand() === '🪗') {
+    if(getPlayerPrimaryHand() === 'accordion') {
       // Using Accordion in battle.
       Sound.polka();
       logMsg(`<span style='color:var(--warning)'>You strike up a catastrophic little polka at the ${e.type}. It hurts nobody and improves nothing.</span>`);
@@ -16510,18 +16533,16 @@ window.BOUNDARY_DATA = {
       return;
     }
     // Check if any equipped item has durability to repair
-    let hasEquipped = Object.values(player.equipped || {}).some(ic => ic !== null);
+    let hasEquipped = Object.values(player.equipped || {}).some(name => name !== null);
     if(!hasEquipped) {
       logMsg("<span style='color:#aaa'>🧑‍🔧 Griswold: \"Your equipment is in fine shape already! Come back when something needs fixing.\"</span>");
       return;
     }
     changeGold(-50);
     // Restore durability on all equipped items (if durability system exists)
-    Object.values(player.equipped || {}).forEach(ic => {
-      if(ic && ITEM_DEF[ic]) {
-        let def = ITEM_DEF[ic];
-        if(def.durability !== undefined) def.durability = def.maxDurability || 100;
-      }
+    Object.values(player.equipped || {}).forEach(name => {
+      const def = name ? ItemDefs[name] : null;
+      if(def && def.durability !== undefined) def.durability = def.maxDurability || 100;
     });
     addFloatingText(player.x, player.y, '🔨 REPAIRED', '#fc0', 16);
     logMsg("<span style='color:var(--success)'>🧑‍🔧 Griswold hammers away for a moment. \"There! Good as new. Well, good as it's going to get.\"</span>");
@@ -16792,7 +16813,7 @@ window.BOUNDARY_DATA = {
 
 // ═══ END: engine.js ═══
 
-// ═══ BEGIN: shop.js (src/shop.js, modified: 2026-05-13 11:48) ═══
+// ═══ BEGIN: shop.js (src/shop.js, modified: 2026-05-13 12:25) ═══
   /*
   SHOP MODULE – NPC MERCHANTS, TRADING, AND QUEST INTERACTIONS
   =============================================================
@@ -18029,7 +18050,7 @@ window.BOUNDARY_DATA = {
           <button onclick="dennisSpeak('government')">Discuss government</button>
           <button onclick="dennisSpeak('weapons')">Ask about the bow</button>
           <button onclick="dennisSpeak('quest')">Ask for useful advice</button>
-          ${(player.equipped.head === '👑' || player.gp > 1000)
+          ${(player.equipped.head === 'crownOfNoodlyAppendages' || player.gp > 1000)
             ? `<button onclick="getConvention()">Request constitutional convention</button>`
             : ''}
         </div>`;
@@ -22523,7 +22544,7 @@ window.mapSweepTransition = function(direction, callback) {
 
 // ═══ END: render.js ═══
 
-// ═══ BEGIN: input.js (src/input.js, modified: 2026-05-13 11:13) ═══
+// ═══ BEGIN: input.js (src/input.js, modified: 2026-05-13 12:24) ═══
   /*
   INPUT MODULE – KEYBOARD, MOUSE, AND GAME LOOP MANAGEMENT
   =========================================================
@@ -23830,8 +23851,8 @@ const hBtn = document.getElementById('hamburgerBtn');
         player.startingClass = 'fighter';
         player.maxHp += 5;
         player.hp += 5;
-        player.equipped.leftHand = '🗡️';   // Sword
-        player.equipped.feet = '🥾';         // Fighter Boots (+2 defense)
+        player.equipped.leftHand = 'sword';
+        player.equipped.feet     = 'oldBoot';   // gives +2 defenseBonus per ITEM_DEF
         if (!player.inventory) player.inventory = [];
         player.inventory.push(new ItemStack('oldBoot', 1));
         logMsg && logMsg("You are a Fighter! +5 HP, Sword equipped, Fighter Boots worn.");
@@ -23841,7 +23862,7 @@ const hBtn = document.getElementById('hamburgerBtn');
         player.mp = 2;
         if (!player.spells) player.spells = {};
         if (!player.spells.illuminate) player.spells.illuminate = { level: 1 };
-        player.equipped.chest = '🥻';        // Robe
+        player.equipped.chest = 'robe';
         if (!player.inventory) player.inventory = [];
         player.inventory.push(new ItemStack('robe', 1));
         logMsg && logMsg("You are a Spellcaster! 2 MP, Illumination known, Robe equipped.");

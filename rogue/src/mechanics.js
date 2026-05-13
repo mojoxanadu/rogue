@@ -1194,32 +1194,38 @@
     // K6: idx === -1 means "just recalculate stats from current equipped state"
     // (used by drag-to-unequip / slot-swap paths that manage inventory themselves)
     if (idx !== -1) {
-      let item = inventory[idx], cur = player.equipped[slot];
-      // #34: Allow unequipping to a null/empty inventory slot
-      player.equipped[slot] = item ? item.icon : null;
-      inventory[idx] = cur ? ItemStack.fromIcon(cur, 1) : null;
+      // Swap one unit from the inventory stack with the equipped slot.
+      // Equipped slots are item INSTANCES (single units), inventory slots are
+      // stacks. Equippable items are non-stackable (maxStack=1), so the stack
+      // is always qty=1 — taking one effectively empties the slot. The
+      // previously-equipped item (if any) is placed in the now-empty slot
+      // as a fresh single-unit stack.
+      const stack = inventory[idx];
+      const prevEquipped = player.equipped[slot];   // camelCase name or null
+      player.equipped[slot] = stack ? stack.itemName : null;
+      inventory[idx] = prevEquipped ? new ItemStack(prevEquipped, 1) : null;
     }
     // Recalculate combat stats from all equipment
     let totalDmg = CONSTANTS.PLAYER_UNARMED_BASE_DMG;
     let totalEvade = CONSTANTS.PLAYER_INITIAL_DODGE_RATE;
     let speedBonus = 0;
-    Object.values(player.equipped).forEach(ic => { 
-      if(ic) { 
-        let d = ITEM_DEF[ic]; 
+    Object.values(player.equipped).forEach(name => {
+      if(name) {
+        let d = ItemDefs[name];
         if(!d) return;
         if(d.type === "weapon") totalDmg = (d.baseDmg || 0);
         totalEvade += (d.evadePercent||0);
         // Boots of Blinding Speed
-        if(ic === ItemDef.iconOf('bootsOfBlindingSpeed')) {
+        if(name === 'bootsOfBlindingSpeed') {
           speedBonus = 1;
           player.blind = true;
           logMsg(`<span style='color:var(--warning)'>${ItemDef.iconOf('bootsOfBlindingSpeed')} The Boots of Blinding Speed make everything blur!</span>`);
           logMsg("<span style='color:var(--success)'>You feel incredibly fast!</span>");
         }
-      } 
+      }
     });
     // Remove blind if boots unequipped
-    if(player.equipped.feet !== ItemDef.iconOf('bootsOfBlindingSpeed') && player.blind) {
+    if(player.equipped.feet !== 'bootsOfBlindingSpeed' && player.blind) {
       player.blind = false;
       logMsg("<span style='color:var(--primary)'>Your vision clears.</span>");
     }
@@ -1228,23 +1234,24 @@
     renderQuickslots(); updateUI();
     // Log equipped message only when an actual inventory item was swapped in
     if (idx !== -1) {
-      let equippedIcon = player.equipped[slot];
-      let itemDef = equippedIcon ? ITEM_DEF[equippedIcon] : null;
-      if(itemDef) logMsg(`<span style='color:var(--success)'>Equipped ${itemDef.name} to ${slot}.</span>`);
+      const equippedName = player.equipped[slot];
+      const equippedDef  = equippedName ? ItemDefs[equippedName] : null;
+      if(equippedDef) logMsg(`<span style='color:var(--success)'>Equipped ${equippedDef.displayName} to ${slot}.</span>`);
     }
   }
 
   // #34: Unequip from equip slot to ground when inventory is full
   window.unequipToGround = (slot) => {
-    const cur = player.equipped[slot];
+    const cur = player.equipped[slot];  // camelCase name
     if(!cur) return;
+    const def = ItemDefs[cur];
     const freeSlot = inventory.findIndex(s => s === null);
     if(freeSlot !== -1) {
-      inventory[freeSlot] = ItemStack.fromIcon(cur, 1);
-      logMsg(`<span style='color:var(--success)'>Unequipped ${ITEM_DEF[cur]?.name || cur} to inventory.</span>`);
+      inventory[freeSlot] = new ItemStack(cur, 1);
+      logMsg(`<span style='color:var(--success)'>Unequipped ${def?.displayName || cur} to inventory.</span>`);
     } else {
-      itemsOnGround.push({ x: player.x, y: player.y, icon: cur });
-      logMsg(`<span style='color:var(--warning)'>Inventory full — ${ITEM_DEF[cur]?.name || cur} dropped at your feet.</span>`);
+      itemsOnGround.push({ x: player.x, y: player.y, icon: def?.icon || '?' });
+      logMsg(`<span style='color:var(--warning)'>Inventory full — ${def?.displayName || cur} dropped at your feet.</span>`);
     }
     player.equipped[slot] = null;
     renderQuickslots(); updateUI();

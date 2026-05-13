@@ -1304,8 +1304,8 @@ const hBtn = document.getElementById('hamburgerBtn');
         player.startingClass = 'fighter';
         player.maxHp += 5;
         player.hp += 5;
-        player.equipped.leftHand = '🗡️';   // Sword
-        player.equipped.feet = '🥾';         // Fighter Boots (+2 defense)
+        player.equipped.leftHand = 'sword';
+        player.equipped.feet     = 'oldBoot';   // gives +2 defenseBonus per ITEM_DEF
         if (!player.inventory) player.inventory = [];
         player.inventory.push(new ItemStack('oldBoot', 1));
         logMsg && logMsg("You are a Fighter! +5 HP, Sword equipped, Fighter Boots worn.");
@@ -1315,7 +1315,7 @@ const hBtn = document.getElementById('hamburgerBtn');
         player.mp = 2;
         if (!player.spells) player.spells = {};
         if (!player.spells.illuminate) player.spells.illuminate = { level: 1 };
-        player.equipped.chest = '🥻';        // Robe
+        player.equipped.chest = 'robe';
         if (!player.inventory) player.inventory = [];
         player.inventory.push(new ItemStack('robe', 1));
         logMsg && logMsg("You are a Spellcaster! 2 MP, Illumination known, Robe equipped.");
