@@ -84,6 +84,15 @@ Combines source + assets into the final shippable HTML.
 
 See `assets.example.json` for the concrete shape.
 
+## Asset path differences from the upstream source repo
+
+`raw/` does not mirror the original `/home/projects/roguelike/` layout exactly.
+Document each tweak here so design team knows where to drop files.
+
+| Asset             | Upstream path                           | `raw/` path                     | Reason                                                  |
+|-------------------|-----------------------------------------|---------------------------------|---------------------------------------------------------|
+| Pixelify Sans Bold| `fonts/static/PixelifySans-Bold.ttf`    | `raw/fonts/PixelifySans-Bold.ttf` | `static/` was an upstream font-archive artifact, not meaningful here |
+
 ## Decisions
 
 - **Build number** lives in `VERSION` at repo root. All three scripts read it.
