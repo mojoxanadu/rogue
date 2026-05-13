@@ -64,7 +64,7 @@ def build():
     asset_subs = token_substitutions(manifest)
 
     src_dir = os.path.join(_HERE, 'src')
-    output_file = os.path.join(_HERE, f'roguelike_build{BUILD}.html')
+    output_file = os.path.join(_HERE, 'roguelike.html')
     build_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     missing = [f for f in FILES if not os.path.exists(os.path.join(src_dir, f))]
