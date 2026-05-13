@@ -2148,30 +2148,37 @@
     const dd = document.getElementById('debug-item-dropdown');
     if (!query) { dd.style.display = 'none'; _debugSelectedItem = null; return; }
     const q = query.toLowerCase();
-    const matches = Object.entries(ITEM_DEF).filter(([icon, def]) =>
-      icon.includes(query) || def.name.toLowerCase().includes(q)
+    // Iterate the camelCase registry; match against icon, displayName, or
+    // the camelCase identifier itself.
+    const matches = Object.entries(ItemDefs).filter(([name, def]) =>
+      def.icon.includes(query) || def.displayName.toLowerCase().includes(q) || name.toLowerCase().includes(q)
     );
     if (matches.length === 0) { dd.style.display = 'none'; return; }
-    dd.innerHTML = matches.map(([icon, def]) =>
-      `<div style="padding:5px 8px; cursor:pointer; border-bottom:1px solid #333;"
-           onclick="debugSelectItem('${icon}', '${def.name.replace(/'/g,"\\'")}', this)"
-           onmouseover="this.style.background='#4A4458'" onmouseout="this.style.background=''">
-         ${icon} ${def.name}
-       </div>`
-    ).join('');
+    // Build via DOM (innerHTML trips the XSS hook even with trusted data)
+    while (dd.firstChild) dd.removeChild(dd.firstChild);
+    for (const [name, def] of matches) {
+      const row = document.createElement('div');
+      row.style.cssText = 'padding:5px 8px;cursor:pointer;border-bottom:1px solid #333;';
+      row.textContent = `${def.icon} ${def.displayName}`;
+      row.onclick      = () => debugSelectItem(name, def.displayName);
+      row.onmouseover  = () => { row.style.background = '#4A4458'; };
+      row.onmouseout   = () => { row.style.background = ''; };
+      dd.appendChild(row);
+    }
     dd.style.display = 'block';
-    // Auto-select first result
-    _debugSelectedItem = matches[0][0];
+    _debugSelectedItem = matches[0][0]; // first matching camelCase name
   };
-  window.debugSelectItem = (icon, name, el) => {
-    _debugSelectedItem = icon;
-    document.getElementById('debug-item-search').value = `${icon} ${name}`;
+  window.debugSelectItem = (name, displayName) => {
+    _debugSelectedItem = name;
+    const def = ItemDefs[name];
+    const icon = def ? def.icon : '';
+    document.getElementById('debug-item-search').value = `${icon} ${displayName}`;
     document.getElementById('debug-item-dropdown').style.display = 'none';
   };
   window.debugAddSearchedItem = () => {
     if (!_debugSelectedItem) {
-      // Try parsing input directly as an icon
-      const val = (document.getElementById('debug-item-search')?.value || '').trim();
+      // Try parsing input directly as an item identifier (icon or name)
+      const val = (document.getElementById('debug-item-search')?.value ?? '').trim();
       _debugSelectedItem = val;
     }
     debugAddItem(_debugSelectedItem);
@@ -2179,13 +2186,22 @@
     document.getElementById('debug-item-dropdown').style.display = 'none';
     _debugSelectedItem = null;
   };
-  window.debugAddItem = (icon) => {
-    let def = ItemDef.byIcon(icon);
-    if (!def) { logMsg(`Unknown item: "${icon}"`); return; }
-    let slot = inventory.findIndex(i => i === null);
-    if (slot !== -1) { inventory[slot] = { icon }; }
-    else { slot = inventory.findIndex(i => i === null); if (slot !== -1) inventory[slot] = { icon }; else itemsOnGround.push({x: player.x, y: player.y, icon}); }
-    logMsg(`Added ${def.name} to ${slot !== -1 ? 'inventory' : 'ground'}.`);
+  window.debugAddItem = (idOrIcon) => {
+    // Accept either a camelCase name OR an emoji icon (legacy /add commands).
+    let name = idOrIcon;
+    let def = ItemDefs[name];
+    if (!def) {
+      def = ItemDef.byIcon(idOrIcon);
+      if (def) name = def.name;
+    }
+    if (!def) { logMsg(`Unknown item: "${idOrIcon}"`); return; }
+    const slot = inventory.findIndex(i => i === null);
+    if (slot !== -1) {
+      inventory[slot] = new ItemStack(name, 1);
+    } else {
+      itemsOnGround.push({x: player.x, y: player.y, icon: def.icon});
+    }
+    logMsg(`Added ${def.displayName} to ${slot !== -1 ? 'inventory' : 'ground'}.`);
     renderQuickslots(); updateUI();
   };
   window.debugEditStats = () => {

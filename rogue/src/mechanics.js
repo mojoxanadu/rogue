@@ -178,15 +178,17 @@
   // Legacy wrapper
   window.takeItemFromBag = (bagIdx, itemIdx) => { window.takeItemFromBagSource('inventory', bagIdx, itemIdx); };
 
-  // Generate a random bag appropriate for the given level
+  // Generate a random bag (by camelCase name) appropriate for the given level.
+  // Returns the bag's name string; callers wrap in `new ItemStack(name, 1)`.
+  // Fallback 'smallClothBag' when no candidates fit the criteria.
   window.randomBag = (playerLevel) => {
-    let candidates = [];
-    for(let [icon, def] of Object.entries(ITEM_DEF)) {
-      if(def.type !== 'bag' || def.bagSlots > 10) continue;
+    const candidates = [];
+    for(const [name, def] of Object.entries(ItemDefs)) {
+      if(!def.isContainer() || def.bagSlots > 10) continue;
       if(def.minLevel && playerLevel < def.minLevel) continue;
-      candidates.push(icon);
+      candidates.push(name);
     }
-    if(candidates.length === 0) return '🎒';
+    if(candidates.length === 0) return 'smallClothBag';
     return candidates[Math.floor(Math.random() * candidates.length)];
   };
 

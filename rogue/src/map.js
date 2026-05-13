@@ -1842,7 +1842,7 @@
       else if (roll < 0.50) chestLoot.push(new ItemStack('shield', 1));
       else if (roll < 0.62) chestLoot.push(new ItemStack('healthPotion', 1));
       else if (roll < 0.74) chestLoot.push(new ItemStack('candle', 1));
-      else if (roll < 0.82) chestLoot.push(ItemStack.fromIcon(randomBag(player.level), 1));
+      else if (roll < 0.82) chestLoot.push(new ItemStack(randomBag(player.level), 1));
       else if (roll < 0.90) chestLoot.push(new ItemStack('identifyScroll', 1));
       else if (roll < 0.97) chestLoot.push(new ItemStack('townPortalScroll', 1));
       else                  chestLoot.push(new ItemStack('key', 1));
