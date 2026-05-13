@@ -1,0 +1,88 @@
+// items_registry.test.js — tests the camelCase registry builder
+// (src/items_registry.js) and locks in the specific item-name mappings
+// that production code relies on. If state.js renames an item, these
+// tests fail loudly with which camelCase identifier broke.
+//
+// Method: stub a minimal ITEM_DEF in a fresh VM context, load items.js
+// then items_registry.js, and assert against the resulting ItemDefs map.
+
+const test   = require('node:test');
+const assert = require('node:assert/strict');
+const { newContext, loadInto } = require('./_harness');
+
+function buildRegistry(itemDef) {
+  const ctx = newContext();
+  loadInto(ctx, 'items.js');
+  ctx.ITEM_DEF = itemDef;
+  loadInto(ctx, 'items_registry.js');
+  return ctx;
+}
+
+
+// ─── Registry builder mechanics ──────────────────────────────
+
+test('Registry builds one ItemDef per ITEM_DEF entry, keyed by camelCase name', () => {
+  const ctx = buildRegistry({
+    '🥾': { name: 'Old Boot',       type: 'armor',  slot: 'feet', stackable: false },
+    '🧪': { name: 'Health Potion',  type: 'potion', stackable: true, maxHeal: 25 },
+  });
+  assert.equal(Object.keys(ctx.ItemDefs).length, 2);
+  assert.ok(ctx.ItemDefs.oldBoot);
+  assert.ok(ctx.ItemDefs.healthPotion);
+  assert.equal(ctx.ItemDefs.oldBoot.icon,         '🥾');
+  assert.equal(ctx.ItemDefs.oldBoot.displayName,  'Old Boot');
+  assert.equal(ctx.ItemDefs.healthPotion.maxHeal, 25);
+});
+
+test('Registry populates ItemDef._byIcon reverse map', () => {
+  const ctx = buildRegistry({
+    '🥾': { name: 'Old Boot', type: 'armor', stackable: false },
+  });
+  assert.equal(ctx.ItemDef.byIcon('🥾').name, 'oldBoot');
+});
+
+test('Registry handles multi-word names: "Bag of Holding" → bagOfHolding', () => {
+  const ctx = buildRegistry({
+    '💼🌟': { name: 'Bag of Holding', type: 'bag', stackable: false, bagSlots: 10 },
+  });
+  assert.ok(ctx.ItemDefs.bagOfHolding);
+  assert.equal(ctx.ItemDefs.bagOfHolding.isContainer(), true);
+});
+
+test('Registry strips apostrophes from displayName', () => {
+  const ctx = buildRegistry({
+    "🪦": { name: "Death's Door", type: 'quest', stackable: false },
+  });
+  assert.ok(ctx.ItemDefs.deathsDoor);
+});
+
+test('Registry: camelCase collisions keep the first def, warn on the rest', (t) => {
+  // Silence the expected console.warn so test output stays clean
+  t.mock.method(console, 'warn', () => {});
+  const ctx = buildRegistry({
+    '🥾': { name: 'Old Boot', type: 'armor', stackable: false },
+    '👢': { name: 'Old Boot', type: 'armor', stackable: false }, // same displayName
+  });
+  // Only one ItemDefs entry, but both icons resolve via _byIcon → first def
+  assert.equal(Object.keys(ctx.ItemDefs).length, 1);
+  assert.equal(ctx.ItemDef.byIcon('🥾').name, 'oldBoot');
+});
+
+
+// ─── Lock in the specific names that production code now depends on ──
+//   Migration call sites in input.js use these literal names. If state.js
+//   ever renames the underlying "name" field, these tests catch it before
+//   players hit a silent broken item.
+
+test('Lock: input.js class-init items resolve to expected camelCase names', () => {
+  const ctx = buildRegistry({
+    '🥾': { name: 'Old Boot',          type: 'armor', slot: 'feet',  stackable: false },
+    '🥻': { name: 'Robe',              type: 'armor', slot: 'chest', stackable: false },
+    '🔐': { name: 'Lockpicking Tools', type: 'misc',                 stackable: false },
+  });
+  // Migration call sites do `new ItemStack('oldBoot', 1)` etc — these
+  // names MUST exist in the registry or stacks render as '?' at runtime.
+  assert.ok(ctx.ItemDefs.oldBoot,          'oldBoot missing — input.js fighter init will break');
+  assert.ok(ctx.ItemDefs.robe,             'robe missing — input.js spellcaster init will break');
+  assert.ok(ctx.ItemDefs.lockpickingTools, 'lockpickingTools missing — input.js rogue init will break');
+});

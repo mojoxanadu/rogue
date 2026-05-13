@@ -23,7 +23,8 @@ const SRC_DIR = path.join(__dirname, '..', 'src');
  * (e.g., loadSrc('items.js', 'items_registry.js')) — but most unit
  * tests should load only the file under test and stub the rest.
  */
-function loadSrc(...files) {
+/** Create an empty VM context preloaded with standard globals. */
+function newContext() {
   const ctx = {
     console,
     Object, Array, Map, Set, Date, Math, JSON, RegExp, Error, Symbol,
@@ -33,16 +34,24 @@ function loadSrc(...files) {
   ctx.window     = ctx;
   ctx.globalThis = ctx;
   vm.createContext(ctx);
+  return ctx;
+}
 
+/** Run src/*.js files into an existing context, in argument order. */
+function loadInto(ctx, ...files) {
   for (const file of files) {
     const code = fs.readFileSync(path.join(SRC_DIR, file), 'utf8');
     try {
       vm.runInContext(code, ctx, { filename: file });
     } catch (e) {
-      throw new Error(`loadSrc('${file}') failed: ${e.message}\n${e.stack}`);
+      throw new Error(`loadInto('${file}') failed: ${e.message}\n${e.stack}`);
     }
   }
   return ctx;
 }
 
-module.exports = { loadSrc, SRC_DIR };
+function loadSrc(...files) {
+  return loadInto(newContext(), ...files);
+}
+
+module.exports = { loadSrc, loadInto, newContext, SRC_DIR };
