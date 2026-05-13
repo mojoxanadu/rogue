@@ -50,6 +50,16 @@
   #log, #log * { user-select: text; -webkit-user-select: text; cursor: text; }
   .log-error { display: block; background: rgba(255,0,0,0.10); border-left: 3px solid #f44; padding: 4px 6px; margin: 2px 0; }
   .log-error pre { white-space: pre-wrap; word-break: break-word; margin: 4px 0 0 0; font-size: 11px; color: #fdd; }
+
+  /* Tap-to-select mobile gesture (alternative to drag-and-drop):
+     a slot the user has tapped to begin a "sticky" move gets a bright
+     dashed outline. Tapping any other slot completes the move; re-tapping
+     the same slot cancels. */
+  .sticky-selected {
+    outline: 3px dashed #ffcc00 !important;
+    outline-offset: -3px;
+    box-shadow: 0 0 12px rgba(255,204,0,0.5) !important;
+  }
   
   /*
      GAME CANVAS
