@@ -261,7 +261,7 @@
     if(step === 0) {
       m.innerHTML = `<h2>🏪 Apu's Mart</h2>
         ${npcFaceHTML('npc_apu', '🧔🏿', 'apu')}
-        <p>🧔🏿‍♂️ "Ah, the 🧴! A wise choice, my friend. Let's get you <em>exactly</em> the right fit."</p>
+        <p>🧔🏿‍♂️ "Ah, the ${ItemDef.iconOf('prophylactic')}! A wise choice, my friend. Let's get you <em>exactly</em> the right fit."</p>
         <p>🧔🏿‍♂️ "Now: will that be Plain or Ribbed?"</p>
         <button class="egg-btn" onclick="larryEasterEgg(1, 'Plain')">Plain</button>
         <button class="egg-btn" onclick="larryEasterEgg(1, 'Ribbed')">Ribbed</button>
@@ -298,7 +298,7 @@
       m.innerHTML = `<h2>📢 LOUDSPEAKER</h2>
         <p style="color:var(--error); font-weight:bold; font-size:18px; text-transform:uppercase;">
         "ATTENTION SHOPPERS! PRICE CHECK AT REGISTER 1!<br>
-        ONE 🧴 — ${desc.toUpperCase()}!<br>
+        ONE ${ItemDef.iconOf('prophylactic')} — ${desc.toUpperCase()}!<br>
         FOR THE GENTLEMAN IN THE <em>LEISURE SUIT!</em>"</p>
         <p style="font-size:11px; color:#aaa;">*Apatosaurus-sized beetles, every one.*</p>
         <button class="egg-btn" style="background:var(--surface-container)" onclick="finishLarryEgg()">Hide in shame...</button>`;
@@ -470,12 +470,12 @@
   // === Lefty's Mystery Woman ===
   window.larryEncounter = function() {
     let m = document.getElementById('modal-content');
-    let hasProp = inventory.some(i => i && i.icon === '🧴');
+    let hasProp = inventory.some(i => i && i.itemName === 'prophylactic');
     let html = `<h2>🫦 Mystery Lady</h2>
       <p style="font-size:80px; margin:10px 0;">💃</p>
       <p>"Hello there, sailor. Care for a little... company?"</p>`;
     if(hasProp) {
-      html += `<button class="egg-btn" style="background:var(--success)" onclick="finishLarryEncounter(true)">Use 🧴 and proceed</button>`;
+      html += `<button class="egg-btn" style="background:var(--success)" onclick="finishLarryEncounter(true)">Use ${ItemDef.iconOf('prophylactic')} and proceed</button>`;
     } else {
       html += `<button class="egg-btn" style="background:var(--error)" onclick="finishLarryEncounter(false)">Proceed anyway...</button>`;
     }
@@ -486,7 +486,7 @@
 
   window.finishLarryEncounter = function(safe) {
     if(safe) {
-      let idx = inventory.findIndex(i => i && i.icon === '🧴');
+      let idx = inventory.findIndex(i => i && i.itemName === 'prophylactic');
       decrementItem(idx);
       player.xp += 500;
       logMsg("<span style='color:var(--success)'>You survived the encounter and gained 500 XP! Safety first!</span>");
@@ -1284,7 +1284,7 @@
     }
     if(player.gp < finalCost) return showInsufficientFunds(shopType, finalCost, ITEM_DEF[icon]?.name || 'that');
     // Prophylactic easter egg
-    if(icon === '🧴') { larryEasterEgg(0); return; }
+    if(icon === ItemDef.iconOf('prophylactic')) { larryEasterEgg(0); return; }
     if(!addPurchasedItem(icon, qty)) { logMsg("No room! (Inventory full)"); return; }
     changeGold(-finalCost);
     openStore(type);
@@ -1591,7 +1591,7 @@
   };
 
   window.startSafeCrackingQuest = () => {
-    logMsg("<span style='color:var(--success)'>🏺 You've started the Safe Cracking Quest!</span>");
+    logMsg(`<span style='color:var(--success)'>${ItemDef.iconOf('brassBottle')} You've started the Safe Cracking Quest!</span>`);
     logMsg("<span style='color:#88FF88'>Find the Swordmaster and beat him at insult sword fighting to learn the safe combination.</span>");
     player.safeCrackingQuest = true;
     hideOverlay();
@@ -1619,7 +1619,7 @@
 
   window.completeSafeCrackingQuest = () => {
     if(player.safeCrackingQuest && player.learnedInsults.length >= 5) {
-      logMsg("<span style='color:var(--success'>🏺 You crack the safe! The combination was related to your insult knowledge!</span>");
+      logMsg(`<span style='color:var(--success)'>${ItemDef.iconOf('brassBottle')} You crack the safe! The combination was related to your insult knowledge!</span>`);
       logMsg("<span style='color:#FFD700'>Inside you find a treasure trove of gold and a special item!</span>");
       
       // Give rewards
@@ -1638,7 +1638,7 @@
       player.safeCrackingQuest = false;
       player.safeCracked = true;
     } else if(player.safeCrackingQuest) {
-      logMsg("<span style='color:var(--warning)'>🏺 The safe is still locked. You need to learn more insults from pirates first.</span>");
+      logMsg(`<span style='color:var(--warning)'>${ItemDef.iconOf('brassBottle')} The safe is still locked. You need to learn more insults from pirates first.</span>`);
     }
   };
 
@@ -1647,7 +1647,7 @@
     hideOverlay();
     // Consume the Brass Bottle
     const consumeBottle = (arr) => {
-      const idx = arr.findIndex(i => i && i.icon === '🏺');
+      const idx = arr.findIndex(i => i && i.itemName === 'brassBottle');
       if(idx !== -1) { arr[idx] = null; return true; }
       return false;
     };
@@ -1656,7 +1656,7 @@
       // Also check bags
       inventory.forEach(item => {
         if(item && item.contents) {
-          const bagIdx = item.contents.findIndex(i => i && i.icon === '🏺');
+          const bagIdx = item.contents.findIndex(i => i && i.itemName === 'brassBottle');
           if(bagIdx !== -1) item.contents[bagIdx] = null;
         }
       });
@@ -1708,8 +1708,8 @@
       <button onclick="scummBarDialogue(0)" style="margin-top:8px;">"I'm looking for a fight... an insult fight!"</button>
       <button onclick="scummBarDialogue(1)" style="margin-top:8px;">"Tell me about the Swordmaster."</button>
       <button onclick="scummBarDialogue(2)" style="margin-top:8px;">"I'll have a grog."</button>
-      <button onclick="openCausticGrogQuest()" style="margin-top:8px;">🍺 Ask about Caustic Grog</button>
-      ${player.hasRedHerring && !player.hasGrogIngredients ? `<button onclick="distractCook()" style="margin-top:8px;">🐟 Distract the Cook</button>` : ''}
+      <button onclick="openCausticGrogQuest()" style="margin-top:8px;">${ItemDef.iconOf('wateredDownBeer')} Ask about Caustic Grog</button>
+      ${player.hasRedHerring && !player.hasGrogIngredients ? `<button onclick="distractCook()" style="margin-top:8px;">${ItemDef.iconOf('redHerring')} Distract the Cook</button>` : ''}
       <button onclick="hideOverlay(); advanceTurn(1)">Leave</button>`;
     showOverlay();
     setTimeout(() => playVoiceClip('voice_scummbar_intro'), 30);
@@ -1923,7 +1923,7 @@
     let empty = inventory.findIndex(i => i === null);
     if(empty !== -1) {
       inventory[empty] = new ItemStack('wateredDownBeer', 1); // Grog
-      logMsg("<span style='color:#FFD700'>🍺 You create the legendary Caustic Grog!</span>");
+      logMsg(`<span style='color:#FFD700'>${ItemDef.iconOf('wateredDownBeer')} You create the legendary Caustic Grog!</span>`);
       logMsg("<span style='color:var(--success)'>It burns going down, but it gives you incredible power!</span>");
       logMsg("<span style='color:#88FF88'>+50% damage for 10 turns!</span>");
       
