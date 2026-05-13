@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--
+  ROGUELIKE - HTML & CSS TEMPLATE
+  ======================================
+  This file defines the core HTML structure and CSS styling for the game.
+  It serves as the foundation for the UI, establishing:
+  - CSS Custom Properties (CSS Variables) for theming
+  - Absolute positioning for game canvas and HUD overlays
+  - Responsive design using viewport units (vw/vh)
+  - Modular UI components (chips, orbs, inventory slots, modals)
+  - CSS animations and transitions for visual feedback
+
+  This is a single-page application where the game canvas occupies the entire
+  viewport, and UI elements are layered on top using z-index.
+-->
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{GAME_NAME}} - Build {{BUILD_NUMBER}}</title>
+<style>
+  /*
+     CSS CUSTOM PROPERTIES (CSS VARIABLES)
+     =====================================
+     Define a consistent color palette and design tokens using CSS variables.
+     This enables easy theming, maintainability, and dynamic updates via JavaScript.
+     Variables are scoped to the :root element, making them globally accessible.
+  */
+  :root {
+    --bg: #141218; --surface: #1D1B20; --surface-container: #4A4458;
+    --primary: #D0BCFF; --on-primary: #381E72; --secondary: #CCC2DC; 
+    --error: #F2B8B5; --warning: #ffb74d; --success: #81c784;
+    --radius-lg: 12px;
+  }
+  /*
+     BASE RESET & FULL‑SCREEN LAYOUT
+     ================================
+     Reset margins/padding, disable overflow, and set the root elements to occupy
+     the entire viewport (100vw × 100vh). This creates a blank canvas for the game.
+     user-select: none prevents accidental text selection during drag‑and‑drop.
+  */
+  body, html { 
+    margin: 0; padding: 0; overflow: hidden; background: #000; 
+    font-family: 'Segoe UI', sans-serif; color: var(--secondary); user-select: none;
+    width: 100%; height: 100%; min-height: 100%;
+  }
+  
+  /*
+     GAME CANVAS
+     ===========
+     The <canvas> element is positioned absolutely at (0,0) with a lower z‑index,
+     allowing the HUD to be drawn on top. It is set to display:block to avoid
+     inline‑element whitespace issues.
+  */
+  canvas { 
+    position: absolute; top: 0; left: 0; z-index: 1; display: block;
+    width: 100vw; height: 100vh;
+  }
+
+  /*
+     HUD (HEADS‑UP DISPLAY) CONTAINER
+     ================================
+     A full‑screen overlay that holds all UI widgets (stats, inventory, minimap, etc.).
+     pointer‑events: none allows clicks to pass through to the canvas, except for
+     elements with the .interactive class that re‑enable pointer‑events.
+  */
+  #hud {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none;
+  }
+
+  .interactive { pointer-events: auto; }
+
+  /*
+     TOP‑LEFT STATS BAR
+     ==================
+     Displays dynamic player stats (GP, Hunger, Status) as rounded "chip" elements.
+     Uses flexbox for horizontal layout and absolute positioning relative to the
+     viewport edge. The .chip.danger class highlights negative status effects.
+  */
+  #top-left-stats {
+    position: absolute; top: 16px; left: 60px; display: flex; gap: 8px;
+  }
+  .chip {
+    background: rgba(29, 27, 32, 0.8); padding: 8px 12px;
+    border-radius: 999px; font-size: 14px; font-weight: 600;
+    border: 1px solid var(--surface-container);
+  }
+  .chip.danger { color: var(--error); border-color: var(--error); }
+
+  /*
+     LEFT ACTION BAR
+     ===============
+     Vertical strip of icon buttons for quick access to menus (Inventory, Stats, Magic, etc.).
+     Each button is a circle with a hover effect. The .badge class shows notification
+     counts (e.g., unspent stat points). Uses flex‑direction: column for vertical stacking.
+  */
+  #left-bar {
+    position: absolute; top: 16px; left: 16px; display: flex; flex-direction: column; gap: 2px;
+    max-height: calc(100vh - 32px); overflow-y: auto; overflow-x: hidden;
+    width: 44px;
+  }
+  .icon-btn {
+    width: 40px; height: 40px; border-radius: 50%; background: rgba(29, 27, 32, 0.9);
+    border: 2px solid var(--secondary); color: #fff; font-size: 18px;
+    display: flex; justify-content: center; align-items: center; cursor: pointer;
+    position: relative;
+  }
+  #left-bar .icon-btn { border: none; width: 36px; height: 36px; border-radius: 6px; font-size: 16px; }
+  .icon-btn:hover { background: var(--surface-container); }
+  .icon-btn .badge {
+    position: absolute; top: -5px; right: -5px; background: var(--error); color: #000;
+    font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 10px;
+  }
+  .points-pending { box-shadow: 0 0 0 1px rgba(255, 215, 120, 0.25), 0 0 10px rgba(255, 215, 120, 0.18); }
+  .sparkle-star {
+    position: absolute; top: -5px; left: -3px; font-size: 10px; line-height: 1;
+    color: #fff1a8; text-shadow: 0 0 8px rgba(255, 241, 168, 0.75); opacity: 0;
+    pointer-events: none;
+  }
+  .points-pending .sparkle-star { opacity: 0.9; animation: subtleSparkle 1.4s ease-in-out infinite; }
+  @keyframes subtleSparkle {
+    0%, 100% { transform: scale(0.8); opacity: 0.25; }
+    45% { transform: scale(1.15); opacity: 0.95; }
+    65% { transform: scale(0.9); opacity: 0.55; }
+  }
+
+  /*
+     BOTTOM BAR – PLAYER RESOURCES & INVENTORY
+     =========================================
+     Contains the XP progress bar, HP/MP resource orbs, and the 10‑slot inventory hotbar.
+     The XP bar uses a CSS transition for smooth updates. The orbs use radial gradients
+     for a glossy, game‑like appearance. Inventory slots are draggable and show quantity
+     overlays.
+  */
+  #bottom-bar {
+    position: absolute; bottom: 16px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  #xp-container {
+    width: 500px; height: 12px; background: rgba(0,0,0,0.6); border: 1px solid #555; border-radius: 6px; position: relative;
+  }
+  #xp-bar-fill {
+    height: 100%; background: var(--primary); border-radius: 5px; transition: width 0.3s;
+  }
+  #xp-text {
+    position: absolute; top: -2px; left: 50%; transform: translateX(-50%); font-size: 10px; font-weight: bold; color: #fff; text-shadow: 1px 1px 0 #000;
+  }
+  
+  #resource-row {
+    display: flex; align-items: center; gap: 16px;
+  }
+  /* #19: Globes enlarged 25% (60px → 75px) */
+  /* #20: HP globe changed to blood red with subtle variation */
+  .orb {
+    width: 75px; height: 75px; border-radius: 50%; border: 2px solid #555; display: flex; justify-content: center; align-items: center;
+    font-weight: bold; font-size: 14px; text-shadow: 1px 1px 2px #000; box-shadow: inset 0 -10px 20px rgba(0,0,0,0.8);
+    position: relative; overflow: hidden;
+  }
+  /* B12 FIX: Blood-red background (#580000) and dark blood-red fill (#8b0000 → #4a0000) */
+  #hp-orb { background: radial-gradient(ellipse at 35% 35%, #7a0000, #580000 60%, #2a0000); }
+  #mp-orb { background: radial-gradient(ellipse at 35% 35%, #001a4d, #000033 60%, #00001a); }
+  .orb-fill {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    transition: height 0.3s; height: 0%;
+    animation: liquidIdle 3s ease-in-out infinite;
+  }
+  #hp-orb .orb-fill {
+    background: linear-gradient(to top, #8b0000 0%, #4a0000 100%);
+  }
+  #mp-orb .orb-fill {
+    background: linear-gradient(to top, #2288ff 0%, #1166cc 100%);
+  }
+
+  /* Liquid slosh keyframes */
+  @keyframes liquidIdle {
+    0%, 100% { transform: skewX(0deg); }
+    50% { transform: skewX(0.5deg); }
+  }
+  @keyframes liquidWalk {
+    0%, 100% { transform: skewX(-1.5deg); }
+    50% { transform: skewX(1.5deg); }
+  }
+  @keyframes liquidRun {
+    0%, 100% { transform: skewX(-3deg) scaleX(1.02); }
+    25% { transform: skewX(2deg) scaleX(0.98); }
+    50% { transform: skewX(-2deg) scaleX(1.01); }
+    75% { transform: skewX(3deg) scaleX(0.99); }
+  }
+  .orb-fill.slosh-walk { animation: liquidWalk 0.6s ease-in-out infinite; }
+  .orb-fill.slosh-run { animation: liquidRun 0.3s ease-in-out infinite; }
+
+  /* Bubble effect */
+  .orb-bubble {
+    position: absolute; width: 3px; height: 3px; border-radius: 50%;
+    background: rgba(255,255,255,0.4); pointer-events: none;
+    animation: bubbleRise 2s ease-out infinite;
+  }
+  @keyframes bubbleRise {
+    0% { transform: translateY(0) scale(1); opacity: 0.6; }
+    100% { transform: translateY(-40px) scale(0.3); opacity: 0; }
+  }
+  .orb-text {
+    position: relative; z-index: 1;
+  }
+  
+  #inventoryUI {
+    display: flex; gap: 4px; background: rgba(0,0,0,0.5); padding: 8px; border-radius: 12px;
+  }
+  .inv-slot {
+    width: 40px; height: 40px; background: rgba(29, 27, 32, 0.9);
+    border: 2px solid #555; border-radius: 6px;
+    display: flex; justify-content: center; align-items: center;
+    font-size: 20px; position: relative; cursor: grab;
+  }
+  .inv-slot:hover { border-color: var(--primary); }
+  .inv-slot .qty {
+    position: absolute; bottom: -4px; right: -4px; color: #fff; background: var(--on-primary);
+    font-size: 10px; font-weight: bold; border-radius: 50%; padding: 1px 4px;
+  }
+  .inv-slot .hotkey { position: absolute; top: 0px; left: 2px; color: #888; font-size: 10px; }
+
+  /*
+     LOG OVERLAY – GAME MESSAGES
+     ===========================
+     A scrolling text area that displays game events, combat results, and system messages.
+     Uses a mask gradient to fade older entries. Each log entry includes a timestamp
+     and supports inline HTML styling for colored text. Now draggable like other modals.
+   */
+  #log-overlay {
+    position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%);
+    width: 600px; background: rgba(0,0,0,0.7); border-radius: 8px;
+    border: 1px solid rgba(74, 68, 88, 0.5);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    display: flex; flex-direction: column;
+  }
+  #log-body {
+    padding: 8px; overflow-y: auto; font-family: monospace; font-size: 12px;
+    height: 120px; cursor: move;
+  }
+  .log-entry { margin-bottom: 2px; }
+  .log-time { color: #888; margin-right: 8px; }
+
+  /*
+     MINIMAP – DUNGEON OVERVIEW
+     ===========================
+     A small, fixed‑size canvas that shows the currently explored map region.
+     Positioned in the top‑right corner, it helps players navigate the dungeon.
+     The map is drawn by JavaScript; this CSS only provides the container styling.
+  */
+  #minimap-container {
+    position: absolute; top: 16px; right: 16px; background: rgba(20,18,24,0.6);
+    border-radius: 8px; padding: 8px; text-align: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    overflow: visible; opacity: 0.85;
+    width: 166px;
+  }
+  #minimap-zoom-btns {
+    position: absolute; top: 4px; right: 4px; display: flex; gap: 2px; z-index: 20;
+  }
+  #minimap-zoom-btns button {
+    width: 16px; height: 16px; font-size: 10px; padding: 0; line-height: 1;
+    background: rgba(29,27,32,0.9); color: #ccc; border: 1px solid #555;
+    border-radius: 3px; cursor: pointer;
+  }
+  #minimap-label { font-size: 12px; font-weight: bold; margin-bottom: 4px; color: #b8a8d8; }
+  #minimap { width: 150px; height: 150px; background: #000; border-radius: 50%; display: block; }
+
+  /*
+     DRAGGABLE MODALS – WINDOWED UI
+     ===============================
+     Translucent, movable windows for inventory, stats, spells, and other panels.
+     Each modal has a header that serves as a drag handle. The modal‑body holds
+     dynamic content generated by JavaScript. Uses box‑shadow for depth.
+  */
+  .draggable-modal {
+    position: absolute; background: rgba(29, 27, 32, 0.95); border: 2px solid var(--secondary);
+    border-radius: 8px; z-index: 100; pointer-events: auto; display: none; flex-direction: column;
+    min-width: 250px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+  }
+  .modal-header {
+    background: var(--surface-container); padding: 8px 12px; border-radius: 6px 6px 0 0;
+    display: flex; justify-content: space-between; align-items: center; cursor: move;
+    font-weight: bold; color: var(--primary);
+  }
+  .modal-close { cursor: pointer; color: #fff; background: transparent; border: none; font-size: 16px; }
+  .modal-body { padding: 16px; }
+
+  /*
+     EQUIPMENT LAYOUT – PAPER DOLL
+     ==============================
+     A "paper doll" arrangement of equipment slots (head, body, hands, etc.) inside
+     the equipment modal. Slots are positioned absolutely within a container.
+     Dashed borders indicate empty slots; solid borders show equipped items.
+  */
+  .equip-container {
+    position: relative; height: 200px; width: 100%; display: flex; justify-content: center; align-items: center;
+  }
+  .equip-slot {
+    width: 48px; height: 48px; background: rgba(0,0,0,0.5);
+    border: 2px dashed #555; border-radius: 8px;
+    display: flex; justify-content: center; align-items: center; font-size: 24px;
+    position: absolute; cursor: drop;
+  }
+  .equip-label { position: absolute; top: -14px; font-size: 10px; color: #aaa; text-shadow: 1px 1px 0 #000;}
+
+  /*
+     KEYBIND HINTS – ACCESSIBILITY
+     =============================
+     Small tooltips that appear when the .show‑keybinds class is added to the body,
+     revealing the keyboard shortcuts for nearby UI elements. Useful for onboarding
+     new players.
+  */
+    .keybind-hint {
+      display: none; position: absolute; top: 2px; left: 50%; transform: translateX(-50%);
+      background: #ff0; color: #000; font-size: 9px; font-weight: bold; padding: 1px 5px; border-radius: 3px;
+      white-space: nowrap; z-index: 100; pointer-events: none;
+    }
+   body.show-keybinds .keybind-hint { display: block; }
+
+  /*
+     MISCELLANEOUS UTILITY STYLES
+     ============================
+     Shared styles for buttons, Easter‑egg buttons, and the screen‑shake animation
+     used for earthquake/tunnel effects. The button hover effect uses filter:brightness
+     for a consistent highlight.
+  */
+  .egg-btn, button { background: var(--surface-container); color: #fff; border: 1px solid #555; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+  button:hover { filter: brightness(1.2); }
+  
+  @keyframes rockViewport {
+    0% { transform: rotate(0deg); }
+    25% { transform: rotate(-3deg); }
+    75% { transform: rotate(3deg); }
+    100% { transform: rotate(0deg); }
+  }
+
+  /*
+     START SCREEN – TITLE & ASSET LOADER
+     ===================================
+     Full‑screen overlay shown before the game begins. Contains the title ASCII art,
+     an asset‑file loader, and the "Enter the Dungeon" button. The background features
+     a custom particle‑field animation drawn on a separate canvas.
+  */
+  #start-screen {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000;
+    width: 100dvw; height: 100dvh;
+    display: flex; flex-direction: column; justify-content: flex-start; align-items: center; z-index: 1000;
+    padding-top: 2vh;
+  }
+  .title-img { width:100%; max-width:900px; max-height:34vh; display:block; margin:0 auto 6px; border-radius:8px; object-fit:contain; }
+
+  /*
+     B39: Death modal / overlay accessibility fix.
+     The #overlay backdrop was blocking all pointer events, making the game log and
+     hamburger menu unreachable while a modal (e.g. death screen) was showing.
+     Fix: set pointer-events:none on the backdrop so clicks pass through to HUD elements.
+     Only #modal-content re-enables pointer-events so modal buttons still work.
+     The log and hamburger are already inside .interactive elements, so they receive
+     clicks as long as the overlay backdrop doesn't swallow them.
+  */
+  #overlay {
+    pointer-events: none; /* backdrop passes clicks through to log, menu, etc. */
+  }
+  #modal-content {
+    pointer-events: auto; /* the actual dialog content still intercepts clicks */
+  }
+</style>
+</head>
