@@ -1852,12 +1852,12 @@
         chestLoot.push(ItemStack.fromIcon(bonus[Math.floor(Math.random() * bonus.length)], 1));
       }
       // 8% chance of coin bonus.
-      // NOTE: gold loot stays as a plain { icon: '🪙', qty: N } object, NOT
+      // NOTE: gold loot stays as a plain new ItemStack('gold', N) object, NOT
       // an ItemStack. Gold is a separate concept from inventory items; the
       // pickup handlers route gold (icon: '🪙', no itemName) to changeGold().
       // A future refactor could replace this with { gold: N } for clarity.
       if (Math.random() < 0.08) {
-        chestLoot.push({ icon: '🪙', qty: 10 + Math.floor(Math.random() * 30 * currentLevel) });
+        chestLoot.push(new ItemStack('gold', 10 + Math.floor(Math.random() * 30 * currentLevel)));
       }
       // Create as a "chest" corpse for right-click looting
       if(typeof createCorpse === 'function' && typeof window.autoLootEnabled !== 'undefined') {
@@ -1865,7 +1865,7 @@
           chestLoot.forEach(item => {
             // Gold loot: plain object with no itemName. Real items are
             // ItemStack instances (have .itemName).
-            if(!item.itemName && item.icon === '🪙') {
+            if(item.def?.pickupTo === 'gp') {
               changeGold(item.qty);
             } else {
               let s = inventory.findIndex(s => s === null);
@@ -1873,7 +1873,7 @@
               else if(typeof tryPlaceInInventory === 'function') tryPlaceInInventory(item);
             }
           });
-          if(!chestLoot.some(item => !item.itemName && item.icon === '🪙')) Sound.clink();
+          if(!chestLoot.some(item => item.itemName === 'gold')) Sound.clink();
         } else {
           createCorpse(x, y, 'chest', {icon:'📦', name:'Chest'}, chestLoot);
         }

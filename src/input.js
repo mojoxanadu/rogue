@@ -1788,8 +1788,8 @@ const hBtn = document.getElementById('hamburgerBtn');
             if(loot.length > 0) {
               if(window.autoLootEnabled && player.talents && player.talents['autoLoot']) {
                 loot.forEach(item => {
-                  if(item.icon === '🪙') { changeGold(item.qty); }
-                  else { let s = inventory.findIndex(s => s === null); if(s !== -1) inventory[s] = ItemStack.fromIcon(item.icon, item.qty); else tryPlaceInInventory(item); }
+                  if(item.def?.pickupTo === 'gp') { changeGold(item.qty); }
+                  else { let s = inventory.findIndex(s => s === null); if(s !== -1) inventory[s] = new ItemStack(item.itemName, item.qty); else tryPlaceInInventory(item); }
                 });
                 if(!loot.some(item => item.icon === '🪙')) Sound.clink();
               } else {

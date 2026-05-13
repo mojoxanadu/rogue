@@ -47,26 +47,33 @@
     let loot = [];
     // B4 FIX: Farm birds (chicken, duck) never drop gold
     const FARM_BIRD_TYPES = new Set(['chicken', 'duck']);
-    // Gold: 50% chance, always drops alongside other items (skipped for farm birds)
+    // Gold: 50% chance, always drops alongside other items (skipped for farm birds).
+    // Gold loot is a plain { icon, qty } object — distinct from ItemStack;
+    // qty is the gold amount, not a stack count.
     if(!FARM_BIRD_TYPES.has(enemyType) && Math.random() < 0.5) {
       let goldAmt = 5 + Math.floor(Math.random() * 10 * Math.max(1, currentLevel));
-      loot.push({ icon: '🪙', qty: goldAmt });
+      loot.push(new ItemStack('gold', goldAmt));
     }
-    // 1-3 item drops per corpse
+    // 1-3 item drops per corpse. Pools are camelCase names keyed into ItemDefs;
+    // never emoji literals (per the no-icons-in-code rule).
     let itemCount = 1 + Math.floor(Math.random() * 3);
     let itemPool = [
-      {icon:'🧪', weight:15}, {icon:'🍕', weight:10}, {icon:'🍖', weight:8},
-      {icon:'🧀', weight:7}, {icon:'🗝️', weight:5}, {icon:'🗡️', weight:5},
-      {icon:'🛡️', weight:4}, {icon:'🕯️', weight:8}, {icon:'📃', weight:5},
-      {icon:'🎒', weight:3}, {icon:'🥤', weight:5}, {icon:'💍', weight:2},
+      {name:'healthPotion', weight:15}, {name:'pizza',  weight:10}, {name:'meat',   weight:8},
+      {name:'cheese',       weight:7},  {name:'key',    weight:5},  {name:'sword',  weight:5},
+      {name:'shield',       weight:4},  {name:'candle', weight:8},  {name:'identifyScroll', weight:5},
+      {name:'smallClothBag', weight:3}, {name:'slurpee', weight:5}, {name:'ringOfMidas', weight:2},
     ];
-    let junkPool = ['💇','🪨','🧿','🧵','🦷💀','🧲','🟠','🫧','🪶','🔘','🪡','🫘','🦴','📎','🧶','🪱'];
-    let totalWeight = itemPool.reduce((s,i) => s + i.weight, 0);
+    let junkPool = [
+      'tuftOfHair', 'smallRock', 'aMarble', 'pieceOfString', 'hensTeeth',
+      'bitOfAsbestos', '1CheetoStale', 'dandruffFlake', 'feather', 'bellyButtonLint',
+      'bentNeedle', 'pocketSand', 'bone', 'paperclip', 'yarn', 'earthworm',
+    ];
+    let totalWeight = itemPool.reduce((s,e) => s + e.weight, 0);
     for(let i = 0; i < itemCount; i++) {
       let roll = Math.random();
       if(roll < 0.3) {
         // Junk
-        loot.push({icon: junkPool[Math.floor(Math.random() * junkPool.length)], qty: 1});
+        loot.push(new ItemStack(junkPool[Math.floor(Math.random() * junkPool.length)], 1));
       } else if(roll < 0.5) {
         // Nothing extra
       } else {
@@ -75,28 +82,29 @@
         for(let entry of itemPool) {
           r -= entry.weight;
           if(r <= 0) {
-            let def = ITEM_DEF[entry.icon];
+            const def = ItemDefs[entry.name];
             if(def && def.minLevel && player.level < def.minLevel) {
-              loot.push({icon:'🧪', qty:1}); // fallback
+              loot.push(new ItemStack('healthPotion', 1)); // fallback
             } else {
-              loot.push({icon: entry.icon, qty: 1});
+              loot.push(new ItemStack(entry.name, 1));
             }
             break;
           }
         }
       }
     }
-    // Bag drop: 8% chance, level-appropriate
+    // Bag drop: 8% chance, level-appropriate. randomBag() returns an emoji
+    // icon; resolve to a name via the migration bridge.
     if(Math.random() < 0.08) {
-      loot.push({icon: randomBag(player.level), qty: 1});
+      loot.push(ItemStack.fromIcon(randomBag(player.level), 1));
     }
     // E10: Beach Portal Scroll drops on level 7+
     if(currentLevel >= 7 && Math.random() < 0.03) {
-      const portalIdx = loot.findIndex(l => l.icon === '🌀');
+      const portalIdx = loot.findIndex(l => l.itemName === 'townPortalScroll');
       if(portalIdx !== -1 && Math.random() < 0.5) {
-        loot[portalIdx] = {icon:'📜🏖️', qty:1};
+        loot[portalIdx] = new ItemStack('scrollOfBeachPortal', 1);
       } else if(Math.random() < 0.02) {
-        loot.push({icon:'📜🏖️', qty:1});
+        loot.push(new ItemStack('scrollOfBeachPortal', 1));
       }
     }
     return loot;
@@ -126,9 +134,10 @@
         // Loot drops to floor
         if(c.loot && c.loot.length > 0) {
           c.loot.forEach(item => {
-            // Gold loot: plain object with no itemName. Real items are
-            // ItemStack instances (have .itemName).
-            if(!item.itemName && item.icon === '🪙') {
+            // Wealth items (gold today, platinum etc. future): pickupTo
+            // routes the stack's qty into a player stat instead of
+            // landing in inventory. Everything else falls to the floor.
+            if(item.def?.pickupTo === 'gp') {
               changeGold(item.qty);
             } else {
               itemsOnGround.push({ x: c.x, y: c.y, icon: item.icon });
@@ -146,14 +155,14 @@
     if(!c || !c.loot || c.loot.length === 0) return;
     let remaining = [];
     c.loot.forEach(item => {
-      if(item.icon === '🪙') {
+      if(item.def?.pickupTo === 'gp') {
         changeGold(item.qty, { x: c.x, y: c.y, floatText: true });
       } else {
         let placed = false;
         let def = ITEM_DEF[item.icon];
         if(def && def.stackable) {
           let maxStack = def.maxStack || 10;
-          let stackSlot = inventory.find(s => s && s.icon === item.icon && (s.qty || 1) < maxStack);
+          let stackSlot = inventory.find(s => s && s.itemName === item.itemName && (s.qty || 1) < maxStack);
           if(stackSlot) {
             let can = maxStack - (stackSlot.qty || 1);
             let add = Math.min(can, item.qty || 1);
@@ -165,7 +174,7 @@
         // Try inventory
         let slot = inventory.findIndex(s => s === null);
         if(!placed && slot !== -1) {
-          inventory[slot] = { icon: item.icon, qty: item.qty || 1 };
+          inventory[slot] = new ItemStack(item.itemName, item.qty || 1);
           placed = true;
         }
         // Try inventory and bags
@@ -190,7 +199,7 @@
       const maxStack = def.maxStack || 10;
       for(let i = 0; i < inventory.length; i++) {
         const s = inventory[i];
-        if(s && s.icon === item.icon && (s.qty || 1) < maxStack) {
+        if(s && s.itemName === item.itemName && (s.qty || 1) < maxStack) {
           const can = maxStack - (s.qty || 1);
           const add = Math.min(can, qty);
           s.qty = (s.qty || 1) + add;
@@ -204,7 +213,7 @@
     // Direct inventory slot
     let pSlot = inventory.findIndex(s => s === null);
     if(pSlot !== -1) {
-      inventory[pSlot] = { icon: item.icon, qty: item.qty || 1 };
+      inventory[pSlot] = new ItemStack(item.itemName, item.qty || 1);
       return true;
     }
     // Inside a bag
@@ -216,7 +225,7 @@
           const maxStack = def.maxStack || 10;
           for(let bi = 0; bi < bag.contents.length; bi++) {
             const bs = bag.contents[bi];
-            if(bs && bs.icon === item.icon && (bs.qty || 1) < maxStack) {
+            if(bs && bs.itemName === item.itemName && (bs.qty || 1) < maxStack) {
               const can = maxStack - (bs.qty || 1);
               const add = Math.min(can, item.qty || 1);
               bs.qty = (bs.qty || 1) + add;
@@ -227,7 +236,7 @@
         }
         let emptySlot = bag.contents.findIndex(s => s === null);
         if(emptySlot !== -1) {
-          bag.contents[emptySlot] = { icon: item.icon, qty: item.qty || 1 };
+          bag.contents[emptySlot] = new ItemStack(item.itemName, item.qty || 1);
           return true;
         }
       }
@@ -262,7 +271,7 @@
     c.loot.forEach((item, idx) => {
       let def = ITEM_DEF[item.icon];
       let name = def ? def.name : item.icon;
-      let displayQty = (item.icon === '🪙') ? `${item.qty}g` : (item.qty > 1 ? `x${item.qty}` : '');
+      let displayQty = (item.itemName === 'gold') ? `${item.qty}g` : (item.qty > 1 ? `x${item.qty}` : '');
       html += `<div draggable="true" id="loot-item-${idx}"
         ondragstart="window._lootDrag={corpseIdx:${corpseIdx},itemIdx:${idx}}; window.draggedSource='loot'; window.draggedItemIdx=${idx};"
         ondragend="window._lootDrag=null; window.draggedSource=null; window.draggedItemIdx=null;"
@@ -291,13 +300,13 @@
     let remaining = [];
     let didLoot = false;
     c.loot.forEach(item => {
-      if(item.icon === '🪙') {
+      if(item.def?.pickupTo === 'gp') {
         changeGold(item.qty, { x: c.x, y: c.y, floatText: true });
         didLoot = true;
       } else {
         let slot = inventory.findIndex(s => s === null);
         if(slot !== -1) {
-          inventory[slot] = { icon: item.icon, qty: item.qty || 1 };
+          inventory[slot] = new ItemStack(item.itemName, item.qty || 1);
           didLoot = true;
         } else {
           let placed = tryPlaceInInventory(item);
@@ -307,7 +316,7 @@
       }
     });
     c.loot = remaining;
-    if(didLoot && (!c.loot || !c.loot.some(item => item.icon === '🪙'))) Sound.clink();
+    if(didLoot && (!c.loot || !c.loot.some(item => item.itemName === 'gold'))) Sound.clink();
     if(remaining.length > 0) {
       logMsg("Inventory full! Some items remain on the corpse.");
       // Red flash on corpse
@@ -324,13 +333,13 @@
     let c = corpses[corpseIdx];
     if(!c || !c.loot || !c.loot[itemIdx]) return;
     let item = c.loot[itemIdx];
-    if(item.icon === '🪙') {
+    if(item.def?.pickupTo === 'gp') {
       changeGold(item.qty, { x: c.x, y: c.y, floatText: true });
       c.loot.splice(itemIdx, 1);
     } else {
       let slot = inventory.findIndex(s => s === null);
       if(slot !== -1) {
-        inventory[slot] = { icon: item.icon, qty: item.qty || 1 };
+        inventory[slot] = new ItemStack(item.itemName, item.qty || 1);
         c.loot.splice(itemIdx, 1);
         Sound.clink();
       } else {
@@ -1472,7 +1481,7 @@
   };
 
   function die() {
-    let crystalIdx = inventory.findIndex(i => i && i.icon === '💎💠');
+    let crystalIdx = inventory.findIndex(i => i && i.itemName === 'resurrectionCrystal');
     if (crystalIdx !== -1) {
       logMsg("Crystal Shatters!");
       inventory[crystalIdx] = null;
@@ -1538,9 +1547,9 @@
     if(!e) return;
 
     if(e.type === 'ifrit' && e.isIfrit) {
-      let ifritLoot = [{icon:'🔥📘', qty:1}];
+      let ifritLoot = [new ItemStack('tomeOfFireball', 1)];
       if(Math.random() < 0.5 && player.level >= 20) {
-        ifritLoot.push({icon:'🧳✨', qty:1});
+        ifritLoot.push(new ItemStack('enchantedValise', 1));
         logMsg("<span style='color:#FFD700'>An Enchanted Valise falls from the ashes!</span>");
       }
       // B37: Scavenger talent auto-loots on kill (no manual toggle required)
@@ -1548,7 +1557,7 @@
         logMsg(`<span style='color:var(--success)'>Your Scavenger instincts kick in! You automatically loot the Ifrit.</span>`);
         ifritLoot.forEach(item => {
           let slot = inventory.findIndex(s => s === null);
-          if(slot !== -1) inventory[slot] = {icon: item.icon, qty: item.qty};
+          if(slot !== -1) inventory[slot] = new ItemStack(item.itemName, item.qty);
           else tryPlaceInInventory(item);
         });
         renderQuickslots(); renderInventory(); updateUI();
@@ -1605,47 +1614,47 @@
     let corpseLoot = [];
 
     if(e.outdoorCritter === 'chipmunk') {
-      corpseLoot.push({icon:'🫘', qty:1});
-      if(Math.random() < 0.35) corpseLoot.push({icon:'🪶', qty:1});
+      corpseLoot.push(new ItemStack('pocketSand', 1));
+      if(Math.random() < 0.35) corpseLoot.push(new ItemStack('feather', 1));
       player.xp += 12;
       logMsg(`<span style='color:#888'>The chipmunk vanishes into the grass, leaving behind a tiny stash of seeds.</span>`);
     } else if(e.outdoorCritter === 'bird') {
-      corpseLoot.push({icon:'🪶', qty:1});
-      if(Math.random() < 0.5) corpseLoot.push({icon:'🫘', qty:1});
+      corpseLoot.push(new ItemStack('feather', 1));
+      if(Math.random() < 0.5) corpseLoot.push(new ItemStack('pocketSand', 1));
       player.xp += 12;
       logMsg(`<span style='color:#888'>A startled burst of feathers and seed husks is all that remains.</span>`);
     } else if(e.type === 'mouse') {
       let roll = Math.random();
-      if(roll < 0.05) corpseLoot.push({icon:'📋', qty:1});
-      else if(roll < 0.25) corpseLoot.push({icon:'🧀', qty:1});
-      corpseLoot.push({icon:'🪙', qty: 1 + Math.floor(Math.random() * 3)});
+      if(roll < 0.05) corpseLoot.push(new ItemStack('plansForWorldDomination', 1));
+      else if(roll < 0.25) corpseLoot.push(new ItemStack('cheese', 1));
+      corpseLoot.push(new ItemStack('gold', 1 + Math.floor(Math.random() * 3)));
       player.xp += 10; player.verminKills = (player.verminKills || 0) + 1;
       if(player.verminKills >= 10) awardAchievement('vermin_slayer');
     } else if(e.type === 'cockroach') {
-      corpseLoot.push({icon:'🦗', qty:1});
-      if(Math.random() < 0.3) corpseLoot.push({icon:'🪙', qty:1});
+      corpseLoot.push(new ItemStack('cockroachLegStale', 1));
+      if(Math.random() < 0.3) corpseLoot.push(new ItemStack('gold', 1));
       player.xp += 5; player.verminKills = (player.verminKills || 0) + 1;
       if(player.verminKills >= 10) awardAchievement('vermin_slayer');
     } else if(e.type === 'chicken') {
       if(typeof Sound !== 'undefined' && Sound.cluck) Sound.cluck();
       // B4 FIX: Chickens only drop meat or feather — no gold
       let chickenRoll = Math.random();
-      if(chickenRoll < 0.60) corpseLoot.push({icon:'🍗', qty:1});       // 60% meat
-      else if(chickenRoll < 0.90) corpseLoot.push({icon:'🪶', qty:1});  // 30% feather
+      if(chickenRoll < 0.60) corpseLoot.push(new ItemStack('duckLeg', 1));       // 60% meat
+      else if(chickenRoll < 0.90) corpseLoot.push(new ItemStack('feather', 1));  // 30% feather
       // 10% nothing
       // E17: 15% poop drop from chickens
-      if(Math.random() < 0.15) corpseLoot.push({icon:'💩', qty:1});
+      if(Math.random() < 0.15) corpseLoot.push(new ItemStack('poop', 1));
       player.xp += 8;
       logMsg(`<span style='color:#888'>The chicken flaps once and goes still.</span>`);
     } else if(e.type === 'duck') {
       Sound.quack();
       // B4 FIX: Ducks are farm birds — no gold, only meat/feather
       let duckRoll = Math.random();
-      if(duckRoll < 0.60) corpseLoot.push({icon:'🍗', qty:1});       // 60% meat
-      else if(duckRoll < 0.90) corpseLoot.push({icon:'🪶', qty:1});  // 30% feather
+      if(duckRoll < 0.60) corpseLoot.push(new ItemStack('duckLeg', 1));       // 60% meat
+      else if(duckRoll < 0.90) corpseLoot.push(new ItemStack('feather', 1));  // 30% feather
       // 10% nothing
       // E17: 15% poop drop from ducks
-      if(Math.random() < 0.15) corpseLoot.push({icon:'💩', qty:1});
+      if(Math.random() < 0.15) corpseLoot.push(new ItemStack('poop', 1));
       player.xp += 15;
       player.duckKills = (player.duckKills || 0) + 1;
       if(player.duckKills >= 5 && !achievements['duck_hunter']) {
@@ -1655,28 +1664,28 @@
       logMsg(`<span style='color:#888'>The duck lets out a final quack before falling silent.</span>`);
     } else if(e.type === 'wet_rat') {
       let roll = Math.random();
-      if(roll < 0.3) corpseLoot.push({icon:'🐀💦', qty:1});
-      else corpseLoot.push({icon:'🧀', qty:1});
+      if(roll < 0.3) corpseLoot.push(new ItemStack('wetRatTail', 1));
+      else corpseLoot.push(new ItemStack('cheese', 1));
       player.xp += 20;
       logMsg(`<span style='color:#888'>The wet rat squeaks one last time.</span>`);
     } else if(e.type === 'pixie') {
-      corpseLoot.push({icon:'💎✨', qty:1});
-      if(Math.random() < 0.35) corpseLoot.push({icon:'🌿', qty:1});
+      corpseLoot.push(new ItemStack('resurrectionCrystal', 1));
+      if(Math.random() < 0.35) corpseLoot.push(new ItemStack('dirt', 1));
       player.xp += 30;
       logMsg(`<span style='color:#88f'>Pixie dust and a Resurrection Crystal scatter across the ground.</span>`);
     } else if(e.type === 'shark') {
       let roll = Math.random();
       if(roll < 0.15) {
-        corpseLoot.push({icon:'👔🦈', qty:1});
+        corpseLoot.push(new ItemStack('sharkskinSuit', 1));
         logMsg(`<span style='color:#FFD700'>🦈 The mighty shark drops a pristine Sharkskin Suit!</span>`);
       } else if(roll < 0.5) {
-        corpseLoot.push({icon:'🦷', qty:1});
+        corpseLoot.push(new ItemStack('sharkTooth', 1));
         logMsg(`<span style='color:#88FF88'>🦷 You claim a shark tooth as a trophy!</span>`);
       }
-      corpseLoot.push({icon:'🪙', qty: 25 + Math.floor(Math.random() * 50)});
-      if(Math.random() < 0.4) corpseLoot.push({icon:'🧪', qty:2});
+      corpseLoot.push(new ItemStack('gold', 25 + Math.floor(Math.random() * 50)));
+      if(Math.random() < 0.4) corpseLoot.push(new ItemStack('healthPotion', 2));
       if(Math.random() < 0.3 && player.level >= 20) {
-        corpseLoot.push({icon:'💼🌟', qty:1});
+        corpseLoot.push(new ItemStack('bagOfHolding', 1));
         logMsg(`<span style='color:#FFD700'>🦈 A Bag of Holding surfaces from the depths!</span>`);
       }
       player.xp += 100;
@@ -1695,14 +1704,14 @@
       addFloatingText(e.x, e.y, "+75xp", "#8cf", 14);
       if(stolenItems.length > 0) {
         logMsg(`<span style='color:var(--success)'>The thief drops your stolen belongings!</span>`);
-        stolenItems.forEach(item => corpseLoot.push({icon: item.icon, qty: 1}));
+        stolenItems.forEach(item => corpseLoot.push(new ItemStack(item.itemName, 1)));
         stolenItems.length = 0;
       }
       changeGold(15 + Math.floor(Math.random() * 30));
     } else if(e.type === 'mimic') {
-      corpseLoot.push({icon:'🗝️', qty:1});
-      corpseLoot.push({icon:'🪙', qty: 30 + Math.floor(Math.random() * 40)});
-      if(Math.random() < 0.35) corpseLoot.push({icon:'💍', qty:1});
+      corpseLoot.push(new ItemStack('key', 1));
+      corpseLoot.push(new ItemStack('gold', 30 + Math.floor(Math.random() * 40)));
+      if(Math.random() < 0.35) corpseLoot.push(new ItemStack('ringOfMidas', 1));
       player.xp += 90;
       addFloatingText(e.x, e.y, "+90xp", "#8cf", 14);
       if(typeof Sound !== 'undefined' && Sound.playSample) Sound.playSample('mimic_laugh', 0.5);
@@ -1714,22 +1723,22 @@
       addFloatingText(e.x, e.y, `+${xpReward}xp`, "#8cf", 14);
       corpseLoot = generateLoot(e.type, e.stats);
       // Always add Tome of Town Portal
-      corpseLoot.push({icon: '📖🌀', qty: 1});
+      corpseLoot.push(new ItemStack('tomeOfTownPortal', 1));
       logMsg("<span style='color:#FFD700'>✨ The Genie's power dissipates! A shimmering tome falls from the swirling smoke...</span>");
       logMsg("<span style='color:#88CCFF'>📖🌀 You find the Tome of Town Portal!</span>");
     } else if(e.type === 'cow') {
       if(typeof Sound !== 'undefined' && Sound.moo) Sound.moo();
       // E17: Cow loot — meat plus 15% poop, no gold
-      corpseLoot.push({icon:'🍖', qty:1});
-      if(Math.random() < 0.4) corpseLoot.push({icon:'🧀', qty:1});
-      if(Math.random() < 0.15) corpseLoot.push({icon:'💩', qty:1}); // E17
+      corpseLoot.push(new ItemStack('meat', 1));
+      if(Math.random() < 0.4) corpseLoot.push(new ItemStack('cheese', 1));
+      if(Math.random() < 0.15) corpseLoot.push(new ItemStack('poop', 1)); // E17
       player.xp += 20;
       logMsg(`<span style='color:#888'>The cow moos one last time.</span>`);
     } else if(e.type === 'pig') {
       if(typeof Sound !== 'undefined' && Sound.oink) Sound.oink();
       // E17: Pig loot — meat plus 15% poop, no gold
-      corpseLoot.push({icon:'🍖', qty:1});
-      if(Math.random() < 0.15) corpseLoot.push({icon:'💩', qty:1}); // E17
+      corpseLoot.push(new ItemStack('meat', 1));
+      if(Math.random() < 0.15) corpseLoot.push(new ItemStack('poop', 1)); // E17
       player.xp += 15;
       logMsg(`<span style='color:#888'>The pig oinks feebly and goes still.</span>`);
     } else if(e.type === 'trex') {
@@ -1740,8 +1749,8 @@
         const angle = (i/6)*Math.PI*2;
         addFloatingText(e.x + Math.cos(angle), e.y + Math.sin(angle), '🩸', '#f00', 18);
       }
-      corpseLoot.push({icon:'🦴', qty: 1+Math.floor(Math.random()*2)});
-      if(Math.random() < 0.3) corpseLoot.push({icon:'🍖', qty:1});
+      corpseLoot.push(new ItemStack('bone', 1+Math.floor(Math.random()*2)));
+      if(Math.random() < 0.3) corpseLoot.push(new ItemStack('meat', 1));
       player.xp += 800;
       addFloatingText(e.x, e.y, '+800xp', '#FFD700', 18);
       checkLevelUp();
@@ -1758,11 +1767,11 @@
         let enemyName = (MONSTER_DEF[e.type] && MONSTER_DEF[e.type].name) || e.type;
         logMsg(`<span style='color:var(--success)'>Your Scavenger instincts kick in! You automatically loot the ${enemyName}.</span>`);
         corpseLoot.forEach(item => {
-          if(item.icon === '🪙') {
+          if(item.def?.pickupTo === 'gp') {
             changeGold(item.qty, { x: e.x, y: e.y, floatText: true });
           } else {
             let slot = inventory.findIndex(s => s === null);
-            if(slot !== -1) { inventory[slot] = {icon: item.icon, qty: item.qty || 1}; }
+            if(slot !== -1) { inventory[slot] = new ItemStack(item.itemName, item.qty || 1); }
             else tryPlaceInInventory(item);
           }
         });
@@ -1836,9 +1845,9 @@
       }
       if(e.stats.hp <= 0) {
         logMsg("<span style='color:#FFD700'>🔥 IFRIT DEFEATED! The fire elemental crumbles to ash!</span>");
-        let ifritLoot = [{icon:'🔥📘', qty:1}];
+        let ifritLoot = [new ItemStack('tomeOfFireball', 1)];
         if(Math.random() < 0.5 && player.level >= 20) {
-          ifritLoot.push({icon:'🧳✨', qty:1});
+          ifritLoot.push(new ItemStack('enchantedValise', 1));
           logMsg("<span style='color:#FFD700'>An Enchanted Valise falls from the ashes!</span>");
         }
         // B37: Scavenger talent auto-loots on kill (no manual toggle required)
@@ -1846,7 +1855,7 @@
           logMsg(`<span style='color:var(--success)'>Your Scavenger instincts kick in! You automatically loot the Ifrit.</span>`);
           ifritLoot.forEach(item => {
             let slot = inventory.findIndex(s => s === null);
-            if(slot !== -1) inventory[slot] = {icon: item.icon, qty: item.qty};
+            if(slot !== -1) inventory[slot] = new ItemStack(item.itemName, item.qty);
             else tryPlaceInInventory(item);
           });
           renderQuickslots(); renderInventory(); updateUI();
@@ -1879,7 +1888,7 @@
         if (pct <= 0.25 && player.knightLimb === 2) { player.knightLimb = 3; logMsg("'I'll bite your legs off!' (Speed Reduced)"); e.stats.speed = 0.1; e.stats.icon = '🦵'; }
         if (e.stats.hp <= 0) {
           logMsg("'Alright, we'll call it a draw!'");
-          createCorpse(e.x, e.y, e.type, e.stats, [{icon:'🦵', qty:1}]);
+          createCorpse(e.x, e.y, e.type, e.stats, [new ItemStack('severedLeg', 1)]);
           enemies.splice(enemyIndex, 1); player.xp += 500; checkLevelUp();
         }
       }
@@ -2514,7 +2523,7 @@
       // If player has the Brass Bottle (from safe cracking quest), genie offers a wish.
       // Otherwise, it attacks as a boss fight.
       if(npc.type === 'genie' && npc.isGenieGuardian) {
-        const hasBottle = inventory.some(i => i && i.icon === '🏺') || inventory.some(i => i && i.icon === '🏺');
+        const hasBottle = inventory.some(i => i && i.itemName === 'brassBottle') || inventory.some(i => i && i.itemName === 'brassBottle');
         if(hasBottle) {
           // Genie offers a wish instead of fighting
           let m = document.getElementById('modal-content');
@@ -2964,7 +2973,7 @@
     let machine = machines.find(m => m.x === mx && m.y === my);
     if(!machine) return;
 
-    let beadCount = inventory.reduce((sum, i) => sum + (i && i.icon === '📿' ? (i.qty || 1) : 0), 0);
+    let beadCount = inventory.reduce((sum, i) => sum + (i && i.itemName === 'orichalcumBead' ? (i.qty || 1) : 0), 0);
 
     let m = document.getElementById('modal-content');
     Sound.machine();
@@ -3009,7 +3018,7 @@
     // Consume beads
     let toConsume = machine.beadCost;
     for(let i = 0; i < inventory.length && toConsume > 0; i++) {
-      if(inventory[i] && inventory[i].icon === '📿') {
+      if(inventory[i] && inventory[i].itemName === 'orichalcumBead') {
         let take = Math.min(inventory[i].qty || 1, toConsume);
         inventory[i].qty = (inventory[i].qty || 1) - take;
         toConsume -= take;
