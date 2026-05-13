@@ -1,7 +1,9 @@
 import os
 import datetime
 
-BUILD_NUMBER = 762
+_HERE = os.path.dirname(os.path.abspath(__file__))
+with open(os.path.join(_HERE, 'VERSION'), 'r', encoding='utf-8') as _vf:
+    BUILD_NUMBER = int(_vf.read().strip())
 GAME_NAME = "NotAName"
 
 def render_title_image(game_name, build_number):
