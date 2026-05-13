@@ -2,7 +2,7 @@
   ╔══════════════════════════════════════════════════════════════╗
   ║  ROGUELIKE: THE ULTIMATE QUEST — Build 762                    ║
   ╠══════════════════════════════════════════════════════════════╣
-  ║  Built: 2026-05-13 15:10:13                                 ║
+  ║  Built: 2026-05-13 15:19:59                                 ║
   ║  Files: 30                                                  ║
   ║  Assets: 1                                                  ║
   ╠══════════════════════════════════════════════════════════════╣
@@ -16,7 +16,7 @@
   ║    items_registry.js (src/items_registry.js, modified: 2026-05-13 12:50)║
   ║    player.js (src/player.js, modified: 2026-05-13 13:09)     ║
   ║    limerick_api.js (src/limerick_api.js, modified: 2026-05-13 13:09)║
-  ║    ui_logic.js (src/ui_logic.js, modified: 2026-05-13 15:04) ║
+  ║    ui_logic.js (src/ui_logic.js, modified: 2026-05-13 15:19) ║
   ║    quests_base.js (src/quests_base.js, modified: 2026-05-13 10:07)║
   ║    quests_monkey_island.js (src/quests_monkey_island.js, modified: 2026-05-13 10:07)║
   ║    quests_monty_python.js (src/quests_monty_python.js, modified: 2026-05-13 10:07)║
@@ -31,12 +31,12 @@
   ║    quest_engine.js (src/quest_engine.js, modified: 2026-05-13 13:10)║
   ║    boundary_data.js (src/boundary_data.js, modified: 2026-05-13 10:07)║
   ║    map.js (src/map.js, modified: 2026-05-13 13:09)           ║
-  ║    mechanics.js (src/mechanics.js, modified: 2026-05-13 13:09)║
-  ║    engine.js (src/engine.js, modified: 2026-05-13 13:09)     ║
-  ║    shop.js (src/shop.js, modified: 2026-05-13 13:09)         ║
+  ║    mechanics.js (src/mechanics.js, modified: 2026-05-13 15:19)║
+  ║    engine.js (src/engine.js, modified: 2026-05-13 15:19)     ║
+  ║    shop.js (src/shop.js, modified: 2026-05-13 15:19)         ║
   ║    webgl_fx.js (src/webgl_fx.js, modified: 2026-05-13 13:10) ║
   ║    render.js (src/render.js, modified: 2026-05-13 13:10)     ║
-  ║    input.js (src/input.js, modified: 2026-05-13 13:10)       ║
+  ║    input.js (src/input.js, modified: 2026-05-13 15:19)       ║
   ╚══════════════════════════════════════════════════════════════╝
 -->
 
@@ -3667,7 +3667,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
 
 // ═══ END: limerick_api.js ═══
 
-// ═══ BEGIN: ui_logic.js (src/ui_logic.js, modified: 2026-05-13 15:04) ═══
+// ═══ BEGIN: ui_logic.js (src/ui_logic.js, modified: 2026-05-13 15:19) ═══
   /*
   UI_LOGIC MODULE – USER INTERFACE, SAVE/LOAD, AND DEBUG SYSTEMS
   ===============================================================
@@ -3693,7 +3693,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
 // === E13: Item Status Glow Helper ===
   function itemHasStatusEffect(icon) {
     if(!icon || typeof ITEM_DEF === 'undefined') return false;
-    const def = ITEM_DEF[icon];
+    const def = ItemDef.byIcon(icon);
     if(!def) return false;
     return !!(def.evadePercent || def.thornsDmg || def.intBonus || def.special ||
               def.magicScaling || def.lightRange || def.manaCost || def.hitRateBonus ||
@@ -4485,11 +4485,11 @@ window.getPlayerCritRate     = getPlayerCritRate;
         const isIdentified = player.identifiedItems && player.identifiedItems.has(item.icon);
         if(hasEffect) {
           slot.style.outline = '2px solid #0f8';
-          if(!isIdentified) slot.title = (ITEM_DEF[item.icon]?.name || item.icon) + ' [Unidentified effects]';
+          if(!isIdentified) slot.title = (item.def?.displayName ?? item.icon) + ' [Unidentified effects]';
         }
       }
       slot.onclick = () => {
-        if(item && ITEM_DEF[item.icon] && ITEM_DEF[item.icon].type === 'bag') return;
+        if(item && item.def && item.def.type === 'bag') return;
         handleItemClick(i);
       };
       // #35: Double-click to use item directly
@@ -4510,8 +4510,8 @@ window.getPlayerCritRate     = getPlayerCritRate;
     menu.id = 'item-ctx-menu';
     menu.style.cssText = `position:fixed; z-index:9999; background:rgba(29,27,32,0.95); border:2px solid var(--secondary);
       border-radius:6px; padding:4px 0; min-width:140px; box-shadow:0 4px 12px rgba(0,0,0,0.5);`;
-    let name = ITEM_DEF[item.icon]?.name || item.icon;
-    const def = ITEM_DEF[item.icon];
+    let name = item.def?.displayName ?? item.icon;
+    const def = item.def;
     const canEquip = def && (def.slot || def.type === 'weapon' || def.type === 'armor');
     const freeInventory = inventory.findIndex(s => s === null);
     menu.innerHTML = `
@@ -4543,7 +4543,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
 
   window.handleInventoryClick = (i) => {
     if(dropMode) { itemsOnGround.push({ x: player.x, y: player.y, icon: inventory[i].icon }); decrementInventory(i); dropMode = false; renderInventory(); return; }
-    if(inventory[i]) logMsg(`Inventory[${i}]: ${ITEM_DEF[inventory[i].icon]?.name || inventory[i].icon}`);
+    if(inventory[i]) logMsg(`Inventory[${i}]: ${inventory[i].def?.name || inventory[i].icon}`);
   };
 
   window._openBagPanel = null;
@@ -4568,7 +4568,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
 
     const sourceArr = openBag.source === 'inv' ? inventory : inventory;
     const bag = sourceArr[openBag.idx];
-    const bagDef = bag && ITEM_DEF[bag.icon];
+    const bagDef = bag && bag.def;
     if(!bag || !bagDef || bagDef.type !== 'bag') {
       panel.style.display = 'none';
       grid.innerHTML = '';
@@ -4610,7 +4610,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
       });
 
       if(entry) {
-        const entryName = ITEM_DEF[entry.icon]?.name || entry.icon;
+        const entryName = entry.def?.displayName ?? entry.icon;
         cell.title = entryName;
         cell.style.cursor = 'grab';
         cell.draggable = true;
@@ -4654,7 +4654,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
       let hotkey = i===9 ? '0' : (i+1);
       slot.innerHTML = `<span class="hotkey">${hotkey}</span>`;
       if(item) {
-        const itemDef = ITEM_DEF[item.icon];
+        const itemDef = item.def;
         const isBag = itemDef && itemDef.type === 'bag';
         slot.innerHTML += item.icon;
         if(item.qty > 1) slot.innerHTML += `<span class="qty">${item.qty}</span>`;
@@ -4667,7 +4667,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
         const isIdentified = player.identifiedItems && player.identifiedItems.has(item.icon);
         if(hasEffect) {
           slot.style.outline = '2px solid #0f8';
-          if(!isIdentified) slot.title = (ITEM_DEF[item.icon]?.name || item.icon) + ' [Unidentified effects]';
+          if(!isIdentified) slot.title = (item.def?.displayName ?? item.icon) + ' [Unidentified effects]';
         }
         slot.ondblclick = () => { if(isBag) openBagFromSource('inv', i); };
         slot.oncontextmenu = (e) => {
@@ -4676,7 +4676,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
         };
       }
       slot.onclick = () => {
-        if(item && ITEM_DEF[item.icon] && ITEM_DEF[item.icon].type === 'bag') return;
+        if(item && item.def && item.def.type === 'bag') return;
         handleItemClick(i);
       };
       grid.appendChild(slot);
@@ -4691,7 +4691,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
       slot.addEventListener('dragover', allowDrop);
       slot.addEventListener('drop', (e) => handleDropItem(e, 'inventory', i));
       if(item) {
-        const itemDef = ITEM_DEF[item.icon];
+        const itemDef = item.def;
         const isBag = itemDef && itemDef.type === 'bag';
         slot.innerHTML = item.icon;
         if(item.qty > 1) slot.innerHTML += `<span class="qty">${item.qty}</span>`;
@@ -4704,22 +4704,22 @@ window.getPlayerCritRate     = getPlayerCritRate;
         const isIdentified = player.identifiedItems && player.identifiedItems.has(item.icon);
         if(hasEffect) {
           slot.style.outline = '2px solid #0f8';
-          if(!isIdentified) slot.title = (ITEM_DEF[item.icon]?.name || item.icon) + ' [Unidentified effects]';
+          if(!isIdentified) slot.title = (item.def?.displayName ?? item.icon) + ' [Unidentified effects]';
         }
       }
       slot.onclick = () => {
-        if(item && ITEM_DEF[item.icon] && ITEM_DEF[item.icon].type === 'bag') {
+        if(item && item.def && item.def.type === 'bag') {
           handleInventoryClick(i);
         } else {
           handleInventoryClick(i);
         }
       };
       slot.ondblclick = () => {
-        if(item && ITEM_DEF[item.icon] && ITEM_DEF[item.icon].type === 'bag') openBagInInventory(i);
+        if(item && item.def && item.def.type === 'bag') openBagInInventory(i);
       };
       slot.oncontextmenu = (e) => {
         e.preventDefault();
-        if(item && ITEM_DEF[item.icon] && ITEM_DEF[item.icon].type === 'bag') {
+        if(item && item.def && item.def.type === 'bag') {
           openBagInInventory(i);
         }
       };
@@ -4885,8 +4885,8 @@ window.getPlayerCritRate     = getPlayerCritRate;
       let tgtItem = tgtArr[targetIdx];
       let srcItem = srcArr[window.draggedItemIdx];
       // Bug 33: If target slot has a bag, try to add dragged item into the bag
-      if(tgtItem && srcItem && ITEM_DEF[tgtItem.icon] && ITEM_DEF[tgtItem.icon].type === 'bag') {
-        let bagDef = ITEM_DEF[tgtItem.icon];
+      if(tgtItem && srcItem && tgtItem.def && tgtItem.def.type === 'bag') {
+        let bagDef = tgtItem.def;
         if(!tgtItem.contents) tgtItem.contents = new Array(bagDef.bagSlots ?? 3).fill(null);
         let freeSlot = tgtItem.contents.findIndex(s => s === null);
         if(freeSlot !== -1) {
@@ -4901,7 +4901,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
       }
       // Bug 34: If same icon and stackable, merge up to maxStack
       if(tgtItem && srcItem && tgtItem.itemName === srcItem.itemName) {
-        let def = ITEM_DEF[tgtItem.icon];
+        let def = tgtItem.def;
         if(def && def.stackable) {
           let maxStack = def.maxStack ?? 10;
           let canAdd = maxStack - (tgtItem.qty ?? 1);
@@ -5000,7 +5000,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
 
     const item = srcArr[fromIdx];
     if (!item) return;
-    const def = ITEM_DEF[item.icon];
+    const def = item.def;
     if (!def) return;
 
     // Check slot compatibility
@@ -5213,7 +5213,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
     [inventory, inventory].forEach(arr => {
       arr.forEach(item => {
         if(!item) return;
-        let def = ITEM_DEF[item.icon];
+        let def = item.def;
         if(!def) return;
         if(def.type === "weapon" && def.baseDmg && def.baseDmg > currentBaseDmg) {
           if (considerEquip) {
@@ -5850,7 +5850,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
     _debugSelectedItem = null;
   };
   window.debugAddItem = (icon) => {
-    let def = ITEM_DEF[icon];
+    let def = ItemDef.byIcon(icon);
     if (!def) { logMsg(`Unknown item: "${icon}"`); return; }
     let slot = inventory.findIndex(i => i === null);
     if (slot !== -1) { inventory[slot] = { icon }; }
@@ -12462,7 +12462,7 @@ window.BOUNDARY_DATA = {
 
 // ═══ END: map.js ═══
 
-// ═══ BEGIN: mechanics.js (src/mechanics.js, modified: 2026-05-13 13:09) ═══
+// ═══ BEGIN: mechanics.js (src/mechanics.js, modified: 2026-05-13 15:19) ═══
 /*
   MECHANICS MODULE – INVENTORY, ITEMS, AND SPECIAL ACTIONS
   =========================================================
@@ -12543,11 +12543,11 @@ window.BOUNDARY_DATA = {
     let m;
     if((m = action.match(/^USE\s+'?(.+?)'?$/i))) {
       const name = m[1].toLowerCase();
-      let idx = inventory.findIndex(item => item && ITEM_DEF[item.icon] && ITEM_DEF[item.icon].name.toLowerCase() === name);
+      let idx = inventory.findIndex(item => item && item.def && item.def.displayName.toLowerCase() === name);
       if(idx === -1) idx = inventory.findIndex(item => item && item.icon.toLowerCase().includes(name));
       if(idx !== -1) { handleItemClick(idx); return; }
       // Try inventory
-      let pidx = inventory.findIndex(item => item && ITEM_DEF[item.icon] && ITEM_DEF[item.icon].name.toLowerCase() === name);
+      let pidx = inventory.findIndex(item => item && item.def && item.def.displayName.toLowerCase() === name);
       if(pidx !== -1) { handleInventoryUse(pidx); }
     } else if((m = action.match(/^CAST\s+(\w+)$/i))) {
       castSpell(m[1].toLowerCase());
@@ -12568,7 +12568,7 @@ window.BOUNDARY_DATA = {
   }
   function handleInventoryUse(idx) {
     let item = inventory[idx]; if(!item) return;
-    let def = ITEM_DEF[item.icon]; if(!def) return;
+    let def = item.def; if(!def) return;
     // Move to free inventory slot, then use
     let freeSlot = inventory.findIndex(s => s === null);
     if(freeSlot !== -1) { inventory[freeSlot] = item; inventory[idx] = null; handleItemClick(freeSlot); }
@@ -12580,7 +12580,7 @@ window.BOUNDARY_DATA = {
     let arr = source === 'inv' ? inventory : inventory;
     let item = arr[idx];
     if(!item) return;
-    let def = ITEM_DEF[item.icon];
+    let def = item.def;
     if(!def || def.type !== 'bag') return;
     // Initialize contents array if new bag
     if(!item.contents) {
@@ -12619,7 +12619,7 @@ window.BOUNDARY_DATA = {
     if(slot !== -1) {
       inventory[slot] = ItemStack.fromIcon(taken.icon, taken.qty ?? 1);
       bag.contents[itemIdx] = null;
-      let def = ITEM_DEF[taken.icon];
+      let def = taken.def;
       logMsg(`Took ${taken.icon} ${def ? def.name : ''} from bag.`);
     } else {
       // Try inventory
@@ -12666,7 +12666,7 @@ window.BOUNDARY_DATA = {
       isIdentifying = false;
       if(!player.identifiedItems) player.identifiedItems = new Set();
       player.identifiedItems.add(itemObj.icon);
-      const identDef = ITEM_DEF[itemObj.icon];
+      const identDef = itemObj.def;
       logMsg(`<span style='color:#4af'>✨ Identified: ${identDef ? identDef.name : itemObj.icon}!</span>`);
       if(identDef) {
         const details = [];
@@ -12745,7 +12745,7 @@ window.BOUNDARY_DATA = {
     }
 
     // Standard behavior...
-    let def = ITEM_DEF[itemObj.icon];
+    let def = itemObj.def;
     if(!def) {
       logMsg(`<span style='color:var(--warning)'>Unknown item: ${itemObj.icon}</span>`);
       return;
@@ -13061,7 +13061,7 @@ window.BOUNDARY_DATA = {
            logMsg("TRAPPED BY GREED!"); isDead = true; die(); return;
         }
         
-        let def = ITEM_DEF[item.icon];
+        let def = item.def;
         if(!def) {
           // Unknown item — still pick it up as a generic misc item
           def = { name: item.icon, type: "misc", stackable: false, maxGP: 1 };
@@ -13160,7 +13160,7 @@ window.BOUNDARY_DATA = {
 
   function getEquippedWeaponDef() {
     let weaponIcon = player.equipped && player.equipped.leftHand;
-    return weaponIcon ? ITEM_DEF[weaponIcon] : null;
+    return weaponIcon ? ItemDef.byIcon(weaponIcon) : null;
   }
 
   // #16: NPCs protected from melee are also protected from ranged and magic
@@ -13724,7 +13724,7 @@ window.BOUNDARY_DATA = {
 
 // ═══ END: mechanics.js ═══
 
-// ═══ BEGIN: engine.js (src/engine.js, modified: 2026-05-13 13:09) ═══
+// ═══ BEGIN: engine.js (src/engine.js, modified: 2026-05-13 15:19) ═══
   /*
   ENGINE MODULE – CORE GAME LOOPS, AI, AND COMBAT
   ================================================
@@ -13886,7 +13886,7 @@ window.BOUNDARY_DATA = {
         changeGold(item.qty, { x: c.x, y: c.y, floatText: true });
       } else {
         let placed = false;
-        let def = ITEM_DEF[item.icon];
+        let def = item.def;
         if(def && def.stackable) {
           let maxStack = def.maxStack ?? 10;
           let stackSlot = inventory.find(s => s && s.itemName === item.itemName && (s.qty ?? 1) < maxStack);
@@ -13918,7 +13918,7 @@ window.BOUNDARY_DATA = {
 
   // Try to place an item in inventory or inside a bag
   function tryPlaceInInventory(item) {
-    const def = ITEM_DEF[item.icon] || { stackable:false };
+    const def = item.def || { stackable:false };
     const qty = item.qty ?? 1;
 
     // Stack in existing inventory slots first
@@ -13946,8 +13946,8 @@ window.BOUNDARY_DATA = {
     // Inside a bag
     for(let i = 0; i < inventory.length; i++) {
       let bag = inventory[i];
-      if(bag && ITEM_DEF[bag.icon] && ITEM_DEF[bag.icon].type === 'bag') {
-        if(!bag.contents) bag.contents = new Array(ITEM_DEF[bag.icon].bagSlots ?? 3).fill(null);
+      if(bag && bag.def && bag.def.type === 'bag') {
+        if(!bag.contents) bag.contents = new Array(bag.def.bagSlots ?? 3).fill(null);
         if(def.stackable) {
           const maxStack = def.maxStack ?? 10;
           for(let bi = 0; bi < bag.contents.length; bi++) {
@@ -13996,7 +13996,7 @@ window.BOUNDARY_DATA = {
     html += `<div id="loot-grid" style="display:grid; grid-template-columns: repeat(${Math.min(c.loot.length, 6)}, 1fr); gap:4px; margin:10px 0;">`;
 
     c.loot.forEach((item, idx) => {
-      let def = ITEM_DEF[item.icon];
+      let def = item.def;
       let name = def ? def.name : item.icon;
       let displayQty = (item.itemName === 'gold') ? `${item.qty}g` : (item.qty > 1 ? `x${item.qty}` : '');
       html += `<div draggable="true" id="loot-item-${idx}"
@@ -15056,7 +15056,7 @@ window.BOUNDARY_DATA = {
       let stolen = inventory[idx];
       stolenItems.push(stolen);
       inventory[idx] = null;
-      logMsg(`<span style='color:var(--error)'>The Thief pickpocketed your ${ITEM_DEF[stolen.icon].name}!</span>`);
+      logMsg(`<span style='color:var(--error)'>The Thief pickpocketed your ${stolen.def.displayName}!</span>`);
       // #13: Play internal dialog voice line on pickpocket
       let stolenVoices = ['voice_internal_stolen_0', 'voice_internal_stolen_1', 'voice_internal_stolen_2'];
       if(typeof Sound !== 'undefined' && Sound.playVoice) {
@@ -15066,7 +15066,7 @@ window.BOUNDARY_DATA = {
       if(typeof Sound !== 'undefined' && Sound.playSample) {
         Sound.playSample('yoink', 0.7);
       }
-      document.getElementById('modal-content').innerHTML = `<h2>🧤 PICKPOCKETED</h2>${modalPortraitHTML('npc_thief_modal', '🧤')}<p>The Thief stole your <strong>${ITEM_DEF[stolen.icon].name}</strong>!</p><button onclick="hideOverlay()">Drat!</button>`;
+      document.getElementById('modal-content').innerHTML = `<h2>🧤 PICKPOCKETED</h2>${modalPortraitHTML('npc_thief_modal', '🧤')}<p>The Thief stole your <strong>${stolen.def.displayName}</strong>!</p><button onclick="hideOverlay()">Drat!</button>`;
       showOverlay();
       renderQuickslots(); updateUI();
     }
@@ -16036,8 +16036,8 @@ window.BOUNDARY_DATA = {
     
     // Crown of Thorns — thorns damage to attacker
     let headSlot = player.equipped.head;
-    if(headSlot && ITEM_DEF[headSlot] && ITEM_DEF[headSlot].thornsDmg) {
-      let thorns = ITEM_DEF[headSlot].thornsDmg;
+    if(headSlot && ItemDef.byIcon(headSlot) && ItemDef.byIcon(headSlot).thornsDmg) {
+      let thorns = ItemDef.byIcon(headSlot).thornsDmg;
       e.stats.hp -= thorns;
       addFloatingText(e.x, e.y, `-${thorns}🌿`, "#8f8", 14);
       logMsg(`Crown of Thorns reflects ${thorns} damage!`);
@@ -16902,7 +16902,7 @@ window.BOUNDARY_DATA = {
 
 // ═══ END: engine.js ═══
 
-// ═══ BEGIN: shop.js (src/shop.js, modified: 2026-05-13 13:09) ═══
+// ═══ BEGIN: shop.js (src/shop.js, modified: 2026-05-13 15:19) ═══
   /*
   SHOP MODULE – NPC MERCHANTS, TRADING, AND QUEST INTERACTIONS
   =============================================================
@@ -17131,7 +17131,7 @@ window.BOUNDARY_DATA = {
   };
 
   function addPurchasedItem(icon, qty = 1) {
-    let def = ITEM_DEF[icon] || {};
+    let def = ItemDef.byIcon(icon) || {};
     let remaining = qty;
     let nextInventory = inventory.map(item => item ? { ...item } : null);
     if(def.stackable) {
@@ -17453,7 +17453,7 @@ window.BOUNDARY_DATA = {
     }
     changeGold(-1);
     player.identifiedItems.add(icon);
-    const def = ITEM_DEF[icon];
+    const def = ItemDef.byIcon(icon);
     logMsg(`<span style='color:var(--success)'>🧔 Cain identifies ${icon} ${def ? def.name : 'item'} for 1g.</span>`);
     if(typeof awardAchievement === 'function') awardAchievement('prophet');
     renderQuickslots();
@@ -18002,7 +18002,7 @@ window.BOUNDARY_DATA = {
          const unidentified = getUnidentifiedIcons();
          const oneByOneHtml = unidentified.length
            ? unidentified.map(icon => {
-               const def = ITEM_DEF[icon];
+               const def = ItemDef.byIcon(icon);
                return `<button onclick="identifyOneItem('${icon}')" style="width:100%; margin-top:4px;">Identify ${icon} ${def ? def.name : 'Item'} (1g)</button>`;
              }).join('')
            : `<div style="margin-top:6px; color:#888; font-size:12px;">Everything in your inventory and inventory is already identified.</div>`;
@@ -18088,7 +18088,7 @@ window.BOUNDARY_DATA = {
       let hasSellable = false;
       inventory.forEach((it, idx) => {
         if(it) {
-          let def = ITEM_DEF[it.icon];
+          let def = it.def;
           if(def && def.maxGP > 0) {
             hasSellable = true;
             let count = inventory.filter(i => i && i.icon === it.icon).length;
@@ -18187,7 +18187,7 @@ window.BOUNDARY_DATA = {
       openDiscworldArcanaBanter(icon, finalCost, type, qty);
       return;
     }
-    if(player.gp < finalCost) return showInsufficientFunds(shopType, finalCost, ITEM_DEF[icon]?.name || 'that');
+    if(player.gp < finalCost) return showInsufficientFunds(shopType, finalCost, ItemDef.byIcon(icon)?.displayName ?? 'that');
     // Prophylactic easter egg
     if(icon === ItemDef.iconOf('prophylactic')) { larryEasterEgg(0); return; }
     if(!addPurchasedItem(icon, qty)) { logMsg("No room! (Inventory full)"); return; }
@@ -18198,7 +18198,7 @@ window.BOUNDARY_DATA = {
   window.sell = function(idx, type) {
     let item = inventory[idx];
     if(!item) return;
-    let def = ITEM_DEF[item.icon];
+    let def = item.def;
     if(def && def.maxGP > 0) {
       changeGold(def.maxGP);
       decrementItem(idx);
@@ -18209,7 +18209,7 @@ window.BOUNDARY_DATA = {
   window.buyStolen = function(idx) {
     let it = stolenItems[idx];
     if(!it) return;
-    let def = ITEM_DEF[it.icon];
+    let def = it.def;
     let cost = def ? (def.maxGP ?? 100) * 2 : 200;
     if(player.gp < cost) return showInsufficientFunds('fence', cost, def?.name || 'that item');
     if(!addPurchasedItem(it.icon, it.qty ?? 1)) { logMsg("Inventory full!"); return; }
@@ -18274,7 +18274,7 @@ window.BOUNDARY_DATA = {
   window.openDiscworldArcanaBanter = function(icon, cost, type, qty = 1) {
     let m = document.getElementById('modal-content');
     if(!m) return;
-    let itemName = ITEM_DEF[icon]?.name || 'arcane nonsense';
+    let itemName = ItemDef.byIcon(icon)?.displayName ?? 'arcane nonsense';
     let canAfford = player.gp >= cost;
     if(!canAfford) showInsufficientFunds('wizard', cost, itemName);
     awardAchievement('granny_weatherwax');
@@ -18296,7 +18296,7 @@ window.BOUNDARY_DATA = {
 
   window.confirmDiscworldArcanaBuy = function(icon, cost, type, qty = 1) {
     if(player.gp < cost) {
-      showInsufficientFunds('wizard', cost, ITEM_DEF[icon]?.name || 'that');
+      showInsufficientFunds('wizard', cost, ItemDef.byIcon(icon)?.displayName ?? 'that');
       openDiscworldArcanaBanter(icon, cost, type, qty);
       return;
     }
@@ -18305,7 +18305,7 @@ window.BOUNDARY_DATA = {
       return;
     }
     changeGold(-cost);
-    logMsg(`<span style='color:var(--warning)'>The wizard sells you ${ITEM_DEF[icon]?.name || icon}. Somewhere, Granny clicks her tongue hard enough to bend iron.</span>`);
+    logMsg(`<span style='color:var(--warning)'>The wizard sells you ${ItemDef.byIcon(icon)?.displayName ?? icon}. Somewhere, Granny clicks her tongue hard enough to bend iron.</span>`);
     openStore(type);
     storeTab('buy', type);
   };
@@ -19169,7 +19169,7 @@ window.BOUNDARY_DATA = {
       openShop('fighting_master');
       return;
     }
-    const def = ITEM_DEF[lh];
+    const def = ItemDef.byIcon(lh);
     if(!def) { openShop('fighting_master'); return; }
     logMsg(`<span style='color:#fd0'>The Weapon Master examines your ${def.name}: Base damage ${def.baseDmg ?? 0}, ${def.ranged ? 'Ranged, ' : ''}${def.magicScaling ? 'Magic scaling: '+def.magicScaling : 'no magic scaling'}. "${(def.baseDmg ?? 0) >= 8 ? 'Now THAT is a weapon.' : (def.baseDmg ?? 0) >= 4 ? 'Serviceable.' : 'You call that a weapon?'}"</span>`);
     openShop('fighting_master');
@@ -22633,7 +22633,7 @@ window.mapSweepTransition = function(direction, callback) {
 
 // ═══ END: render.js ═══
 
-// ═══ BEGIN: input.js (src/input.js, modified: 2026-05-13 13:10) ═══
+// ═══ BEGIN: input.js (src/input.js, modified: 2026-05-13 15:19) ═══
   /*
   INPUT MODULE – KEYBOARD, MOUSE, AND GAME LOOP MANAGEMENT
   =========================================================
@@ -23086,7 +23086,7 @@ const hBtn = document.getElementById('hamburgerBtn');
           let nonEmpty = inventory.filter(i => i !== null);
           debugLog(`Inventory: ${nonEmpty.length} items`);
           nonEmpty.forEach((item) => {
-            let name = ITEM_DEF[item.icon] ? ITEM_DEF[item.icon].name : item.icon;
+            let name = item.def ? item.def.displayName : item.icon;
             debugLog(`  ${item.icon} ${name} x${item.qty ?? 1}`);
           });
           break;
@@ -23669,7 +23669,7 @@ const hBtn = document.getElementById('hamburgerBtn');
             const item = inventory[i];
             if(!item) continue;
             if(item.icon === query) { foundIdx = i; break; }
-            const def = ITEM_DEF[item.icon];
+            const def = item.def;
             if(def && def.name.toLowerCase().includes(query)) { foundIdx = i; break; }
           }
           if(foundIdx === -1) {
@@ -24260,7 +24260,7 @@ const hBtn = document.getElementById('hamburgerBtn');
             if (icon) {
               itemsOnGround.push({ x: player.x, y: player.y, icon });
               player.equipped[dragData.slot] = null;
-              logMsg(`You drop the ${ITEM_DEF[icon]?.name || icon} on the ground.`);
+              logMsg(`You drop the ${ItemDef.byIcon(icon)?.displayName ?? icon} on the ground.`);
               swapEquip(-1, dragData.slot);
               updateUI();
               if (typeof renderEquipModal === 'function') renderEquipModal();
@@ -24462,7 +24462,7 @@ const hBtn = document.getElementById('hamburgerBtn');
       if(!item) return;
       let existing = document.getElementById('floor-ctx-menu');
       if(existing) existing.remove();
-      let def = ITEM_DEF[item.icon];
+      let def = item.def;
       let name = def ? def.name : item.icon;
       let menu = document.createElement('div');
       menu.id = 'floor-ctx-menu';

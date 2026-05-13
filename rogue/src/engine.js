@@ -159,7 +159,7 @@
         changeGold(item.qty, { x: c.x, y: c.y, floatText: true });
       } else {
         let placed = false;
-        let def = ITEM_DEF[item.icon];
+        let def = item.def;
         if(def && def.stackable) {
           let maxStack = def.maxStack ?? 10;
           let stackSlot = inventory.find(s => s && s.itemName === item.itemName && (s.qty ?? 1) < maxStack);
@@ -191,7 +191,7 @@
 
   // Try to place an item in inventory or inside a bag
   function tryPlaceInInventory(item) {
-    const def = ITEM_DEF[item.icon] || { stackable:false };
+    const def = item.def || { stackable:false };
     const qty = item.qty ?? 1;
 
     // Stack in existing inventory slots first
@@ -219,8 +219,8 @@
     // Inside a bag
     for(let i = 0; i < inventory.length; i++) {
       let bag = inventory[i];
-      if(bag && ITEM_DEF[bag.icon] && ITEM_DEF[bag.icon].type === 'bag') {
-        if(!bag.contents) bag.contents = new Array(ITEM_DEF[bag.icon].bagSlots ?? 3).fill(null);
+      if(bag && bag.def && bag.def.type === 'bag') {
+        if(!bag.contents) bag.contents = new Array(bag.def.bagSlots ?? 3).fill(null);
         if(def.stackable) {
           const maxStack = def.maxStack ?? 10;
           for(let bi = 0; bi < bag.contents.length; bi++) {
@@ -269,7 +269,7 @@
     html += `<div id="loot-grid" style="display:grid; grid-template-columns: repeat(${Math.min(c.loot.length, 6)}, 1fr); gap:4px; margin:10px 0;">`;
 
     c.loot.forEach((item, idx) => {
-      let def = ITEM_DEF[item.icon];
+      let def = item.def;
       let name = def ? def.name : item.icon;
       let displayQty = (item.itemName === 'gold') ? `${item.qty}g` : (item.qty > 1 ? `x${item.qty}` : '');
       html += `<div draggable="true" id="loot-item-${idx}"
@@ -1329,7 +1329,7 @@
       let stolen = inventory[idx];
       stolenItems.push(stolen);
       inventory[idx] = null;
-      logMsg(`<span style='color:var(--error)'>The Thief pickpocketed your ${ITEM_DEF[stolen.icon].name}!</span>`);
+      logMsg(`<span style='color:var(--error)'>The Thief pickpocketed your ${stolen.def.displayName}!</span>`);
       // #13: Play internal dialog voice line on pickpocket
       let stolenVoices = ['voice_internal_stolen_0', 'voice_internal_stolen_1', 'voice_internal_stolen_2'];
       if(typeof Sound !== 'undefined' && Sound.playVoice) {
@@ -1339,7 +1339,7 @@
       if(typeof Sound !== 'undefined' && Sound.playSample) {
         Sound.playSample('yoink', 0.7);
       }
-      document.getElementById('modal-content').innerHTML = `<h2>🧤 PICKPOCKETED</h2>${modalPortraitHTML('npc_thief_modal', '🧤')}<p>The Thief stole your <strong>${ITEM_DEF[stolen.icon].name}</strong>!</p><button onclick="hideOverlay()">Drat!</button>`;
+      document.getElementById('modal-content').innerHTML = `<h2>🧤 PICKPOCKETED</h2>${modalPortraitHTML('npc_thief_modal', '🧤')}<p>The Thief stole your <strong>${stolen.def.displayName}</strong>!</p><button onclick="hideOverlay()">Drat!</button>`;
       showOverlay();
       renderQuickslots(); updateUI();
     }
@@ -2309,8 +2309,8 @@
     
     // Crown of Thorns — thorns damage to attacker
     let headSlot = player.equipped.head;
-    if(headSlot && ITEM_DEF[headSlot] && ITEM_DEF[headSlot].thornsDmg) {
-      let thorns = ITEM_DEF[headSlot].thornsDmg;
+    if(headSlot && ItemDef.byIcon(headSlot) && ItemDef.byIcon(headSlot).thornsDmg) {
+      let thorns = ItemDef.byIcon(headSlot).thornsDmg;
       e.stats.hp -= thorns;
       addFloatingText(e.x, e.y, `-${thorns}🌿`, "#8f8", 14);
       logMsg(`Crown of Thorns reflects ${thorns} damage!`);
