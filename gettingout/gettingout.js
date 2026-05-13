@@ -15,8 +15,8 @@ import {
   extractTitle,
   extractFlash,
 } from './vpnSession.js';
-import { GOContactSearch } from './GOContactSearch.js';
-import { GOMessaging }    from './GOMessaging.js';
+import { GOContactList } from './GOContactList.js';
+import { GOMessaging }   from './GOMessaging.js';
 
 // --- Site-specific config ---------------------------------------------------
 const LOGIN_URL    = 'https://sso.gtlconnect.com/users/sign_in';
@@ -88,34 +88,55 @@ async function login(sess) {
   return { finalUrl, finalHtml };
 }
 
-async function demoGOContactSearch(sess /*, postLogin */) {
-  // Demo of GOContactSearch: list states, list Indiana facilities, run a
-  // 3-character inmate-name search against the first facility, and print
-  // a summary. The class talks to public pay.gettingout.com endpoints, so
-  // the SSO login above isn't strictly required — it's left in as a smoke
-  // test of the broader flow.
-  const search = new GOContactSearch(sess);
+async function demoGOContactList(sess /*, postLogin */) {
+  // Demo of GOContactList: find KENNETH KIMES at Richard J Donovan
+  // Correctional Facility (RJD, CA, id 273921) and add him to Rosie's
+  // contact list if he isn't already there. Search hits the public
+  // pay.gettingout.com endpoints; addContact hits messaging.gtlconnect.com
+  // and needs the OAuth Bearer token, so we wire a GOMessaging instance
+  // through the constructor.
+  const msg  = new GOMessaging(sess);
+  const list = new GOContactList(sess, { messaging: msg });
 
-  console.log('\n[*] GOContactSearch.getStates()');
-  const states = await search.getStates();
-  console.log(`[+] ${states.length} states`);
-  console.log(`     first 3: ${JSON.stringify(states.slice(0, 3))}`);
-  const indiana = states.find(s => s.value === 'IN');
-  console.log(`     Indiana: ${JSON.stringify(indiana)}`);
+  console.log('\n[*] GOContactList.getFacilities(\'CA\')');
+  const facilities = await list.getFacilities('CA');
+  const rjd = facilities.find(f => /donovan|RJD/i.test(f.label));
+  if (!rjd) throw new Error('RJD facility not found in CA list');
+  console.log(`[+] ${JSON.stringify(rjd)}`);
 
-  console.log(`\n[*] GOContactSearch.getFacilities('IN')`);
-  const facilities = await search.getFacilities('IN');
-  console.log(`[+] ${facilities.length} facilities in IN`);
-  console.log(`     first 3: ${JSON.stringify(facilities.slice(0, 3), null, 2)}`);
-
-  const fac = facilities[0];
-  const query = 'smi';
-  console.log(`\n[*] GOContactSearch.searchInmates('IN', ${fac.value} /* ${fac.label} */, '${query}')`);
-  const inmates = await search.searchInmates('IN', fac.value, query);
+  const query = 'kim';
+  console.log(`\n[*] GOContactList.searchInmates('CA', ${rjd.value}, '${query}')`);
+  const inmates = await list.searchInmates('CA', rjd.value, query);
   console.log(`[+] ${inmates.length} inmate(s) returned`);
-  for (const i of inmates) {
-    console.log(`     ${i.fullName.padEnd(24)} booking=${i.bookingNumber}  date=${i.bookingDate}  dob=${i.dob}`);
+  const target = inmates.find(i =>
+    i.lastName === 'KIMES' && /^KEN(NETH)?$/i.test(i.firstName ?? '')
+  );
+  if (!target) {
+    console.log('[!] no KENNETH KIMES in result set — aborting');
+    return;
   }
+  console.log(`     match: ${target.fullName.padEnd(24)} id=${target.contactId} fac=${target.facilityId} booking=${target.bookingNumber} dob=${target.dob}`);
+
+  // Idempotency: skip add if Kenneth is already on the contact list.
+  // We match by name, NOT by id — search-side `contactId` (pay.gettingout.com)
+  // and contact-list-side `contactId` (messaging.gtlconnect.com) live in
+  // different numeric universes. Names are stable across both APIs (both
+  // return uppercase first_name/last_name).
+  console.log('\n[*] GOMessaging.authenticate() + getContacts() (idempotency check)');
+  await msg.authenticate();
+  const existing = await msg.getContacts();
+  const already = existing.find(c =>
+    (c.firstName ?? '').toUpperCase() === (target.firstName ?? '').toUpperCase() &&
+    (c.lastName  ?? '').toUpperCase() === (target.lastName  ?? '').toUpperCase()
+  );
+  if (already) {
+    console.log(`[=] already on contact list: ${JSON.stringify(already)}`);
+    return;
+  }
+
+  console.log(`\n[*] GOContactList.addContact(${target.fullName}) [STATE CHANGE]`);
+  const result = await list.addContact(target, { iAcceptStateChange: true });
+  console.log(`[+] addContact response: ${JSON.stringify(result).slice(0, 400)}`);
 }
 
 async function demoGOMessaging(sess, _postLogin, { spendOk } = {}) {
@@ -167,8 +188,8 @@ async function demoGOMessaging(sess, _postLogin, { spendOk } = {}) {
 }
 
 const DEMOS = {
-  GOContactSearch: demoGOContactSearch,
-  GOMessaging:     demoGOMessaging,
+  GOContactList: demoGOContactList,
+  GOMessaging:   demoGOMessaging,
 };
 
 function parseArgs(argv) {
@@ -193,7 +214,8 @@ function printHelp() {
   console.log(`Usage: node gettingout.js --demo <${names}> [--spend-ok]`);
   console.log('');
   console.log('Demos:');
-  console.log('  GOContactSearch  Public pay.gettingout.com search (states → facilities → inmates).');
+  console.log('  GOContactList    Search inmates and add to contact list');
+  console.log('                   (finds Kenneth Kimes at RJD and adds him if not already present).');
   console.log('  GOMessaging      Authenticated message-center walkthrough');
   console.log('                   (contacts, balance, incoming messages; sends only with --spend-ok).');
   console.log('');
