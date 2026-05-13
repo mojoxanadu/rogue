@@ -6,7 +6,7 @@
   start‑screen animation, quest timer ticker, and status‑based movement modifications.
 
   Key responsibilities:
-  1. Keyboard input routing – WASD/arrow movement, inventory ('i'), equipment ('e'),
+  1. Keyboard input routing – WASD/arrow movement, inventoryx ('i'), equipment ('e'),
      spells ('f'), rest ('z'), attack (space), modal toggles, number‑key item clicks
   2. Mouse event handling – hamburger menu toggle, start button click
   3. Game loop timers – quest timer countdown, damage tint fade, level‑up flash decay
@@ -221,7 +221,7 @@ const hBtn = document.getElementById('hamburgerBtn');
       currentLevel,
       currentScene,
       player: _debugDeepClone(player),
-      inventory: _debugDeepClone(inventory),
+      inventoryx: _debugDeepClone(inventoryx),
       inventoryx: _debugDeepClone(inventoryx),
       theMap: _debugDeepClone(theMap),
       darkMap: _debugDeepClone(darkMap),
@@ -247,8 +247,6 @@ const hBtn = document.getElementById('hamburgerBtn');
     mapH = snap.mapH;
 
     Object.assign(player, snap.player || {});
-    inventory.length = 0;
-    (snap.inventory || []).forEach(v => inventory.push(v));
     inventoryx.length = 0;
     (snap.inventoryx || []).forEach(v => inventoryx.push(v));
 
@@ -395,8 +393,8 @@ const hBtn = document.getElementById('hamburgerBtn');
           debugLog('  /restart                  - Restart game (confirm)');
           debugLog('  /clear                    - Clear console');
           debugLog('  /stats                    - Show player stats');
-          debugLog('  /inventory                - List inventory items');
-          debugLog('  /use <item>               - Use inventory item');
+          debugLog('  /inventoryx                - List inventoryx items');
+          debugLog('  /use <item>               - Use inventoryx item');
           debugLog('  /quests                   - Quest count summary');
           debugLog('');
           debugLog('--- Movement / MUD ---');
@@ -450,7 +448,7 @@ const hBtn = document.getElementById('hamburgerBtn');
           debugLog(`GP ${player.gp} | STR ${player.stats.str} | DEX ${player.stats.dex} | INT ${player.stats.int}`);
           break;
         case '/inventory':
-          let nonEmpty = inventory.filter(i => i !== null);
+          let nonEmpty = inventoryx.filter(i => i !== null);
           debugLog(`Inventory: ${nonEmpty.length} items`);
           nonEmpty.forEach((item) => {
             let name = ITEM_DEF[item.icon] ? ITEM_DEF[item.icon].name : item.icon;
@@ -774,8 +772,8 @@ const hBtn = document.getElementById('hamburgerBtn');
           if(!icon) { debugLog('Usage: /loot add <icon> [qty]'); break; }
           let added = 0;
           for(let i = 0; i < qty; i++) {
-            const slot = inventory.findIndex(s => s === null);
-            if(slot !== -1) { inventory[slot] = { icon, qty: 1 }; added++; continue; }
+            const slot = inventoryx.findIndex(s => s === null);
+            if(slot !== -1) { inventoryx[slot] = { icon, qty: 1 }; added++; continue; }
             if(typeof tryPlaceInPouch === 'function' && tryPlaceInPouch({ icon, qty: 1 })) { added++; continue; }
             break;
           }
@@ -1030,21 +1028,21 @@ const hBtn = document.getElementById('hamburgerBtn');
             break;
           }
           const query = args.join(' ').toLowerCase();
-          // Find item in inventory
+          // Find item in inventoryx
           let foundIdx = -1;
-          for(let i = 0; i < inventory.length; i++) {
-            const item = inventory[i];
+          for(let i = 0; i < inventoryx.length; i++) {
+            const item = inventoryx[i];
             if(!item) continue;
             if(item.icon === query) { foundIdx = i; break; }
             const def = ITEM_DEF[item.icon];
             if(def && def.name.toLowerCase().includes(query)) { foundIdx = i; break; }
           }
           if(foundIdx === -1) {
-            debugLog(`No item matching '${query}' in inventory.`);
+            debugLog(`No item matching '${query}' in inventoryx.`);
             break;
           }
           if(typeof handleItemClick === 'function') {
-            const usedIcon = inventory[foundIdx]?.icon || query;
+            const usedIcon = inventoryx[foundIdx]?.icon || query;
             handleItemClick(foundIdx);
             debugLog(`Using ${usedIcon}`);
           } else {
@@ -1309,8 +1307,8 @@ const hBtn = document.getElementById('hamburgerBtn');
         player.hp += 5;
         player.equipped.leftHand = '🗡️';   // Sword
         player.equipped.feet = '🥾';         // Fighter Boots (+2 defense)
-        if (!player.inventory) player.inventory = [];
-        player.inventory.push({ icon: '🥾', qty: 1 });
+        if (!player.inventoryx) player.inventoryx = [];
+        player.inventoryx.push({ icon: '🥾', qty: 1 });
         logMsg && logMsg("You are a Fighter! +5 HP, Sword equipped, Fighter Boots worn.");
       } else if (selClass === 'spellcaster') {
         player.startingClass = 'spellcaster';
@@ -1319,8 +1317,8 @@ const hBtn = document.getElementById('hamburgerBtn');
         if (!player.spells) player.spells = {};
         if (!player.spells.illuminate) player.spells.illuminate = { level: 1 };
         player.equipped.chest = '🥻';        // Robe
-        if (!player.inventory) player.inventory = [];
-        player.inventory.push({ icon: '🥻', qty: 1 });
+        if (!player.inventoryx) player.inventoryx = [];
+        player.inventoryx.push({ icon: '🥻', qty: 1 });
         logMsg && logMsg("You are a Spellcaster! 2 MP, Illumination known, Robe equipped.");
       } else if (selClass === 'rogue') {
         player.startingClass = 'rogue';
@@ -1340,7 +1338,7 @@ const hBtn = document.getElementById('hamburgerBtn');
       debugLog("Calculating FOV...");
       calculateFOV();
       
-      debugLog("Rendering inventory...");
+      debugLog("Rendering inventoryx...");
       renderInventory();
       
       debugLog("Rendering inventoryx...");
@@ -1460,7 +1458,7 @@ const hBtn = document.getElementById('hamburgerBtn');
     "Somewhere out there, a Grue is waiting politely.",
     "A wandering merchant prepares expensive small talk.",
     "You feel lucky. This is usually a bad sign.",
-    "The stars align. Your inventory does not.",
+    "The stars align. Your inventoryx does not.",
     "A faint breeze carries the smell of dungeon mold.",
     "Your next heroic plan is 80% confidence, 20% panic.",
     "The moon rises. So do your chances of bad decisions.",
@@ -1611,7 +1609,7 @@ const hBtn = document.getElementById('hamburgerBtn');
         else if(window._rangedTargeting) rangedWeaponTarget(tileX, tileY);
       }
     });
-    // Bug 26: Handle drag-drop of inventory items onto the map
+    // Bug 26: Handle drag-drop of inventoryx items onto the map
     gameCanvas.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
     gameCanvas.addEventListener('drop', (e) => {
       e.preventDefault();
@@ -1638,10 +1636,10 @@ const hBtn = document.getElementById('hamburgerBtn');
         }
       }
       if(window.draggedItemIdx !== null && window.draggedSource === 'inv') {
-        let item = inventory[window.draggedItemIdx];
+        let item = inventoryx[window.draggedItemIdx];
         if(item) {
           itemsOnGround.push({ x: player.x, y: player.y, icon: item.icon });
-          inventory[window.draggedItemIdx] = null;
+          inventoryx[window.draggedItemIdx] = null;
           logMsg(`Dropped ${item.icon} on the ground.`);
           renderInventory(); updateUI();
         }
@@ -1769,13 +1767,13 @@ const hBtn = document.getElementById('hamburgerBtn');
         }
         if((state || 0) === 0) {
           // Check if player has a key
-          let hasKey = inventory.some(i => i && i.icon === '🗝️') || (player.inventoryx && player.inventoryx.some(i => i && i.icon === '🗝️'));
+          let hasKey = inventoryx.some(i => i && i.icon === '🗝️') || (player.inventoryx && player.inventoryx.some(i => i && i.icon === '🗝️'));
           if(hasKey) {
-            // Use key from inventory first, then inventoryx
-            let keyIdx = inventory.findIndex(i => i && i.icon === '🗝️');
+            // Use key from inventoryx first, then inventoryx
+            let keyIdx = inventoryx.findIndex(i => i && i.icon === '🗝️');
             if(keyIdx !== -1) {
-              inventory[keyIdx].qty--;
-              if(inventory[keyIdx].qty <= 0) inventory[keyIdx] = null;
+              inventoryx[keyIdx].qty--;
+              if(inventoryx[keyIdx].qty <= 0) inventoryx[keyIdx] = null;
             } else {
               let pouchIdx = player.inventoryx.findIndex(i => i && i.icon === '🗝️');
               if(pouchIdx !== -1) {
@@ -1792,7 +1790,7 @@ const hBtn = document.getElementById('hamburgerBtn');
               if(window.autoLootEnabled && player.talents && player.talents['autoLoot']) {
                 loot.forEach(item => {
                   if(item.icon === '🪙') { changeGold(item.qty); }
-                  else { let s = inventory.findIndex(s => s === null); if(s !== -1) inventory[s] = {icon: item.icon, qty: item.qty}; else tryPlaceInPouch(item); }
+                  else { let s = inventoryx.findIndex(s => s === null); if(s !== -1) inventoryx[s] = {icon: item.icon, qty: item.qty}; else tryPlaceInPouch(item); }
                 });
                 if(!loot.some(item => item.icon === '🪙')) Sound.clink();
               } else {
@@ -1866,9 +1864,9 @@ const hBtn = document.getElementById('hamburgerBtn');
         flashInteractionFailure('item', itemIdx);
         return;
       }
-      let slot = inventory.findIndex(s => s === null);
+      let slot = inventoryx.findIndex(s => s === null);
       if(slot !== -1) {
-        inventory[slot] = {icon: item.icon, qty: 1};
+        inventoryx[slot] = {icon: item.icon, qty: 1};
         itemsOnGround.splice(itemIdx, 1);
         logMsg(`Picked up ${item.icon}`);
         Sound.clink();

@@ -1,9 +1,9 @@
 /*
   MECHANICS MODULE – INVENTORY, ITEMS, AND SPECIAL ACTIONS
   =========================================================
-  This module contains the core game mechanics for handling player interactions with inventory items,
+  This module contains the core game mechanics for handling player interactions with inventoryx items,
   special quest items, and Monty Python‑themed events. It bridges the UI (clicks, keypresses) with
-  the game state (inventory, equipment, enemies, quest flags).
+  the game state (inventoryx, equipment, enemies, quest flags).
 
   Key responsibilities:
   1. Item click handling – weapon/armor equipping, food/potion consumption, scroll reading
@@ -13,7 +13,7 @@
   5. Equipment swapping – stat recalculation (damage, dodge rate)
 
   The functions here are called from ui_logic.js (handleItemClick) and from the game loop
-  (pickupItems). They update the global inventory, inventoryx, player.equipped, and enemy arrays.
+  (pickupItems). They update the global inventoryx, inventoryx, player.equipped, and enemy arrays.
 */
   // #38: Helper — show blue +MP floating text above player
   function showMpGain(amount) {
@@ -78,8 +78,8 @@
     let m;
     if((m = action.match(/^USE\s+'?(.+?)'?$/i))) {
       const name = m[1].toLowerCase();
-      let idx = inventory.findIndex(item => item && ITEM_DEF[item.icon] && ITEM_DEF[item.icon].name.toLowerCase() === name);
-      if(idx === -1) idx = inventory.findIndex(item => item && item.icon.toLowerCase().includes(name));
+      let idx = inventoryx.findIndex(item => item && ITEM_DEF[item.icon] && ITEM_DEF[item.icon].name.toLowerCase() === name);
+      if(idx === -1) idx = inventoryx.findIndex(item => item && item.icon.toLowerCase().includes(name));
       if(idx !== -1) { handleItemClick(idx); return; }
       // Try inventoryx
       let pidx = inventoryx.findIndex(item => item && ITEM_DEF[item.icon] && ITEM_DEF[item.icon].name.toLowerCase() === name);
@@ -104,15 +104,15 @@
   function handlePouchUse(idx) {
     let item = inventoryx[idx]; if(!item) return;
     let def = ITEM_DEF[item.icon]; if(!def) return;
-    // Move to free inventory slot, then use
-    let freeSlot = inventory.findIndex(s => s === null);
-    if(freeSlot !== -1) { inventory[freeSlot] = item; inventoryx[idx] = null; handleItemClick(freeSlot); }
+    // Move to free inventoryx slot, then use
+    let freeSlot = inventoryx.findIndex(s => s === null);
+    if(freeSlot !== -1) { inventoryx[freeSlot] = item; inventoryx[idx] = null; handleItemClick(freeSlot); }
   }
 
   // === Open a bag / expansion bag ===
   // openBagFromSource: source = 'inv' or 'inventoryx', idx = slot index
   function openBagFromSource(source, idx) {
-    let arr = source === 'inv' ? inventory : inventoryx;
+    let arr = source === 'inv' ? inventoryx : inventoryx;
     let item = arr[idx];
     if(!item) return;
     let def = ITEM_DEF[item.icon];
@@ -146,14 +146,14 @@
   window.openBagInInventory = function(idx) { openBagFromSource('inv', idx); };
 
   window.takeItemFromBagSource = (source, bagIdx, itemIdx) => {
-    let arr = source === 'inv' ? inventory : inventoryx;
+    let arr = source === 'inv' ? inventoryx : inventoryx;
     let bag = arr[bagIdx];
     if(!bag || !bag.contents || !bag.contents[itemIdx]) return;
     let taken = bag.contents[itemIdx];
-    // Try to add to inventory
-    let slot = inventory.findIndex(s => s === null);
+    // Try to add to inventoryx
+    let slot = inventoryx.findIndex(s => s === null);
     if(slot !== -1) {
-      inventory[slot] = { icon: taken.icon, qty: taken.qty || 1 };
+      inventoryx[slot] = { icon: taken.icon, qty: taken.qty || 1 };
       bag.contents[itemIdx] = null;
       let def = ITEM_DEF[taken.icon];
       logMsg(`Took ${taken.icon} ${def ? def.name : ''} from bag.`);
@@ -163,7 +163,7 @@
       if(pSlot !== -1) {
         inventoryx[pSlot] = { icon: taken.icon, qty: taken.qty || 1 };
         bag.contents[itemIdx] = null;
-        logMsg(`Took ${taken.icon} to inventoryx (inventory full).`);
+        logMsg(`Took ${taken.icon} to inventoryx (inventoryx full).`);
       } else {
         itemsOnGround.push({ x: player.x, y: player.y, icon: taken.icon });
         bag.contents[itemIdx] = null;
@@ -194,7 +194,7 @@
   // === Inventory & Quest Actions (v7.2.0) ===
    function handleItemClick(idx) {
      if(player.hp <= 0) { logMsg("<span style='color:#888'>You are dead.</span>"); return; }
-     let itemObj = inventory[idx];
+     let itemObj = inventoryx[idx];
      if(!itemObj) return;
 
     // E13: Identify Scroll — mark item as identified, reveal full tooltip
@@ -334,7 +334,7 @@
       return;
     }
 
-    // Gold Bag — add gold directly, don't keep in inventory
+    // Gold Bag — add gold directly, don't keep in inventoryx
     if(def.type === "wealth") {
       let goldValue = def.maxGP || 50;
       changeGold(goldValue);
@@ -460,11 +460,11 @@
         decrementItem(idx);
         // Place magic residue in same slot
         const residue = { icon: '✨', qty: 1 };
-        if(!inventory[idx]) {
-          inventory[idx] = residue;
+        if(!inventoryx[idx]) {
+          inventoryx[idx] = residue;
         } else {
-          let freeSlot = inventory.findIndex(s => s === null);
-          if(freeSlot !== -1) inventory[freeSlot] = residue;
+          let freeSlot = inventoryx.findIndex(s => s === null);
+          if(freeSlot !== -1) inventoryx[freeSlot] = residue;
           else { let fp = inventoryx.findIndex(s => s === null); if(fp !== -1) inventoryx[fp] = residue; else itemsOnGround.push({x: player.x, y: player.y, icon: '✨'}); }
         }
         logMsg("<span style='color:#888; font-style:italic;'>The scroll crumbles to magic residue.</span>");
@@ -477,7 +477,7 @@
         logMsg(`<span style='color:var(--success)'>📖🌀 You open the ${def.name} and read from its pages...</span>`);
         castSpell('portal', true);
         // Consume the tome (replace with ash)
-        inventory[idx] = { icon: '🌫️', qty: 1 };
+        inventoryx[idx] = { icon: '🌫️', qty: 1 };
         renderInventory(); updateUI();
         return;
       }
@@ -487,7 +487,7 @@
       logMsg(`<span style='color:var(--success)'>📖 Learned spell: ${def.name}. The tome crumbles to ash!</span>`);
       Sound.clink();
       // Bug 35: Replace tome with spell residue ash
-      inventory[idx] = { icon: '🌫️', qty: 1 };
+      inventoryx[idx] = { icon: '🌫️', qty: 1 };
       renderInventory(); updateUI();
     }
     else if(itemObj.icon === '🫖') {
@@ -502,10 +502,10 @@
         return;
       }
       player.teapotLastUse = now;
-      // Add health potion to inventory
-      let slot = inventory.findIndex(i => i === null);
+      // Add health potion to inventoryx
+      let slot = inventoryx.findIndex(i => i === null);
       if(slot !== -1) {
-        inventory[slot] = {icon: '🧪', qty: 1};
+        inventoryx[slot] = {icon: '🧪', qty: 1};
         logMsg("<span style='color:var(--success)'>🫖 The Magic Teapot brews a Health Potion!</span>");
       } else {
         // Try inventoryx
@@ -563,7 +563,7 @@
   };
 
   window.witchTrial = () => {
-    let hasDuck = inventory.some(i => i && i.icon === '🦆');
+    let hasDuck = inventoryx.some(i => i && i.icon === '🦆');
     let m = document.getElementById('modal-content');
     if(hasDuck) {
       m.innerHTML = `<h2>⚖️ The Scales of Justice</h2><p>"She weighs the same as a duck!"</p>
@@ -578,8 +578,8 @@
 
   window.finishWitch = () => {
     hideOverlay();
-    let empty = inventory.findIndex(i => i === null);
-    if(empty !== -1) inventory[empty] = {icon:'🧪🦎', qty:1};
+    let empty = inventoryx.findIndex(i => i === null);
+    if(empty !== -1) inventoryx[empty] = {icon:'🧪🦎', qty:1};
     logMsg("The Witch left a Potion of Newt behind.");
     renderInventory();
   };
@@ -613,12 +613,12 @@
         let stacked = false;
         if(def.stackable) {
           let maxStack = def.maxStack || 10;
-          let slot = inventory.find(i => i && i.icon === item.icon && (i.qty || 1) < maxStack);
+          let slot = inventoryx.find(i => i && i.icon === item.icon && (i.qty || 1) < maxStack);
           if(slot) { slot.qty = (slot.qty || 1) + 1; stacked = true; }
         }
         if(!stacked) {
-          let emptyIdx = inventory.findIndex(i => i === null);
-          if(emptyIdx !== -1) { inventory[emptyIdx] = {icon: item.icon, qty: 1}; stacked = true; }
+          let emptyIdx = inventoryx.findIndex(i => i === null);
+          if(emptyIdx !== -1) { inventoryx[emptyIdx] = {icon: item.icon, qty: 1}; stacked = true; }
         }
 
         // Try Pouch Second
@@ -659,22 +659,22 @@
   }
 
   function decrementItem(idx) { 
-    if(!inventory[idx]) return; 
-    inventory[idx].qty--; 
-    if(!inventory[idx].qty || inventory[idx].qty <= 0) inventory[idx] = null; 
+    if(!inventoryx[idx]) return; 
+    inventoryx[idx].qty--; 
+    if(!inventoryx[idx].qty || inventoryx[idx].qty <= 0) inventoryx[idx] = null; 
     renderInventory(); 
   }
 
   function countItemByIcon(icon) {
     let total = 0;
-    inventory.forEach(item => { if(item && item.icon === icon) total += item.qty || 1; });
+    inventoryx.forEach(item => { if(item && item.icon === icon) total += item.qty || 1; });
     inventoryx.forEach(item => { if(item && item.icon === icon) total += item.qty || 1; });
     return total;
   }
 
   function consumeItemByIcon(icon, qty = 1) {
     let remaining = qty;
-    [inventory, inventoryx].forEach(arr => {
+    [inventoryx, inventoryx].forEach(arr => {
       for(let i = 0; i < arr.length && remaining > 0; i++) {
         let item = arr[i];
         if(!item || item.icon !== icon) continue;
@@ -1190,12 +1190,12 @@
 
   function swapEquip(idx, slot) {
     // K6: idx === -1 means "just recalculate stats from current equipped state"
-    // (used by drag-to-unequip / slot-swap paths that manage inventory themselves)
+    // (used by drag-to-unequip / slot-swap paths that manage inventoryx themselves)
     if (idx !== -1) {
-      let item = inventory[idx], cur = player.equipped[slot];
-      // #34: Allow unequipping to a null/empty inventory slot
+      let item = inventoryx[idx], cur = player.equipped[slot];
+      // #34: Allow unequipping to a null/empty inventoryx slot
       player.equipped[slot] = item ? item.icon : null;
-      inventory[idx] = cur ? { icon: cur, qty: 1 } : null;
+      inventoryx[idx] = cur ? { icon: cur, qty: 1 } : null;
     }
     // Recalculate combat stats from all equipment
     let totalDmg = CONSTANTS.PLAYER_UNARMED_BASE_DMG;
@@ -1224,7 +1224,7 @@
     player.baseDmg = totalDmg; player.dodgeRate = totalEvade / 100;
     player.speedBonus = speedBonus;
     renderInventory(); updateUI();
-    // Log equipped message only when an actual inventory item was swapped in
+    // Log equipped message only when an actual inventoryx item was swapped in
     if (idx !== -1) {
       let equippedIcon = player.equipped[slot];
       let itemDef = equippedIcon ? ITEM_DEF[equippedIcon] : null;
@@ -1232,14 +1232,14 @@
     }
   }
 
-  // #34: Unequip from equip slot to ground when inventory is full
+  // #34: Unequip from equip slot to ground when inventoryx is full
   window.unequipToGround = (slot) => {
     const cur = player.equipped[slot];
     if(!cur) return;
-    const freeSlot = inventory.findIndex(s => s === null);
+    const freeSlot = inventoryx.findIndex(s => s === null);
     if(freeSlot !== -1) {
-      inventory[freeSlot] = { icon: cur, qty: 1 };
-      logMsg(`<span style='color:var(--success)'>Unequipped ${ITEM_DEF[cur]?.name || cur} to inventory.</span>`);
+      inventoryx[freeSlot] = { icon: cur, qty: 1 };
+      logMsg(`<span style='color:var(--success)'>Unequipped ${ITEM_DEF[cur]?.name || cur} to inventoryx.</span>`);
     } else {
       itemsOnGround.push({ x: player.x, y: player.y, icon: cur });
       logMsg(`<span style='color:var(--warning)'>Inventory full — ${ITEM_DEF[cur]?.name || cur} dropped at your feet.</span>`);

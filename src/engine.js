@@ -138,7 +138,7 @@
     }
   }
 
-  // Auto-loot: immediately dump corpse loot into inventory
+  // Auto-loot: immediately dump corpse loot into inventoryx
   function autoLootCorpse(corpseIdx) {
     let c = corpses[corpseIdx];
     if(!c || !c.loot || c.loot.length === 0) return;
@@ -151,7 +151,7 @@
         let def = ITEM_DEF[item.icon];
         if(def && def.stackable) {
           let maxStack = def.maxStack || 10;
-          let stackSlot = inventory.find(s => s && s.icon === item.icon && (s.qty || 1) < maxStack);
+          let stackSlot = inventoryx.find(s => s && s.icon === item.icon && (s.qty || 1) < maxStack);
           if(stackSlot) {
             let can = maxStack - (stackSlot.qty || 1);
             let add = Math.min(can, item.qty || 1);
@@ -160,10 +160,10 @@
             placed = (item.qty || 0) <= 0;
           }
         }
-        // Try inventory
-        let slot = inventory.findIndex(s => s === null);
+        // Try inventoryx
+        let slot = inventoryx.findIndex(s => s === null);
         if(!placed && slot !== -1) {
-          inventory[slot] = { icon: item.icon, qty: item.qty || 1 };
+          inventoryx[slot] = { icon: item.icon, qty: item.qty || 1 };
           placed = true;
         }
         // Try inventoryx and bags
@@ -254,7 +254,7 @@
         html += `<p style="color:var(--warning); font-size:11px;">⚠️ Your keen senses warn you: a ${nearEnemy.type} lurks nearby. Loot carefully!</p>`;
       }
     }
-    html += `<p style="color:#888; font-size:11px;">Drag items to inventory or click Loot All (Ctrl+Click for quick loot)</p>`;
+    html += `<p style="color:#888; font-size:11px;">Drag items to inventoryx or click Loot All (Ctrl+Click for quick loot)</p>`;
     html += `<div id="loot-grid" style="display:grid; grid-template-columns: repeat(${Math.min(c.loot.length, 6)}, 1fr); gap:4px; margin:10px 0;">`;
 
     c.loot.forEach((item, idx) => {
@@ -293,9 +293,9 @@
         changeGold(item.qty, { x: c.x, y: c.y, floatText: true });
         didLoot = true;
       } else {
-        let slot = inventory.findIndex(s => s === null);
+        let slot = inventoryx.findIndex(s => s === null);
         if(slot !== -1) {
-          inventory[slot] = { icon: item.icon, qty: item.qty || 1 };
+          inventoryx[slot] = { icon: item.icon, qty: item.qty || 1 };
           didLoot = true;
         } else {
           let placed = tryPlaceInPouch(item);
@@ -326,9 +326,9 @@
       changeGold(item.qty, { x: c.x, y: c.y, floatText: true });
       c.loot.splice(itemIdx, 1);
     } else {
-      let slot = inventory.findIndex(s => s === null);
+      let slot = inventoryx.findIndex(s => s === null);
       if(slot !== -1) {
-        inventory[slot] = { icon: item.icon, qty: item.qty || 1 };
+        inventoryx[slot] = { icon: item.icon, qty: item.qty || 1 };
         c.loot.splice(itemIdx, 1);
         Sound.clink();
       } else {
@@ -481,8 +481,8 @@
     window._cainHealedThisVisit = false; // E6: reset Cain heal on new game
     window._activeBombs = []; // E16: reset active bombs on new game
     
-    // Reset inventory and inventoryx
-    for(let i = 0; i < inventory.length; i++) inventory[i] = null;
+    // Reset inventoryx and inventoryx
+    for(let i = 0; i < inventoryx.length; i++) inventoryx[i] = null;
     for(let i = 0; i < inventoryx.length; i++) inventoryx[i] = null;
     
     // Close overlay
@@ -1312,12 +1312,12 @@
   }
 
   function thiefSteal(thiefIdx) {
-    let items = inventory.filter(i => i !== null);
+    let items = inventoryx.filter(i => i !== null);
     if (items.length > 0) {
-      let idx = inventory.indexOf(items[Math.floor(Math.random()*items.length)]);
-      let stolen = inventory[idx];
+      let idx = inventoryx.indexOf(items[Math.floor(Math.random()*items.length)]);
+      let stolen = inventoryx[idx];
       stolenItems.push(stolen);
-      inventory[idx] = null;
+      inventoryx[idx] = null;
       logMsg(`<span style='color:var(--error)'>The Thief pickpocketed your ${ITEM_DEF[stolen.icon].name}!</span>`);
       // #13: Play internal dialog voice line on pickpocket
       let stolenVoices = ['voice_internal_stolen_0', 'voice_internal_stolen_1', 'voice_internal_stolen_2'];
@@ -1470,10 +1470,10 @@
   };
 
   function die() {
-    let crystalIdx = inventory.findIndex(i => i && i.icon === '💎💠');
+    let crystalIdx = inventoryx.findIndex(i => i && i.icon === '💎💠');
     if (crystalIdx !== -1) {
       logMsg("Crystal Shatters!");
-      inventory[crystalIdx] = null;
+      inventoryx[crystalIdx] = null;
       player.hp = player.maxHp; updateUI(); return;
     }
     // B41: Capture the last relevant game log message to display in the death modal
@@ -1545,8 +1545,8 @@
       if(player.talents && player.talents['autoLoot']) {
         logMsg(`<span style='color:var(--success)'>Your Scavenger instincts kick in! You automatically loot the Ifrit.</span>`);
         ifritLoot.forEach(item => {
-          let slot = inventory.findIndex(s => s === null);
-          if(slot !== -1) inventory[slot] = {icon: item.icon, qty: item.qty};
+          let slot = inventoryx.findIndex(s => s === null);
+          if(slot !== -1) inventoryx[slot] = {icon: item.icon, qty: item.qty};
           else tryPlaceInPouch(item);
         });
         renderInventory(); renderPouch(); updateUI();
@@ -1759,8 +1759,8 @@
           if(item.icon === '🪙') {
             changeGold(item.qty, { x: e.x, y: e.y, floatText: true });
           } else {
-            let slot = inventory.findIndex(s => s === null);
-            if(slot !== -1) { inventory[slot] = {icon: item.icon, qty: item.qty || 1}; }
+            let slot = inventoryx.findIndex(s => s === null);
+            if(slot !== -1) { inventoryx[slot] = {icon: item.icon, qty: item.qty || 1}; }
             else tryPlaceInPouch(item);
           }
         });
@@ -1843,8 +1843,8 @@
         if(player.talents && player.talents['autoLoot']) {
           logMsg(`<span style='color:var(--success)'>Your Scavenger instincts kick in! You automatically loot the Ifrit.</span>`);
           ifritLoot.forEach(item => {
-            let slot = inventory.findIndex(s => s === null);
-            if(slot !== -1) inventory[slot] = {icon: item.icon, qty: item.qty};
+            let slot = inventoryx.findIndex(s => s === null);
+            if(slot !== -1) inventoryx[slot] = {icon: item.icon, qty: item.qty};
             else tryPlaceInPouch(item);
           });
           renderInventory(); renderPouch(); updateUI();
@@ -2512,7 +2512,7 @@
       // If player has the Brass Bottle (from safe cracking quest), genie offers a wish.
       // Otherwise, it attacks as a boss fight.
       if(npc.type === 'genie' && npc.isGenieGuardian) {
-        const hasBottle = inventory.some(i => i && i.icon === '🏺') || inventoryx.some(i => i && i.icon === '🏺');
+        const hasBottle = inventoryx.some(i => i && i.icon === '🏺') || inventoryx.some(i => i && i.icon === '🏺');
         if(hasBottle) {
           // Genie offers a wish instead of fighting
           let m = document.getElementById('modal-content');
@@ -2964,7 +2964,7 @@
     let machine = machines.find(m => m.x === mx && m.y === my);
     if(!machine) return;
 
-    let beadCount = inventory.reduce((sum, i) => sum + (i && i.icon === '📿' ? (i.qty || 1) : 0), 0);
+    let beadCount = inventoryx.reduce((sum, i) => sum + (i && i.icon === '📿' ? (i.qty || 1) : 0), 0);
 
     let m = document.getElementById('modal-content');
     Sound.machine();
@@ -3008,12 +3008,12 @@
 
     // Consume beads
     let toConsume = machine.beadCost;
-    for(let i = 0; i < inventory.length && toConsume > 0; i++) {
-      if(inventory[i] && inventory[i].icon === '📿') {
-        let take = Math.min(inventory[i].qty || 1, toConsume);
-        inventory[i].qty = (inventory[i].qty || 1) - take;
+    for(let i = 0; i < inventoryx.length && toConsume > 0; i++) {
+      if(inventoryx[i] && inventoryx[i].icon === '📿') {
+        let take = Math.min(inventoryx[i].qty || 1, toConsume);
+        inventoryx[i].qty = (inventoryx[i].qty || 1) - take;
         toConsume -= take;
-        if(inventory[i].qty <= 0) inventory[i] = null;
+        if(inventoryx[i].qty <= 0) inventoryx[i] = null;
       }
     }
     renderInventory();

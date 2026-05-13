@@ -1860,7 +1860,7 @@
         if(window.autoLootEnabled && player.talents && player.talents['autoLoot']) {
           chestLoot.forEach(item => {
             if(item.icon === '🪙') { changeGold(item.qty); }
-            else { let s = inventory.findIndex(s => s === null); if(s !== -1) inventory[s] = {icon:item.icon, qty:item.qty}; else if(typeof tryPlaceInPouch==='function') tryPlaceInPouch(item); }
+            else { let s = inventoryx.findIndex(s => s === null); if(s !== -1) inventoryx[s] = {icon:item.icon, qty:item.qty}; else if(typeof tryPlaceInPouch==='function') tryPlaceInPouch(item); }
           });
           if(!chestLoot.some(item => item.icon === '🪙')) Sound.clink();
         } else {

@@ -3,7 +3,7 @@
   =============================================================
   This module implements the game's shop system, providing interactive merchant interfaces
   for buying items, selling loot, identifying mystery items, and advancing quest-related
-  dialogue. Each NPC vendor has a distinct personality and inventory.
+  dialogue. Each NPC vendor has a distinct personality and inventoryx.
 
   Key responsibilities:
   1. Shop UI rendering (openShop/openStore) – generates modal HTML for each NPC type
@@ -12,7 +12,7 @@
      Librarian/bookstore (spellbooks, Grue lore), Fence (stolen goods),
      Lefty's Bar (whiskey, mystery woman encounter)
   3. Transaction handling – buying items, selling to fence, buying back stolen items
-  4. Inventory management – automatic inventoryx stashing when inventory is full
+  4. Inventory management – automatic inventoryx stashing when inventoryx is full
   5. Quest progression – Dennis' political commentary, safety warnings
 
   openShop() is the engine.js-facing entry point; openStore() is the internal renderer.
@@ -228,7 +228,7 @@
   function addPurchasedItem(icon, qty = 1) {
     let def = ITEM_DEF[icon] || {};
     let remaining = qty;
-    let nextInventory = inventory.map(item => item ? { ...item } : null);
+    let nextInventory = inventoryx.map(item => item ? { ...item } : null);
     let nextPouch = inventoryx.map(item => item ? { ...item } : null);
     if(def.stackable) {
       const maxStack = def.maxStack || 10;
@@ -253,7 +253,7 @@
       }
     });
     if(remaining > 0) return false;
-    inventory.splice(0, inventory.length, ...nextInventory);
+    inventoryx.splice(0, inventoryx.length, ...nextInventory);
     inventoryx.splice(0, inventoryx.length, ...nextPouch);
     if(typeof renderInventory === 'function') renderInventory();
     if(typeof renderPouch === 'function') renderPouch();
@@ -313,10 +313,10 @@
 
   window.finishLarryEgg = function() {
     logMsg("<span style='color:var(--warning)'>Unseen customers poke their heads out and yell: 'Pervert!'</span>");
-    let emptyIdx = inventory.findIndex(i => i === null);
+    let emptyIdx = inventoryx.findIndex(i => i === null);
     if(emptyIdx !== -1) {
       changeGold(-1);
-      inventory[emptyIdx] = {icon:'🧴', qty:1};
+      inventoryx[emptyIdx] = {icon:'🧴', qty:1};
       renderInventory(); updateUI();
     }
     openStore('apu');
@@ -393,7 +393,7 @@
     }
     else if(step === 1) {
       // Application fee: 10 cockroach legs
-      let hasLegs = inventoryx.some(i => i && i.icon === '🦗') || inventory.some(i => i && i.icon === '🦗');
+      let hasLegs = inventoryx.some(i => i && i.icon === '🦗') || inventoryx.some(i => i && i.icon === '🦗');
       m.innerHTML = `<h2>🏪 Application Fee</h2>
         ${npcFaceHTML('npc_apu', '🧔🏿', 'apu')}
         <p>🧔🏿‍♂️ "First, we need to verify your commitment. The application fee is 10 cockroach legs."</p>
@@ -406,8 +406,8 @@
       playVoiceClip('voice_apu_franchise_1');
       if(hasLegs) {
         // Remove cockroach legs if they somehow have them
-        for(let i = 0; i < inventory.length; i++) {
-          if(inventory[i] && inventory[i].icon === '🦗') { inventory[i] = null; break; }
+        for(let i = 0; i < inventoryx.length; i++) {
+          if(inventoryx[i] && inventoryx[i].icon === '🦗') { inventoryx[i] = null; break; }
         }
         renderInventory();
       }
@@ -460,13 +460,13 @@
       logMsg("<span style='color:var(--success)>'\"Free Squishee with every purchase! (Machine may be broken.)\"</span>");
       player.xp += 100; checkLevelUp();
       // Give player a useless but flavorful item
-      let slot = inventory.findIndex(i => i === null);
-      if(slot !== -1) inventory[slot] = {icon: '💳', qty: 1};
+      let slot = inventoryx.findIndex(i => i === null);
+      if(slot !== -1) inventoryx[slot] = {icon: '💳', qty: 1};
       renderInventory();
       m.innerHTML = `<h2>🏪 Congratulations!</h2>
         ${npcFaceHTML('npc_apu', '🧔🏿', 'apu')}
         <p>🧔🏿‍♂️ "Welcome to the KwikeeMart family! Or... welcome to the periphery of the KwikeeMart family."</p>
-        <p>🧔🏿‍♂️ "Your Apu's Club Card is in your inventory. It does nothing. But it's PRETTY."</p>
+        <p>🧔🏿‍♂️ "Your Apu's Club Card is in your inventoryx. It does nothing. But it's PRETTY."</p>
         <p>🧔🏿‍♂️ "Thank you, come again!"</p>
         <button onclick="openStore('apu')" style="margin-top:16px;">"I have so many questions..."</button>`;
       playVoiceClip('voice_apu_franchise_6');
@@ -476,7 +476,7 @@
   // === Lefty's Mystery Woman ===
   window.larryEncounter = function() {
     let m = document.getElementById('modal-content');
-    let hasProp = inventory.some(i => i && i.icon === '🧴');
+    let hasProp = inventoryx.some(i => i && i.icon === '🧴');
     let html = `<h2>🫦 Mystery Lady</h2>
       <p style="font-size:80px; margin:10px 0;">💃</p>
       <p>"Hello there, sailor. Care for a little... company?"</p>`;
@@ -492,7 +492,7 @@
 
   window.finishLarryEncounter = function(safe) {
     if(safe) {
-      let idx = inventory.findIndex(i => i && i.icon === '🧴');
+      let idx = inventoryx.findIndex(i => i && i.icon === '🧴');
       decrementItem(idx);
       player.xp += 500;
       logMsg("<span style='color:var(--success)'>You survived the encounter and gained 500 XP! Safety first!</span>");
@@ -521,7 +521,7 @@
       seen.add(item.icon);
       out.push(item.icon);
     };
-    inventory.forEach(pushIfNeeded);
+    inventoryx.forEach(pushIfNeeded);
     inventoryx.forEach(pushIfNeeded);
     return out;
   }
@@ -651,8 +651,8 @@
     logMsg("<span style='color:var(--success)'>Dennis hands you a SCROLL OF CONSTITUTIONAL CONVENTION.</span>");
     logMsg("Dennis: \"Come see the violence inherent in the system! Help! Help! I'm being repressed!\"");
     player.xp += 200; checkLevelUp();
-    let empty = inventory.findIndex(i => i === null);
-    if(empty !== -1) inventory[empty] = {icon:'📜📜', qty:1};
+    let empty = inventoryx.findIndex(i => i === null);
+    if(empty !== -1) inventoryx[empty] = {icon:'📜📜', qty:1};
     renderInventory(); hideOverlay();
   };
 
@@ -1106,7 +1106,7 @@
                const def = ITEM_DEF[icon];
                return `<button onclick="identifyOneItem('${icon}')" style="width:100%; margin-top:4px;">Identify ${icon} ${def ? def.name : 'Item'} (1g)</button>`;
              }).join('')
-           : `<div style="margin-top:6px; color:#888; font-size:12px;">Everything in your inventory and inventoryx is already identified.</div>`;
+           : `<div style="margin-top:6px; color:#888; font-size:12px;">Everything in your inventoryx and inventoryx is already identified.</div>`;
          html = `<div style="padding:8px;">
            <p style="margin-top:0;">Deckard Cain peers at your belongings with the weight of three very long afternoons.</p>
            <button onclick="bulkIdentify()" style="width:100%;">Identify All (100g)</button>
@@ -1187,12 +1187,12 @@
     } else if(tab === 'sell') {
       html = '<div style="display:flex; flex-direction:column; gap:4px;">';
       let hasSellable = false;
-      inventory.forEach((it, idx) => {
+      inventoryx.forEach((it, idx) => {
         if(it) {
           let def = ITEM_DEF[it.icon];
           if(def && def.maxGP > 0) {
             hasSellable = true;
-            let count = inventory.filter(i => i && i.icon === it.icon).length;
+            let count = inventoryx.filter(i => i && i.icon === it.icon).length;
             let badge = count > 1 ? `<span style="background:var(--warning); color:#000; font-size:9px; padding:0 4px; border-radius:8px; margin-left:4px;">${count}</span>` : '';
             html += `<div class="shop-item" style="margin:0; padding:4px;"><span>${it.icon} ${def.name} (+${def.maxGP}g)${badge}</span>
               <button onclick="sell(${idx}, '${type}')">Sell</button></div>`;
@@ -1297,7 +1297,7 @@
   };
 
   window.sell = function(idx, type) {
-    let item = inventory[idx];
+    let item = inventoryx[idx];
     if(!item) return;
     let def = ITEM_DEF[item.icon];
     if(def && def.maxGP > 0) {
@@ -1515,12 +1515,12 @@
 
     player.chaplainPrizes.push(prize.icon);
 
-    let slot = inventory.findIndex(i => i === null);
+    let slot = inventoryx.findIndex(i => i === null);
     if(slot !== -1) {
-      inventory[slot] = { icon: prize.icon, qty: 1 };
+      inventoryx[slot] = { icon: prize.icon, qty: 1 };
       logMsg(`<span style='color:#FFD700'>⛪ You receive: ${prize.icon} <strong>${prize.name}</strong>! "${prize.desc}"</span>`);
     } else {
-      logMsg(`<span style='color:var(--warning)'>⛪ No inventory room for ${prize.icon} ${prize.name}! It fades away sadly.</span>`);
+      logMsg(`<span style='color:var(--warning)'>⛪ No inventoryx room for ${prize.icon} ${prize.name}! It fades away sadly.</span>`);
     }
 
     renderInventory(); updateUI();
@@ -1634,9 +1634,9 @@
       checkLevelUp();
       
       // Give a special item
-      let empty = inventory.findIndex(i => i === null);
+      let empty = inventoryx.findIndex(i => i === null);
       if(empty !== -1) {
-        inventory[empty] = {icon: '🏺', qty: 1}; // Brass Bottle
+        inventoryx[empty] = {icon: '🏺', qty: 1}; // Brass Bottle
         logMsg("You receive a Brass Bottle! It feels... magical.");
       }
       
@@ -1657,10 +1657,10 @@
       if(idx !== -1) { arr[idx] = null; return true; }
       return false;
     };
-    if(!consumeBottle(inventory)) consumeBottle(inventoryx);
+    if(!consumeBottle(inventoryx)) consumeBottle(inventoryx);
     if(!consumeBottle(inventoryx)) {
       // Also check bags
-      inventory.forEach(item => {
+      inventoryx.forEach(item => {
         if(item && item.contents) {
           const bagIdx = item.contents.findIndex(i => i && i.icon === '🏺');
           if(bagIdx !== -1) item.contents[bagIdx] = null;
@@ -1926,9 +1926,9 @@
     Sound.grogPour();
     
     // Give caustic grog item
-    let empty = inventory.findIndex(i => i === null);
+    let empty = inventoryx.findIndex(i => i === null);
     if(empty !== -1) {
-      inventory[empty] = {icon: '🍺', qty: 1}; // Grog
+      inventoryx[empty] = {icon: '🍺', qty: 1}; // Grog
       logMsg("<span style='color:#FFD700'>🍺 You create the legendary Caustic Grog!</span>");
       logMsg("<span style='color:var(--success)'>It burns going down, but it gives you incredible power!</span>");
       logMsg("<span style='color:#88FF88'>+50% damage for 10 turns!</span>");
@@ -1941,7 +1941,7 @@
       player.xp += 300;
       checkLevelUp();
     } else {
-      logMsg("<span style='color:var(--error)'>Your inventory is full!</span>");
+      logMsg("<span style='color:var(--error)'>Your inventoryx is full!</span>");
       player.hasGrogIngredients = true; // Give back ingredients
       player.hasRedHerring = true;
       player.causticGrogMade = false;
@@ -1960,9 +1960,9 @@
       if(typeof QuestEngine !== 'undefined') QuestEngine.emit('custom', { id: 'found_red_herring' });
       logMsg("<span style='color:var(--success)'>🐟 You catch a Red Herring! It smells... suspicious.</span>");
       
-      let empty = inventory.findIndex(i => i === null);
+      let empty = inventoryx.findIndex(i => i === null);
       if(empty !== -1) {
-        inventory[empty] = {icon: '🐟', qty: 1};
+        inventoryx[empty] = {icon: '🐟', qty: 1};
         logMsg("<span style='color:#88FF88'>This could be useful for distracting someone...</span>");
       }
       renderInventory();
@@ -2119,7 +2119,7 @@
     }
     else if(step === 'wisdom') {
       let hint = GRUE_HINTS[Math.floor(Math.random() * GRUE_HINTS.length)];
-      let hasCandles = inventory.some(i => i && i.icon === '🕯️');
+      let hasCandles = inventoryx.some(i => i && i.icon === '🕯️');
       m.innerHTML = `<h2>🧌 On the Subject of Darkness</h2>
         <p style="color:#ccc; font-size:12px; margin:8px 0;">"${hint}"</p>
         ${!hasCandles ? '<p style="color:var(--warning); font-size:12px;">"You have no light. Take these. Do not thank me. Gratitude disrupts my concentration."</p>' : ''}
@@ -2128,8 +2128,8 @@
           <button onclick="openPacifistOrc(\'intro\')">← Back</button>
         </div>`;
       if(!hasCandles) {
-        let slot = inventory.findIndex(s => s === null);
-        if(slot !== -1) { inventory[slot] = {icon:'🕯️', qty:3}; renderInventory(); }
+        let slot = inventoryx.findIndex(s => s === null);
+        if(slot !== -1) { inventoryx[slot] = {icon:'🕯️', qty:3}; renderInventory(); }
       }
     }
     else if(step === 'chaplain') {
@@ -2187,9 +2187,9 @@
   };
 
   window.grokTrade = function(icon, name, idx) {
-    let slot = inventory.findIndex(s => s === null);
-    if(slot === -1) { logMsg("Your inventory is full. Grok looks unimpressed."); return; }
-    inventory[slot] = {icon, qty:1};
+    let slot = inventoryx.findIndex(s => s === null);
+    if(slot === -1) { logMsg("Your inventoryx is full. Grok looks unimpressed."); return; }
+    inventoryx[slot] = {icon, qty:1};
     renderInventory();
     let GROK_REMARKS = [
       '"Ah. Now I have one less thing. This is progress."',
@@ -2284,9 +2284,9 @@
   };
 
   window.grokTrade = function(icon, name, idx) {
-    let slot = inventory.findIndex(s => s === null);
-    if(slot === -1) { logMsg("Your inventory is full. Grok looks unimpressed."); return; }
-    inventory[slot] = {icon, qty:1};
+    let slot = inventoryx.findIndex(s => s === null);
+    if(slot === -1) { logMsg("Your inventoryx is full. Grok looks unimpressed."); return; }
+    inventoryx[slot] = {icon, qty:1};
     renderInventory();
     const GROK_REMARKS = [
       '"Ah. Now I have one less thing. This is progress."',
