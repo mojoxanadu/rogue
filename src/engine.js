@@ -93,10 +93,9 @@
         }
       }
     }
-    // Bag drop: 8% chance, level-appropriate. randomBag() returns an emoji
-    // icon; resolve to a name via the migration bridge.
+    // Bag drop: 8% chance, level-appropriate.
     if(Math.random() < 0.08) {
-      loot.push(ItemStack.fromIcon(randomBag(player.level), 1));
+      loot.push(new ItemStack(randomBag(player.level), 1));
     }
     // E10: Beach Portal Scroll drops on level 7+
     if(currentLevel >= 7 && Math.random() < 0.03) {
