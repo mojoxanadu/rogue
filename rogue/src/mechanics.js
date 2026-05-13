@@ -615,7 +615,7 @@
         let stacked = false;
         if(def.stackable) {
           let maxStack = def.maxStack ?? 10;
-          let slot = inventory.find(i => i && i.icon === item.icon && (i.qty ?? 1) < maxStack);
+          let slot = inventory.find(i => i && i.itemName === item.itemName && (i.qty ?? 1) < maxStack);
           if(slot) { slot.qty = (slot.qty ?? 1) + 1; stacked = true; }
         }
         if(!stacked) {
@@ -627,7 +627,7 @@
         if(!stacked) {
           if(def.stackable) {
             let maxStack = def.maxStack ?? 10;
-            let ps = inventory.find(i => i && i.icon === item.icon && (i.qty ?? 1) < maxStack);
+            let ps = inventory.find(i => i && i.itemName === item.itemName && (i.qty ?? 1) < maxStack);
             if(ps) { ps.qty = (ps.qty ?? 1) + 1; stacked = true; }
           }
           if(!stacked) {

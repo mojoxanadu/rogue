@@ -524,7 +524,7 @@
 
         case 'inventoryHas':
           // Player has at least qty of an item (does NOT consume it)
-          return inventory.some(i => i && i.icon === req.item && (i.qty ?? 1) >= (req.qty ?? 1));
+          return inventory.some(i => i && i.itemName === req.item && (i.qty ?? 1) >= (req.qty ?? 1));
 
         case 'inventoryRemove':
           // Like inventoryHas, but CONSUMES the item if the check passes.
@@ -1045,10 +1045,10 @@
     // UTILITY METHODS
     // ──────────────────────────────────────────────────────────────────────────
 
-    _tryRemoveItem(itemIcon, qty) {
+    _tryRemoveItem(itemName, qty) {
       let found = 0;
       for (let i = 0; i < inventory.length; i++) {
-        if (inventory[i] && inventory[i].icon === itemIcon) {
+        if (inventory[i] && inventory[i].itemName === itemName) {
           found += (inventory[i].qty ?? 1);
         }
       }
@@ -1056,7 +1056,7 @@
       // Actually remove
       let remaining = qty;
       for (let i = 0; i < inventory.length && remaining > 0; i++) {
-        if (inventory[i] && inventory[i].icon === itemIcon) {
+        if (inventory[i] && inventory[i].itemName === itemName) {
           let has = inventory[i].qty ?? 1;
           if (has <= remaining) {
             remaining -= has;

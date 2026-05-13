@@ -1032,9 +1032,9 @@ const hBtn = document.getElementById('hamburgerBtn');
           for(let i = 0; i < inventory.length; i++) {
             const item = inventory[i];
             if(!item) continue;
-            if(item.icon === query) { foundIdx = i; break; }
+            if(item.icon === query || item.itemName === query) { foundIdx = i; break; }
             const def = item.def;
-            if(def && def.name.toLowerCase().includes(query)) { foundIdx = i; break; }
+            if(def && def.displayName.toLowerCase().includes(query)) { foundIdx = i; break; }
           }
           if(foundIdx === -1) {
             debugLog(`No item matching '${query}' in inventory.`);
@@ -1766,15 +1766,15 @@ const hBtn = document.getElementById('hamburgerBtn');
         }
         if((state ?? 0) === 0) {
           // Check if player has a key
-          let hasKey = inventory.some(i => i && i.icon === '🗝️') || (player.inventory && player.inventory.some(i => i && i.icon === '🗝️'));
+          let hasKey = inventory.some(i => i && i.itemName === 'key') || (player.inventory && player.inventory.some(i => i && i.itemName === 'key'));
           if(hasKey) {
             // Use key from inventory first, then inventory
-            let keyIdx = inventory.findIndex(i => i && i.icon === '🗝️');
+            let keyIdx = inventory.findIndex(i => i && i.itemName === 'key');
             if(keyIdx !== -1) {
               inventory[keyIdx].qty--;
               if(inventory[keyIdx].qty <= 0) inventory[keyIdx] = null;
             } else {
-              let inventoryIdx = player.inventory.findIndex(i => i && i.icon === '🗝️');
+              let inventoryIdx = player.inventory.findIndex(i => i && i.itemName === 'key');
               if(inventoryIdx !== -1) {
                 player.inventory[inventoryIdx].qty--;
                 if(player.inventory[inventoryIdx].qty <= 0) player.inventory[inventoryIdx] = null;
@@ -1791,7 +1791,7 @@ const hBtn = document.getElementById('hamburgerBtn');
                   if(item.def?.pickupTo === 'gp') { changeGold(item.qty); }
                   else { let s = inventory.findIndex(s => s === null); if(s !== -1) inventory[s] = new ItemStack(item.itemName, item.qty); else tryPlaceInInventory(item); }
                 });
-                if(!loot.some(item => item.icon === '🪙')) Sound.clink();
+                if(!loot.some(item => item.itemName === 'gold')) Sound.clink();
               } else {
                 createCorpse(tileX, tileY, 'chest', {icon:'📦'}, loot);
               }

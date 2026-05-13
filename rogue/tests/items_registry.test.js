@@ -75,6 +75,16 @@ test('Registry: two defs can share an icon (gold + uniqueCoin both use 🪙)', (
   assert.equal(ctx.ItemDef.byIcon('🪙').name, 'uniqueCoin');
 });
 
+test('Lock: quest data items resolve (req.item = camelCase name)', () => {
+  const ctx = buildRegistry({
+    '🏺': { name: 'Brass Bottle',     type: 'misc',  stackable: false },
+    '📿': { name: 'Orichalcum Bead',  type: 'quest', stackable: true },
+  });
+  for (const n of ['brassBottle', 'orichalcumBead']) {
+    assert.ok(ctx.ItemDefs[n], `${n} missing — quest data req.item="${n}" will never match`);
+  }
+});
+
 test("Lock: 'arrows' exists for Bow.ammoName lookup", () => {
   const ctx = buildRegistry({
     '➶': { name: 'Arrows', type: 'ammo', stackable: true, maxStack: 99 },

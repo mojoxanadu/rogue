@@ -110,7 +110,7 @@
               },
               rewards: [
                 { type: 'achievement', id: 'greed_survived' },
-                { type: 'item', item: '🏺', name: 'Golden Chalice' }
+                { type: 'item', item: 'brassBottle', name: 'Golden Chalice' }
               ],
               rewardExperience: 50,
               finishesQuest: true
@@ -268,7 +268,7 @@
             rat.stats.icon = '🐀💖';
             if(typeof emitQuestEvent === 'function') emitQuestEvent('rat_saved', {});
             logMsg('<span style="color:var(--primary)">🐀 The rat looks at you gratefully!</span>');
-            const bootIndex = inventory.findIndex(i => i && i.icon === '🥾');
+            const bootIndex = inventory.findIndex(i => i && i.itemName === 'oldBoot');
             if(bootIndex > -1) { inventory[bootIndex] = null; renderQuickslots(); }
           }
         },
