@@ -20,6 +20,107 @@
   The functions here are called from engine.js (updateUI), from input.js (key/mouse events),
   and from direct HTML button clicks. They modify DOM elements and update global state.
 */
+// === Tap-to-select mobile gesture ===
+// Drag-and-drop isn't reliable on touchscreens, so we layer a tap-based
+// alternative on top: tap an inventory slot or equip slot to "pick it up"
+// (sticky highlight); tap any other slot (incl. quickslot HUD) to drop.
+// Quickslot HUD slots preserve their existing tap-to-use behavior when no
+// selection is active — they only act as drop TARGETS, never as sources.
+//
+// State: window._stickyDrag is null OR
+//        { source: 'inv', idx: <inventory index 0..29> } OR
+//        { source: 'equip', slot: <'head'|'chest'|...> }
+window._stickyDrag = null;
+
+// Returns true if a sticky operation handled this tap (caller should NOT
+// fall through to use-item / open-bag / etc.).
+window.handleStickyTap = function(targetSource, targetIdxOrSlot) {
+  const src = window._stickyDrag;
+  if (!src) return false;
+  // Self-tap: cancel the selection.
+  const isSame = (src.source === targetSource &&
+    (src.source === 'equip' ? src.slot === targetIdxOrSlot : src.idx === targetIdxOrSlot));
+  if (isSame) {
+    window._stickyDrag = null;
+    if (typeof renderQuickslots === 'function') renderQuickslots();
+    if (typeof renderInventory === 'function') renderInventory();
+    if (typeof updateUI === 'function') updateUI();
+    return true;
+  }
+  // Different target: perform the move.
+  _performStickyMove(src, targetSource, targetIdxOrSlot);
+  window._stickyDrag = null;
+  if (typeof renderQuickslots === 'function') renderQuickslots();
+  if (typeof renderInventory === 'function') renderInventory();
+  if (typeof updateUI === 'function') updateUI();
+  return true;
+};
+
+// Begin a sticky selection. Called from tap handlers on bag-panel slots
+// and equip slots (NOT from quickslot HUD slots).
+window.startStickyDrag = function(source, idxOrSlot) {
+  // Reject empty sources
+  if (source === 'inv'   && !inventory[idxOrSlot]) return;
+  if (source === 'equip' && !player.equipped[idxOrSlot]) return;
+  window._stickyDrag = source === 'equip' ? { source, slot: idxOrSlot } : { source, idx: idxOrSlot };
+  if (typeof renderQuickslots === 'function') renderQuickslots();
+  if (typeof renderInventory === 'function') renderInventory();
+  if (typeof updateUI === 'function') updateUI();
+};
+
+function _equipSlotFits(slot, def) {
+  if (!def) return false;
+  if (slot === 'leftHand'  && (def.type === 'weapon' || def.slot === 'leftHand'))  return true;
+  if (slot === 'rightHand' && (def.type === 'weapon' || def.slot === 'rightHand')) return true;
+  return def.slot === slot;
+}
+
+function _performStickyMove(src, targetSource, target) {
+  if (src.source === 'inv' && targetSource === 'inv') {
+    // Inventory-to-inventory: swap the two stack references.
+    const tmp = inventory[src.idx];
+    inventory[src.idx] = inventory[target];
+    inventory[target] = tmp;
+    return;
+  }
+  if (src.source === 'inv' && targetSource === 'equip') {
+    // Equip from inventory — reuse the existing swap logic.
+    if (typeof swapEquip === 'function') swapEquip(src.idx, target);
+    return;
+  }
+  if (src.source === 'equip' && targetSource === 'inv') {
+    // Unequip into a specific inv slot. If that slot is occupied, the
+    // existing item must fit the equip slot (it'll be swapped in).
+    const slot = src.slot;
+    const equippedName = player.equipped[slot];
+    if (!equippedName) return;
+    const existing = inventory[target];
+    if (existing) {
+      const existingDef = ItemDefs[existing.itemName];
+      if (!_equipSlotFits(slot, existingDef)) {
+        if (typeof logMsg === 'function') {
+          logMsg(`<span style='color:var(--warning)'>${existingDef?.displayName ?? 'That item'} doesn't fit the ${slot} slot.</span>`);
+        }
+        return;
+      }
+      player.equipped[slot] = existing.itemName;
+    } else {
+      player.equipped[slot] = null;
+    }
+    inventory[target] = new ItemStack(equippedName, 1);
+    return;
+  }
+  if (src.source === 'equip' && targetSource === 'equip') {
+    // Equip-to-equip via tap is ambiguous (cross-slot move usually needs a
+    // type swap with the destination). Easier path: unequip to inventory
+    // first, then equip from there. Show a hint and bail.
+    if (typeof logMsg === 'function') {
+      logMsg(`<span style='color:#aaa'>To move an equipped item to another slot, tap an inventory slot to unequip first.</span>`);
+    }
+    return;
+  }
+}
+
 // === E13: Item Status Glow Helper ===
   function itemHasStatusEffect(icon) {
     if(!icon || typeof ITEM_DEF === 'undefined') return false;
@@ -221,6 +322,18 @@
         el.ondragover = (e) => equipSlotDragOver(e, slot);
         el.ondrop = (e) => equipSlotDrop(e, slot);
         el.style.cursor = name ? 'grab' : '';
+        // Sticky-tap support: tap a filled equip slot to begin a move; tap
+        // again with a pending move to drop. Empty equip slots are valid
+        // drop targets but cannot start a move.
+        el.onclick = () => {
+          if (handleStickyTap('equip', slot)) return;
+          if (name) startStickyDrag('equip', slot);
+        };
+        if (window._stickyDrag && window._stickyDrag.source === 'equip' && window._stickyDrag.slot === slot) {
+          el.classList.add('sticky-selected');
+        } else {
+          el.classList.remove('sticky-selected');
+        }
       }
     });
 
@@ -802,6 +915,13 @@
     for(let i=0; i<player.quickslotCount; i++) {
       let item = inventory[i], slot = document.createElement('div');
       slot.className = isIdentifying ? 'inv-slot selected' : 'inv-slot';
+      // Sticky-tap drop target: tap completes a pending sticky-drag move
+      // onto inventory[i]. Quickslots NEVER initiate a sticky-drag (the
+      // user's existing tap-to-use behavior is preserved when no sticky
+      // selection is active).
+      if (window._stickyDrag && window._stickyDrag.source === 'inv' && window._stickyDrag.idx === i) {
+        slot.classList.add('sticky-selected');
+      }
       slot.draggable = item ? true : false;
       if(item) slot.addEventListener('dragstart', (e) => handleDragStart(e, 'inv', i));
       slot.addEventListener('dragover', allowDrop);
@@ -819,6 +939,7 @@
         }
       }
       slot.onclick = () => {
+        if (handleStickyTap('inv', i)) return;
         if(item && item.def && item.def.type === 'bag') return;
         handleItemClick(i);
       };
@@ -977,6 +1098,9 @@
       let item = inventory[i], slot = document.createElement('div');
       slot.className = 'inv-slot'; slot.style.width='36px'; slot.style.height='36px'; slot.style.minWidth='0';
       slot.style.borderRadius='6px'; slot.style.margin='1px';
+      if (window._stickyDrag && window._stickyDrag.source === 'inv' && window._stickyDrag.idx === i) {
+        slot.classList.add('sticky-selected');
+      }
       slot.draggable = item ? true : false;
       if(item) slot.addEventListener('dragstart', (e) => handleDragStart(e, 'inv', i));
       slot.addEventListener('dragover', allowDrop);
@@ -1006,6 +1130,9 @@
         };
       }
       slot.onclick = () => {
+        // Bag-panel's quickslot row mirrors HUD behavior: only acts as a
+        // drop target for sticky-tap; tap-to-use otherwise.
+        if (handleStickyTap('inv', i)) return;
         if(item && item.def && item.def.type === 'bag') return;
         handleItemClick(i);
       };
@@ -1016,6 +1143,9 @@
       let item = inventory[i], slot = document.createElement('div');
       slot.className = 'inv-slot'; slot.style.width='36px'; slot.style.height='36px'; slot.style.fontSize='16px'; slot.style.minWidth='0';
       slot.style.borderRadius='6px'; slot.style.margin='1px';
+      if (window._stickyDrag && window._stickyDrag.source === 'inv' && window._stickyDrag.idx === i) {
+        slot.classList.add('sticky-selected');
+      }
       slot.draggable = item ? true : false;
       if(item) slot.addEventListener('dragstart', (e) => handleDragStart(e, 'inventory', i));
       slot.addEventListener('dragover', allowDrop);
@@ -1038,10 +1168,21 @@
         }
       }
       slot.onclick = () => {
-        if(item && item.def && item.def.type === 'bag') {
-          handleInventoryClick(i);
-        } else {
-          handleInventoryClick(i);
+        // Sticky-tap: drop pending move here; or, if no pending move and
+        // this slot has an item, start a sticky-drag. Empty slots without
+        // a pending move do nothing (consistent with desktop drag UX).
+        if (handleStickyTap('inventory', i)) return;
+        if (item) {
+          // Bag items still need single-click for handleInventoryClick
+          // (which opens or interacts with the bag in the existing flow).
+          // Non-bag items: start a sticky-drag instead of immediately
+          // consuming/equipping — preserves the "tap, then tap target"
+          // mobile UX.
+          if (item.def && item.def.type === 'bag') {
+            handleInventoryClick(i);
+          } else {
+            startStickyDrag('inv', i);
+          }
         }
       };
       slot.ondblclick = () => {
