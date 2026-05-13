@@ -268,8 +268,8 @@
             rat.stats.icon = '🐀💖';
             if(typeof emitQuestEvent === 'function') emitQuestEvent('rat_saved', {});
             logMsg('<span style="color:var(--primary)">🐀 The rat looks at you gratefully!</span>');
-            const bootIndex = inventory.findIndex(i => i && i.icon === '🥾');
-            if(bootIndex > -1) { inventory[bootIndex] = null; renderInventory(); }
+            const bootIndex = inventoryx.findIndex(i => i && i.icon === '🥾');
+            if(bootIndex > -1) { inventoryx[bootIndex] = null; renderInventory(); }
           }
         },
 
@@ -305,9 +305,9 @@
             window._templeActive = false;
             window._templeCollapsed = true;
             if(player.hp > 0) {
-              const emptySlot = inventory.findIndex(i => i === null);
+              const emptySlot = inventoryx.findIndex(i => i === null);
               if(emptySlot > -1) {
-                inventory[emptySlot] = { icon: '🏺', name: 'Golden Chalice', type: 'quest' };
+                inventoryx[emptySlot] = { icon: '🏺', name: 'Golden Chalice', type: 'quest' };
                 renderInventory();
               }
               if(typeof emitQuestEvent === 'function') emitQuestEvent('temple_survived', {});

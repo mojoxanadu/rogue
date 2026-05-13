@@ -2,43 +2,43 @@
   ╔══════════════════════════════════════════════════════════════╗
   ║  ROGUELIKE: THE ULTIMATE QUEST — Build 762                    ║
   ╠══════════════════════════════════════════════════════════════╣
-  ║  Built: 2026-05-13 09:43:20                                 ║
+  ║  Built: 2026-05-13 09:56:14                                 ║
   ║  Files: 28                                                  ║
   ║  Assets: 1                                                  ║
   ╠══════════════════════════════════════════════════════════════╣
   ║  Source Files:                                              ║
-  ║    header.html (src/header.html, modified: 2026-05-13 09:43) ║
-  ║    ui_layout.html (src/ui_layout.html, modified: 2026-05-13 09:43)║
+  ║    header.html (src/header.html, modified: 2026-05-13 09:52) ║
+  ║    ui_layout.html (src/ui_layout.html, modified: 2026-05-13 09:52)║
   ║    audio.js (src/audio.js, modified: 2026-05-13 09:43)       ║
   ║    music_data.js (src/music_data.js, modified: 2026-05-13 09:43)║
-  ║    state.js (src/state.js, modified: 2026-05-13 09:43)       ║
-  ║    player.js (src/player.js, modified: 2026-05-13 09:43)     ║
+  ║    state.js (src/state.js, modified: 2026-05-13 09:52)       ║
+  ║    player.js (src/player.js, modified: 2026-05-13 09:52)     ║
   ║    limerick_api.js (src/limerick_api.js, modified: 2026-05-13 09:43)║
-  ║    ui_logic.js (src/ui_logic.js, modified: 2026-05-13 09:43) ║
+  ║    ui_logic.js (src/ui_logic.js, modified: 2026-05-13 09:56) ║
   ║    quests_base.js (src/quests_base.js, modified: 2026-05-13 09:43)║
   ║    quests_monkey_island.js (src/quests_monkey_island.js, modified: 2026-05-13 09:43)║
-  ║    quests_monty_python.js (src/quests_monty_python.js, modified: 2026-05-13 09:43)║
+  ║    quests_monty_python.js (src/quests_monty_python.js, modified: 2026-05-13 09:52)║
   ║    quests_black_cauldron.js (src/quests_black_cauldron.js, modified: 2026-05-13 09:43)║
   ║    quests_indiana_jones.js (src/quests_indiana_jones.js, modified: 2026-05-13 09:43)║
-  ║    quests_kq5.js (src/quests_kq5.js, modified: 2026-05-13 09:43)║
+  ║    quests_kq5.js (src/quests_kq5.js, modified: 2026-05-13 09:52)║
   ║    quests_zork.js (src/quests_zork.js, modified: 2026-05-13 09:43)║
   ║    quests_elder_scrolls.js (src/quests_elder_scrolls.js, modified: 2026-05-13 09:43)║
   ║    quests_larry.js (src/quests_larry.js, modified: 2026-05-13 09:43)║
   ║    quests_space_quest.js (src/quests_space_quest.js, modified: 2026-05-13 09:43)║
   ║    quests_qfg.js (src/quests_qfg.js, modified: 2026-05-13 09:43)║
-  ║    quest_engine.js (src/quest_engine.js, modified: 2026-05-13 09:43)║
+  ║    quest_engine.js (src/quest_engine.js, modified: 2026-05-13 09:52)║
   ║    boundary_data.js (src/boundary_data.js, modified: 2026-05-13 09:43)║
-  ║    map.js (src/map.js, modified: 2026-05-13 09:43)           ║
-  ║    mechanics.js (src/mechanics.js, modified: 2026-05-13 09:43)║
-  ║    engine.js (src/engine.js, modified: 2026-05-13 09:43)     ║
-  ║    shop.js (src/shop.js, modified: 2026-05-13 09:43)         ║
+  ║    map.js (src/map.js, modified: 2026-05-13 09:52)           ║
+  ║    mechanics.js (src/mechanics.js, modified: 2026-05-13 09:52)║
+  ║    engine.js (src/engine.js, modified: 2026-05-13 09:52)     ║
+  ║    shop.js (src/shop.js, modified: 2026-05-13 09:52)         ║
   ║    webgl_fx.js (src/webgl_fx.js, modified: 2026-05-13 09:43) ║
   ║    render.js (src/render.js, modified: 2026-05-13 09:43)     ║
-  ║    input.js (src/input.js, modified: 2026-05-13 09:43)       ║
+  ║    input.js (src/input.js, modified: 2026-05-13 09:55)       ║
   ╚══════════════════════════════════════════════════════════════╝
 -->
 
-<!-- ═══ BEGIN: header.html (src/header.html, modified: 2026-05-13 09:43) ═══ -->
+<!-- ═══ BEGIN: header.html (src/header.html, modified: 2026-05-13 09:52) ═══ -->
 <!DOCTYPE html>
 <html lang="en">
 <!--
@@ -49,7 +49,7 @@
   - CSS Custom Properties (CSS Variables) for theming
   - Absolute positioning for game canvas and HUD overlays
   - Responsive design using viewport units (vw/vh)
-  - Modular UI components (chips, orbs, inventory slots, modals)
+  - Modular UI components (chips, orbs, inventoryx slots, modals)
   - CSS animations and transitions for visual feedback
 
   This is a single-page application where the game canvas occupies the entire
@@ -101,7 +101,7 @@
   /*
      HUD (HEADS‑UP DISPLAY) CONTAINER
      ================================
-     A full‑screen overlay that holds all UI widgets (stats, inventory, minimap, etc.).
+     A full‑screen overlay that holds all UI widgets (stats, inventoryx, minimap, etc.).
      pointer‑events: none allows clicks to pass through to the canvas, except for
      elements with the .interactive class that re‑enable pointer‑events.
   */
@@ -168,7 +168,7 @@
   /*
      BOTTOM BAR – PLAYER RESOURCES & INVENTORY
      =========================================
-     Contains the XP progress bar, HP/MP resource orbs, and the 10‑slot inventory hotbar.
+     Contains the XP progress bar, HP/MP resource orbs, and the 10‑slot inventoryx hotbar.
      The XP bar uses a CSS transition for smooth updates. The orbs use radial gradients
      for a glossy, game‑like appearance. Inventory slots are draggable and show quantity
      overlays.
@@ -308,7 +308,7 @@
   /*
      DRAGGABLE MODALS – WINDOWED UI
      ===============================
-     Translucent, movable windows for inventory, stats, spells, and other panels.
+     Translucent, movable windows for inventoryx, stats, spells, and other panels.
      Each modal has a header that serves as a drag handle. The modal‑body holds
      dynamic content generated by JavaScript. Uses box‑shadow for depth.
   */
@@ -410,7 +410,7 @@
 
 <!-- ═══ END: header.html ═══ -->
 
-<!-- ═══ BEGIN: ui_layout.html (src/ui_layout.html, modified: 2026-05-13 09:43) ═══ -->
+<!-- ═══ BEGIN: ui_layout.html (src/ui_layout.html, modified: 2026-05-13 09:52) ═══ -->
 <body>
 <!--
   UI LAYOUT – HTML STRUCTURE
@@ -418,8 +418,8 @@
   This file contains the complete HTML markup for the game's user interface.
   It is divided into three main layers:
   1. The <canvas> element (the game world)
-  2. The HUD (Heads‑Up Display) with stats, minimap, action bar, log, and inventory
-  3. Draggable modal windows for menus, inventory, equipment, etc.
+  2. The HUD (Heads‑Up Display) with stats, minimap, action bar, log, and inventoryx
+  3. Draggable modal windows for menus, inventoryx, equipment, etc.
 
   All UI elements are positioned absolutely and layered using z‑index.
   The layout is designed to be fully responsive via CSS (see header.html).
@@ -495,8 +495,8 @@
   </div>
 
   <!--
-    Bottom bar – XP progress, HP/MP orbs, and 10‑slot inventory hotbar.
-    The inventory slots are populated by renderInventory() in ui_logic.js.
+    Bottom bar – XP progress, HP/MP orbs, and 10‑slot inventoryx hotbar.
+    The inventoryx slots are populated by renderInventory() in ui_logic.js.
   -->
   <div id="bottom-bar" class="interactive">
     <div id="xp-container" title="Experience">
@@ -2135,7 +2135,7 @@
 
 // ═══ END: music_data.js ═══
 
-// ═══ BEGIN: state.js (src/state.js, modified: 2026-05-13 09:43) ═══
+// ═══ BEGIN: state.js (src/state.js, modified: 2026-05-13 09:52) ═══
   // K3: Game name — set via build process template substitution
   window.GAME_NAME = 'NotAName';
 
@@ -2150,7 +2150,7 @@
     1. CONSTANTS – tunable numeric parameters (hunger, speed, XP, etc.)
     2. Canvas & Tile definitions
     3. TALENT_TREES – progression trees for character development
-    4. Game‑state variables (currentLevel, theMap, inventory, etc.)
+    4. Game‑state variables (currentLevel, theMap, inventoryx, etc.)
     5. Player object – the player's persistent stats and flags
     6. MONSTER_DEF – definitions of all enemy types
     7. ITEM_DEF – definitions of all item types
@@ -2260,7 +2260,7 @@
   let questTimer = { active: false, time: 0, label: "", callback: null }; 
   let levelCache = {}; 
   const logInfo = { count: 0 };
-  // inventory, inventoryx, player, setPlayerDefaults, changeGold, PlayerSprites
+  // inventoryx, inventoryx, player, setPlayerDefaults, changeGold, PlayerSprites
   // → moved to src/player.js (K5 refactor)
   const assets = { sprites: {}, sounds: {}, minigames: {}, movies: {} };
   window.assets = assets; // Make assets globally accessible for video/image loading
@@ -2860,7 +2860,7 @@
 
 // ═══ END: state.js ═══
 
-// ═══ BEGIN: player.js (src/player.js, modified: 2026-05-13 09:43) ═══
+// ═══ BEGIN: player.js (src/player.js, modified: 2026-05-13 09:52) ═══
 // ============================================================
 //  PLAYER MODULE  –  src/player.js
 //  Centralizes all player state, defaults, and core functions.
@@ -2872,12 +2872,15 @@
 //  multiplayer trivially achievable.
 // ============================================================
 
-// ─── Inventory & Pouch ───────────────────────────────────────
-//  These parallel arrays hold item stacks or null for empty slots.
-//  inventory: 10 slots accessible from the main panel.
-//  inventoryx:     30 slots accessible from the inventoryx/bag panel.
-const inventory = new Array(10).fill(null);
-const inventoryx     = new Array(30).fill(null);
+// ─── Inventory ──────────────────────────────────────────────
+//  Single 30-slot array holding item stacks or null for empty slots.
+//  The first `player.quickslotCount` slots are mirrored in the HUD
+//  quickslot row; the bag panel shows all 30. Drags between the two
+//  views are slot moves within this same array.
+//
+//  (NOTE: identifier still named `inventoryx` mid-refactor; phase 3
+//  renames to `inventory` after all callers are updated.)
+const inventoryx = new Array(30).fill(null);
 
 // ─── Player Object ──────────────────────────────────────────
 //  Single source of truth for all runtime player properties.
@@ -2940,6 +2943,11 @@ function setPlayerDefaults() {
   player.spells = {};
   player.equipped = { head: null, chest: '🎽', legs: '🩲', feet: '🩴', leftHand: null, rightHand: null };
   player.learnedInsults = []; player.learnedRetorts = []; player.startingClass = null;
+  // Number of inventoryx slots mirrored in the HUD quickslot row. Future
+  // boons will raise this from a starting value (planned: 5) up to the
+  // full inventoryx size. All quickslot rendering and key bindings must
+  // read this — never hardcode 10.
+  player.quickslotCount = 10;
 }
 
 // ─── K9: Initialize player at declaration time ───────────────
@@ -3266,12 +3274,12 @@ window.getPlayerCritRate     = getPlayerCritRate;
 
 // ═══ END: limerick_api.js ═══
 
-// ═══ BEGIN: ui_logic.js (src/ui_logic.js, modified: 2026-05-13 09:43) ═══
+// ═══ BEGIN: ui_logic.js (src/ui_logic.js, modified: 2026-05-13 09:56) ═══
   /*
   UI_LOGIC MODULE – USER INTERFACE, SAVE/LOAD, AND DEBUG SYSTEMS
   ===============================================================
   This module contains all front‑end logic for updating the game's HTML interface,
-  managing save/load with optional encryption, rendering inventory grids, handling
+  managing save/load with optional encryption, rendering inventoryx grids, handling
   draggable modals, and providing debug/developer tools. It bridges the game state
   with the DOM, ensuring the player sees real‑time feedback.
 
@@ -3280,7 +3288,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
   2. Logging system – timestamped message display with auto‑scroll
   3. Save/load system – JSON serialization with XOR obfuscation, file download/upload
   4. Draggable modal management – mouse drag‑and‑drop for movable windows
-  5. Inventory & inventoryx rendering – visual grids with drag‑and‑drop between inventory/inventoryx
+  5. Inventory & inventoryx rendering – visual grids with drag‑and‑drop between inventoryx/inventoryx
   6. Stat & talent panels – allocation UI, talent tree display, spell management
   7. Debug/cheat functions – god mode, warp, add items, edit stats, toggle encryption
   8. Asset loader – import external sprite/sound packs via JSON file
@@ -3461,7 +3469,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
         const itemName = icon && ITEM_DEF[icon] ? ITEM_DEF[icon].name : '';
         el.innerHTML = `<div class="equip-label">${label}</div><span style="font-size:24px;">${icon || ''}</span>`;
         el.title = itemName;
-        // K6: Make filled slots draggable; always accept drops from inventory/inventoryx
+        // K6: Make filled slots draggable; always accept drops from inventoryx/inventoryx
         el.draggable = !!icon;
         el.ondragstart = icon ? (e) => equipSlotDragStart(e, slot) : null;
         el.ondragover = (e) => equipSlotDragOver(e, slot);
@@ -4042,8 +4050,8 @@ window.getPlayerCritRate     = getPlayerCritRate;
   window.renderInventory = () => {
     const grid = document.getElementById('inventoryUI'); if(!grid) return;
     grid.innerHTML = '';
-    for(let i=0; i<10; i++) {
-      let item = inventory[i], slot = document.createElement('div');
+    for(let i=0; i<player.quickslotCount; i++) {
+      let item = inventoryx[i], slot = document.createElement('div');
       slot.className = isIdentifying ? 'inv-slot selected' : 'inv-slot';
       slot.draggable = item ? true : false;
       if(item) slot.addEventListener('dragstart', (e) => handleDragStart(e, 'inv', i));
@@ -4073,9 +4081,9 @@ window.getPlayerCritRate     = getPlayerCritRate;
     }
   };
 
-  // Bug 27: Right-click context menu for inventory items
+  // Bug 27: Right-click context menu for inventoryx items
   window.showItemContextMenu = (idx, e) => {
-    let item = inventory[idx];
+    let item = inventoryx[idx];
     if(!item) return;
     let existing = document.getElementById('item-ctx-menu');
     if(existing) existing.remove();
@@ -4094,7 +4102,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
       ${canEquip ? `<div style="padding:6px 12px; cursor:pointer; font-size:12px;" onmouseover="this.style.background='#4A4458'" onmouseout="this.style.background=''"
         onclick="swapEquip(${idx}, '${def.slot || 'leftHand'}'); document.getElementById('item-ctx-menu')?.remove();">Equip</div>` : ''}
       ${freePouch !== -1 ? `<div style="padding:6px 12px; cursor:pointer; font-size:12px;" onmouseover="this.style.background='#4A4458'" onmouseout="this.style.background=''"
-        onclick="tryPlaceInPouch(inventory[${idx}]); inventory[${idx}]=null; renderInventory(); renderPouch(); document.getElementById('item-ctx-menu')?.remove();">Move to Pouch</div>` : ''}
+        onclick="tryPlaceInPouch(inventoryx[${idx}]); inventoryx[${idx}]=null; renderInventory(); renderPouch(); document.getElementById('item-ctx-menu')?.remove();">Move to Pouch</div>` : ''}
       <div style="padding:6px 12px; cursor:pointer; font-size:12px; color:var(--error);" onmouseover="this.style.background='#4A4458'" onmouseout="this.style.background=''"
         onclick="dropItemFromCtx(${idx}); document.getElementById('item-ctx-menu')?.remove();">Drop</div>`;
     menu.style.left = Math.min(e.clientX, window.innerWidth - 150) + 'px';
@@ -4106,10 +4114,10 @@ window.getPlayerCritRate     = getPlayerCritRate;
   };
 
   window.dropItemFromCtx = (idx) => {
-    let item = inventory[idx];
+    let item = inventoryx[idx];
     if(!item) return;
     itemsOnGround.push({ x: player.x, y: player.y, icon: item.icon });
-    inventory[idx] = null;
+    inventoryx[idx] = null;
     logMsg(`Dropped ${item.icon} on the ground.`);
     renderInventory(); updateUI();
   };
@@ -4139,7 +4147,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
       return;
     }
 
-    const sourceArr = openBag.source === 'inv' ? inventory : inventoryx;
+    const sourceArr = openBag.source === 'inv' ? inventoryx : inventoryx;
     const bag = sourceArr[openBag.idx];
     const bagDef = bag && ITEM_DEF[bag.icon];
     if(!bag || !bagDef || bagDef.type !== 'bag') {
@@ -4160,15 +4168,15 @@ window.getPlayerCritRate     = getPlayerCritRate;
       const cell = document.createElement('div');
       cell.style.cssText = 'min-height:42px; border-radius:8px; border:1px solid rgba(219,199,167,0.18); background:rgba(0,0,0,0.22); display:flex; align-items:center; justify-content:center; position:relative;';
 
-      // B6: All bag slots accept drops from inventory/inventoryx
+      // B6: All bag slots accept drops from inventoryx/inventoryx
       cell.addEventListener('dragover', allowDrop);
       cell.addEventListener('drop', (e) => {
         e.preventDefault();
         if(window.draggedSource === 'inv' || window.draggedSource === 'inventoryx') {
-          const srcArr = window.draggedSource === 'inv' ? inventory : inventoryx;
+          const srcArr = window.draggedSource === 'inv' ? inventoryx : inventoryx;
           const srcItem = srcArr[window.draggedItemIdx];
           if(!srcItem) return;
-          const destArr = openBag.source === 'inv' ? inventory : inventoryx;
+          const destArr = openBag.source === 'inv' ? inventoryx : inventoryx;
           const destBag = destArr[openBag.idx];
           if(!destBag || !destBag.contents) return;
           // Swap: if slot is occupied, put displaced item back to src slot
@@ -4215,9 +4223,9 @@ window.getPlayerCritRate     = getPlayerCritRate;
     const grid = document.getElementById('inventoryx-grid');
     if(!grid) return;
     grid.innerHTML = '';
-    // Row 0: inventory quickslots (keys 1-0) with hotkey numbers
-    for(let i=0; i<10; i++) {
-      let item = inventory[i], slot = document.createElement('div');
+    // Row 0: inventoryx quickslots (keys 1-0) with hotkey numbers
+    for(let i=0; i<player.quickslotCount; i++) {
+      let item = inventoryx[i], slot = document.createElement('div');
       slot.className = 'inv-slot'; slot.style.width='36px'; slot.style.height='36px'; slot.style.minWidth='0';
       slot.style.borderRadius='6px'; slot.style.margin='1px';
       slot.draggable = item ? true : false;
@@ -4304,13 +4312,13 @@ window.getPlayerCritRate     = getPlayerCritRate;
   window.handleDragStart = (e, source, idx) => { window.draggedSource = source; window.draggedItemIdx = idx; e.dataTransfer.setData('text/plain', idx); };
   window.allowDrop = (e) => { e.preventDefault(); };
 
-  // Drag any inventory/floor/loot item onto the inventoryx icon — auto-find open slot
+  // Drag any inventoryx/floor/loot item onto the inventoryx icon — auto-find open slot
   window.dropToPouch = (e) => {
     e.preventDefault();
     let item = null;
     // B6: From bag panel drag — move item to inventoryx
     if(window.draggedSource === 'bag' && window._dragBagSource != null && window._dragBagIdx != null) {
-      const bagArr = window._dragBagSource === 'inv' ? inventory : inventoryx;
+      const bagArr = window._dragBagSource === 'inv' ? inventoryx : inventoryx;
       const bag = bagArr[window._dragBagIdx];
       const bagSlotIdx = window.draggedItemIdx;
       if(bag && bag.contents && bag.contents[bagSlotIdx]) {
@@ -4329,13 +4337,13 @@ window.getPlayerCritRate     = getPlayerCritRate;
       renderInventory(); renderPouch(); updateUI();
       return;
     }
-    // From inventory drag
+    // From inventoryx drag
     if(window.draggedItemIdx !== null && window.draggedSource === 'inv') {
-      item = inventory[window.draggedItemIdx];
+      item = inventoryx[window.draggedItemIdx];
       if(item) {
         let placed = tryPlaceInPouch(item);
         if(placed) {
-          inventory[window.draggedItemIdx] = null;
+          inventoryx[window.draggedItemIdx] = null;
           logMsg(`${item.icon} stashed in inventoryx.`);
           Sound.clink();
         } else {
@@ -4365,7 +4373,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
   };
   window.handleDropItem = (e, targetSource, targetIdx) => {
     e.preventDefault();
-    // K6: Handle drag FROM an equipped paper doll slot → inventory/inventoryx slot
+    // K6: Handle drag FROM an equipped paper doll slot → inventoryx/inventoryx slot
     {
       let raw = null;
       try { raw = e.dataTransfer.getData('text/plain'); } catch(_) {}
@@ -4376,7 +4384,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
           const slotName = dragData.slot;
           const equippedIcon = player.equipped[slotName];
           if (equippedIcon) {
-            const tgtArr = targetSource === 'inv' ? inventory : inventoryx;
+            const tgtArr = targetSource === 'inv' ? inventoryx : inventoryx;
             const targetItem = tgtArr[targetIdx];
             if (targetItem === null) {
               // Drop to empty slot — unequip
@@ -4409,14 +4417,14 @@ window.getPlayerCritRate     = getPlayerCritRate;
         }
       }
     }
-    // B6: Handle drag from bag panel slot → inventory/inventoryx slot
+    // B6: Handle drag from bag panel slot → inventoryx/inventoryx slot
     if(window.draggedSource === 'bag' && window._dragBagSource != null && window._dragBagIdx != null) {
-      const bagArr = window._dragBagSource === 'inv' ? inventory : inventoryx;
+      const bagArr = window._dragBagSource === 'inv' ? inventoryx : inventoryx;
       const bag = bagArr[window._dragBagIdx];
       const bagSlotIdx = window.draggedItemIdx;
       if(bag && bag.contents && bag.contents[bagSlotIdx]) {
         const bagItem = bag.contents[bagSlotIdx];
-        const tgtArr = targetSource === 'inv' ? inventory : inventoryx;
+        const tgtArr = targetSource === 'inv' ? inventoryx : inventoryx;
         const displaced = tgtArr[targetIdx];
         tgtArr[targetIdx] = { icon: bagItem.icon, qty: bagItem.qty || 1 };
         // Put displaced item (if any) into the bag slot we dragged from
@@ -4429,19 +4437,19 @@ window.getPlayerCritRate     = getPlayerCritRate;
       renderInventory(); renderPouch(); updateUI();
       return;
     }
-    // Handle loot drag from corpse window → inventory/inventoryx slot
+    // Handle loot drag from corpse window → inventoryx/inventoryx slot
     if(window.draggedSource === 'loot' && window._lootDrag) {
       let c = corpses[window._lootDrag.corpseIdx];
       if(c && c.loot && c.loot[window._lootDrag.itemIdx]) {
         let lootItem = c.loot[window._lootDrag.itemIdx];
-        let tgtArr = targetSource === 'inv' ? inventory : inventoryx;
+        let tgtArr = targetSource === 'inv' ? inventoryx : inventoryx;
         let displaced = tgtArr[targetIdx];
         tgtArr[targetIdx] = { icon: lootItem.icon, qty: lootItem.qty || 1 };
         c.loot.splice(window._lootDrag.itemIdx, 1);
         if(displaced) {
           // Try to put displaced item back somewhere
-          let freeInv = inventory.findIndex(s => s === null);
-          if(freeInv !== -1) inventory[freeInv] = displaced;
+          let freeInv = inventoryx.findIndex(s => s === null);
+          if(freeInv !== -1) inventoryx[freeInv] = displaced;
           else { let fp = inventoryx.findIndex(s => s === null); if(fp !== -1) inventoryx[fp] = displaced; else itemsOnGround.push({x: player.x, y: player.y, icon: displaced.icon}); }
         }
         logMsg(`${lootItem.icon} moved to ${targetSource}.`);
@@ -4452,8 +4460,8 @@ window.getPlayerCritRate     = getPlayerCritRate;
       return;
     }
     if(window.draggedItemIdx !== null && window.draggedSource !== null) {
-      let srcArr = window.draggedSource === 'inv' ? inventory : inventoryx;
-      let tgtArr = targetSource === 'inv' ? inventory : inventoryx;
+      let srcArr = window.draggedSource === 'inv' ? inventoryx : inventoryx;
+      let tgtArr = targetSource === 'inv' ? inventoryx : inventoryx;
       let tgtItem = tgtArr[targetIdx];
       let srcItem = srcArr[window.draggedItemIdx];
       // Bug 33: If target slot has a bag, try to add dragged item into the bag
@@ -4496,15 +4504,15 @@ window.getPlayerCritRate     = getPlayerCritRate;
 
   window.handleDrop = (e, slot) => {
     e.preventDefault();
-    // #31: Allow drag from either inventory or inventoryx to equip slot
+    // #31: Allow drag from either inventoryx or inventoryx to equip slot
     if(window.draggedItemIdx !== null && (window.draggedSource === 'inv' || window.draggedSource === 'inventoryx')) {
       if(window.draggedSource === 'inventoryx') {
-        // Move from inventoryx to inventory temp slot, then equip
+        // Move from inventoryx to inventoryx temp slot, then equip
         let pouchItem = inventoryx[window.draggedItemIdx];
         if(pouchItem) {
-          let freeInv = inventory.findIndex(s => s === null);
+          let freeInv = inventoryx.findIndex(s => s === null);
           if(freeInv !== -1) {
-            inventory[freeInv] = pouchItem;
+            inventoryx[freeInv] = pouchItem;
             inventoryx[window.draggedItemIdx] = null;
             swapEquip(freeInv, slot);
           } else {
@@ -4536,7 +4544,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
     event.dataTransfer.effectAllowed = 'move';
   };
 
-  // Allow dragging inventory/inventoryx items INTO a paper doll slot
+  // Allow dragging inventoryx/inventoryx items INTO a paper doll slot
   window.equipSlotDragOver = function(event, slotName) {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'move';
@@ -4557,11 +4565,13 @@ window.getPlayerCritRate     = getPlayerCritRate;
 
     if (dragData && (dragData.source === 'inventory' || dragData.source === 'inventoryx')) {
       // Explicit JSON source (future-proof / from new drag start format)
-      srcArr = dragData.source === 'inventory' ? inventory : inventoryx;
+      // Both source labels now refer to slots in the same inventoryx array
+      // (quickslot row vs bag panel are two views of the same storage).
+      srcArr = inventoryx;
       fromIdx = dragData.idx;
     } else if (window.draggedItemIdx !== null && (window.draggedSource === 'inv' || window.draggedSource === 'inventoryx')) {
-      // Legacy global variable drag system (existing inventory/inventoryx drag)
-      srcArr = window.draggedSource === 'inv' ? inventory : inventoryx;
+      // Legacy global variable drag system — same unification as above.
+      srcArr = inventoryx;
       fromIdx = window.draggedItemIdx;
     } else {
       // Nothing we can handle
@@ -4780,7 +4790,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
     // See if player happens to be carrying anything unequipped
     // that could improve their combat stats if it were.
     let considerEquip = false;
-    [inventory, inventoryx].forEach(arr => {
+    [inventoryx, inventoryx].forEach(arr => {
       arr.forEach(item => {
         if(!item) return;
         let def = ITEM_DEF[item.icon];
@@ -5422,8 +5432,8 @@ window.getPlayerCritRate     = getPlayerCritRate;
   window.debugAddItem = (icon) => {
     let def = ITEM_DEF[icon];
     if (!def) { logMsg(`Unknown item: "${icon}"`); return; }
-    let slot = inventory.findIndex(i => i === null);
-    if (slot !== -1) { inventory[slot] = { icon }; }
+    let slot = inventoryx.findIndex(i => i === null);
+    if (slot !== -1) { inventoryx[slot] = { icon }; }
     else { slot = inventoryx.findIndex(i => i === null); if (slot !== -1) inventoryx[slot] = { icon }; else itemsOnGround.push({x: player.x, y: player.y, icon}); }
     logMsg(`Added ${def.name} to ${slot !== -1 ? 'inventory' : 'ground'}.`);
     renderInventory(); updateUI();
@@ -5815,10 +5825,10 @@ window.getPlayerCritRate     = getPlayerCritRate;
   <table style="width:100%;border-collapse:collapse;font-size:10px;">
     <tr><td style="color:#fa4;padding:2px 8px;">/use &lt;item&gt;</td><td>Use item by name or emoji</td></tr>
     <tr><td style="color:#fa4;padding:2px 8px;">/cast &lt;spell&gt;</td><td>Cast spell by name</td></tr>
-    <tr><td style="color:#fa4;padding:2px 8px;">/equip &lt;item&gt;</td><td>Equip item from inventory</td></tr>
+    <tr><td style="color:#fa4;padding:2px 8px;">/equip &lt;item&gt;</td><td>Equip item from inventoryx</td></tr>
     <tr><td style="color:#fa4;padding:2px 8px;">/say &lt;text&gt;</td><td>Log message to game log</td></tr>
     <tr><td style="color:#fa4;padding:2px 8px;">/tp &lt;x&gt; &lt;y&gt;</td><td>Teleport (debug)</td></tr>
-    <tr><td style="color:#fa4;padding:2px 8px;">/give &lt;item&gt;</td><td>Add item to inventory (debug)</td></tr>
+    <tr><td style="color:#fa4;padding:2px 8px;">/give &lt;item&gt;</td><td>Add item to inventoryx (debug)</td></tr>
   </table>
 
   <h3 style="color:#b8860b;margin-top:12px;">Variables</h3>
@@ -6879,7 +6889,7 @@ ${html}
 
 // ═══ END: quests_monkey_island.js ═══
 
-// ═══ BEGIN: quests_monty_python.js (src/quests_monty_python.js, modified: 2026-05-13 09:43) ═══
+// ═══ BEGIN: quests_monty_python.js (src/quests_monty_python.js, modified: 2026-05-13 09:52) ═══
   /*
   ╔══════════════════════════════════════════════════════════════════════════════╗
   ║  QUEST PACK: MONTY PYTHON — Holy Grail, Black Knight, Bridge of Death      ║
@@ -7128,7 +7138,7 @@ ${html}
     Step 2: Player can ask about the "Constitutional Convention" he's organizing.
             → If INT >= 13: hint about needing 1000g or a crown item (👑)
     Step 3: Player gives 1000g or has 👑:
-            → Dennis hands over a scroll  📜 (add to inventory)
+            → Dennis hands over a scroll  📜 (add to inventoryx)
             → QuestEngine.advance('q_dennis_convention', { progress: 20 })
             → awardAchievement('convention')
 
@@ -7576,7 +7586,7 @@ ${html}
 
 // ═══ END: quests_indiana_jones.js ═══
 
-// ═══ BEGIN: quests_kq5.js (src/quests_kq5.js, modified: 2026-05-13 09:43) ═══
+// ═══ BEGIN: quests_kq5.js (src/quests_kq5.js, modified: 2026-05-13 09:52) ═══
   // === King's Quest V Quest Pack ===
   /*
     KING'S QUEST V – RAT RESCUE & TEMPLE OF GREED
@@ -7847,8 +7857,8 @@ ${html}
             rat.stats.icon = '🐀💖';
             if(typeof emitQuestEvent === 'function') emitQuestEvent('rat_saved', {});
             logMsg('<span style="color:var(--primary)">🐀 The rat looks at you gratefully!</span>');
-            const bootIndex = inventory.findIndex(i => i && i.icon === '🥾');
-            if(bootIndex > -1) { inventory[bootIndex] = null; renderInventory(); }
+            const bootIndex = inventoryx.findIndex(i => i && i.icon === '🥾');
+            if(bootIndex > -1) { inventoryx[bootIndex] = null; renderInventory(); }
           }
         },
 
@@ -7884,9 +7894,9 @@ ${html}
             window._templeActive = false;
             window._templeCollapsed = true;
             if(player.hp > 0) {
-              const emptySlot = inventory.findIndex(i => i === null);
+              const emptySlot = inventoryx.findIndex(i => i === null);
               if(emptySlot > -1) {
-                inventory[emptySlot] = { icon: '🏺', name: 'Golden Chalice', type: 'quest' };
+                inventoryx[emptySlot] = { icon: '🏺', name: 'Golden Chalice', type: 'quest' };
                 renderInventory();
               }
               if(typeof emitQuestEvent === 'function') emitQuestEvent('temple_survived', {});
@@ -8693,7 +8703,7 @@ ${html}
 
 // ═══ END: quests_qfg.js ═══
 
-// ═══ BEGIN: quest_engine.js (src/quest_engine.js, modified: 2026-05-13 09:43) ═══
+// ═══ BEGIN: quest_engine.js (src/quest_engine.js, modified: 2026-05-13 09:52) ═══
   /*
   ╔══════════════════════════════════════════════════════════════════════════════╗
   ║  QUEST ENGINE MODULE — DATA-DRIVEN QUEST & ACHIEVEMENT SYSTEM              ║
@@ -9220,7 +9230,7 @@ ${html}
 
         case 'inventoryHas':
           // Player has at least qty of an item (does NOT consume it)
-          return inventory.some(i => i && i.icon === req.item && (i.qty || 1) >= (req.qty || 1));
+          return inventoryx.some(i => i && i.icon === req.item && (i.qty || 1) >= (req.qty || 1));
 
         case 'inventoryRemove':
           // Like inventoryHas, but CONSUMES the item if the check passes.
@@ -9308,9 +9318,9 @@ ${html}
           break;
 
         case 'giveItem': {
-          let emptySlot = inventory.findIndex(i => i === null);
+          let emptySlot = inventoryx.findIndex(i => i === null);
           if (emptySlot !== -1) {
-            inventory[emptySlot] = { icon: reward.item, qty: reward.qty || 1 };
+            inventoryx[emptySlot] = { icon: reward.item, qty: reward.qty || 1 };
             let def = ITEM_DEF[reward.item];
             if (def) logMsg(`<span style='color:var(--success)'>Received: ${def.name}</span>`);
             if (typeof renderInventory === 'function') renderInventory();
@@ -9743,22 +9753,22 @@ ${html}
 
     _tryRemoveItem(itemIcon, qty) {
       let found = 0;
-      for (let i = 0; i < inventory.length; i++) {
-        if (inventory[i] && inventory[i].icon === itemIcon) {
-          found += (inventory[i].qty || 1);
+      for (let i = 0; i < inventoryx.length; i++) {
+        if (inventoryx[i] && inventoryx[i].icon === itemIcon) {
+          found += (inventoryx[i].qty || 1);
         }
       }
       if (found < qty) return false;
       // Actually remove
       let remaining = qty;
-      for (let i = 0; i < inventory.length && remaining > 0; i++) {
-        if (inventory[i] && inventory[i].icon === itemIcon) {
-          let has = inventory[i].qty || 1;
+      for (let i = 0; i < inventoryx.length && remaining > 0; i++) {
+        if (inventoryx[i] && inventoryx[i].icon === itemIcon) {
+          let has = inventoryx[i].qty || 1;
           if (has <= remaining) {
             remaining -= has;
-            inventory[i] = null;
+            inventoryx[i] = null;
           } else {
-            inventory[i].qty -= remaining;
+            inventoryx[i].qty -= remaining;
             remaining = 0;
           }
         }
@@ -10078,7 +10088,7 @@ window.BOUNDARY_DATA = {
 
 // ═══ END: boundary_data.js ═══
 
-// ═══ BEGIN: map.js (src/map.js, modified: 2026-05-13 09:43) ═══
+// ═══ BEGIN: map.js (src/map.js, modified: 2026-05-13 09:52) ═══
   /*
   MAP MODULE – PROCEDURAL GENERATION AND SCENE MANAGEMENT
   ========================================================
@@ -11941,7 +11951,7 @@ window.BOUNDARY_DATA = {
         if(window.autoLootEnabled && player.talents && player.talents['autoLoot']) {
           chestLoot.forEach(item => {
             if(item.icon === '🪙') { changeGold(item.qty); }
-            else { let s = inventory.findIndex(s => s === null); if(s !== -1) inventory[s] = {icon:item.icon, qty:item.qty}; else if(typeof tryPlaceInPouch==='function') tryPlaceInPouch(item); }
+            else { let s = inventoryx.findIndex(s => s === null); if(s !== -1) inventoryx[s] = {icon:item.icon, qty:item.qty}; else if(typeof tryPlaceInPouch==='function') tryPlaceInPouch(item); }
           });
           if(!chestLoot.some(item => item.icon === '🪙')) Sound.clink();
         } else {
@@ -12021,13 +12031,13 @@ window.BOUNDARY_DATA = {
 
 // ═══ END: map.js ═══
 
-// ═══ BEGIN: mechanics.js (src/mechanics.js, modified: 2026-05-13 09:43) ═══
+// ═══ BEGIN: mechanics.js (src/mechanics.js, modified: 2026-05-13 09:52) ═══
 /*
   MECHANICS MODULE – INVENTORY, ITEMS, AND SPECIAL ACTIONS
   =========================================================
-  This module contains the core game mechanics for handling player interactions with inventory items,
+  This module contains the core game mechanics for handling player interactions with inventoryx items,
   special quest items, and Monty Python‑themed events. It bridges the UI (clicks, keypresses) with
-  the game state (inventory, equipment, enemies, quest flags).
+  the game state (inventoryx, equipment, enemies, quest flags).
 
   Key responsibilities:
   1. Item click handling – weapon/armor equipping, food/potion consumption, scroll reading
@@ -12037,7 +12047,7 @@ window.BOUNDARY_DATA = {
   5. Equipment swapping – stat recalculation (damage, dodge rate)
 
   The functions here are called from ui_logic.js (handleItemClick) and from the game loop
-  (pickupItems). They update the global inventory, inventoryx, player.equipped, and enemy arrays.
+  (pickupItems). They update the global inventoryx, inventoryx, player.equipped, and enemy arrays.
 */
   // #38: Helper — show blue +MP floating text above player
   function showMpGain(amount) {
@@ -12102,8 +12112,8 @@ window.BOUNDARY_DATA = {
     let m;
     if((m = action.match(/^USE\s+'?(.+?)'?$/i))) {
       const name = m[1].toLowerCase();
-      let idx = inventory.findIndex(item => item && ITEM_DEF[item.icon] && ITEM_DEF[item.icon].name.toLowerCase() === name);
-      if(idx === -1) idx = inventory.findIndex(item => item && item.icon.toLowerCase().includes(name));
+      let idx = inventoryx.findIndex(item => item && ITEM_DEF[item.icon] && ITEM_DEF[item.icon].name.toLowerCase() === name);
+      if(idx === -1) idx = inventoryx.findIndex(item => item && item.icon.toLowerCase().includes(name));
       if(idx !== -1) { handleItemClick(idx); return; }
       // Try inventoryx
       let pidx = inventoryx.findIndex(item => item && ITEM_DEF[item.icon] && ITEM_DEF[item.icon].name.toLowerCase() === name);
@@ -12128,15 +12138,15 @@ window.BOUNDARY_DATA = {
   function handlePouchUse(idx) {
     let item = inventoryx[idx]; if(!item) return;
     let def = ITEM_DEF[item.icon]; if(!def) return;
-    // Move to free inventory slot, then use
-    let freeSlot = inventory.findIndex(s => s === null);
-    if(freeSlot !== -1) { inventory[freeSlot] = item; inventoryx[idx] = null; handleItemClick(freeSlot); }
+    // Move to free inventoryx slot, then use
+    let freeSlot = inventoryx.findIndex(s => s === null);
+    if(freeSlot !== -1) { inventoryx[freeSlot] = item; inventoryx[idx] = null; handleItemClick(freeSlot); }
   }
 
   // === Open a bag / expansion bag ===
   // openBagFromSource: source = 'inv' or 'inventoryx', idx = slot index
   function openBagFromSource(source, idx) {
-    let arr = source === 'inv' ? inventory : inventoryx;
+    let arr = source === 'inv' ? inventoryx : inventoryx;
     let item = arr[idx];
     if(!item) return;
     let def = ITEM_DEF[item.icon];
@@ -12170,14 +12180,14 @@ window.BOUNDARY_DATA = {
   window.openBagInInventory = function(idx) { openBagFromSource('inv', idx); };
 
   window.takeItemFromBagSource = (source, bagIdx, itemIdx) => {
-    let arr = source === 'inv' ? inventory : inventoryx;
+    let arr = source === 'inv' ? inventoryx : inventoryx;
     let bag = arr[bagIdx];
     if(!bag || !bag.contents || !bag.contents[itemIdx]) return;
     let taken = bag.contents[itemIdx];
-    // Try to add to inventory
-    let slot = inventory.findIndex(s => s === null);
+    // Try to add to inventoryx
+    let slot = inventoryx.findIndex(s => s === null);
     if(slot !== -1) {
-      inventory[slot] = { icon: taken.icon, qty: taken.qty || 1 };
+      inventoryx[slot] = { icon: taken.icon, qty: taken.qty || 1 };
       bag.contents[itemIdx] = null;
       let def = ITEM_DEF[taken.icon];
       logMsg(`Took ${taken.icon} ${def ? def.name : ''} from bag.`);
@@ -12187,7 +12197,7 @@ window.BOUNDARY_DATA = {
       if(pSlot !== -1) {
         inventoryx[pSlot] = { icon: taken.icon, qty: taken.qty || 1 };
         bag.contents[itemIdx] = null;
-        logMsg(`Took ${taken.icon} to inventoryx (inventory full).`);
+        logMsg(`Took ${taken.icon} to inventoryx (inventoryx full).`);
       } else {
         itemsOnGround.push({ x: player.x, y: player.y, icon: taken.icon });
         bag.contents[itemIdx] = null;
@@ -12218,7 +12228,7 @@ window.BOUNDARY_DATA = {
   // === Inventory & Quest Actions (v7.2.0) ===
    function handleItemClick(idx) {
      if(player.hp <= 0) { logMsg("<span style='color:#888'>You are dead.</span>"); return; }
-     let itemObj = inventory[idx];
+     let itemObj = inventoryx[idx];
      if(!itemObj) return;
 
     // E13: Identify Scroll — mark item as identified, reveal full tooltip
@@ -12358,7 +12368,7 @@ window.BOUNDARY_DATA = {
       return;
     }
 
-    // Gold Bag — add gold directly, don't keep in inventory
+    // Gold Bag — add gold directly, don't keep in inventoryx
     if(def.type === "wealth") {
       let goldValue = def.maxGP || 50;
       changeGold(goldValue);
@@ -12484,11 +12494,11 @@ window.BOUNDARY_DATA = {
         decrementItem(idx);
         // Place magic residue in same slot
         const residue = { icon: '✨', qty: 1 };
-        if(!inventory[idx]) {
-          inventory[idx] = residue;
+        if(!inventoryx[idx]) {
+          inventoryx[idx] = residue;
         } else {
-          let freeSlot = inventory.findIndex(s => s === null);
-          if(freeSlot !== -1) inventory[freeSlot] = residue;
+          let freeSlot = inventoryx.findIndex(s => s === null);
+          if(freeSlot !== -1) inventoryx[freeSlot] = residue;
           else { let fp = inventoryx.findIndex(s => s === null); if(fp !== -1) inventoryx[fp] = residue; else itemsOnGround.push({x: player.x, y: player.y, icon: '✨'}); }
         }
         logMsg("<span style='color:#888; font-style:italic;'>The scroll crumbles to magic residue.</span>");
@@ -12501,7 +12511,7 @@ window.BOUNDARY_DATA = {
         logMsg(`<span style='color:var(--success)'>📖🌀 You open the ${def.name} and read from its pages...</span>`);
         castSpell('portal', true);
         // Consume the tome (replace with ash)
-        inventory[idx] = { icon: '🌫️', qty: 1 };
+        inventoryx[idx] = { icon: '🌫️', qty: 1 };
         renderInventory(); updateUI();
         return;
       }
@@ -12511,7 +12521,7 @@ window.BOUNDARY_DATA = {
       logMsg(`<span style='color:var(--success)'>📖 Learned spell: ${def.name}. The tome crumbles to ash!</span>`);
       Sound.clink();
       // Bug 35: Replace tome with spell residue ash
-      inventory[idx] = { icon: '🌫️', qty: 1 };
+      inventoryx[idx] = { icon: '🌫️', qty: 1 };
       renderInventory(); updateUI();
     }
     else if(itemObj.icon === '🫖') {
@@ -12526,10 +12536,10 @@ window.BOUNDARY_DATA = {
         return;
       }
       player.teapotLastUse = now;
-      // Add health potion to inventory
-      let slot = inventory.findIndex(i => i === null);
+      // Add health potion to inventoryx
+      let slot = inventoryx.findIndex(i => i === null);
       if(slot !== -1) {
-        inventory[slot] = {icon: '🧪', qty: 1};
+        inventoryx[slot] = {icon: '🧪', qty: 1};
         logMsg("<span style='color:var(--success)'>🫖 The Magic Teapot brews a Health Potion!</span>");
       } else {
         // Try inventoryx
@@ -12587,7 +12597,7 @@ window.BOUNDARY_DATA = {
   };
 
   window.witchTrial = () => {
-    let hasDuck = inventory.some(i => i && i.icon === '🦆');
+    let hasDuck = inventoryx.some(i => i && i.icon === '🦆');
     let m = document.getElementById('modal-content');
     if(hasDuck) {
       m.innerHTML = `<h2>⚖️ The Scales of Justice</h2><p>"She weighs the same as a duck!"</p>
@@ -12602,8 +12612,8 @@ window.BOUNDARY_DATA = {
 
   window.finishWitch = () => {
     hideOverlay();
-    let empty = inventory.findIndex(i => i === null);
-    if(empty !== -1) inventory[empty] = {icon:'🧪🦎', qty:1};
+    let empty = inventoryx.findIndex(i => i === null);
+    if(empty !== -1) inventoryx[empty] = {icon:'🧪🦎', qty:1};
     logMsg("The Witch left a Potion of Newt behind.");
     renderInventory();
   };
@@ -12637,12 +12647,12 @@ window.BOUNDARY_DATA = {
         let stacked = false;
         if(def.stackable) {
           let maxStack = def.maxStack || 10;
-          let slot = inventory.find(i => i && i.icon === item.icon && (i.qty || 1) < maxStack);
+          let slot = inventoryx.find(i => i && i.icon === item.icon && (i.qty || 1) < maxStack);
           if(slot) { slot.qty = (slot.qty || 1) + 1; stacked = true; }
         }
         if(!stacked) {
-          let emptyIdx = inventory.findIndex(i => i === null);
-          if(emptyIdx !== -1) { inventory[emptyIdx] = {icon: item.icon, qty: 1}; stacked = true; }
+          let emptyIdx = inventoryx.findIndex(i => i === null);
+          if(emptyIdx !== -1) { inventoryx[emptyIdx] = {icon: item.icon, qty: 1}; stacked = true; }
         }
 
         // Try Pouch Second
@@ -12683,22 +12693,22 @@ window.BOUNDARY_DATA = {
   }
 
   function decrementItem(idx) { 
-    if(!inventory[idx]) return; 
-    inventory[idx].qty--; 
-    if(!inventory[idx].qty || inventory[idx].qty <= 0) inventory[idx] = null; 
+    if(!inventoryx[idx]) return; 
+    inventoryx[idx].qty--; 
+    if(!inventoryx[idx].qty || inventoryx[idx].qty <= 0) inventoryx[idx] = null; 
     renderInventory(); 
   }
 
   function countItemByIcon(icon) {
     let total = 0;
-    inventory.forEach(item => { if(item && item.icon === icon) total += item.qty || 1; });
+    inventoryx.forEach(item => { if(item && item.icon === icon) total += item.qty || 1; });
     inventoryx.forEach(item => { if(item && item.icon === icon) total += item.qty || 1; });
     return total;
   }
 
   function consumeItemByIcon(icon, qty = 1) {
     let remaining = qty;
-    [inventory, inventoryx].forEach(arr => {
+    [inventoryx, inventoryx].forEach(arr => {
       for(let i = 0; i < arr.length && remaining > 0; i++) {
         let item = arr[i];
         if(!item || item.icon !== icon) continue;
@@ -13214,12 +13224,12 @@ window.BOUNDARY_DATA = {
 
   function swapEquip(idx, slot) {
     // K6: idx === -1 means "just recalculate stats from current equipped state"
-    // (used by drag-to-unequip / slot-swap paths that manage inventory themselves)
+    // (used by drag-to-unequip / slot-swap paths that manage inventoryx themselves)
     if (idx !== -1) {
-      let item = inventory[idx], cur = player.equipped[slot];
-      // #34: Allow unequipping to a null/empty inventory slot
+      let item = inventoryx[idx], cur = player.equipped[slot];
+      // #34: Allow unequipping to a null/empty inventoryx slot
       player.equipped[slot] = item ? item.icon : null;
-      inventory[idx] = cur ? { icon: cur, qty: 1 } : null;
+      inventoryx[idx] = cur ? { icon: cur, qty: 1 } : null;
     }
     // Recalculate combat stats from all equipment
     let totalDmg = CONSTANTS.PLAYER_UNARMED_BASE_DMG;
@@ -13248,7 +13258,7 @@ window.BOUNDARY_DATA = {
     player.baseDmg = totalDmg; player.dodgeRate = totalEvade / 100;
     player.speedBonus = speedBonus;
     renderInventory(); updateUI();
-    // Log equipped message only when an actual inventory item was swapped in
+    // Log equipped message only when an actual inventoryx item was swapped in
     if (idx !== -1) {
       let equippedIcon = player.equipped[slot];
       let itemDef = equippedIcon ? ITEM_DEF[equippedIcon] : null;
@@ -13256,14 +13266,14 @@ window.BOUNDARY_DATA = {
     }
   }
 
-  // #34: Unequip from equip slot to ground when inventory is full
+  // #34: Unequip from equip slot to ground when inventoryx is full
   window.unequipToGround = (slot) => {
     const cur = player.equipped[slot];
     if(!cur) return;
-    const freeSlot = inventory.findIndex(s => s === null);
+    const freeSlot = inventoryx.findIndex(s => s === null);
     if(freeSlot !== -1) {
-      inventory[freeSlot] = { icon: cur, qty: 1 };
-      logMsg(`<span style='color:var(--success)'>Unequipped ${ITEM_DEF[cur]?.name || cur} to inventory.</span>`);
+      inventoryx[freeSlot] = { icon: cur, qty: 1 };
+      logMsg(`<span style='color:var(--success)'>Unequipped ${ITEM_DEF[cur]?.name || cur} to inventoryx.</span>`);
     } else {
       itemsOnGround.push({ x: player.x, y: player.y, icon: cur });
       logMsg(`<span style='color:var(--warning)'>Inventory full — ${ITEM_DEF[cur]?.name || cur} dropped at your feet.</span>`);
@@ -13274,7 +13284,7 @@ window.BOUNDARY_DATA = {
 
 // ═══ END: mechanics.js ═══
 
-// ═══ BEGIN: engine.js (src/engine.js, modified: 2026-05-13 09:43) ═══
+// ═══ BEGIN: engine.js (src/engine.js, modified: 2026-05-13 09:52) ═══
   /*
   ENGINE MODULE – CORE GAME LOOPS, AI, AND COMBAT
   ================================================
@@ -13415,7 +13425,7 @@ window.BOUNDARY_DATA = {
     }
   }
 
-  // Auto-loot: immediately dump corpse loot into inventory
+  // Auto-loot: immediately dump corpse loot into inventoryx
   function autoLootCorpse(corpseIdx) {
     let c = corpses[corpseIdx];
     if(!c || !c.loot || c.loot.length === 0) return;
@@ -13428,7 +13438,7 @@ window.BOUNDARY_DATA = {
         let def = ITEM_DEF[item.icon];
         if(def && def.stackable) {
           let maxStack = def.maxStack || 10;
-          let stackSlot = inventory.find(s => s && s.icon === item.icon && (s.qty || 1) < maxStack);
+          let stackSlot = inventoryx.find(s => s && s.icon === item.icon && (s.qty || 1) < maxStack);
           if(stackSlot) {
             let can = maxStack - (stackSlot.qty || 1);
             let add = Math.min(can, item.qty || 1);
@@ -13437,10 +13447,10 @@ window.BOUNDARY_DATA = {
             placed = (item.qty || 0) <= 0;
           }
         }
-        // Try inventory
-        let slot = inventory.findIndex(s => s === null);
+        // Try inventoryx
+        let slot = inventoryx.findIndex(s => s === null);
         if(!placed && slot !== -1) {
-          inventory[slot] = { icon: item.icon, qty: item.qty || 1 };
+          inventoryx[slot] = { icon: item.icon, qty: item.qty || 1 };
           placed = true;
         }
         // Try inventoryx and bags
@@ -13531,7 +13541,7 @@ window.BOUNDARY_DATA = {
         html += `<p style="color:var(--warning); font-size:11px;">⚠️ Your keen senses warn you: a ${nearEnemy.type} lurks nearby. Loot carefully!</p>`;
       }
     }
-    html += `<p style="color:#888; font-size:11px;">Drag items to inventory or click Loot All (Ctrl+Click for quick loot)</p>`;
+    html += `<p style="color:#888; font-size:11px;">Drag items to inventoryx or click Loot All (Ctrl+Click for quick loot)</p>`;
     html += `<div id="loot-grid" style="display:grid; grid-template-columns: repeat(${Math.min(c.loot.length, 6)}, 1fr); gap:4px; margin:10px 0;">`;
 
     c.loot.forEach((item, idx) => {
@@ -13570,9 +13580,9 @@ window.BOUNDARY_DATA = {
         changeGold(item.qty, { x: c.x, y: c.y, floatText: true });
         didLoot = true;
       } else {
-        let slot = inventory.findIndex(s => s === null);
+        let slot = inventoryx.findIndex(s => s === null);
         if(slot !== -1) {
-          inventory[slot] = { icon: item.icon, qty: item.qty || 1 };
+          inventoryx[slot] = { icon: item.icon, qty: item.qty || 1 };
           didLoot = true;
         } else {
           let placed = tryPlaceInPouch(item);
@@ -13603,9 +13613,9 @@ window.BOUNDARY_DATA = {
       changeGold(item.qty, { x: c.x, y: c.y, floatText: true });
       c.loot.splice(itemIdx, 1);
     } else {
-      let slot = inventory.findIndex(s => s === null);
+      let slot = inventoryx.findIndex(s => s === null);
       if(slot !== -1) {
-        inventory[slot] = { icon: item.icon, qty: item.qty || 1 };
+        inventoryx[slot] = { icon: item.icon, qty: item.qty || 1 };
         c.loot.splice(itemIdx, 1);
         Sound.clink();
       } else {
@@ -13758,8 +13768,8 @@ window.BOUNDARY_DATA = {
     window._cainHealedThisVisit = false; // E6: reset Cain heal on new game
     window._activeBombs = []; // E16: reset active bombs on new game
     
-    // Reset inventory and inventoryx
-    for(let i = 0; i < inventory.length; i++) inventory[i] = null;
+    // Reset inventoryx and inventoryx
+    for(let i = 0; i < inventoryx.length; i++) inventoryx[i] = null;
     for(let i = 0; i < inventoryx.length; i++) inventoryx[i] = null;
     
     // Close overlay
@@ -14589,12 +14599,12 @@ window.BOUNDARY_DATA = {
   }
 
   function thiefSteal(thiefIdx) {
-    let items = inventory.filter(i => i !== null);
+    let items = inventoryx.filter(i => i !== null);
     if (items.length > 0) {
-      let idx = inventory.indexOf(items[Math.floor(Math.random()*items.length)]);
-      let stolen = inventory[idx];
+      let idx = inventoryx.indexOf(items[Math.floor(Math.random()*items.length)]);
+      let stolen = inventoryx[idx];
       stolenItems.push(stolen);
-      inventory[idx] = null;
+      inventoryx[idx] = null;
       logMsg(`<span style='color:var(--error)'>The Thief pickpocketed your ${ITEM_DEF[stolen.icon].name}!</span>`);
       // #13: Play internal dialog voice line on pickpocket
       let stolenVoices = ['voice_internal_stolen_0', 'voice_internal_stolen_1', 'voice_internal_stolen_2'];
@@ -14747,10 +14757,10 @@ window.BOUNDARY_DATA = {
   };
 
   function die() {
-    let crystalIdx = inventory.findIndex(i => i && i.icon === '💎💠');
+    let crystalIdx = inventoryx.findIndex(i => i && i.icon === '💎💠');
     if (crystalIdx !== -1) {
       logMsg("Crystal Shatters!");
-      inventory[crystalIdx] = null;
+      inventoryx[crystalIdx] = null;
       player.hp = player.maxHp; updateUI(); return;
     }
     // B41: Capture the last relevant game log message to display in the death modal
@@ -14822,8 +14832,8 @@ window.BOUNDARY_DATA = {
       if(player.talents && player.talents['autoLoot']) {
         logMsg(`<span style='color:var(--success)'>Your Scavenger instincts kick in! You automatically loot the Ifrit.</span>`);
         ifritLoot.forEach(item => {
-          let slot = inventory.findIndex(s => s === null);
-          if(slot !== -1) inventory[slot] = {icon: item.icon, qty: item.qty};
+          let slot = inventoryx.findIndex(s => s === null);
+          if(slot !== -1) inventoryx[slot] = {icon: item.icon, qty: item.qty};
           else tryPlaceInPouch(item);
         });
         renderInventory(); renderPouch(); updateUI();
@@ -15036,8 +15046,8 @@ window.BOUNDARY_DATA = {
           if(item.icon === '🪙') {
             changeGold(item.qty, { x: e.x, y: e.y, floatText: true });
           } else {
-            let slot = inventory.findIndex(s => s === null);
-            if(slot !== -1) { inventory[slot] = {icon: item.icon, qty: item.qty || 1}; }
+            let slot = inventoryx.findIndex(s => s === null);
+            if(slot !== -1) { inventoryx[slot] = {icon: item.icon, qty: item.qty || 1}; }
             else tryPlaceInPouch(item);
           }
         });
@@ -15120,8 +15130,8 @@ window.BOUNDARY_DATA = {
         if(player.talents && player.talents['autoLoot']) {
           logMsg(`<span style='color:var(--success)'>Your Scavenger instincts kick in! You automatically loot the Ifrit.</span>`);
           ifritLoot.forEach(item => {
-            let slot = inventory.findIndex(s => s === null);
-            if(slot !== -1) inventory[slot] = {icon: item.icon, qty: item.qty};
+            let slot = inventoryx.findIndex(s => s === null);
+            if(slot !== -1) inventoryx[slot] = {icon: item.icon, qty: item.qty};
             else tryPlaceInPouch(item);
           });
           renderInventory(); renderPouch(); updateUI();
@@ -15789,7 +15799,7 @@ window.BOUNDARY_DATA = {
       // If player has the Brass Bottle (from safe cracking quest), genie offers a wish.
       // Otherwise, it attacks as a boss fight.
       if(npc.type === 'genie' && npc.isGenieGuardian) {
-        const hasBottle = inventory.some(i => i && i.icon === '🏺') || inventoryx.some(i => i && i.icon === '🏺');
+        const hasBottle = inventoryx.some(i => i && i.icon === '🏺') || inventoryx.some(i => i && i.icon === '🏺');
         if(hasBottle) {
           // Genie offers a wish instead of fighting
           let m = document.getElementById('modal-content');
@@ -16241,7 +16251,7 @@ window.BOUNDARY_DATA = {
     let machine = machines.find(m => m.x === mx && m.y === my);
     if(!machine) return;
 
-    let beadCount = inventory.reduce((sum, i) => sum + (i && i.icon === '📿' ? (i.qty || 1) : 0), 0);
+    let beadCount = inventoryx.reduce((sum, i) => sum + (i && i.icon === '📿' ? (i.qty || 1) : 0), 0);
 
     let m = document.getElementById('modal-content');
     Sound.machine();
@@ -16285,12 +16295,12 @@ window.BOUNDARY_DATA = {
 
     // Consume beads
     let toConsume = machine.beadCost;
-    for(let i = 0; i < inventory.length && toConsume > 0; i++) {
-      if(inventory[i] && inventory[i].icon === '📿') {
-        let take = Math.min(inventory[i].qty || 1, toConsume);
-        inventory[i].qty = (inventory[i].qty || 1) - take;
+    for(let i = 0; i < inventoryx.length && toConsume > 0; i++) {
+      if(inventoryx[i] && inventoryx[i].icon === '📿') {
+        let take = Math.min(inventoryx[i].qty || 1, toConsume);
+        inventoryx[i].qty = (inventoryx[i].qty || 1) - take;
         toConsume -= take;
-        if(inventory[i].qty <= 0) inventory[i] = null;
+        if(inventoryx[i].qty <= 0) inventoryx[i] = null;
       }
     }
     renderInventory();
@@ -16443,13 +16453,13 @@ window.BOUNDARY_DATA = {
 
 // ═══ END: engine.js ═══
 
-// ═══ BEGIN: shop.js (src/shop.js, modified: 2026-05-13 09:43) ═══
+// ═══ BEGIN: shop.js (src/shop.js, modified: 2026-05-13 09:52) ═══
   /*
   SHOP MODULE – NPC MERCHANTS, TRADING, AND QUEST INTERACTIONS
   =============================================================
   This module implements the game's shop system, providing interactive merchant interfaces
   for buying items, selling loot, identifying mystery items, and advancing quest-related
-  dialogue. Each NPC vendor has a distinct personality and inventory.
+  dialogue. Each NPC vendor has a distinct personality and inventoryx.
 
   Key responsibilities:
   1. Shop UI rendering (openShop/openStore) – generates modal HTML for each NPC type
@@ -16458,7 +16468,7 @@ window.BOUNDARY_DATA = {
      Librarian/bookstore (spellbooks, Grue lore), Fence (stolen goods),
      Lefty's Bar (whiskey, mystery woman encounter)
   3. Transaction handling – buying items, selling to fence, buying back stolen items
-  4. Inventory management – automatic inventoryx stashing when inventory is full
+  4. Inventory management – automatic inventoryx stashing when inventoryx is full
   5. Quest progression – Dennis' political commentary, safety warnings
 
   openShop() is the engine.js-facing entry point; openStore() is the internal renderer.
@@ -16674,7 +16684,7 @@ window.BOUNDARY_DATA = {
   function addPurchasedItem(icon, qty = 1) {
     let def = ITEM_DEF[icon] || {};
     let remaining = qty;
-    let nextInventory = inventory.map(item => item ? { ...item } : null);
+    let nextInventory = inventoryx.map(item => item ? { ...item } : null);
     let nextPouch = inventoryx.map(item => item ? { ...item } : null);
     if(def.stackable) {
       const maxStack = def.maxStack || 10;
@@ -16699,7 +16709,7 @@ window.BOUNDARY_DATA = {
       }
     });
     if(remaining > 0) return false;
-    inventory.splice(0, inventory.length, ...nextInventory);
+    inventoryx.splice(0, inventoryx.length, ...nextInventory);
     inventoryx.splice(0, inventoryx.length, ...nextPouch);
     if(typeof renderInventory === 'function') renderInventory();
     if(typeof renderPouch === 'function') renderPouch();
@@ -16759,10 +16769,10 @@ window.BOUNDARY_DATA = {
 
   window.finishLarryEgg = function() {
     logMsg("<span style='color:var(--warning)'>Unseen customers poke their heads out and yell: 'Pervert!'</span>");
-    let emptyIdx = inventory.findIndex(i => i === null);
+    let emptyIdx = inventoryx.findIndex(i => i === null);
     if(emptyIdx !== -1) {
       changeGold(-1);
-      inventory[emptyIdx] = {icon:'🧴', qty:1};
+      inventoryx[emptyIdx] = {icon:'🧴', qty:1};
       renderInventory(); updateUI();
     }
     openStore('apu');
@@ -16839,7 +16849,7 @@ window.BOUNDARY_DATA = {
     }
     else if(step === 1) {
       // Application fee: 10 cockroach legs
-      let hasLegs = inventoryx.some(i => i && i.icon === '🦗') || inventory.some(i => i && i.icon === '🦗');
+      let hasLegs = inventoryx.some(i => i && i.icon === '🦗') || inventoryx.some(i => i && i.icon === '🦗');
       m.innerHTML = `<h2>🏪 Application Fee</h2>
         ${npcFaceHTML('npc_apu', '🧔🏿', 'apu')}
         <p>🧔🏿‍♂️ "First, we need to verify your commitment. The application fee is 10 cockroach legs."</p>
@@ -16852,8 +16862,8 @@ window.BOUNDARY_DATA = {
       playVoiceClip('voice_apu_franchise_1');
       if(hasLegs) {
         // Remove cockroach legs if they somehow have them
-        for(let i = 0; i < inventory.length; i++) {
-          if(inventory[i] && inventory[i].icon === '🦗') { inventory[i] = null; break; }
+        for(let i = 0; i < inventoryx.length; i++) {
+          if(inventoryx[i] && inventoryx[i].icon === '🦗') { inventoryx[i] = null; break; }
         }
         renderInventory();
       }
@@ -16906,13 +16916,13 @@ window.BOUNDARY_DATA = {
       logMsg("<span style='color:var(--success)>'\"Free Squishee with every purchase! (Machine may be broken.)\"</span>");
       player.xp += 100; checkLevelUp();
       // Give player a useless but flavorful item
-      let slot = inventory.findIndex(i => i === null);
-      if(slot !== -1) inventory[slot] = {icon: '💳', qty: 1};
+      let slot = inventoryx.findIndex(i => i === null);
+      if(slot !== -1) inventoryx[slot] = {icon: '💳', qty: 1};
       renderInventory();
       m.innerHTML = `<h2>🏪 Congratulations!</h2>
         ${npcFaceHTML('npc_apu', '🧔🏿', 'apu')}
         <p>🧔🏿‍♂️ "Welcome to the KwikeeMart family! Or... welcome to the periphery of the KwikeeMart family."</p>
-        <p>🧔🏿‍♂️ "Your Apu's Club Card is in your inventory. It does nothing. But it's PRETTY."</p>
+        <p>🧔🏿‍♂️ "Your Apu's Club Card is in your inventoryx. It does nothing. But it's PRETTY."</p>
         <p>🧔🏿‍♂️ "Thank you, come again!"</p>
         <button onclick="openStore('apu')" style="margin-top:16px;">"I have so many questions..."</button>`;
       playVoiceClip('voice_apu_franchise_6');
@@ -16922,7 +16932,7 @@ window.BOUNDARY_DATA = {
   // === Lefty's Mystery Woman ===
   window.larryEncounter = function() {
     let m = document.getElementById('modal-content');
-    let hasProp = inventory.some(i => i && i.icon === '🧴');
+    let hasProp = inventoryx.some(i => i && i.icon === '🧴');
     let html = `<h2>🫦 Mystery Lady</h2>
       <p style="font-size:80px; margin:10px 0;">💃</p>
       <p>"Hello there, sailor. Care for a little... company?"</p>`;
@@ -16938,7 +16948,7 @@ window.BOUNDARY_DATA = {
 
   window.finishLarryEncounter = function(safe) {
     if(safe) {
-      let idx = inventory.findIndex(i => i && i.icon === '🧴');
+      let idx = inventoryx.findIndex(i => i && i.icon === '🧴');
       decrementItem(idx);
       player.xp += 500;
       logMsg("<span style='color:var(--success)'>You survived the encounter and gained 500 XP! Safety first!</span>");
@@ -16967,7 +16977,7 @@ window.BOUNDARY_DATA = {
       seen.add(item.icon);
       out.push(item.icon);
     };
-    inventory.forEach(pushIfNeeded);
+    inventoryx.forEach(pushIfNeeded);
     inventoryx.forEach(pushIfNeeded);
     return out;
   }
@@ -17097,8 +17107,8 @@ window.BOUNDARY_DATA = {
     logMsg("<span style='color:var(--success)'>Dennis hands you a SCROLL OF CONSTITUTIONAL CONVENTION.</span>");
     logMsg("Dennis: \"Come see the violence inherent in the system! Help! Help! I'm being repressed!\"");
     player.xp += 200; checkLevelUp();
-    let empty = inventory.findIndex(i => i === null);
-    if(empty !== -1) inventory[empty] = {icon:'📜📜', qty:1};
+    let empty = inventoryx.findIndex(i => i === null);
+    if(empty !== -1) inventoryx[empty] = {icon:'📜📜', qty:1};
     renderInventory(); hideOverlay();
   };
 
@@ -17552,7 +17562,7 @@ window.BOUNDARY_DATA = {
                const def = ITEM_DEF[icon];
                return `<button onclick="identifyOneItem('${icon}')" style="width:100%; margin-top:4px;">Identify ${icon} ${def ? def.name : 'Item'} (1g)</button>`;
              }).join('')
-           : `<div style="margin-top:6px; color:#888; font-size:12px;">Everything in your inventory and inventoryx is already identified.</div>`;
+           : `<div style="margin-top:6px; color:#888; font-size:12px;">Everything in your inventoryx and inventoryx is already identified.</div>`;
          html = `<div style="padding:8px;">
            <p style="margin-top:0;">Deckard Cain peers at your belongings with the weight of three very long afternoons.</p>
            <button onclick="bulkIdentify()" style="width:100%;">Identify All (100g)</button>
@@ -17633,12 +17643,12 @@ window.BOUNDARY_DATA = {
     } else if(tab === 'sell') {
       html = '<div style="display:flex; flex-direction:column; gap:4px;">';
       let hasSellable = false;
-      inventory.forEach((it, idx) => {
+      inventoryx.forEach((it, idx) => {
         if(it) {
           let def = ITEM_DEF[it.icon];
           if(def && def.maxGP > 0) {
             hasSellable = true;
-            let count = inventory.filter(i => i && i.icon === it.icon).length;
+            let count = inventoryx.filter(i => i && i.icon === it.icon).length;
             let badge = count > 1 ? `<span style="background:var(--warning); color:#000; font-size:9px; padding:0 4px; border-radius:8px; margin-left:4px;">${count}</span>` : '';
             html += `<div class="shop-item" style="margin:0; padding:4px;"><span>${it.icon} ${def.name} (+${def.maxGP}g)${badge}</span>
               <button onclick="sell(${idx}, '${type}')">Sell</button></div>`;
@@ -17743,7 +17753,7 @@ window.BOUNDARY_DATA = {
   };
 
   window.sell = function(idx, type) {
-    let item = inventory[idx];
+    let item = inventoryx[idx];
     if(!item) return;
     let def = ITEM_DEF[item.icon];
     if(def && def.maxGP > 0) {
@@ -17961,12 +17971,12 @@ window.BOUNDARY_DATA = {
 
     player.chaplainPrizes.push(prize.icon);
 
-    let slot = inventory.findIndex(i => i === null);
+    let slot = inventoryx.findIndex(i => i === null);
     if(slot !== -1) {
-      inventory[slot] = { icon: prize.icon, qty: 1 };
+      inventoryx[slot] = { icon: prize.icon, qty: 1 };
       logMsg(`<span style='color:#FFD700'>⛪ You receive: ${prize.icon} <strong>${prize.name}</strong>! "${prize.desc}"</span>`);
     } else {
-      logMsg(`<span style='color:var(--warning)'>⛪ No inventory room for ${prize.icon} ${prize.name}! It fades away sadly.</span>`);
+      logMsg(`<span style='color:var(--warning)'>⛪ No inventoryx room for ${prize.icon} ${prize.name}! It fades away sadly.</span>`);
     }
 
     renderInventory(); updateUI();
@@ -18080,9 +18090,9 @@ window.BOUNDARY_DATA = {
       checkLevelUp();
       
       // Give a special item
-      let empty = inventory.findIndex(i => i === null);
+      let empty = inventoryx.findIndex(i => i === null);
       if(empty !== -1) {
-        inventory[empty] = {icon: '🏺', qty: 1}; // Brass Bottle
+        inventoryx[empty] = {icon: '🏺', qty: 1}; // Brass Bottle
         logMsg("You receive a Brass Bottle! It feels... magical.");
       }
       
@@ -18103,10 +18113,10 @@ window.BOUNDARY_DATA = {
       if(idx !== -1) { arr[idx] = null; return true; }
       return false;
     };
-    if(!consumeBottle(inventory)) consumeBottle(inventoryx);
+    if(!consumeBottle(inventoryx)) consumeBottle(inventoryx);
     if(!consumeBottle(inventoryx)) {
       // Also check bags
-      inventory.forEach(item => {
+      inventoryx.forEach(item => {
         if(item && item.contents) {
           const bagIdx = item.contents.findIndex(i => i && i.icon === '🏺');
           if(bagIdx !== -1) item.contents[bagIdx] = null;
@@ -18372,9 +18382,9 @@ window.BOUNDARY_DATA = {
     Sound.grogPour();
     
     // Give caustic grog item
-    let empty = inventory.findIndex(i => i === null);
+    let empty = inventoryx.findIndex(i => i === null);
     if(empty !== -1) {
-      inventory[empty] = {icon: '🍺', qty: 1}; // Grog
+      inventoryx[empty] = {icon: '🍺', qty: 1}; // Grog
       logMsg("<span style='color:#FFD700'>🍺 You create the legendary Caustic Grog!</span>");
       logMsg("<span style='color:var(--success)'>It burns going down, but it gives you incredible power!</span>");
       logMsg("<span style='color:#88FF88'>+50% damage for 10 turns!</span>");
@@ -18387,7 +18397,7 @@ window.BOUNDARY_DATA = {
       player.xp += 300;
       checkLevelUp();
     } else {
-      logMsg("<span style='color:var(--error)'>Your inventory is full!</span>");
+      logMsg("<span style='color:var(--error)'>Your inventoryx is full!</span>");
       player.hasGrogIngredients = true; // Give back ingredients
       player.hasRedHerring = true;
       player.causticGrogMade = false;
@@ -18406,9 +18416,9 @@ window.BOUNDARY_DATA = {
       if(typeof QuestEngine !== 'undefined') QuestEngine.emit('custom', { id: 'found_red_herring' });
       logMsg("<span style='color:var(--success)'>🐟 You catch a Red Herring! It smells... suspicious.</span>");
       
-      let empty = inventory.findIndex(i => i === null);
+      let empty = inventoryx.findIndex(i => i === null);
       if(empty !== -1) {
-        inventory[empty] = {icon: '🐟', qty: 1};
+        inventoryx[empty] = {icon: '🐟', qty: 1};
         logMsg("<span style='color:#88FF88'>This could be useful for distracting someone...</span>");
       }
       renderInventory();
@@ -18565,7 +18575,7 @@ window.BOUNDARY_DATA = {
     }
     else if(step === 'wisdom') {
       let hint = GRUE_HINTS[Math.floor(Math.random() * GRUE_HINTS.length)];
-      let hasCandles = inventory.some(i => i && i.icon === '🕯️');
+      let hasCandles = inventoryx.some(i => i && i.icon === '🕯️');
       m.innerHTML = `<h2>🧌 On the Subject of Darkness</h2>
         <p style="color:#ccc; font-size:12px; margin:8px 0;">"${hint}"</p>
         ${!hasCandles ? '<p style="color:var(--warning); font-size:12px;">"You have no light. Take these. Do not thank me. Gratitude disrupts my concentration."</p>' : ''}
@@ -18574,8 +18584,8 @@ window.BOUNDARY_DATA = {
           <button onclick="openPacifistOrc(\'intro\')">← Back</button>
         </div>`;
       if(!hasCandles) {
-        let slot = inventory.findIndex(s => s === null);
-        if(slot !== -1) { inventory[slot] = {icon:'🕯️', qty:3}; renderInventory(); }
+        let slot = inventoryx.findIndex(s => s === null);
+        if(slot !== -1) { inventoryx[slot] = {icon:'🕯️', qty:3}; renderInventory(); }
       }
     }
     else if(step === 'chaplain') {
@@ -18633,9 +18643,9 @@ window.BOUNDARY_DATA = {
   };
 
   window.grokTrade = function(icon, name, idx) {
-    let slot = inventory.findIndex(s => s === null);
-    if(slot === -1) { logMsg("Your inventory is full. Grok looks unimpressed."); return; }
-    inventory[slot] = {icon, qty:1};
+    let slot = inventoryx.findIndex(s => s === null);
+    if(slot === -1) { logMsg("Your inventoryx is full. Grok looks unimpressed."); return; }
+    inventoryx[slot] = {icon, qty:1};
     renderInventory();
     let GROK_REMARKS = [
       '"Ah. Now I have one less thing. This is progress."',
@@ -18730,9 +18740,9 @@ window.BOUNDARY_DATA = {
   };
 
   window.grokTrade = function(icon, name, idx) {
-    let slot = inventory.findIndex(s => s === null);
-    if(slot === -1) { logMsg("Your inventory is full. Grok looks unimpressed."); return; }
-    inventory[slot] = {icon, qty:1};
+    let slot = inventoryx.findIndex(s => s === null);
+    if(slot === -1) { logMsg("Your inventoryx is full. Grok looks unimpressed."); return; }
+    inventoryx[slot] = {icon, qty:1};
     renderInventory();
     const GROK_REMARKS = [
       '"Ah. Now I have one less thing. This is progress."',
@@ -22180,7 +22190,7 @@ window.mapSweepTransition = function(direction, callback) {
 
 // ═══ END: render.js ═══
 
-// ═══ BEGIN: input.js (src/input.js, modified: 2026-05-13 09:43) ═══
+// ═══ BEGIN: input.js (src/input.js, modified: 2026-05-13 09:55) ═══
   /*
   INPUT MODULE – KEYBOARD, MOUSE, AND GAME LOOP MANAGEMENT
   =========================================================
@@ -22189,7 +22199,7 @@ window.mapSweepTransition = function(direction, callback) {
   start‑screen animation, quest timer ticker, and status‑based movement modifications.
 
   Key responsibilities:
-  1. Keyboard input routing – WASD/arrow movement, inventory ('i'), equipment ('e'),
+  1. Keyboard input routing – WASD/arrow movement, inventoryx ('i'), equipment ('e'),
      spells ('f'), rest ('z'), attack (space), modal toggles, number‑key item clicks
   2. Mouse event handling – hamburger menu toggle, start button click
   3. Game loop timers – quest timer countdown, damage tint fade, level‑up flash decay
@@ -22404,7 +22414,7 @@ const hBtn = document.getElementById('hamburgerBtn');
       currentLevel,
       currentScene,
       player: _debugDeepClone(player),
-      inventory: _debugDeepClone(inventory),
+      inventoryx: _debugDeepClone(inventoryx),
       inventoryx: _debugDeepClone(inventoryx),
       theMap: _debugDeepClone(theMap),
       darkMap: _debugDeepClone(darkMap),
@@ -22430,8 +22440,6 @@ const hBtn = document.getElementById('hamburgerBtn');
     mapH = snap.mapH;
 
     Object.assign(player, snap.player || {});
-    inventory.length = 0;
-    (snap.inventory || []).forEach(v => inventory.push(v));
     inventoryx.length = 0;
     (snap.inventoryx || []).forEach(v => inventoryx.push(v));
 
@@ -22578,8 +22586,8 @@ const hBtn = document.getElementById('hamburgerBtn');
           debugLog('  /restart                  - Restart game (confirm)');
           debugLog('  /clear                    - Clear console');
           debugLog('  /stats                    - Show player stats');
-          debugLog('  /inventory                - List inventory items');
-          debugLog('  /use <item>               - Use inventory item');
+          debugLog('  /inventoryx                - List inventoryx items');
+          debugLog('  /use <item>               - Use inventoryx item');
           debugLog('  /quests                   - Quest count summary');
           debugLog('');
           debugLog('--- Movement / MUD ---');
@@ -22633,7 +22641,7 @@ const hBtn = document.getElementById('hamburgerBtn');
           debugLog(`GP ${player.gp} | STR ${player.stats.str} | DEX ${player.stats.dex} | INT ${player.stats.int}`);
           break;
         case '/inventory':
-          let nonEmpty = inventory.filter(i => i !== null);
+          let nonEmpty = inventoryx.filter(i => i !== null);
           debugLog(`Inventory: ${nonEmpty.length} items`);
           nonEmpty.forEach((item) => {
             let name = ITEM_DEF[item.icon] ? ITEM_DEF[item.icon].name : item.icon;
@@ -22957,8 +22965,8 @@ const hBtn = document.getElementById('hamburgerBtn');
           if(!icon) { debugLog('Usage: /loot add <icon> [qty]'); break; }
           let added = 0;
           for(let i = 0; i < qty; i++) {
-            const slot = inventory.findIndex(s => s === null);
-            if(slot !== -1) { inventory[slot] = { icon, qty: 1 }; added++; continue; }
+            const slot = inventoryx.findIndex(s => s === null);
+            if(slot !== -1) { inventoryx[slot] = { icon, qty: 1 }; added++; continue; }
             if(typeof tryPlaceInPouch === 'function' && tryPlaceInPouch({ icon, qty: 1 })) { added++; continue; }
             break;
           }
@@ -23213,21 +23221,21 @@ const hBtn = document.getElementById('hamburgerBtn');
             break;
           }
           const query = args.join(' ').toLowerCase();
-          // Find item in inventory
+          // Find item in inventoryx
           let foundIdx = -1;
-          for(let i = 0; i < inventory.length; i++) {
-            const item = inventory[i];
+          for(let i = 0; i < inventoryx.length; i++) {
+            const item = inventoryx[i];
             if(!item) continue;
             if(item.icon === query) { foundIdx = i; break; }
             const def = ITEM_DEF[item.icon];
             if(def && def.name.toLowerCase().includes(query)) { foundIdx = i; break; }
           }
           if(foundIdx === -1) {
-            debugLog(`No item matching '${query}' in inventory.`);
+            debugLog(`No item matching '${query}' in inventoryx.`);
             break;
           }
           if(typeof handleItemClick === 'function') {
-            const usedIcon = inventory[foundIdx]?.icon || query;
+            const usedIcon = inventoryx[foundIdx]?.icon || query;
             handleItemClick(foundIdx);
             debugLog(`Using ${usedIcon}`);
           } else {
@@ -23492,8 +23500,8 @@ const hBtn = document.getElementById('hamburgerBtn');
         player.hp += 5;
         player.equipped.leftHand = '🗡️';   // Sword
         player.equipped.feet = '🥾';         // Fighter Boots (+2 defense)
-        if (!player.inventory) player.inventory = [];
-        player.inventory.push({ icon: '🥾', qty: 1 });
+        if (!player.inventoryx) player.inventoryx = [];
+        player.inventoryx.push({ icon: '🥾', qty: 1 });
         logMsg && logMsg("You are a Fighter! +5 HP, Sword equipped, Fighter Boots worn.");
       } else if (selClass === 'spellcaster') {
         player.startingClass = 'spellcaster';
@@ -23502,8 +23510,8 @@ const hBtn = document.getElementById('hamburgerBtn');
         if (!player.spells) player.spells = {};
         if (!player.spells.illuminate) player.spells.illuminate = { level: 1 };
         player.equipped.chest = '🥻';        // Robe
-        if (!player.inventory) player.inventory = [];
-        player.inventory.push({ icon: '🥻', qty: 1 });
+        if (!player.inventoryx) player.inventoryx = [];
+        player.inventoryx.push({ icon: '🥻', qty: 1 });
         logMsg && logMsg("You are a Spellcaster! 2 MP, Illumination known, Robe equipped.");
       } else if (selClass === 'rogue') {
         player.startingClass = 'rogue';
@@ -23523,7 +23531,7 @@ const hBtn = document.getElementById('hamburgerBtn');
       debugLog("Calculating FOV...");
       calculateFOV();
       
-      debugLog("Rendering inventory...");
+      debugLog("Rendering inventoryx...");
       renderInventory();
       
       debugLog("Rendering inventoryx...");
@@ -23643,7 +23651,7 @@ const hBtn = document.getElementById('hamburgerBtn');
     "Somewhere out there, a Grue is waiting politely.",
     "A wandering merchant prepares expensive small talk.",
     "You feel lucky. This is usually a bad sign.",
-    "The stars align. Your inventory does not.",
+    "The stars align. Your inventoryx does not.",
     "A faint breeze carries the smell of dungeon mold.",
     "Your next heroic plan is 80% confidence, 20% panic.",
     "The moon rises. So do your chances of bad decisions.",
@@ -23794,7 +23802,7 @@ const hBtn = document.getElementById('hamburgerBtn');
         else if(window._rangedTargeting) rangedWeaponTarget(tileX, tileY);
       }
     });
-    // Bug 26: Handle drag-drop of inventory items onto the map
+    // Bug 26: Handle drag-drop of inventoryx items onto the map
     gameCanvas.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
     gameCanvas.addEventListener('drop', (e) => {
       e.preventDefault();
@@ -23821,10 +23829,10 @@ const hBtn = document.getElementById('hamburgerBtn');
         }
       }
       if(window.draggedItemIdx !== null && window.draggedSource === 'inv') {
-        let item = inventory[window.draggedItemIdx];
+        let item = inventoryx[window.draggedItemIdx];
         if(item) {
           itemsOnGround.push({ x: player.x, y: player.y, icon: item.icon });
-          inventory[window.draggedItemIdx] = null;
+          inventoryx[window.draggedItemIdx] = null;
           logMsg(`Dropped ${item.icon} on the ground.`);
           renderInventory(); updateUI();
         }
@@ -23952,13 +23960,13 @@ const hBtn = document.getElementById('hamburgerBtn');
         }
         if((state || 0) === 0) {
           // Check if player has a key
-          let hasKey = inventory.some(i => i && i.icon === '🗝️') || (player.inventoryx && player.inventoryx.some(i => i && i.icon === '🗝️'));
+          let hasKey = inventoryx.some(i => i && i.icon === '🗝️') || (player.inventoryx && player.inventoryx.some(i => i && i.icon === '🗝️'));
           if(hasKey) {
-            // Use key from inventory first, then inventoryx
-            let keyIdx = inventory.findIndex(i => i && i.icon === '🗝️');
+            // Use key from inventoryx first, then inventoryx
+            let keyIdx = inventoryx.findIndex(i => i && i.icon === '🗝️');
             if(keyIdx !== -1) {
-              inventory[keyIdx].qty--;
-              if(inventory[keyIdx].qty <= 0) inventory[keyIdx] = null;
+              inventoryx[keyIdx].qty--;
+              if(inventoryx[keyIdx].qty <= 0) inventoryx[keyIdx] = null;
             } else {
               let pouchIdx = player.inventoryx.findIndex(i => i && i.icon === '🗝️');
               if(pouchIdx !== -1) {
@@ -23975,7 +23983,7 @@ const hBtn = document.getElementById('hamburgerBtn');
               if(window.autoLootEnabled && player.talents && player.talents['autoLoot']) {
                 loot.forEach(item => {
                   if(item.icon === '🪙') { changeGold(item.qty); }
-                  else { let s = inventory.findIndex(s => s === null); if(s !== -1) inventory[s] = {icon: item.icon, qty: item.qty}; else tryPlaceInPouch(item); }
+                  else { let s = inventoryx.findIndex(s => s === null); if(s !== -1) inventoryx[s] = {icon: item.icon, qty: item.qty}; else tryPlaceInPouch(item); }
                 });
                 if(!loot.some(item => item.icon === '🪙')) Sound.clink();
               } else {
@@ -24049,9 +24057,9 @@ const hBtn = document.getElementById('hamburgerBtn');
         flashInteractionFailure('item', itemIdx);
         return;
       }
-      let slot = inventory.findIndex(s => s === null);
+      let slot = inventoryx.findIndex(s => s === null);
       if(slot !== -1) {
-        inventory[slot] = {icon: item.icon, qty: 1};
+        inventoryx[slot] = {icon: item.icon, qty: 1};
         itemsOnGround.splice(itemIdx, 1);
         logMsg(`Picked up ${item.icon}`);
         Sound.clink();

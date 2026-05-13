@@ -9,12 +9,15 @@
 //  multiplayer trivially achievable.
 // ============================================================
 
-// ─── Inventory & Pouch ───────────────────────────────────────
-//  These parallel arrays hold item stacks or null for empty slots.
-//  inventory: 10 slots accessible from the main panel.
-//  inventoryx:     30 slots accessible from the inventoryx/bag panel.
-const inventory = new Array(10).fill(null);
-const inventoryx     = new Array(30).fill(null);
+// ─── Inventory ──────────────────────────────────────────────
+//  Single 30-slot array holding item stacks or null for empty slots.
+//  The first `player.quickslotCount` slots are mirrored in the HUD
+//  quickslot row; the bag panel shows all 30. Drags between the two
+//  views are slot moves within this same array.
+//
+//  (NOTE: identifier still named `inventoryx` mid-refactor; phase 3
+//  renames to `inventory` after all callers are updated.)
+const inventoryx = new Array(30).fill(null);
 
 // ─── Player Object ──────────────────────────────────────────
 //  Single source of truth for all runtime player properties.
@@ -77,6 +80,11 @@ function setPlayerDefaults() {
   player.spells = {};
   player.equipped = { head: null, chest: '🎽', legs: '🩲', feet: '🩴', leftHand: null, rightHand: null };
   player.learnedInsults = []; player.learnedRetorts = []; player.startingClass = null;
+  // Number of inventoryx slots mirrored in the HUD quickslot row. Future
+  // boons will raise this from a starting value (planned: 5) up to the
+  // full inventoryx size. All quickslot rendering and key bindings must
+  // read this — never hardcode 10.
+  player.quickslotCount = 10;
 }
 
 // ─── K9: Initialize player at declaration time ───────────────
