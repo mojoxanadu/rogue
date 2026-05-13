@@ -2,7 +2,7 @@
   ╔══════════════════════════════════════════════════════════════╗
   ║  ROGUELIKE: THE ULTIMATE QUEST — Build 762                    ║
   ╠══════════════════════════════════════════════════════════════╣
-  ║  Built: 2026-05-13 11:23:41                                 ║
+  ║  Built: 2026-05-13 11:31:42                                 ║
   ║  Files: 30                                                  ║
   ║  Assets: 1                                                  ║
   ╠══════════════════════════════════════════════════════════════╣
@@ -12,7 +12,7 @@
   ║    audio.js (src/audio.js, modified: 2026-05-13 10:07)       ║
   ║    music_data.js (src/music_data.js, modified: 2026-05-13 10:07)║
   ║    state.js (src/state.js, modified: 2026-05-13 10:07)       ║
-  ║    items.js (src/items.js, modified: 2026-05-13 11:19)       ║
+  ║    items.js (src/items.js, modified: 2026-05-13 11:30)       ║
   ║    items_registry.js (src/items_registry.js, modified: 2026-05-13 10:40)║
   ║    player.js (src/player.js, modified: 2026-05-13 10:07)     ║
   ║    limerick_api.js (src/limerick_api.js, modified: 2026-05-13 10:07)║
@@ -2862,7 +2862,7 @@
 
 // ═══ END: state.js ═══
 
-// ═══ BEGIN: items.js (src/items.js, modified: 2026-05-13 11:19) ═══
+// ═══ BEGIN: items.js (src/items.js, modified: 2026-05-13 11:30) ═══
 // ============================================================
 //  ITEMS MODEL  –  src/items.js
 //
@@ -2870,17 +2870,18 @@
 //  no input. This file defines WHAT an item is; views/controllers
 //  decide how to display or react to one.
 //
-//  Three classes:
+//  Two classes:
 //    ItemDef    — the catalog entry. "Healing Potion costs 25 GP,
-//                 heals up to 30 HP, stackable to 99." One per
+//                 heals up to 30 HP, max stack 99." One per
 //                 distinct kind of item in the game.
 //    ItemStack  — what occupies an inventory slot. References an
 //                 ItemDef by canonical camelCase name and carries
-//                 a `qty` for stackable items.
-//    Container  — an ItemStack subclass for items that have their
-//                 own internal slots (bags, pouches, chests).
-//                 Stack qty is always 1; slots can hold any
-//                 ItemStack including nested Containers.
+//                 a `qty` (always 1 for non-stackable, 1+ for
+//                 stackable). For container items (bags), the
+//                 constructor also initializes a `slots` array —
+//                 there is no separate Container subclass, since
+//                 "is this a container?" is fully derivable from
+//                 def.isContainer().
 //
 //  Items are identified in code by camelCase strings (e.g.
 //  'healingPotion'), NEVER by their emoji icon. The emoji is
@@ -2934,9 +2935,13 @@ class ItemDef {
     delete this.stackable;
   }
 
-  /** True if this def represents a carryable container (a bag). */
+  /**
+   * True if this def represents a carryable container (a bag).
+   * Sole predicate is bagSlots > 0 — the legacy `type === 'bag'`
+   * field is a category label, not the source of truth here.
+   */
   isContainer() {
-    return this.type === 'bag' || this.bagSlots > 0;
+    return this.bagSlots > 0;
   }
 
   // ─── Static helpers ────────────────────────────────────────
@@ -2988,6 +2993,13 @@ class ItemStack {
     if (typeof itemName !== 'string') throw new Error('ItemStack requires a string itemName');
     this.itemName = itemName;
     this.qty = qty;
+    // If this stack's def is a container, initialize the inner slots
+    // array. There is no Container subclass — the existence of `slots`
+    // IS the "I am a container" signal at the instance level.
+    const def = this.def;
+    if (def && def.isContainer()) {
+      this.slots = new Array(def.bagSlots).fill(null);
+    }
   }
 
   /** The live ItemDef (looked up in the global ItemDefs registry). */
@@ -3028,6 +3040,60 @@ class ItemStack {
     return moved;
   }
 
+  /** True if this stack has its own inner slots (i.e., it's a bag). */
+  isContainer() {
+    return Array.isArray(this.slots);
+  }
+
+  /**
+   * Find an existing stack of `itemName` with room for more units,
+   * searching this container's slots and recursing into any nested
+   * containers. Returns the stack or null.
+   *
+   * Breadth-first: this container's own slots are exhausted before
+   * recursing — items consolidate at the top level before being
+   * tucked into bags.
+   *
+   * No-op (returns null) if this stack isn't a container.
+   */
+  findRoom(itemName) {
+    if (!this.isContainer()) return null;
+    for (const s of this.slots) {
+      if (s && !s.isContainer() && s.itemName === itemName && s.hasRoom()) return s;
+    }
+    for (const s of this.slots) {
+      if (s && s.isContainer()) {
+        const found = s.findRoom(itemName);
+        if (found) return found;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Find the first empty slot. Breadth-first: this container's own
+   * slots first, then recurse into nested containers — so dropping
+   * an item lands in the main inventory when there's room, with
+   * bags acting as overflow.
+   *
+   * Returns `{ container, idx }` (where `container` is the ItemStack
+   * holding the empty slot) or null. No-op if this stack isn't a
+   * container.
+   */
+  findFreeSlot() {
+    if (!this.isContainer()) return null;
+    for (let i = 0; i < this.slots.length; i++) {
+      if (this.slots[i] === null) return { container: this, idx: i };
+    }
+    for (const s of this.slots) {
+      if (s && s.isContainer()) {
+        const r = s.findFreeSlot();
+        if (r) return r;
+      }
+    }
+    return null;
+  }
+
   // ─── Static factory (migration helper) ─────────────────────
   /**
    * Build an ItemStack from a legacy emoji + qty pair. Existing
@@ -3051,80 +3117,9 @@ class ItemStack {
 }
 
 
-// ─── Container ───────────────────────────────────────────────
-/**
- * An ItemStack subclass for carryable containers (bags, pouches).
- * The stack itself takes up one slot in a parent inventory; its
- * `slots` array holds nested ItemStacks (or nulls). Stacks of
- * containers are always qty=1 — containers are never stackable.
- *
- * Auto-placement logic (e.g., picking up an item) recurses through
- * a player's inventory and into every Container's slots looking for
- * an existing stack with room or a free slot. See findRoom() and
- * findFreeSlot() — both return descriptors that identify where the
- * space is (which container, which slot index).
- */
-class Container extends ItemStack {
-  constructor(itemName) {
-    super(itemName, NON_STACKABLE_QTY);
-    const def = this.def;
-    if (!def) throw new Error(`Container: no def for '${itemName}'`);
-    if (!def.isContainer()) throw new Error(`Container: def '${itemName}' is not a container type`);
-    if (!def.bagSlots || def.bagSlots < 1) {
-      throw new Error(`Container: def '${itemName}' has no positive bagSlots`);
-    }
-    this.slots = new Array(def.bagSlots).fill(null);
-  }
-
-  /**
-   * Find an existing ItemStack of `itemName` with room for more units.
-   * Returns the stack, or null. Breadth-first: this container's own
-   * slots are searched in full before recursing into any nested
-   * containers, so items consolidate at the top level before being
-   * tucked into bags.
-   */
-  findRoom(itemName) {
-    // Same level first.
-    for (const s of this.slots) {
-      if (s && !(s instanceof Container) && s.itemName === itemName && s.hasRoom()) return s;
-    }
-    // Then recurse, in slot order.
-    for (const s of this.slots) {
-      if (s instanceof Container) {
-        const found = s.findRoom(itemName);
-        if (found) return found;
-      }
-    }
-    return null;
-  }
-
-  /**
-   * Find the first empty slot. Breadth-first across containers (this
-   * container's own slots are exhausted before recursing into nested
-   * ones) — so dropping an item lands in the player's main inventory
-   * if there's room, only tucking into bags as overflow.
-   *
-   * Returns `{ container, idx }` or null.
-   */
-  findFreeSlot() {
-    for (let i = 0; i < this.slots.length; i++) {
-      if (this.slots[i] === null) return { container: this, idx: i };
-    }
-    for (const s of this.slots) {
-      if (s instanceof Container) {
-        const r = s.findFreeSlot();
-        if (r) return r;
-      }
-    }
-    return null;
-  }
-}
-
-
 // Expose to the global concat scope.
 window.ItemDef   = ItemDef;
 window.ItemStack = ItemStack;
-window.Container = Container;
 
 // ═══ END: items.js ═══
 
