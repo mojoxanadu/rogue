@@ -87,6 +87,37 @@ test('Lock: input.js class-init items resolve to expected camelCase names', () =
   assert.ok(ctx.ItemDefs.lockpickingTools, 'lockpickingTools missing — input.js rogue init will break');
 });
 
+test('Lock: mechanics.js items resolve to expected camelCase names', () => {
+  const ctx = buildRegistry({
+    '💣🌟': { name: 'Holy Hand Grenade',     type: 'misc',    stackable: false },
+    '🧪🦎': { name: 'Potion of Newt',        type: 'potion',  stackable: true, maxStack: 99 },
+    '👢⚡': { name: 'Boots of Blinding Speed', type: 'armor',   stackable: false },
+    '🦪':   { name: 'Oyster',                type: 'food',    maxStack: 99 },
+    '🥜':   { name: 'Peanuts',               type: 'food',    maxStack: 99 },
+    '🥛':   { name: 'Milk',                  type: 'food',    maxStack: 99 },
+    '🥾':   { name: 'Old Boot',              type: 'armor',   stackable: false },
+    '💩':   { name: 'Poop',                  type: 'useless', stackable: true },
+    '🪱':   { name: 'Earthworm',             type: 'useless', stackable: true },
+    '🥤':   { name: 'Slurpee',               type: 'food',    stackable: true, maxStack: 99 },
+    '📃':   { name: 'Identify Scroll',       type: 'scroll',  stackable: true, maxStack: 99 },
+    '📖🌀': { name: 'Tome of Town Portal',   type: 'spell',   stackable: false },
+    '🫖':   { name: 'Magic Teapot',          type: 'misc',    stackable: false },
+    '🦆':   { name: 'Rubber Duck',           type: 'quest',   maxStack: 1 },
+    '🌫️':   { name: 'Spell Residue',         type: 'useless', stackable: true, maxStack: 10 },
+    '🧪':   { name: 'Health Potion',         type: 'potion',  stackable: true, maxStack: 99 },
+    '🗝️':   { name: 'Key',                   type: 'key',     stackable: true },
+    '🕯️':   { name: 'Candle',                type: 'light',   stackable: true, maxStack: 99 },
+    '📋':   { name: 'Plans for World Domination', type: 'useless', stackable: false },
+  });
+  for (const n of ['holyHandGrenade', 'potionOfNewt', 'bootsOfBlindingSpeed',
+                   'oyster', 'peanuts', 'milk', 'oldBoot', 'poop', 'earthworm',
+                   'slurpee', 'identifyScroll', 'tomeOfTownPortal', 'magicTeapot',
+                   'rubberDuck', 'spellResidue', 'healthPotion', 'key', 'candle',
+                   'plansForWorldDomination']) {
+    assert.ok(ctx.ItemDefs[n], `${n} missing — mechanics.js will produce broken stacks/checks`);
+  }
+});
+
 test('Lock: shop.js items resolve to expected camelCase names', () => {
   const ctx = buildRegistry({
     '🧴':   { name: 'Prophylactic',             type: 'useless', maxStack: 1,  maxGP: 0 },

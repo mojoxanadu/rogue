@@ -125,7 +125,7 @@
         let lootTable = ['🪙', '🪙', '🧪', '🍖', '🕯️'];
         let count = 1 + Math.floor(Math.random() * Math.min(2, def.bagSlots));
         for(let i = 0; i < count && i < item.contents.length; i++) {
-          item.contents[i] = { icon: lootTable[Math.floor(Math.random() * lootTable.length)], qty: 1 };
+          item.contents[i] = ItemStack.fromIcon(lootTable[Math.floor(Math.random() * lootTable.length)], 1);
         }
       }
     }
@@ -152,7 +152,7 @@
     // Try to add to inventory
     let slot = inventory.findIndex(s => s === null);
     if(slot !== -1) {
-      inventory[slot] = { icon: taken.icon, qty: taken.qty || 1 };
+      inventory[slot] = ItemStack.fromIcon(taken.icon, taken.qty || 1);
       bag.contents[itemIdx] = null;
       let def = ITEM_DEF[taken.icon];
       logMsg(`Took ${taken.icon} ${def ? def.name : ''} from bag.`);
@@ -160,7 +160,7 @@
       // Try inventory
       let pSlot = inventory.findIndex((s, i) => s === null && !(source === 'inventory' && i === bagIdx));
       if(pSlot !== -1) {
-        inventory[pSlot] = { icon: taken.icon, qty: taken.qty || 1 };
+        inventory[pSlot] = ItemStack.fromIcon(taken.icon, taken.qty || 1);
         bag.contents[itemIdx] = null;
         logMsg(`Took ${taken.icon} to inventory (inventory full).`);
       } else {
@@ -219,20 +219,20 @@
     }
 
     // Handle Holy Hand Grenade
-    if(itemObj.icon === '💣🌟') {
+    if(itemObj.itemName === 'holyHandGrenade') {
       triggerGrenade(idx);
       return;
     }
 
     // Handle Potion of Newt (I got better!)
-    if(itemObj.icon === '🧪🦎') {
+    if(itemObj.itemName === 'potionOfNewt') {
       logMsg("You turned into a newt! ...You got better.");
       player.xp += 100; checkLevelUp(); decrementItem(idx);
       return;
     }
 
     // Boots of Blinding Speed Logic
-    if(itemObj.icon === '👢⚡') {
+    if(itemObj.itemName === 'bootsOfBlindingSpeed') {
       logMsg("<span style='color:var(--primary)'>You feel extremely fast, but everything goes dark!</span>");
       player.blind = true;
       swapEquip(idx, 'feet');
@@ -240,7 +240,7 @@
     }
 
     // E.753.POISON + E.753.MILK: Poisoned food effects
-    if(itemObj.icon === '🦪') {
+    if(itemObj.itemName === 'oyster') {
       logMsg("<span style='color:#f44'>Maybe I shouldn't have eaten an oyster from a convenience store in a dungeon...</span>");
       player.hp -= 10; addFloatingText(player.x, player.y, '-10', '#f00', 18);
       if(typeof Sound !== 'undefined') Sound.playTone(80, 'sawtooth', 0.3, 0.1, 40);
@@ -249,7 +249,7 @@
       if(player.hp <= 0) { die(); return; }
       updateUI(); return;
     }
-    if(itemObj.icon === '🥜') {
+    if(itemObj.itemName === 'peanuts') {
       logMsg("<span style='color:#f44'>I'm allergic to peanuts!</span>");
       player.hp -= 15; addFloatingText(player.x, player.y, '-15', '#f00', 18);
       if(typeof Sound !== 'undefined') Sound.playTone(100, 'sawtooth', 0.4, 0.1, 30);
@@ -258,7 +258,7 @@
       if(player.hp <= 0) { die(); return; }
       updateUI(); return;
     }
-    if(itemObj.icon === '🥛') {
+    if(itemObj.itemName === 'milk') {
       logMsg("<span style='color:#fa0'>Turns out I'm lactose intolerant.</span>");
       player.hp -= 5; addFloatingText(player.x, player.y, '-5', '#f00', 16);
       // Diarrhea status: reduced speed for 100 turns, intermittent farts (~10 min)
@@ -287,7 +287,7 @@
     }
 
     // B760.RAT_BOOT: old boot can be thrown at nearby cat during rat chase event.
-    if(itemObj.icon === '👢' || itemObj.icon === '🥾') {
+    if(itemObj.itemName === 'oldBoot') {
       const catIdx = enemies.findIndex(e => e && e.type === 'cat' && Math.abs(e.x - player.x) <= 6 && Math.abs(e.y - player.y) <= 6);
       if(catIdx !== -1) {
         const cat = enemies[catIdx];
@@ -310,7 +310,7 @@
     if(def.type === "bag") { openBagFromSource('inv', idx); return; }
     if(def.type === "weapon") { swapEquip(idx, 'leftHand'); return; }
     if(def.type === "armor") { swapEquip(idx, def.slot || 'chest'); return; }
-    if(def.type === "key") { logMsg("🗝️ Keys are used automatically when you bump a locked chest."); return; }
+    if(def.type === "key") { logMsg(`${ItemDef.iconOf('key')} Keys are used automatically when you bump a locked chest.`); return; }
 
     // E16: Explosive items (bombs) — place with a countdown fuse
     if(def.type === "explosive") {
@@ -326,7 +326,7 @@
         icon: itemObj.icon,
         startTime: performance.now()
       });
-      logMsg("<span style='color:#f80'>💣 You set the bomb! Get clear!</span>");
+      logMsg(`<span style='color:#f80'>${itemObj.icon} You set the bomb! Get clear!</span>`);
       Sound.playTone(440, 'square', 0.15, 0.05, 200);
       decrementItem(idx);
       updateUI();
@@ -352,7 +352,7 @@
         return;
       }
       lightTurns = (lightTurns || 0) + (def.lightRange || 15);
-      logMsg(`<span style='color:var(--success)'>🕯️ You light the ${def.name}! (${lightTurns} turns of light)</span>`);
+      logMsg(`<span style='color:var(--success)'>${ItemDef.iconOf('candle')} You light the ${def.name}! (${lightTurns} turns of light)</span>`);
       decrementItem(idx);
       calculateFOV(); drawMap(); updateUI();
       return;
@@ -361,7 +361,7 @@
     // Useless items
     if(def.type === "useless" || def.type === "misc" || def.type === "quest") {
       // E17: Poop — humorous use messages, does not consume item
-      if(itemObj.icon === '💩') {
+      if(itemObj.itemName === 'poop') {
         const poopLines = [
           "You consider using the poop. You decide against it. Some decisions make themselves.",
           "In a moment of desperate creativity, you raise the poop... No. Just no.",
@@ -372,7 +372,7 @@
         logMsg(`<span style='color:#888; font-style:italic;'>${poopLines[player._poopIdx]}</span>`);
         return; // don't consume
       }
-      if(itemObj.icon === '🪱') {
+      if(itemObj.itemName === 'earthworm') {
         logMsg("<span style='color:#888'>You have an earthworm. It wriggles. Your options are limited.</span>");
         return;
       }
@@ -423,7 +423,7 @@
         }
       }
       // Bug 23: Slurpee Sugar Rush
-      if(itemObj.icon === '🥤') {
+      if(itemObj.itemName === 'slurpee') {
         player.statusType = 'sugar';
         player.statusTurns = 20;
         logMsg("<span style='color:var(--warning)'>⚡ SUGAR RUSH! You feel incredibly fast!</span>");
@@ -431,7 +431,7 @@
       decrementItem(idx);
     }
     else if(def.type === "scroll") {
-      if(itemObj.icon === '📃') { isIdentifying = true; logMsg("Select an item."); return; }
+      if(itemObj.itemName === 'identifyScroll') { isIdentifying = true; logMsg("Select an item."); return; }
       if(def.spell) {
         // B756.SCROLL_MANA: require minimum mana to read/cast from scroll,
         // but do not spend mana on a successful scroll cast.
@@ -458,13 +458,16 @@
         player.mp = savedMp; // restore mana — scroll pays the cost
         decrementItem(idx);
         // Place magic residue in same slot
-        const residue = { icon: '✨', qty: 1 };
+        // Unified residue: state.js's Spell Residue (🌫️). Previously this
+        // path created ✨-glyph residue, inconsistent with the other spell
+        // residue sites (lines 479/489) which used 🌫️.
+        const residueName = 'spellResidue';
         if(!inventory[idx]) {
-          inventory[idx] = residue;
+          inventory[idx] = new ItemStack(residueName, 1);
         } else {
           let freeSlot = inventory.findIndex(s => s === null);
-          if(freeSlot !== -1) inventory[freeSlot] = residue;
-          else { let fp = inventory.findIndex(s => s === null); if(fp !== -1) inventory[fp] = residue; else itemsOnGround.push({x: player.x, y: player.y, icon: '✨'}); }
+          if(freeSlot !== -1) inventory[freeSlot] = new ItemStack(residueName, 1);
+          else { let fp = inventory.findIndex(s => s === null); if(fp !== -1) inventory[fp] = new ItemStack(residueName, 1); else itemsOnGround.push({x: player.x, y: player.y, icon: ItemDef.iconOf(residueName)}); }
         }
         logMsg("<span style='color:#888; font-style:italic;'>The scroll crumbles to magic residue.</span>");
         renderQuickslots(); renderInventory(); updateUI();
@@ -472,24 +475,24 @@
     }
     else if(def.type === "spell") {
       // E9: Tome of Town Portal — use directly to cast portal spell, then becomes ash
-      if(def.spell === 'portal' && itemObj.icon === '📖🌀') {
-        logMsg(`<span style='color:var(--success)'>📖🌀 You open the ${def.name} and read from its pages...</span>`);
+      if(def.spell === 'portal' && itemObj.itemName === 'tomeOfTownPortal') {
+        logMsg(`<span style='color:var(--success)'>${ItemDef.iconOf('tomeOfTownPortal')} You open the ${def.name} and read from its pages...</span>`);
         castSpell('portal', true);
         // Consume the tome (replace with ash)
-        inventory[idx] = { icon: '🌫️', qty: 1 };
+        inventory[idx] = new ItemStack('spellResidue', 1);
         renderQuickslots(); updateUI();
         return;
       }
       // Equip a spellbook as active spell
       player.equippedSpell = def.spell;
       if(!player.spells[def.spell]) player.spells[def.spell] = { level: 1 };
-      logMsg(`<span style='color:var(--success)'>📖 Learned spell: ${def.name}. The tome crumbles to ash!</span>`);
+      logMsg(`<span style='color:var(--success)'>${itemObj.icon} Learned spell: ${def.name}. The tome crumbles to ash!</span>`);
       Sound.clink();
       // Bug 35: Replace tome with spell residue ash
-      inventory[idx] = { icon: '🌫️', qty: 1 };
+      inventory[idx] = new ItemStack('spellResidue', 1);
       renderQuickslots(); updateUI();
     }
-    else if(itemObj.icon === '🫖') {
+    else if(itemObj.itemName === 'magicTeapot') {
       // Magic Teapot — create a healing potion (60min cooldown)
       let now = Date.now();
       let lastUse = player.teapotLastUse || 0;
@@ -497,24 +500,24 @@
       let remaining = cooldownMs - (now - lastUse);
       if(remaining > 0) {
         let mins = Math.ceil(remaining / 60000);
-        logMsg(`🫖 The teapot is still cooling! (${mins} min remaining)`);
+        logMsg(`${ItemDef.iconOf('magicTeapot')} The teapot is still cooling! (${mins} min remaining)`);
         return;
       }
       player.teapotLastUse = now;
       // Add health potion to inventory
       let slot = inventory.findIndex(i => i === null);
       if(slot !== -1) {
-        inventory[slot] = {icon: '🧪', qty: 1};
-        logMsg("<span style='color:var(--success)'>🫖 The Magic Teapot brews a Health Potion!</span>");
+        inventory[slot] = new ItemStack('healthPotion', 1);
+        logMsg(`<span style='color:var(--success)'>${ItemDef.iconOf('magicTeapot')} The Magic Teapot brews a Health Potion!</span>`);
       } else {
         // Try inventory
         let pSlot = inventory.findIndex(i => i === null);
         if(pSlot !== -1) {
-          inventory[pSlot] = {icon: '🧪', qty: 1};
-          logMsg("<span style='color:var(--success)'>🫖 The Magic Teapot brews a Health Potion! (stashed in inventory)</span>");
+          inventory[pSlot] = new ItemStack('healthPotion', 1);
+          logMsg(`<span style='color:var(--success)'>${ItemDef.iconOf('magicTeapot')} The Magic Teapot brews a Health Potion! (stashed in inventory)</span>`);
         } else {
           itemsOnGround.push({x: player.x, y: player.y, icon: '🧪'});
-          logMsg("<span style='color:var(--success)'>🫖 The Magic Teapot brews a Health Potion! (dropped at feet)</span>");
+          logMsg(`<span style='color:var(--success)'>${ItemDef.iconOf('magicTeapot')} The Magic Teapot brews a Health Potion! (dropped at feet)</span>`);
         }
       }
       renderQuickslots(); renderInventory(); updateUI();
@@ -562,7 +565,7 @@
   };
 
   window.witchTrial = () => {
-    let hasDuck = inventory.some(i => i && i.icon === '🦆');
+    let hasDuck = inventory.some(i => i && i.itemName === 'rubberDuck');
     let m = document.getElementById('modal-content');
     if(hasDuck) {
       m.innerHTML = `<h2>⚖️ The Scales of Justice</h2><p>"She weighs the same as a duck!"</p>
@@ -578,7 +581,7 @@
   window.finishWitch = () => {
     hideOverlay();
     let empty = inventory.findIndex(i => i === null);
-    if(empty !== -1) inventory[empty] = {icon:'🧪🦎', qty:1};
+    if(empty !== -1) inventory[empty] = new ItemStack('potionOfNewt', 1);
     logMsg("The Witch left a Potion of Newt behind.");
     renderQuickslots();
   };
@@ -617,7 +620,7 @@
         }
         if(!stacked) {
           let emptyIdx = inventory.findIndex(i => i === null);
-          if(emptyIdx !== -1) { inventory[emptyIdx] = {icon: item.icon, qty: 1}; stacked = true; }
+          if(emptyIdx !== -1) { inventory[emptyIdx] = ItemStack.fromIcon(item.icon, 1); stacked = true; }
         }
 
         // Try Inventory Second
@@ -629,7 +632,7 @@
           }
           if(!stacked) {
             let pIdx = inventory.findIndex(i => i === null);
-            if(pIdx !== -1) { inventory[pIdx] = {icon: item.icon, qty: 1}; stacked = true; logMsg(`Stashed ${item.icon} in Inventory.`); }
+            if(pIdx !== -1) { inventory[pIdx] = ItemStack.fromIcon(item.icon, 1); stacked = true; logMsg(`Stashed ${item.icon} in Inventory.`); }
           }
         }
 
@@ -647,8 +650,8 @@
             }
           }
           // Achievement triggers
-          if(item.icon === '📋') awardAchievement('world_domination');
-          if(item.icon === '💣🌟') awardAchievement('holy_hand');
+          if(item.itemName === 'plansForWorldDomination') awardAchievement('world_domination');
+          if(item.itemName === 'holyHandGrenade') awardAchievement('holy_hand');
         }
         else { logMsg("<span style='color:var(--warning)'>Inventory full!</span>"); }
       }
@@ -1194,7 +1197,7 @@
       let item = inventory[idx], cur = player.equipped[slot];
       // #34: Allow unequipping to a null/empty inventory slot
       player.equipped[slot] = item ? item.icon : null;
-      inventory[idx] = cur ? { icon: cur, qty: 1 } : null;
+      inventory[idx] = cur ? ItemStack.fromIcon(cur, 1) : null;
     }
     // Recalculate combat stats from all equipment
     let totalDmg = CONSTANTS.PLAYER_UNARMED_BASE_DMG;
@@ -1207,16 +1210,16 @@
         if(d.type === "weapon") totalDmg = (d.baseDmg || 0);
         totalEvade += (d.evadePercent||0);
         // Boots of Blinding Speed
-        if(ic === '👢⚡') {
+        if(ic === ItemDef.iconOf('bootsOfBlindingSpeed')) {
           speedBonus = 1;
           player.blind = true;
-          logMsg("<span style='color:var(--warning)'>👢⚡ The Boots of Blinding Speed make everything blur!</span>");
+          logMsg(`<span style='color:var(--warning)'>${ItemDef.iconOf('bootsOfBlindingSpeed')} The Boots of Blinding Speed make everything blur!</span>`);
           logMsg("<span style='color:var(--success)'>You feel incredibly fast!</span>");
         }
       } 
     });
     // Remove blind if boots unequipped
-    if(player.equipped.feet !== '👢⚡' && player.blind) {
+    if(player.equipped.feet !== ItemDef.iconOf('bootsOfBlindingSpeed') && player.blind) {
       player.blind = false;
       logMsg("<span style='color:var(--primary)'>Your vision clears.</span>");
     }
@@ -1237,7 +1240,7 @@
     if(!cur) return;
     const freeSlot = inventory.findIndex(s => s === null);
     if(freeSlot !== -1) {
-      inventory[freeSlot] = { icon: cur, qty: 1 };
+      inventory[freeSlot] = ItemStack.fromIcon(cur, 1);
       logMsg(`<span style='color:var(--success)'>Unequipped ${ITEM_DEF[cur]?.name || cur} to inventory.</span>`);
     } else {
       itemsOnGround.push({ x: player.x, y: player.y, icon: cur });
