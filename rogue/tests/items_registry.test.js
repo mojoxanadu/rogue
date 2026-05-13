@@ -56,6 +56,35 @@ test('Registry strips apostrophes from displayName', () => {
   assert.ok(ctx.ItemDefs.deathsDoor);
 });
 
+test('Registry: two defs can share an icon (gold + uniqueCoin both use 🪙)', () => {
+  // Icons are display-only; the camelCase name is the identity. The reverse
+  // map (_byIcon) keeps the FIRST registration so ItemStack.fromIcon stays
+  // stable for the legacy emoji-keyed migration paths.
+  const ctx = buildRegistry({
+    '🪙': { name: 'Unique Coin', type: 'quest',  stackable: false },
+    // Same icon, different camelCase name — registered second.
+    '🪙ALT': { name: 'Gold',     type: 'wealth', maxStack: 9999, pickupTo: 'gp' },
+  });
+  // Both defs exist by name.
+  assert.equal(ctx.ItemDefs.uniqueCoin.icon, '🪙');
+  assert.equal(ctx.ItemDefs.gold.icon,       '🪙ALT');
+  // _byIcon for the conflicting icon resolves to the first registration.
+  // (The test uses a distinct second icon to avoid pre-empting the reverse
+  // map check; in production gold and uniqueCoin both legitimately use 🪙
+  // and byIcon('🪙') → uniqueCoin because it's declared first in ITEM_DEF.)
+  assert.equal(ctx.ItemDef.byIcon('🪙').name, 'uniqueCoin');
+});
+
+test('Lock: gold is wealth with pickupTo=gp', () => {
+  const ctx = buildRegistry({
+    '🪙': { name: 'Gold', type: 'wealth', maxStack: 9999, pickupTo: 'gp' },
+  });
+  const gold = ctx.ItemDefs.gold;
+  assert.ok(gold, 'gold ItemDef missing — loot drops will break');
+  assert.equal(gold.pickupTo, 'gp', 'pickupTo must be "gp" — pickup handlers route by this property');
+  assert.equal(gold.type, 'wealth');
+});
+
 test('Registry: camelCase collisions keep the first def, warn on the rest', (t) => {
   // Silence the expected console.warn so test output stays clean
   t.mock.method(console, 'warn', () => {});

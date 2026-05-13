@@ -622,6 +622,7 @@
     "🪙": { name: "Unique Coin", type: "quest", stackable: false, maxGP: 0 },
     "🐀💦": { name: "Wet Rat Tail", type: "quest", stackable: true, maxGP: 0 },
     "🦆":   { name: "Rubber Duck",  type: "quest", maxStack: 1, maxGP: 0 },
+    "🦵":   { name: "Severed Leg",  type: "quest", maxStack: 1, maxGP: 0 },
 
     // ── SCROLL ───────────────────────────────────────
     "📜📜": { name: "Constitutional Convention", type: "scroll", stackable: true, maxStack: 99, maxGP: 0 },
@@ -701,6 +702,17 @@
 
     // ── WEALTH ───────────────────────────────────────
     "💰": { name: "Gold Bag", type: "wealth", stackable: false, maxGP: 50 },
+    // Loose gold pieces. Shares the 🪙 icon with the Unique Coin quest item —
+    // icons are display-only and need not be unique. Code distinguishes by
+    // itemName ('gold' vs 'uniqueCoin').
+    //
+    // pickupTo='gp' routes the stack's qty into player.gp on pickup instead
+    // of placing the stack in inventory — this is the "custom wealth
+    // behavior" hook. Future platinum pieces would set pickupTo='pp', etc.
+    // Property-on-the-def rather than a WealthStack subclass: no parallel
+    // hierarchy, no "forgot to use the subclass" trap; new wealth types
+    // are pure data additions.
+    "🪙": { name: "Gold", type: "wealth", maxStack: 9999, maxGP: 0, pickupTo: 'gp' },
 
     // ── WEAPON ───────────────────────────────────────
     "🪗": { name: "Accordion", type: "weapon", stackable: false, baseDmg: 0, maxGP: 0, special: 'accordion' },

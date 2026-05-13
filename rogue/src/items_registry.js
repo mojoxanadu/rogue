@@ -51,9 +51,12 @@ function _toCamelCase(displayName) {
       icon,
     });
     ItemDefs[name] = def;
-    // Reverse map: emoji → def. Used by ItemDef.byIcon() and
-    // ItemStack.fromIcon() during the migration period.
-    ItemDef._byIcon[icon] = def;
+    // Reverse map: emoji → def. First-wins, since icons need not be unique
+    // across defs (e.g., 'gold' and 'uniqueCoin' both use 🪙). Keeping the
+    // first registration gives byIcon() stable behavior — used by the
+    // ItemStack.fromIcon migration helper that should eventually have
+    // zero callers.
+    if (!ItemDef._byIcon[icon]) ItemDef._byIcon[icon] = def;
   }
   const colCount = Object.keys(collisions).length;
   if (colCount > 0) {

@@ -310,10 +310,10 @@
   function getFloorItemSprite(item) {
     if(!(window.useSprites && assets.sprites)) return null;
     if(assets.sprites[item.icon]) return assets.sprites[item.icon];
-    if(item.icon === '🗡️') return assets.sprites['sword'];
-    if(item.icon === '🧪') return assets.sprites['potion'];
-    if(item.icon === '📜') return assets.sprites['scroll'];
-    if(item.icon === '🪙') return assets.sprites['coin'];
+    if(item.itemName === 'sword')                  return assets.sprites['sword'];
+    if(item.itemName === 'healthPotion')           return assets.sprites['potion'];
+    if(item.itemName === 'certifiedPastafarian')   return assets.sprites['scroll'];
+    if(item.itemName === 'gold')                   return assets.sprites['coin'];
     return null;
   }
 
