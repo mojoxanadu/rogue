@@ -524,7 +524,7 @@
 
         case 'inventoryHas':
           // Player has at least qty of an item (does NOT consume it)
-          return inventoryx.some(i => i && i.icon === req.item && (i.qty || 1) >= (req.qty || 1));
+          return inventory.some(i => i && i.icon === req.item && (i.qty || 1) >= (req.qty || 1));
 
         case 'inventoryRemove':
           // Like inventoryHas, but CONSUMES the item if the check passes.
@@ -612,12 +612,12 @@
           break;
 
         case 'giveItem': {
-          let emptySlot = inventoryx.findIndex(i => i === null);
+          let emptySlot = inventory.findIndex(i => i === null);
           if (emptySlot !== -1) {
-            inventoryx[emptySlot] = { icon: reward.item, qty: reward.qty || 1 };
+            inventory[emptySlot] = { icon: reward.item, qty: reward.qty || 1 };
             let def = ITEM_DEF[reward.item];
             if (def) logMsg(`<span style='color:var(--success)'>Received: ${def.name}</span>`);
-            if (typeof renderInventory === 'function') renderInventory();
+            if (typeof renderQuickslots === 'function') renderQuickslots();
           } else {
             logMsg(`<span style='color:var(--error)'>Inventory full! Item dropped on ground.</span>`);
             itemsOnGround.push({ x: player.x, y: player.y, icon: reward.item });
@@ -1047,27 +1047,27 @@
 
     _tryRemoveItem(itemIcon, qty) {
       let found = 0;
-      for (let i = 0; i < inventoryx.length; i++) {
-        if (inventoryx[i] && inventoryx[i].icon === itemIcon) {
-          found += (inventoryx[i].qty || 1);
+      for (let i = 0; i < inventory.length; i++) {
+        if (inventory[i] && inventory[i].icon === itemIcon) {
+          found += (inventory[i].qty || 1);
         }
       }
       if (found < qty) return false;
       // Actually remove
       let remaining = qty;
-      for (let i = 0; i < inventoryx.length && remaining > 0; i++) {
-        if (inventoryx[i] && inventoryx[i].icon === itemIcon) {
-          let has = inventoryx[i].qty || 1;
+      for (let i = 0; i < inventory.length && remaining > 0; i++) {
+        if (inventory[i] && inventory[i].icon === itemIcon) {
+          let has = inventory[i].qty || 1;
           if (has <= remaining) {
             remaining -= has;
-            inventoryx[i] = null;
+            inventory[i] = null;
           } else {
-            inventoryx[i].qty -= remaining;
+            inventory[i].qty -= remaining;
             remaining = 0;
           }
         }
       }
-      if (typeof renderInventory === 'function') renderInventory();
+      if (typeof renderQuickslots === 'function') renderQuickslots();
       return true;
     },
 
