@@ -142,6 +142,17 @@ test('Lock: mechanics.js items resolve to expected camelCase names', () => {
   }
 });
 
+test('Lock: ui_logic.js items resolve to expected camelCase names', () => {
+  const ctx = buildRegistry({
+    '🗡️': { name: 'Sword',     type: 'weapon', stackable: false },
+    '📜': { name: 'Certified Pastafarian', type: 'useless', stackable: false },
+    '🪗': { name: 'Accordion', type: 'weapon', stackable: false },
+  });
+  for (const n of ['sword', 'certifiedPastafarian', 'accordion']) {
+    assert.ok(ctx.ItemDefs[n], `${n} missing — ui_logic.js will produce broken refs`);
+  }
+});
+
 test('Lock: map.js items resolve to expected camelCase names', () => {
   const ctx = buildRegistry({
     '🪗': { name: 'Accordion',         type: 'weapon', stackable: false },
