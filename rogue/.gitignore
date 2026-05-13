@@ -7,3 +7,5 @@ __pycache__/
 # Build artifacts — roguelike.html (the release output) IS tracked.
 dev_build.html
 assets.json
+err
+log

@@ -1,4 +1,170 @@
 <body>
+<!-- DEV-ONLY BEGIN: error capture + action bar (stripped by build_release.py) -->
+<script>
+  // ── Global error capture → routed to the game log ──────────────
+  // Captures uncaught errors and unhandled promise rejections so they're
+  // visible to players (and developers) without opening the browser
+  // console. Errors are rendered with a red border and copyable stack
+  // trace; copyLastError() copies the most recent one to clipboard.
+  // window._lastError holds the most recent error as a multi-line string,
+  // ready for clipboard copy. The string is the real exception data —
+  // Error.name / .message / .stack as the browser provides them, plus the
+  // (filename, line, col) breadcrumb when the listener gave us those.
+  window._lastError = null;
+
+  function _escHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  // Produce a faithful textual representation of an exception. Prefers the
+  // browser's real stack trace. Falls through to message+location when the
+  // listener only handed us a string (CORS-tainted scripts, some inline
+  // handlers in older engines). Custom error properties (cause, code, etc.)
+  // are included too via Object.entries.
+  function _formatErr(label, errOrMsg, file, line, col) {
+    const parts = [label];
+    if (errOrMsg && typeof errOrMsg === 'object') {
+      if (errOrMsg.name && errOrMsg.name !== 'Error') parts.push('(' + errOrMsg.name + ')');
+      if (errOrMsg.message) parts[parts.length - 1] += ': ' + errOrMsg.message;
+      if (errOrMsg.stack) {
+        parts.push('');
+        parts.push(String(errOrMsg.stack));
+      } else if (errOrMsg.message) {
+        // no stack — fall through to file:line:col below
+      }
+      // Surface non-standard fields (cause, code, name args) the user added.
+      try {
+        const own = Object.keys(errOrMsg).filter(k => !['name','message','stack'].includes(k));
+        if (own.length) {
+          parts.push('');
+          parts.push('Properties:');
+          for (const k of own) parts.push('  ' + k + ' = ' + String(errOrMsg[k]));
+        }
+      } catch (_) {}
+    } else if (errOrMsg != null) {
+      parts[0] += ': ' + String(errOrMsg);
+    }
+    const where = [];
+    if (file) where.push(file);
+    if (line != null) where.push(String(line));
+    if (col  != null) where.push(String(col));
+    if (where.length) {
+      parts.push('');
+      parts.push('Location: ' + where.join(':'));
+    }
+    return parts.join('\n');
+  }
+
+  function _reportError(text) {
+    window._lastError = text;
+    if (typeof logMsg === 'function') {
+      logMsg('<span class="log-error"><strong>JS Error</strong><pre>' + _escHtml(text) + '</pre></span>');
+    } else {
+      // logMsg not yet defined — buffer for later
+      window._earlyErrors = window._earlyErrors || [];
+      window._earlyErrors.push(text);
+    }
+  }
+  window.addEventListener('error', function(e) {
+    // Prefer the real Error object (e.error); fall back to e.message if
+    // the script was cross-origin and e.error was scrubbed to null.
+    _reportError(_formatErr('Error', e.error || e.message || e, e.filename, e.lineno, e.colno));
+  });
+  window.addEventListener('unhandledrejection', function(e) {
+    _reportError(_formatErr('Unhandled Rejection', e.reason));
+  });
+
+  // Test trigger — explicitly throws so you can confirm the whole pipeline
+  // (capture → log render → copy button) works end-to-end. Bound to the 🧪
+  // button below.
+  window.testErrorCapture = function() {
+    setTimeout(function() {
+      throw new Error('Test exception from testErrorCapture() — if you see this with a stack trace, capture is working.');
+    }, 0);
+  };
+
+  // Also intercept console.error so errors that were try/caught and only
+  // logged still surface in the in-game log. Preserves the original
+  // console.error so devtools sees them too.
+  (function() {
+    var origErr = console.error.bind(console);
+    console.error = function() {
+      origErr.apply(null, arguments);
+      try {
+        var parts = [];
+        for (var i = 0; i < arguments.length; i++) {
+          var a = arguments[i];
+          if (a && a.stack) parts.push(a.stack);
+          else if (typeof a === 'object') parts.push(JSON.stringify(a));
+          else parts.push(String(a));
+        }
+        _reportError('console.error: ' + parts.join(' '));
+      } catch(_) {}
+    };
+  })();
+
+  // Clipboard copy with fallback for non-secure contexts (HTTP, remote IP).
+  // navigator.clipboard.writeText() requires a secure context — fails
+  // silently on Android over LAN HTTP. Fallback creates a hidden textarea,
+  // selects it, and uses document.execCommand('copy') which works
+  // anywhere a user gesture is in scope.
+  function _copyText(text) {
+    // Try the modern API first
+    if (navigator.clipboard && window.isSecureContext) {
+      return navigator.clipboard.writeText(text).then(
+        function() { return true; },
+        function() { return _legacyCopy(text); }
+      );
+    }
+    return Promise.resolve(_legacyCopy(text));
+  }
+  function _legacyCopy(text) {
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.cssText = 'position:fixed;left:-9999px;top:-9999px;opacity:0;';
+      document.body.appendChild(ta);
+      ta.select();
+      ta.setSelectionRange(0, ta.value.length);
+      var ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Log action buttons. Defined here so they're available regardless of
+  // whether ui_logic.js has finished loading.
+  window.copyLog = function() {
+    const el = document.getElementById('log');
+    if (!el) return;
+    Promise.resolve(_copyText(el.innerText)).then(function(ok) {
+      if (typeof logMsg === 'function') {
+        logMsg(ok ? 'Log copied to clipboard.' : '<span style="color:#f88">Copy failed — select manually.</span>');
+      }
+    });
+  };
+  window.copyLastError = function() {
+    if (!window._lastError) {
+      if (typeof logMsg === 'function') logMsg('No error captured yet.');
+      return;
+    }
+    Promise.resolve(_copyText(window._lastError)).then(function(ok) {
+      if (typeof logMsg === 'function') {
+        logMsg(ok ? 'Last error copied to clipboard.' : '<span style="color:#f88">Copy failed — select manually.</span>');
+      }
+    });
+  };
+  window.clearLog = function() {
+    const el = document.getElementById('log');
+    if (el && el.replaceChildren) el.replaceChildren();
+  };
+</script>
+<!-- DEV-ONLY END -->
 <!--
   UI LAYOUT – HTML STRUCTURE
   ==========================
@@ -81,6 +247,10 @@
     </div>
   </div>
 
+  <!-- Log action buttons moved to end of body (see below) so they're the
+       last child of body and naturally stack above earlier siblings. -->
+
+
   <!--
     Bottom bar – XP progress, HP/MP orbs, and 10‑slot inventory hotbar.
     The inventory slots are populated by renderQuickslots() in ui_logic.js.
@@ -127,51 +297,10 @@
   <div class="modal" id="modal-content" style="background:var(--surface); border:2px solid var(--secondary); padding:24px; border-radius:8px; text-align:center;"></div>
 </div>
 
-<div class="draggable-modal" id="class-select-modal" style="top: 100px; left: 100px; width: 700px; display:none;">
-  <div class="modal-header"><span>🎮 Choose Your Class</span><button class="modal-close" onclick="toggleModal('class-select-modal')">✖</button></div>
-  <div class="modal-body" style="text-align:center;">
-    <p>Select a class to begin your adventure. Each class has unique strengths and starting items.</p>
-    <div style="display:flex; gap:20px; margin-top:20px;">
-      <div class="class-option" style="flex:1; border:2px solid var(--primary); border-radius:8px; padding:15px;">
-        <h3>⚔️ Fighter</h3>
-        <div id="fighter-portrait" style="font-size:80px;">🛡️</div>
-        <p>Sturdy warrior with high health and melee damage.</p>
-        <ul style="text-align:left; font-size:14px;">
-          <li>+5 Max HP</li>
-          <li>+2 Base Damage</li>
-          <li>+5% Hit Rate</li>
-          <li>Starting item: Sword (🗡️)</li>
-        </ul>
-        <button onclick="selectClass('fighter')" style="margin-top:10px;">Select Fighter</button>
-      </div>
-      <div class="class-option" style="flex:1; border:2px solid var(--secondary); border-radius:8px; padding:15px;">
-        <h3>🏹 Rogue</h3>
-        <div id="rogue-portrait" style="font-size:80px;">👤</div>
-        <p>Agile scoundrel with high crit and dodge.</p>
-        <ul style="text-align:left; font-size:14px;">
-          <li>+5% Dodge</li>
-          <li>+5% Crit Chance</li>
-          <li>Starting item: Dagger (🗡️)</li>
-        </ul>
-        <button onclick="selectClass('rogue')" style="margin-top:10px;">Select Rogue</button>
-      </div>
-      <div class="class-option" style="flex:1; border:2px solid var(--tertiary); border-radius:8px; padding:15px;">
-        <h3>🔮 Spellcaster</h3>
-        <div id="spellcaster-portrait" style="font-size:80px;">🧙</div>
-        <p>Arcane adept with mana and spell power.</p>
-        <ul style="text-align:left; font-size:14px;">
-          <li>+10 Max MP</li>
-          <li>+2 Spell Damage Bonus</li>
-          <li>Starting item: Scroll (📜)</li>
-        </ul>
-        <button onclick="selectClass('spellcaster')" style="margin-top:10px;">Select Spellcaster</button>
-      </div>
-    </div>
-    <div style="margin-top:20px;">
-      <button onclick="toggleModal('class-select-modal'); toggleModal('menu-modal')">Back to Menu</button>
-    </div>
-  </div>
-</div>
+<!-- Legacy class-select-modal removed. The video-based class-modal (below
+     around line 430) is the active class-selection UI. When no class
+     videos are loaded (e.g., dev builds without asset bundles), each
+     slot displays a text fallback panel (see initClassVideos). -->
 
 <div class="draggable-modal" id="inventory-modal" style="top: 100px; left: 200px; width: 628px;">
   <div class="modal-header"><span>🎒 Inventory</span><button class="modal-close" onclick="toggleModal('inventory-modal')">✖</button></div>
@@ -698,28 +827,89 @@
         }
       }
       
-      // Load class videos from asset bundle using blob URLs
-      ['fighter', 'rogue', 'spellcaster'].forEach(function(cls) {
-        var vid = document.getElementById('vid-' + cls);
-        if(!vid) { 
-          if(typeof logMsg === 'function') logMsg("<span style='color:#f88'>Video element vid-" + cls + " not found.</span>");
-          return; 
+      // Text fallback shown when a class video isn't loaded — avoids the
+      // bare-video-element empty rectangles users were seeing in dev builds.
+      // Same info the legacy class-select-modal used to display.
+      var classFallbacks = {
+        fighter:     { emoji: '🛡️', title: 'Fighter',     bonus: '+5 HP · +2 DMG · +5% Hit' },
+        rogue:       { emoji: '👤', title: 'Rogue',       bonus: '+5% Dodge · +5% Crit' },
+        spellcaster: { emoji: '🧙', title: 'Spellcaster', bonus: '+10 MP · +2 Spell Dmg' }
+      };
+
+      // The slots are absolutely positioned over a backdrop image and use
+      // percentage top/height. With no backdrop, the parent has zero height
+      // and the slots become invisible. So when we can't load the backdrop,
+      // build a separate flex-row of class cards and hide the absolute-
+      // positioned slot layer entirely.
+      function showFallbackCards() {
+        // Hide the backdrop wrapper (it would render as 0 height anyway,
+        // but explicit hide also dismisses the bare <video> placeholders).
+        var backdrop = document.getElementById('class-modal-backdrop');
+        if (backdrop) backdrop.style.display = 'none';
+        // Remove any prior fallback row (idempotent across re-opens)
+        var prior = document.getElementById('class-fallback-row');
+        if (prior) prior.parentNode.removeChild(prior);
+        var row = document.createElement('div');
+        row.id = 'class-fallback-row';
+        row.style.cssText = 'display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin:24px 0;width:100%;max-width:760px;';
+        ['fighter', 'rogue', 'spellcaster'].forEach(function(cls) {
+          var info = classFallbacks[cls];
+          if (!info) return;
+          var card = document.createElement('div');
+          card.className = 'class-vid-slot';   // reuse hover/selected styling
+          card.id = 'slot-' + cls;
+          card.style.cssText = 'flex:1 1 200px;min-width:180px;max-width:240px;background:#1a1a24;border:2px solid #444;border-radius:8px;padding:18px;text-align:center;color:#ddd;cursor:pointer;';
+          card.onmouseenter = function() { _classHover(cls, true); };
+          card.onmouseleave = function() { _classHover(cls, false); };
+          card.onclick = function() { _selectClass(cls); };
+          var portrait = document.createElement('div');
+          portrait.style.cssText = 'font-size:64px;line-height:1;margin-bottom:8px;';
+          portrait.textContent = info.emoji;
+          var title = document.createElement('div');
+          title.style.cssText = 'font-weight:bold;font-size:18px;color:#e8d88a;letter-spacing:0.04em;text-transform:uppercase;margin-bottom:6px;';
+          title.textContent = info.title;
+          var bonus = document.createElement('div');
+          bonus.style.cssText = 'font-size:13px;color:#aaa;line-height:1.5;';
+          bonus.textContent = info.bonus;
+          card.appendChild(portrait);
+          card.appendChild(title);
+          card.appendChild(bonus);
+          row.appendChild(card);
+        });
+        // Insert the fallback row right before the Begin Adventure button
+        var btn = document.getElementById('beginAdventureBtn');
+        if (btn && btn.parentNode) {
+          btn.parentNode.insertBefore(row, btn);
         }
-        var assetKey = 'movie_' + cls;
-        if(hasMovies && window.assets.movies[assetKey]) {
-          var blobUrl = dataUrlToBlobUrl(window.assets.movies[assetKey]);
-          if(blobUrl) {
-            vid.src = blobUrl;
-            vid.load();
-            vid.play().catch(function(){});
-            if(typeof logMsg === 'function') logMsg("<span style='color:#8f8'>Class video " + cls + " loaded via blob URL.</span>");
-          } else {
-            if(typeof logMsg === 'function') logMsg("<span style='color:#f88'>Failed to create blob URL for " + cls + ".</span>");
+      }
+
+      // Decide layout based on whether ANY class video loaded successfully.
+      var anyVideoLoaded = false;
+      if (hasMovies) {
+        ['fighter', 'rogue', 'spellcaster'].forEach(function(cls) {
+          var vid = document.getElementById('vid-' + cls);
+          if (!vid) return;
+          var assetKey = 'movie_' + cls;
+          if (window.assets.movies[assetKey]) {
+            var blobUrl = dataUrlToBlobUrl(window.assets.movies[assetKey]);
+            if (blobUrl) {
+              vid.src = blobUrl;
+              vid.load();
+              vid.play().catch(function(){});
+              anyVideoLoaded = true;
+              if (typeof logMsg === 'function') logMsg("<span style='color:#8f8'>Class video " + cls + " loaded via blob URL.</span>");
+            } else if (typeof logMsg === 'function') {
+              logMsg("<span style='color:#f88'>Failed to create blob URL for " + cls + ".</span>");
+            }
+          } else if (typeof logMsg === 'function') {
+            logMsg("<span style='color:#f88'>Class video '" + cls + "' not in movies.</span>");
           }
-        } else if(typeof logMsg === 'function') {
-          logMsg("<span style='color:#f88'>Class video '" + cls + "' not in movies.</span>");
-        }
-      });
+        });
+      }
+      if (!anyVideoLoaded) {
+        if (typeof logMsg === 'function') logMsg("<span style='color:#ff8'>No class videos available — falling back to text cards.</span>");
+        showFallbackCards();
+      }
     };
 
   window._beginAdventure = function() {
@@ -737,5 +927,18 @@
     if (startBtn) startBtn.click();
   };
 </script>
+
+<!-- Log action buttons. Placed at end of body so they're the last DOM
+     child — ties on z-index resolve in DOM order, so this guarantees
+     they stack above any other fixed UI no matter what. Full viewport
+     width to avoid any sizing surprises on narrow mobile screens. -->
+<!-- DEV-ONLY BEGIN: action bar (stripped by build_release.py) -->
+<div id="log-actions" class="interactive" style="position:fixed;top:0;left:0;width:100vw;display:flex;gap:2px;background:rgba(0,0,0,0.95);padding:4px;box-sizing:border-box;border-bottom:2px solid #888;z-index:2147483647;">
+  <button onclick="testErrorCapture()" title="Trigger a test exception (verify capture works)" style="flex:1 1 0;font-size:13px;padding:8px 0;cursor:pointer;background:#3a2a4a;color:#dcf;border:1px solid #75a;border-radius:3px;">🧪 Test</button>
+  <button onclick="copyLog()" title="Copy entire game log to clipboard" style="flex:1 1 0;font-size:13px;padding:8px 0;cursor:pointer;background:#2a2a2a;color:#ddd;border:1px solid #555;border-radius:3px;">📋 Log</button>
+  <button onclick="copyLastError()" title="Copy most recent exception + stack to clipboard" style="flex:1 1 0;font-size:13px;padding:8px 0;cursor:pointer;background:#5a1a1a;color:#fdd;border:1px solid #a55;border-radius:3px;">⚠ Err</button>
+  <button onclick="clearLog()" title="Clear the log" style="flex:1 1 0;font-size:13px;padding:8px 0;cursor:pointer;background:#2a2a2a;color:#ddd;border:1px solid #555;border-radius:3px;">🗑</button>
+</div>
+<!-- DEV-ONLY END -->
 
 <script>

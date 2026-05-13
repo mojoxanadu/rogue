@@ -25,6 +25,12 @@ DEV_STUB_CSS = (
 
 TOKEN_RE = re.compile(r'\{\{[A-Z0-9_]+\}\}')
 
+# Chrome shows alt text alongside the broken-image icon when src is missing,
+# even with display:none on some paths (JS may set src to '' later). Stripping
+# alt="..." in the dev build avoids the "Class selection backdrop"-style text
+# leaks. Production keeps alt for accessibility.
+ALT_RE = re.compile(r'\s+alt="[^"]*"')
+
 
 def build():
     src_dir = os.path.join(_HERE, 'src')
@@ -53,6 +59,7 @@ def build():
             content = TOKEN_RE.sub('', content)
 
             if ext == '.html':
+                content = ALT_RE.sub('', content)
                 content = content.replace(
                     '</head>',
                     f'<script>window.GAME_NAME = "{GAME_NAME}";</script>{DEV_STUB_CSS}</head>',

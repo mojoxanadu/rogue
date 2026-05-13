@@ -35,6 +35,18 @@
     const logDiv = document.getElementById('log');
     const logOverlay = document.getElementById('log-overlay');
     if(!logDiv) return;
+    // Drain any errors captured before logMsg was wired up (window.onerror
+    // fires before this file is parsed if a script loaded earlier throws).
+    if (window._earlyErrors && window._earlyErrors.length) {
+      const buffered = window._earlyErrors;
+      window._earlyErrors = [];
+      buffered.forEach(function(text) {
+        logInfo.count++;
+        const escErr = String(text)
+          .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        logDiv.innerHTML += '<div class="log-entry"><span class="log-time">#' + logInfo.count + '</span><span class="log-new log-error"><strong>JS Error</strong><pre>' + escErr + '</pre></span></div>';
+      });
+    }
     logInfo.count++;
     const now = new Date();
     const ts = `[${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}]`;
@@ -208,7 +220,7 @@
         el.ondragstart = name ? (e) => equipSlotDragStart(e, slot) : null;
         el.ondragover = (e) => equipSlotDragOver(e, slot);
         el.ondrop = (e) => equipSlotDrop(e, slot);
-        el.style.cursor = icon ? 'grab' : '';
+        el.style.cursor = name ? 'grab' : '';
       }
     });
 
