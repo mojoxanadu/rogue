@@ -716,7 +716,7 @@
 
     // ── WEAPON ───────────────────────────────────────
     "🪗": { name: "Accordion", type: "weapon", stackable: false, baseDmg: 0, maxGP: 0, special: 'accordion' },
-    "🏹": { name: "Bow", type: "weapon", stackable: false, baseDmg: 1, maxGP: 25, ranged: true, range: 9, ammoIcon: '➶', rangedDamage: 8 },
+    "🏹": { name: "Bow", type: "weapon", stackable: false, baseDmg: 1, maxGP: 25, ranged: true, range: 9, ammoName: 'arrows', rangedDamage: 8 },
     "🗡️✨": { name: "Excalibur", type: "weapon", stackable: false, baseDmg: 12, maxGP: 12000 },
     "🦯✨": { name: "Proper Staff", type: "weapon", stackable: false, baseDmg: 5, maxGP: 25000, ranged: true, range: 9, manaCost: 5, rangedDamage: 20, magicScaling: 'int' },
     "🦯": { name: "Staff", type: "weapon", stackable: false, baseDmg: 4, maxGP: 5 },
