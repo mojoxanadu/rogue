@@ -7,9 +7,7 @@
 // pay.gettingout.com is served from a host with an incomplete cert chain,
 // so the caller's VpnSession must bundle the DigiCert intermediate via
 // `extraCa`. messaging.gtlconnect.com works with the system trust store
-// but its endpoints require an OAuth-PKCE access_token managed by the
-// sibling GOMessaging class — addContact takes that instance through the
-// constructor and reuses its authenticate()d token.
+// but its endpoints require an OAuth-PKCE access_token managed by GOAuth.
 //
 // Discovered by reverse-reading the bundle at
 //   https://my.viapath.com/home/assets/index-*.js
@@ -23,8 +21,8 @@
 //
 // Usage:
 //   const sess = new VpnSession({ extraCa: ['./certs/...'] }).start();
-//   const msg  = new GOMessaging(sess);  // optional, only for addContact
-//   const list = new GOContactList(sess, { messaging: msg });
+//   const auth = new GOAuth(sess, { credentials });
+//   const list = new GOContactList(auth);
 //   const inmates = await list.searchInmates('CA', 273921, 'kim');
 //   await list.addContact(inmates[i], { iAcceptStateChange: true });
 
@@ -33,17 +31,16 @@ const MSG_BASE = 'https://messaging.gtlconnect.com';
 const ORIGIN   = 'https://my.viapath.com';
 
 export class GOContactList {
-  constructor(session, { messaging = null, country = 'US' } = {}) {
-    if (!session || typeof session.fetch !== 'function') {
-      throw new TypeError('GOContactList requires a VpnSession (or compatible) instance');
+  constructor(auth, { country = 'US' } = {}) {
+    if (!auth || typeof auth.getAccessToken !== 'function') {
+      throw new TypeError('GOContactList requires a GOAuth (or compatible) instance');
     }
-    this.session = session;
+    this.auth = auth;
     this.country = country;
-    this.messaging = messaging; // only needed for addContact
   }
 
   async _getJson(url) {
-    const { res } = await this.session.fetch(url, {
+    const { res } = await this.auth.session.fetch(url, {
       headers: {
         'Accept': 'application/json, text/plain, */*',
         'Origin': ORIGIN,
@@ -115,32 +112,28 @@ export class GOContactList {
   }
 
   // 4. Send an inmate-friend-request (a.k.a. "add contact").
-  // CHANGES STATE on the user's account — adds the inmate to Rosie's
+  // CHANGES STATE on the user's account — adds the inmate to the user's
   // contact list pending facility approval. Caller MUST pass
   // { iAcceptStateChange: true } to confirm.
   //
   // `inmate` should be a search-result object (or anything with
-  // .contactId + .facilityId). Requires a GOMessaging instance passed
-  // at construction time so we can borrow its OAuth access_token.
+  // .contactId + .facilityId).
   //
   // Returns the parsed server response (shape TBD).
   async addContact(inmate, { iAcceptStateChange = false } = {}) {
     if (iAcceptStateChange !== true) {
       throw new Error('addContact: refusing to mutate contact list; pass { iAcceptStateChange: true } to confirm');
     }
-    if (!this.messaging) {
-      throw new Error('addContact: requires a GOMessaging instance (pass via constructor { messaging })');
-    }
     if (!inmate || inmate.contactId == null || inmate.facilityId == null) {
       throw new Error('addContact: inmate must have contactId and facilityId');
     }
-    if (!this.messaging.accessToken) await this.messaging.authenticate();
+    const token = await this.auth.getAccessToken();
     const url = `${MSG_BASE}/webapi/v1/users/contacts/inmate_friend_request`;
-    const { res } = await this.session.fetch(url, {
+    const { res } = await this.auth.session.fetch(url, {
       method: 'POST',
       headers: {
         'Accept': 'application/json, text/plain, */*',
-        'Authorization': `Bearer ${this.messaging.accessToken}`,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
         'Origin': ORIGIN,
         'Referer': `${ORIGIN}/`,

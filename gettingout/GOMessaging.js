@@ -1,17 +1,14 @@
 // GOMessaging.js — GettingOut/ViaPath message-center client.
 //
 // Wraps the messaging.gtlconnect.com endpoints used by the SPA at
-// my.viapath.com/home (the bundle at /home/assets/index-*.js). Unlike
-// GOContactSearch, these endpoints require a Bearer access_token, which
-// is obtained via an OAuth2 PKCE authorization-code flow against
-// sso.gtlconnect.com. The flow only succeeds once the caller has already
-// signed in to /users/sign_in (i.e. the session must carry _usso_session).
+// my.viapath.com/home (the bundle at /home/assets/index-*.js). These
+// endpoints require a Bearer access_token; that token is owned by a
+// sibling GOAuth instance, passed in at construction. This class
+// re-asks GOAuth for the token on every request (no local caching) so
+// auth stays the single source of truth.
 //
 // Discovered by reverse-reading the bundle. Relevant strings:
-//   ussoApiURL       = https://sso.gtlconnect.com
 //   messagingApiURL  = https://messaging.gtlconnect.com
-//   ussoClientId     = f0b2cd56…1c4b3
-//   redirectUri      = https://my.viapath.com/home/usso
 //   GET  /webapi/v2/users/contacts
 //   GET  /webapi/v6/users/messages/chat?user_id=<id>&limit=N&page_number=N
 //   GET  /webapi/v4/users/messages/cost?recipient_id=<id>   (returns {balance, cost})
@@ -24,19 +21,14 @@
 // Cost-incurring methods (sendMessage) require the caller to pass
 // { iAcceptCost: true } explicitly. Read-only methods are always safe.
 
-import { createHash, randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { extractFormToken } from './vpnSession.js';
 
 const WHITELIST_PATH = join(dirname(fileURLToPath(import.meta.url)), 'whitelist.txt');
 
-const USSO_BASE      = 'https://sso.gtlconnect.com';
 const MSG_BASE       = 'https://messaging.gtlconnect.com';
 const ORIGIN         = 'https://my.viapath.com';
-const REDIRECT_URI   = 'https://my.viapath.com/home/usso';
-const CLIENT_ID      = 'f0b2cd568cf335933ff567b7d6baf375bf38ccfc42a0fced1f25acaaa6c1c4b3';
 const DEFAULT_LOCALE = 'en';
 const PAGE_SIZE      = 50;
 const MAX_BODY_LEN   = 2000;
@@ -152,138 +144,21 @@ function safeText(plainText) {
   });
 }
 
-function base64url(buf) {
-  return buf.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
-function pkcePair() {
-  const verifier  = base64url(randomBytes(32));
-  const challenge = base64url(createHash('sha256').update(verifier).digest());
-  return { verifier, challenge };
-}
-
 export class GOMessaging {
-  constructor(session, { locale = DEFAULT_LOCALE } = {}) {
-    if (!session || typeof session.fetch !== 'function') {
-      throw new TypeError('GOMessaging requires a VpnSession (or compatible) instance');
+  constructor(auth, { locale = DEFAULT_LOCALE } = {}) {
+    if (!auth || typeof auth.getAccessToken !== 'function') {
+      throw new TypeError('GOMessaging requires a GOAuth (or compatible) instance');
     }
-    this.session = session;
+    this.auth = auth;
     this.locale = locale;
-    this.accessToken = null;
-  }
-
-  // --- auth -----------------------------------------------------------------
-
-  async authenticate() {
-    if (this.accessToken) return this.accessToken;
-
-    const code = await this._authorizeForCode({ allowTermsAccept: true });
-
-    // 2. /oauth/token — exchange code + verifier for access_token.
-    const { res } = await this.session.fetch(`${USSO_BASE}/oauth/token`, {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Origin': ORIGIN,
-        'Referer': `${ORIGIN}/`,
-      },
-      body: JSON.stringify({
-        client_id: CLIENT_ID,
-        redirect_uri: REDIRECT_URI,
-        grant_type: 'authorization_code',
-        code,
-        code_verifier: this._verifier,
-      }),
-    });
-    const body = await res.text();
-    if (res.status !== 200) {
-      throw new Error(`/oauth/token → HTTP ${res.status}: ${body.slice(0, 300)}`);
-    }
-    let tok;
-    try { tok = JSON.parse(body); }
-    catch { throw new Error(`/oauth/token → non-JSON: ${body.slice(0, 200)}`); }
-    if (!tok.access_token) throw new Error(`/oauth/token → no access_token in response`);
-    this.accessToken = tok.access_token;
-    return this.accessToken;
-  }
-
-  // Runs /oauth/authorize. If the server diverts to the recurring SSO
-  // Terms-of-Service interstitial (shown every session — not a persisted
-  // account-state change), accept it once and retry the authorize call.
-  async _authorizeForCode({ allowTermsAccept }) {
-    const { verifier, challenge } = pkcePair();
-    const authUrl =
-      `${USSO_BASE}/oauth/authorize?` +
-      `client_id=${encodeURIComponent(CLIENT_ID)}` +
-      `&scope=` +
-      `&response_type=code` +
-      `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
-      `&code_challenge=${encodeURIComponent(challenge)}` +
-      `&code_challenge_method=S256` +
-      `&locale=${encodeURIComponent(this.locale)}`;
-
-    const trace = [];
-    const { res, finalUrl } = await this.session.fetch(authUrl, {
-      headers: { 'Accept': 'text/html,*/*', 'Referer': `${ORIGIN}/` },
-    }, trace);
-
-    const finalUrlObj = new URL(finalUrl);
-    const code = finalUrlObj.searchParams.get('code');
-    if (code) {
-      this._verifier = verifier;
-      return code;
-    }
-
-    if (allowTermsAccept && finalUrlObj.pathname === '/users/terms') {
-      const html = await res.text();
-      await this._acceptTerms(html, finalUrl);
-      return await this._authorizeForCode({ allowTermsAccept: false });
-    }
-
-    const hops = trace.map(h => `${h.status} ${h.url}`).join('\n  ');
-    throw new Error(`OAuth authorize did not yield a code. Trace:\n  ${hops}`);
-  }
-
-  // Submit the recurring TOS-acceptance form. The server posts back a
-  // 302 to the original /oauth/authorize, which the caller re-issues.
-  // NOTE: this looks state-changing but isn't — the SSO shows this
-  // interstitial on every new _usso_session (i.e. once per login), not
-  // once per account. Don't "harden" this by removing it; OAuth will
-  // dead-end on /users/terms if you do.
-  async _acceptTerms(html, refererUrl) {
-    const token = extractFormToken(html);
-    if (!token) throw new Error('TOS interstitial: authenticity_token not found');
-    const form = new URLSearchParams();
-    form.set('utf8', '✓');
-    form.set('authenticity_token', token);
-    form.set('locale', this.locale);
-    form.set('tos-pp', '1');
-    form.set('communications', '1');
-    const acceptUrl = `${USSO_BASE}/users/terms/accept`;
-    const { res } = await this.session.fetch(acceptUrl, {
-      method: 'POST',
-      headers: {
-        'Accept': 'text/html,*/*',
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Origin': USSO_BASE,
-        'Referer': refererUrl,
-      },
-      body: form.toString(),
-    });
-    if (res.status >= 400) {
-      const body = await res.text();
-      throw new Error(`/users/terms/accept → HTTP ${res.status}: ${body.slice(0, 200)}`);
-    }
-    await res.arrayBuffer();
   }
 
   async _getJson(url) {
-    if (!this.accessToken) await this.authenticate();
-    const { res } = await this.session.fetch(url, {
+    const token = await this.auth.getAccessToken();
+    const { res } = await this.auth.session.fetch(url, {
       headers: {
         'Accept': 'application/json, text/plain, */*',
-        'Authorization': `Bearer ${this.accessToken}`,
+        'Authorization': `Bearer ${token}`,
         'Origin': ORIGIN,
         'Referer': `${ORIGIN}/`,
       },
@@ -419,13 +294,13 @@ export class GOMessaging {
     if (body.length > MAX_BODY_LEN) {
       throw new Error(`sendMessage: body length ${body.length} exceeds MAX_BODY_LEN ${MAX_BODY_LEN}`);
     }
-    if (!this.accessToken) await this.authenticate();
+    const token = await this.auth.getAccessToken();
     const url = `${MSG_BASE}/webapi/v6/users/messages`;
-    const { res } = await this.session.fetch(url, {
+    const { res } = await this.auth.session.fetch(url, {
       method: 'POST',
       headers: {
         'Accept': 'application/json, text/plain, */*',
-        'Authorization': `Bearer ${this.accessToken}`,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
         'Origin': ORIGIN,
         'Referer': `${ORIGIN}/`,

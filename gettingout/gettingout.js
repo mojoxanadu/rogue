@@ -1,102 +1,35 @@
 // gettingout.js — site-specific entrypoint for sso.gtlconnect.com / GettingOut.
 //
 // All the things that change per site live here:
-//   - LOGIN_URL and credential-secret names
-//   - the form fields the site expects
-//   - the success heuristic
-//   - (later) the post-login walkthrough steps
-// Everything else — VPN-pinning, cookies, redirects, secrets, HTML helpers —
-// is in ./vpnSession.js so future projects can reuse it.
+//   - credential-secret names + GCP project
+//   - which demos exist
+// SSO sign-in + OAuth-PKCE live in GOAuth; per-service surfaces live in
+// GOMessaging / GOContactList. VPN-pinning, cookies, redirects, secrets,
+// and HTML helpers live in ./vpnSession.js.
+//
+// Login is lazy. main() builds the GOAuth instance but does NOT pre-call
+// it; the first service method that needs a Bearer token triggers SSO
+// sign-in + PKCE end-to-end. That keeps the wiring in main() short and
+// puts auth right next to the call site that needs it.
 
-import {
-  VpnSession,
-  getSecret,
-  extractFormToken,
-  extractTitle,
-  extractFlash,
-} from './vpnSession.js';
+import { VpnSession, getSecret } from './vpnSession.js';
+import { GOAuth }        from './GOAuth.js';
 import { GOContactList } from './GOContactList.js';
 import { GOMessaging }   from './GOMessaging.js';
 
 // --- Site-specific config ---------------------------------------------------
-const LOGIN_URL    = 'https://sso.gtlconnect.com/users/sign_in';
 const GCP_PROJECT  = 'static-webbing-461904-c4';
 const EMAIL_SECRET = 'gettingout-rosie-email';
 const PWD_SECRET   = 'gettingout-rosie-password';
 
-async function login(sess) {
-  console.log(`[*] Loading credentials from Google Secret Manager (${GCP_PROJECT})`);
-  const [email, password] = await Promise.all([
-    getSecret(EMAIL_SECRET, GCP_PROJECT),
-    getSecret(PWD_SECRET,   GCP_PROJECT),
-  ]);
-  console.log(`[+] email=${email}  password=<${password.length} chars>`);
-
-  // Step A — GET login page (seeds session + AWSALB cookies, gives us CSRF).
-  console.log(`\n[*] GET ${LOGIN_URL}`);
-  const { res: getRes } = await sess.fetch(LOGIN_URL);
-  const getHtml = await getRes.text();
-  console.log(`[+] Status ${getRes.status}  cookies: [${sess.jar.names().join(', ')}]`);
-
-  const token = extractFormToken(getHtml);
-  if (!token) throw new Error('authenticity_token not found on login page');
-  console.log(`[+] authenticity_token: ${token.slice(0, 24)}…`);
-
-  // Step B — POST credentials.
-  const form = new URLSearchParams();
-  form.set('utf8', '✓');
-  form.set('authenticity_token', token);
-  form.set('user[email]', email);
-  form.set('user[password]', password);
-
-  console.log(`\n[*] POST ${LOGIN_URL}`);
-  const postTrace = [];
-  const { res: postRes, finalUrl } = await sess.fetch(LOGIN_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Origin': 'https://sso.gtlconnect.com',
-      'Referer': LOGIN_URL,
-    },
-    body: form.toString(),
-  }, postTrace);
-
-  console.log('\n[*] Redirect chain:');
-  for (const hop of postTrace) {
-    const loc = hop.location ? `  → ${hop.location}` : '';
-    console.log(`    ${hop.method} ${hop.status}  ${hop.url}${loc}  (+${hop.setCookieCount} cookies)`);
-  }
-
-  const finalHtml = await postRes.text();
-  console.log(`\n[+] Final: ${postRes.status}  ${finalUrl}  bytes=${finalHtml.length}`);
-  console.log(`[+] Title: ${extractTitle(finalHtml) ?? '(none)'}`);
-  console.log(`[+] Cookies in jar: [${sess.jar.names().join(', ')}]`);
-
-  const flashes = extractFlash(finalHtml);
-  if (flashes.length) {
-    console.log('[+] Flash / alert blocks:');
-    for (const f of flashes) console.log(`     • ${f.slice(0, 200)}`);
-  }
-
-  const stillOnSignIn = /\/users\/sign_in/.test(finalUrl) ||
-                        /name=["']user\[password\]["']/.test(finalHtml);
-  const hasSessionCookie = sess.jar.names().includes('_usso_session');
-  if (stillOnSignIn) throw new Error('LOGIN FAILED (still on sign-in page)');
-  if (!hasSessionCookie) throw new Error('LOGIN UNKNOWN (no _usso_session cookie)');
-  console.log('\n[+] Verdict: LOGIN LIKELY SUCCESS (session cookie present, redirected away)');
-
-  return { finalUrl, finalHtml };
-}
-
-async function demoGOContactList(sess /*, postLogin */) {
+async function demoGOContactList(auth /*, opts */) {
   // Demo of GOContactList: find KENNETH KIMES at Richard J Donovan
   // Correctional Facility (RJD, CA, id 273921) and add him to Rosie's
   // contact list if he isn't already there. Search hits the public
-  // pay.gettingout.com endpoints; addContact hits messaging.gtlconnect.com
-  // and needs the OAuth Bearer token, so we wire a GOMessaging instance
-  // through the constructor.
-  const msg  = new GOMessaging(sess);
-  const list = new GOContactList(sess, { messaging: msg });
+  // pay.gettingout.com endpoints (unauthenticated); addContact and the
+  // idempotency check both go through GOAuth for a Bearer token.
+  const list = new GOContactList(auth);
+  const msg  = new GOMessaging(auth);
 
   console.log('\n[*] GOContactList.getFacilities(\'CA\')');
   const facilities = await list.getFacilities('CA');
@@ -122,8 +55,7 @@ async function demoGOContactList(sess /*, postLogin */) {
   // and contact-list-side `contactId` (messaging.gtlconnect.com) live in
   // different numeric universes. Names are stable across both APIs (both
   // return uppercase first_name/last_name).
-  console.log('\n[*] GOMessaging.authenticate() + getContacts() (idempotency check)');
-  await msg.authenticate();
+  console.log('\n[*] GOMessaging.getContacts() (idempotency check; triggers lazy auth)');
   const existing = await msg.getContacts();
   const already = existing.find(c =>
     (c.firstName ?? '').toUpperCase() === (target.firstName ?? '').toUpperCase() &&
@@ -139,20 +71,15 @@ async function demoGOContactList(sess /*, postLogin */) {
   console.log(`[+] addContact response: ${JSON.stringify(result).slice(0, 400)}`);
 }
 
-async function demoGOMessaging(sess, _postLogin, { spendOk } = {}) {
+async function demoGOMessaging(auth, { spendOk } = {}) {
   // Demo of GOMessaging: walkthrough of the message center.
-  // Authenticates via OAuth-PKCE against sso.gtlconnect.com (which works
-  // because the preceding SSO login already seeded _usso_session), then
-  // hits messaging.gtlconnect.com for contacts, balance, and incoming
-  // messages for the first contact. Send is gated behind --spend-ok.
+  // Auth is lazy — the first call (getContacts) triggers SSO sign-in
+  // and the OAuth-PKCE exchange inside GOAuth. Send is gated behind
+  // --spend-ok.
   console.log(`[*] spend-ok: ${spendOk ? 'YES (sending may incur ~$0.05)' : 'no (read-only)'}`);
-  const msg = new GOMessaging(sess);
+  const msg = new GOMessaging(auth);
 
-  console.log('\n[*] GOMessaging.authenticate() (OAuth-PKCE)');
-  await msg.authenticate();
-  console.log(`[+] access_token acquired (${msg.accessToken.length} chars)`);
-
-  console.log('\n[*] GOMessaging.getContacts()');
+  console.log('\n[*] GOMessaging.getContacts() (triggers lazy auth)');
   const contacts = await msg.getContacts();
   console.log(`[+] ${contacts.length} contact(s)`);
   for (const c of contacts) {
@@ -231,7 +158,7 @@ function printHelp() {
   console.log('  --spend-ok       Enable cost-incurring calls (sendMessage charges ~$0.05/msg).');
   console.log('                   Only meaningful with --demo GOMessaging. Default: off.');
   console.log('');
-  console.log('Both demos share the same SSO login + VPN-pinned session.');
+  console.log('Both demos share the same lazy GOAuth (SSO sign-in + OAuth-PKCE) over a VPN-pinned session.');
 }
 
 async function main() {
@@ -258,9 +185,19 @@ async function main() {
   const egress = await sess.assertVpn();
   console.log(`[+] Egress IP confirmed: ${egress}`);
 
-  const postLogin = await login(sess);
+  console.log(`[*] Loading credentials from Google Secret Manager (${GCP_PROJECT})`);
+  const [email, password] = await Promise.all([
+    getSecret(EMAIL_SECRET, GCP_PROJECT),
+    getSecret(PWD_SECRET,   GCP_PROJECT),
+  ]);
+  console.log(`[+] email=${email}  password=<${password.length} chars>`);
+
+  // Auth is lazy — built here, but sign-in + PKCE don't run until the
+  // first service method asks for a token.
+  const auth = new GOAuth(sess, { credentials: { email, password } });
+
   console.log(`\n[*] Running demo: ${demo}${spendOk ? ' (--spend-ok)' : ''}`);
-  await demoFn(sess, postLogin, { spendOk });
+  await demoFn(auth, { spendOk });
 
   sess.shutdown();
   if (sess.vpnDown) process.exit(2);
