@@ -865,7 +865,7 @@
         enemies.push({ x: fencePos.x, y: fencePos.y, type: "fence", stats: {...MONSTER_DEF["fence"]} });
         let corpsePos = findNearbyFloorTile(leftyPos.x, leftyPos.y, 4, reserved);
         if(corpsePos && typeof createCorpse === 'function') {
-          createCorpse(corpsePos.x, corpsePos.y, 'busker', { icon: '🧑‍🎤' }, [{ icon: '🪗', qty: 1 }, { icon: '📎', qty: 1 }]);
+          createCorpse(corpsePos.x, corpsePos.y, 'busker', { icon: '🧑‍🎤' }, [new ItemStack('accordion', 1), new ItemStack('paperclip', 1)]);
           let buskerCorpse = corpses[corpses.length - 1];
           if(buskerCorpse) {
             buskerCorpse.name = 'busker corpse';
@@ -1838,31 +1838,42 @@
       }
       // Build a multi-item loot pile for the chest (right-click to loot)
       let chestLoot = [];
-      if (roll < 0.35) chestLoot.push({icon:'🗡️', qty:1});
-      else if (roll < 0.50) chestLoot.push({icon:'🛡️', qty:1});
-      else if (roll < 0.62) chestLoot.push({icon:'🧪', qty:1});
-      else if (roll < 0.74) chestLoot.push({icon:'🕯️', qty:1});
-      else if (roll < 0.82) chestLoot.push({icon: randomBag(player.level), qty:1});
-      else if (roll < 0.90) chestLoot.push({icon:'📃', qty:1});
-      else if (roll < 0.97) chestLoot.push({icon:'🌀', qty:1});
-      else chestLoot.push({icon:'🗝️', qty:1});
+      if (roll < 0.35)      chestLoot.push(new ItemStack('sword', 1));
+      else if (roll < 0.50) chestLoot.push(new ItemStack('shield', 1));
+      else if (roll < 0.62) chestLoot.push(new ItemStack('healthPotion', 1));
+      else if (roll < 0.74) chestLoot.push(new ItemStack('candle', 1));
+      else if (roll < 0.82) chestLoot.push(ItemStack.fromIcon(randomBag(player.level), 1));
+      else if (roll < 0.90) chestLoot.push(new ItemStack('identifyScroll', 1));
+      else if (roll < 0.97) chestLoot.push(new ItemStack('townPortalScroll', 1));
+      else                  chestLoot.push(new ItemStack('key', 1));
       // 30% chance of bonus item in chest
       if (Math.random() < 0.3) {
         let bonus = ['🧪','🕯️','🍕','🍖','💰','📃'];
-        chestLoot.push({icon: bonus[Math.floor(Math.random() * bonus.length)], qty:1});
+        chestLoot.push(ItemStack.fromIcon(bonus[Math.floor(Math.random() * bonus.length)], 1));
       }
-      // 8% chance of coin bonus
+      // 8% chance of coin bonus.
+      // NOTE: gold loot stays as a plain { icon: '🪙', qty: N } object, NOT
+      // an ItemStack. Gold is a separate concept from inventory items; the
+      // pickup handlers route gold (icon: '🪙', no itemName) to changeGold().
+      // A future refactor could replace this with { gold: N } for clarity.
       if (Math.random() < 0.08) {
-        chestLoot.push({icon:'🪙', qty: 10 + Math.floor(Math.random() * 30 * currentLevel)});
+        chestLoot.push({ icon: '🪙', qty: 10 + Math.floor(Math.random() * 30 * currentLevel) });
       }
       // Create as a "chest" corpse for right-click looting
       if(typeof createCorpse === 'function' && typeof window.autoLootEnabled !== 'undefined') {
         if(window.autoLootEnabled && player.talents && player.talents['autoLoot']) {
           chestLoot.forEach(item => {
-            if(item.icon === '🪙') { changeGold(item.qty); }
-            else { let s = inventory.findIndex(s => s === null); if(s !== -1) inventory[s] = {icon:item.icon, qty:item.qty}; else if(typeof tryPlaceInInventory==='function') tryPlaceInInventory(item); }
+            // Gold loot: plain object with no itemName. Real items are
+            // ItemStack instances (have .itemName).
+            if(!item.itemName && item.icon === '🪙') {
+              changeGold(item.qty);
+            } else {
+              let s = inventory.findIndex(s => s === null);
+              if(s !== -1) inventory[s] = new ItemStack(item.itemName, item.qty);
+              else if(typeof tryPlaceInInventory === 'function') tryPlaceInInventory(item);
+            }
           });
-          if(!chestLoot.some(item => item.icon === '🪙')) Sound.clink();
+          if(!chestLoot.some(item => !item.itemName && item.icon === '🪙')) Sound.clink();
         } else {
           createCorpse(x, y, 'chest', {icon:'📦', name:'Chest'}, chestLoot);
         }
