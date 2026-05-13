@@ -17,13 +17,11 @@ import base64
 import hashlib
 import datetime
 
+from config import BUILD, GAME_NAME
+
 _HERE = os.path.dirname(os.path.abspath(__file__))
 RAW_DIR = os.path.join(_HERE, 'raw')
 OUT_PATH = os.path.join(_HERE, 'assets.json')
-
-with open(os.path.join(_HERE, 'VERSION'), 'r', encoding='utf-8') as _vf:
-    BUILD_NUMBER = int(_vf.read().strip())
-GAME_NAME = "NotAName"
 
 # One entry per build-time-embedded asset. `source_path` is relative to raw/.
 ASSETS = [
@@ -38,7 +36,7 @@ ASSETS = [
 
 
 def render_title():
-    """Composite GAME_NAME + BUILD_NUMBER onto raw/title.png.
+    """Composite GAME_NAME + BUILD onto raw/title.png.
 
     Output raw/title_rendered.png is what gets base64-embedded as {{TITLE_IMAGE}}.
     Logic ported verbatim from the original build.py render_title_image().
@@ -61,7 +59,7 @@ def render_title():
     font_size = int(w * 0.06)
     font = ImageFont.truetype(font_path, font_size)
     title_text = GAME_NAME.upper()
-    build_text = f"BUILD\n{BUILD_NUMBER}"
+    build_text = f"BUILD\n{BUILD}"
 
     bbox = draw.textbbox((0, 0), title_text, font=font)
     tw = bbox[2] - bbox[0]
@@ -85,7 +83,7 @@ def render_title():
                         fill=(245, 230, 170, 245), spacing=max(2, build_font_size // 10), align='center')
 
     Image.alpha_composite(img, overlay).convert('RGB').save(out_path)
-    print(f"  ✓ title rendered: \"{title_text} / BUILD {BUILD_NUMBER}\" on {w}x{h}")
+    print(f"  ✓ title rendered: \"{title_text} / BUILD {BUILD}\" on {w}x{h}")
 
 
 def embed_one(spec):
@@ -119,7 +117,7 @@ def build():
 
     manifest = {
         'schema_version': 1,
-        'build_number': BUILD_NUMBER,
+        'build_number': BUILD,
         'generated_at': datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
         'generator': 'build_assets.py',
         'assets': entries,

@@ -11,42 +11,10 @@ import os
 import re
 import datetime
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-with open(os.path.join(_HERE, 'VERSION'), 'r', encoding='utf-8') as _vf:
-    BUILD_NUMBER = int(_vf.read().strip())
-GAME_NAME = "NotAName"
+from config import BUILD, GAME_NAME
+from build_files import FILES
 
-# Build order MUST match build.py / future build_release.py. See BUILDS.md.
-FILES = [
-    'header.html',
-    'ui_layout.html',
-    'audio.js',
-    'music_data.js',
-    'state.js',
-    'player.js',
-    'limerick_api.js',
-    'ui_logic.js',
-    'quests_base.js',
-    'quests_monkey_island.js',
-    'quests_monty_python.js',
-    'quests_black_cauldron.js',
-    'quests_indiana_jones.js',
-    'quests_kq5.js',
-    'quests_zork.js',
-    'quests_elder_scrolls.js',
-    'quests_larry.js',
-    'quests_space_quest.js',
-    'quests_qfg.js',
-    'quest_engine.js',
-    'boundary_data.js',
-    'map.js',
-    'mechanics.js',
-    'engine.js',
-    'shop.js',
-    'webgl_fx.js',
-    'render.js',
-    'input.js',
-]
+_HERE = os.path.dirname(os.path.abspath(__file__))
 
 # Injected so <img> tags with blanked-out src don't render broken-image icons.
 DEV_STUB_CSS = (
@@ -65,7 +33,7 @@ def build():
 
     missing = []
     with open(out_path, 'w', encoding='utf-8') as out:
-        out.write(f"<!-- dev build {BUILD_NUMBER} @ {build_time} — no binary assets -->\n")
+        out.write(f"<!-- dev build {BUILD} @ {build_time} — no binary assets -->\n")
 
         for filename in FILES:
             filepath = os.path.join(src_dir, filename)
@@ -81,7 +49,7 @@ def build():
                 content = f.read()
 
             content = content.replace('{{GAME_NAME}}', GAME_NAME)
-            content = content.replace('{{BUILD_NUMBER}}', str(BUILD_NUMBER))
+            content = content.replace('{{BUILD_NUMBER}}', str(BUILD))
             content = TOKEN_RE.sub('', content)
 
             if ext == '.html':
@@ -97,7 +65,7 @@ def build():
         out.write('</script>\n</body>\n</html>\n')
 
     size_kb = os.path.getsize(out_path) // 1024
-    print(f"✓ {out_path} ({size_kb} KB, build {BUILD_NUMBER}, {len(FILES) - len(missing)}/{len(FILES)} files)")
+    print(f"✓ {out_path} ({size_kb} KB, build {BUILD}, {len(FILES) - len(missing)}/{len(FILES)} files)")
     if missing:
         print(f"  ⚠ missing: {', '.join(missing)}")
 

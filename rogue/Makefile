@@ -6,14 +6,19 @@
 #   make assets       rebuild assets.json from raw/ (only if inputs changed)
 #   make release      full integrated build (auto-rebuilds assets if stale)
 #   make all          dev + release
+#   make check        diff release against $(SNAPSHOT) modulo timestamps
 #   make clean        wipe artifacts (keeps raw/ and src/)
 
-BUILD     := $(shell cat VERSION)
+include config
+
 SRC       := $(wildcard src/*.html) $(wildcard src/*.js)
 RAW       := $(shell find raw -type f 2>/dev/null)
 RELEASE   := roguelike_build$(BUILD).html
+SNAPSHOT  ?= /home/projects/roguelike/roguelike_build$(BUILD).html
 
-.PHONY: all dev assets release clean
+PY_SHARED := config.py build_files.py
+
+.PHONY: all dev assets release check clean
 .DEFAULT_GOAL := dev
 
 dev: dev_build.html
@@ -24,14 +29,17 @@ release: $(RELEASE)
 
 all: dev release
 
-dev_build.html: $(SRC) VERSION build_html.py
+dev_build.html: $(SRC) config $(PY_SHARED) build_html.py
 	python3 build_html.py
 
-assets.json: $(RAW) VERSION build_assets.py
+assets.json: $(RAW) config config.py build_assets.py
 	python3 build_assets.py
 
-$(RELEASE): $(SRC) assets.json VERSION build_release.py
+$(RELEASE): $(SRC) assets.json config $(PY_SHARED) build_release.py
 	python3 build_release.py
+
+check: $(RELEASE) check.py
+	python3 check.py $(RELEASE) $(SNAPSHOT)
 
 clean:
 	rm -f dev_build.html assets.json roguelike_build*.html raw/title_rendered.png

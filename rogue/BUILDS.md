@@ -49,7 +49,7 @@ re-runs this when art/audio changes; devs never need to.
 
 | | |
 |---|---|
-| **Inputs**  | `raw/` directory (PNG, TTF, mp3, gif, …), `VERSION` |
+| **Inputs**  | `raw/` directory (PNG, TTF, mp3, gif, …), `config` |
 | **Outputs** | `assets.json` (manifest, see `assets.example.json`), `raw/title_rendered.png` (title + build-number overlay composited onto `raw/title.png` using `raw/fonts/PixelifySans-Bold.ttf`) |
 | **Audience**| Designers, sound designers |
 
@@ -95,6 +95,7 @@ Document each tweak here so design team knows where to drop files.
 
 ## Decisions
 
-- **Build number** lives in `VERSION` at repo root. All three scripts read it.
+- **Build settings** (`BUILD`, `GAME_NAME`) live in a flat `config` file at repo root. Python scripts import them via `config.py`; the Makefile reads the same file via `include config`. Single source of truth.
+- **Source-file order** lives in `build_files.py`. Tier 1 and tier 3 both import `FILES` from there — adding a new file means editing one list.
 - **Title overlay** is rendered in tier 2 (asset transform); tier 3 is pure string substitution.
 - **Raw assets** live in `rogue/raw/` but are **gitignored**. Design team copies the current `raw/` contents into their local clone manually (shared drive, Slack drop, whatever). Trade-off accepted: new devs don't get assets in `git clone` (must request a copy), but the repo stays small and there's no LFS server to maintain. Revisit if/when an LFS-capable git server (gitea) is stood up.
