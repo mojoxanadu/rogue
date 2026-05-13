@@ -23,7 +23,7 @@
 // === E13: Item Status Glow Helper ===
   function itemHasStatusEffect(icon) {
     if(!icon || typeof ITEM_DEF === 'undefined') return false;
-    const def = ITEM_DEF[icon];
+    const def = ItemDef.byIcon(icon);
     if(!def) return false;
     return !!(def.evadePercent || def.thornsDmg || def.intBonus || def.special ||
               def.magicScaling || def.lightRange || def.manaCost || def.hitRateBonus ||
@@ -815,11 +815,11 @@
         const isIdentified = player.identifiedItems && player.identifiedItems.has(item.icon);
         if(hasEffect) {
           slot.style.outline = '2px solid #0f8';
-          if(!isIdentified) slot.title = (ITEM_DEF[item.icon]?.name || item.icon) + ' [Unidentified effects]';
+          if(!isIdentified) slot.title = (item.def?.displayName ?? item.icon) + ' [Unidentified effects]';
         }
       }
       slot.onclick = () => {
-        if(item && ITEM_DEF[item.icon] && ITEM_DEF[item.icon].type === 'bag') return;
+        if(item && item.def && item.def.type === 'bag') return;
         handleItemClick(i);
       };
       // #35: Double-click to use item directly
@@ -840,8 +840,8 @@
     menu.id = 'item-ctx-menu';
     menu.style.cssText = `position:fixed; z-index:9999; background:rgba(29,27,32,0.95); border:2px solid var(--secondary);
       border-radius:6px; padding:4px 0; min-width:140px; box-shadow:0 4px 12px rgba(0,0,0,0.5);`;
-    let name = ITEM_DEF[item.icon]?.name || item.icon;
-    const def = ITEM_DEF[item.icon];
+    let name = item.def?.displayName ?? item.icon;
+    const def = item.def;
     const canEquip = def && (def.slot || def.type === 'weapon' || def.type === 'armor');
     const freeInventory = inventory.findIndex(s => s === null);
     menu.innerHTML = `
@@ -873,7 +873,7 @@
 
   window.handleInventoryClick = (i) => {
     if(dropMode) { itemsOnGround.push({ x: player.x, y: player.y, icon: inventory[i].icon }); decrementInventory(i); dropMode = false; renderInventory(); return; }
-    if(inventory[i]) logMsg(`Inventory[${i}]: ${ITEM_DEF[inventory[i].icon]?.name || inventory[i].icon}`);
+    if(inventory[i]) logMsg(`Inventory[${i}]: ${inventory[i].def?.name || inventory[i].icon}`);
   };
 
   window._openBagPanel = null;
@@ -898,7 +898,7 @@
 
     const sourceArr = openBag.source === 'inv' ? inventory : inventory;
     const bag = sourceArr[openBag.idx];
-    const bagDef = bag && ITEM_DEF[bag.icon];
+    const bagDef = bag && bag.def;
     if(!bag || !bagDef || bagDef.type !== 'bag') {
       panel.style.display = 'none';
       grid.innerHTML = '';
@@ -940,7 +940,7 @@
       });
 
       if(entry) {
-        const entryName = ITEM_DEF[entry.icon]?.name || entry.icon;
+        const entryName = entry.def?.displayName ?? entry.icon;
         cell.title = entryName;
         cell.style.cursor = 'grab';
         cell.draggable = true;
@@ -984,7 +984,7 @@
       let hotkey = i===9 ? '0' : (i+1);
       slot.innerHTML = `<span class="hotkey">${hotkey}</span>`;
       if(item) {
-        const itemDef = ITEM_DEF[item.icon];
+        const itemDef = item.def;
         const isBag = itemDef && itemDef.type === 'bag';
         slot.innerHTML += item.icon;
         if(item.qty > 1) slot.innerHTML += `<span class="qty">${item.qty}</span>`;
@@ -997,7 +997,7 @@
         const isIdentified = player.identifiedItems && player.identifiedItems.has(item.icon);
         if(hasEffect) {
           slot.style.outline = '2px solid #0f8';
-          if(!isIdentified) slot.title = (ITEM_DEF[item.icon]?.name || item.icon) + ' [Unidentified effects]';
+          if(!isIdentified) slot.title = (item.def?.displayName ?? item.icon) + ' [Unidentified effects]';
         }
         slot.ondblclick = () => { if(isBag) openBagFromSource('inv', i); };
         slot.oncontextmenu = (e) => {
@@ -1006,7 +1006,7 @@
         };
       }
       slot.onclick = () => {
-        if(item && ITEM_DEF[item.icon] && ITEM_DEF[item.icon].type === 'bag') return;
+        if(item && item.def && item.def.type === 'bag') return;
         handleItemClick(i);
       };
       grid.appendChild(slot);
@@ -1021,7 +1021,7 @@
       slot.addEventListener('dragover', allowDrop);
       slot.addEventListener('drop', (e) => handleDropItem(e, 'inventory', i));
       if(item) {
-        const itemDef = ITEM_DEF[item.icon];
+        const itemDef = item.def;
         const isBag = itemDef && itemDef.type === 'bag';
         slot.innerHTML = item.icon;
         if(item.qty > 1) slot.innerHTML += `<span class="qty">${item.qty}</span>`;
@@ -1034,22 +1034,22 @@
         const isIdentified = player.identifiedItems && player.identifiedItems.has(item.icon);
         if(hasEffect) {
           slot.style.outline = '2px solid #0f8';
-          if(!isIdentified) slot.title = (ITEM_DEF[item.icon]?.name || item.icon) + ' [Unidentified effects]';
+          if(!isIdentified) slot.title = (item.def?.displayName ?? item.icon) + ' [Unidentified effects]';
         }
       }
       slot.onclick = () => {
-        if(item && ITEM_DEF[item.icon] && ITEM_DEF[item.icon].type === 'bag') {
+        if(item && item.def && item.def.type === 'bag') {
           handleInventoryClick(i);
         } else {
           handleInventoryClick(i);
         }
       };
       slot.ondblclick = () => {
-        if(item && ITEM_DEF[item.icon] && ITEM_DEF[item.icon].type === 'bag') openBagInInventory(i);
+        if(item && item.def && item.def.type === 'bag') openBagInInventory(i);
       };
       slot.oncontextmenu = (e) => {
         e.preventDefault();
-        if(item && ITEM_DEF[item.icon] && ITEM_DEF[item.icon].type === 'bag') {
+        if(item && item.def && item.def.type === 'bag') {
           openBagInInventory(i);
         }
       };
@@ -1215,8 +1215,8 @@
       let tgtItem = tgtArr[targetIdx];
       let srcItem = srcArr[window.draggedItemIdx];
       // Bug 33: If target slot has a bag, try to add dragged item into the bag
-      if(tgtItem && srcItem && ITEM_DEF[tgtItem.icon] && ITEM_DEF[tgtItem.icon].type === 'bag') {
-        let bagDef = ITEM_DEF[tgtItem.icon];
+      if(tgtItem && srcItem && tgtItem.def && tgtItem.def.type === 'bag') {
+        let bagDef = tgtItem.def;
         if(!tgtItem.contents) tgtItem.contents = new Array(bagDef.bagSlots ?? 3).fill(null);
         let freeSlot = tgtItem.contents.findIndex(s => s === null);
         if(freeSlot !== -1) {
@@ -1231,7 +1231,7 @@
       }
       // Bug 34: If same icon and stackable, merge up to maxStack
       if(tgtItem && srcItem && tgtItem.itemName === srcItem.itemName) {
-        let def = ITEM_DEF[tgtItem.icon];
+        let def = tgtItem.def;
         if(def && def.stackable) {
           let maxStack = def.maxStack ?? 10;
           let canAdd = maxStack - (tgtItem.qty ?? 1);
@@ -1330,7 +1330,7 @@
 
     const item = srcArr[fromIdx];
     if (!item) return;
-    const def = ITEM_DEF[item.icon];
+    const def = item.def;
     if (!def) return;
 
     // Check slot compatibility
@@ -1543,7 +1543,7 @@
     [inventory, inventory].forEach(arr => {
       arr.forEach(item => {
         if(!item) return;
-        let def = ITEM_DEF[item.icon];
+        let def = item.def;
         if(!def) return;
         if(def.type === "weapon" && def.baseDmg && def.baseDmg > currentBaseDmg) {
           if (considerEquip) {
@@ -2180,7 +2180,7 @@
     _debugSelectedItem = null;
   };
   window.debugAddItem = (icon) => {
-    let def = ITEM_DEF[icon];
+    let def = ItemDef.byIcon(icon);
     if (!def) { logMsg(`Unknown item: "${icon}"`); return; }
     let slot = inventory.findIndex(i => i === null);
     if (slot !== -1) { inventory[slot] = { icon }; }

@@ -78,11 +78,11 @@
     let m;
     if((m = action.match(/^USE\s+'?(.+?)'?$/i))) {
       const name = m[1].toLowerCase();
-      let idx = inventory.findIndex(item => item && ITEM_DEF[item.icon] && ITEM_DEF[item.icon].name.toLowerCase() === name);
+      let idx = inventory.findIndex(item => item && item.def && item.def.displayName.toLowerCase() === name);
       if(idx === -1) idx = inventory.findIndex(item => item && item.icon.toLowerCase().includes(name));
       if(idx !== -1) { handleItemClick(idx); return; }
       // Try inventory
-      let pidx = inventory.findIndex(item => item && ITEM_DEF[item.icon] && ITEM_DEF[item.icon].name.toLowerCase() === name);
+      let pidx = inventory.findIndex(item => item && item.def && item.def.displayName.toLowerCase() === name);
       if(pidx !== -1) { handleInventoryUse(pidx); }
     } else if((m = action.match(/^CAST\s+(\w+)$/i))) {
       castSpell(m[1].toLowerCase());
@@ -103,7 +103,7 @@
   }
   function handleInventoryUse(idx) {
     let item = inventory[idx]; if(!item) return;
-    let def = ITEM_DEF[item.icon]; if(!def) return;
+    let def = item.def; if(!def) return;
     // Move to free inventory slot, then use
     let freeSlot = inventory.findIndex(s => s === null);
     if(freeSlot !== -1) { inventory[freeSlot] = item; inventory[idx] = null; handleItemClick(freeSlot); }
@@ -115,7 +115,7 @@
     let arr = source === 'inv' ? inventory : inventory;
     let item = arr[idx];
     if(!item) return;
-    let def = ITEM_DEF[item.icon];
+    let def = item.def;
     if(!def || def.type !== 'bag') return;
     // Initialize contents array if new bag
     if(!item.contents) {
@@ -154,7 +154,7 @@
     if(slot !== -1) {
       inventory[slot] = ItemStack.fromIcon(taken.icon, taken.qty ?? 1);
       bag.contents[itemIdx] = null;
-      let def = ITEM_DEF[taken.icon];
+      let def = taken.def;
       logMsg(`Took ${taken.icon} ${def ? def.name : ''} from bag.`);
     } else {
       // Try inventory
@@ -201,7 +201,7 @@
       isIdentifying = false;
       if(!player.identifiedItems) player.identifiedItems = new Set();
       player.identifiedItems.add(itemObj.icon);
-      const identDef = ITEM_DEF[itemObj.icon];
+      const identDef = itemObj.def;
       logMsg(`<span style='color:#4af'>✨ Identified: ${identDef ? identDef.name : itemObj.icon}!</span>`);
       if(identDef) {
         const details = [];
@@ -280,7 +280,7 @@
     }
 
     // Standard behavior...
-    let def = ITEM_DEF[itemObj.icon];
+    let def = itemObj.def;
     if(!def) {
       logMsg(`<span style='color:var(--warning)'>Unknown item: ${itemObj.icon}</span>`);
       return;
@@ -596,7 +596,7 @@
            logMsg("TRAPPED BY GREED!"); isDead = true; die(); return;
         }
         
-        let def = ITEM_DEF[item.icon];
+        let def = item.def;
         if(!def) {
           // Unknown item — still pick it up as a generic misc item
           def = { name: item.icon, type: "misc", stackable: false, maxGP: 1 };
@@ -695,7 +695,7 @@
 
   function getEquippedWeaponDef() {
     let weaponIcon = player.equipped && player.equipped.leftHand;
-    return weaponIcon ? ITEM_DEF[weaponIcon] : null;
+    return weaponIcon ? ItemDef.byIcon(weaponIcon) : null;
   }
 
   // #16: NPCs protected from melee are also protected from ranged and magic

@@ -226,7 +226,7 @@
   };
 
   function addPurchasedItem(icon, qty = 1) {
-    let def = ITEM_DEF[icon] || {};
+    let def = ItemDef.byIcon(icon) || {};
     let remaining = qty;
     let nextInventory = inventory.map(item => item ? { ...item } : null);
     if(def.stackable) {
@@ -548,7 +548,7 @@
     }
     changeGold(-1);
     player.identifiedItems.add(icon);
-    const def = ITEM_DEF[icon];
+    const def = ItemDef.byIcon(icon);
     logMsg(`<span style='color:var(--success)'>🧔 Cain identifies ${icon} ${def ? def.name : 'item'} for 1g.</span>`);
     if(typeof awardAchievement === 'function') awardAchievement('prophet');
     renderQuickslots();
@@ -1097,7 +1097,7 @@
          const unidentified = getUnidentifiedIcons();
          const oneByOneHtml = unidentified.length
            ? unidentified.map(icon => {
-               const def = ITEM_DEF[icon];
+               const def = ItemDef.byIcon(icon);
                return `<button onclick="identifyOneItem('${icon}')" style="width:100%; margin-top:4px;">Identify ${icon} ${def ? def.name : 'Item'} (1g)</button>`;
              }).join('')
            : `<div style="margin-top:6px; color:#888; font-size:12px;">Everything in your inventory and inventory is already identified.</div>`;
@@ -1183,7 +1183,7 @@
       let hasSellable = false;
       inventory.forEach((it, idx) => {
         if(it) {
-          let def = ITEM_DEF[it.icon];
+          let def = it.def;
           if(def && def.maxGP > 0) {
             hasSellable = true;
             let count = inventory.filter(i => i && i.icon === it.icon).length;
@@ -1282,7 +1282,7 @@
       openDiscworldArcanaBanter(icon, finalCost, type, qty);
       return;
     }
-    if(player.gp < finalCost) return showInsufficientFunds(shopType, finalCost, ITEM_DEF[icon]?.name || 'that');
+    if(player.gp < finalCost) return showInsufficientFunds(shopType, finalCost, ItemDef.byIcon(icon)?.displayName ?? 'that');
     // Prophylactic easter egg
     if(icon === ItemDef.iconOf('prophylactic')) { larryEasterEgg(0); return; }
     if(!addPurchasedItem(icon, qty)) { logMsg("No room! (Inventory full)"); return; }
@@ -1293,7 +1293,7 @@
   window.sell = function(idx, type) {
     let item = inventory[idx];
     if(!item) return;
-    let def = ITEM_DEF[item.icon];
+    let def = item.def;
     if(def && def.maxGP > 0) {
       changeGold(def.maxGP);
       decrementItem(idx);
@@ -1304,7 +1304,7 @@
   window.buyStolen = function(idx) {
     let it = stolenItems[idx];
     if(!it) return;
-    let def = ITEM_DEF[it.icon];
+    let def = it.def;
     let cost = def ? (def.maxGP ?? 100) * 2 : 200;
     if(player.gp < cost) return showInsufficientFunds('fence', cost, def?.name || 'that item');
     if(!addPurchasedItem(it.icon, it.qty ?? 1)) { logMsg("Inventory full!"); return; }
@@ -1369,7 +1369,7 @@
   window.openDiscworldArcanaBanter = function(icon, cost, type, qty = 1) {
     let m = document.getElementById('modal-content');
     if(!m) return;
-    let itemName = ITEM_DEF[icon]?.name || 'arcane nonsense';
+    let itemName = ItemDef.byIcon(icon)?.displayName ?? 'arcane nonsense';
     let canAfford = player.gp >= cost;
     if(!canAfford) showInsufficientFunds('wizard', cost, itemName);
     awardAchievement('granny_weatherwax');
@@ -1391,7 +1391,7 @@
 
   window.confirmDiscworldArcanaBuy = function(icon, cost, type, qty = 1) {
     if(player.gp < cost) {
-      showInsufficientFunds('wizard', cost, ITEM_DEF[icon]?.name || 'that');
+      showInsufficientFunds('wizard', cost, ItemDef.byIcon(icon)?.displayName ?? 'that');
       openDiscworldArcanaBanter(icon, cost, type, qty);
       return;
     }
@@ -1400,7 +1400,7 @@
       return;
     }
     changeGold(-cost);
-    logMsg(`<span style='color:var(--warning)'>The wizard sells you ${ITEM_DEF[icon]?.name || icon}. Somewhere, Granny clicks her tongue hard enough to bend iron.</span>`);
+    logMsg(`<span style='color:var(--warning)'>The wizard sells you ${ItemDef.byIcon(icon)?.displayName ?? icon}. Somewhere, Granny clicks her tongue hard enough to bend iron.</span>`);
     openStore(type);
     storeTab('buy', type);
   };
@@ -2264,7 +2264,7 @@
       openShop('fighting_master');
       return;
     }
-    const def = ITEM_DEF[lh];
+    const def = ItemDef.byIcon(lh);
     if(!def) { openShop('fighting_master'); return; }
     logMsg(`<span style='color:#fd0'>The Weapon Master examines your ${def.name}: Base damage ${def.baseDmg ?? 0}, ${def.ranged ? 'Ranged, ' : ''}${def.magicScaling ? 'Magic scaling: '+def.magicScaling : 'no magic scaling'}. "${(def.baseDmg ?? 0) >= 8 ? 'Now THAT is a weapon.' : (def.baseDmg ?? 0) >= 4 ? 'Serviceable.' : 'You call that a weapon?'}"</span>`);
     openShop('fighting_master');

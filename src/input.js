@@ -450,7 +450,7 @@ const hBtn = document.getElementById('hamburgerBtn');
           let nonEmpty = inventory.filter(i => i !== null);
           debugLog(`Inventory: ${nonEmpty.length} items`);
           nonEmpty.forEach((item) => {
-            let name = ITEM_DEF[item.icon] ? ITEM_DEF[item.icon].name : item.icon;
+            let name = item.def ? item.def.displayName : item.icon;
             debugLog(`  ${item.icon} ${name} x${item.qty ?? 1}`);
           });
           break;
@@ -1033,7 +1033,7 @@ const hBtn = document.getElementById('hamburgerBtn');
             const item = inventory[i];
             if(!item) continue;
             if(item.icon === query) { foundIdx = i; break; }
-            const def = ITEM_DEF[item.icon];
+            const def = item.def;
             if(def && def.name.toLowerCase().includes(query)) { foundIdx = i; break; }
           }
           if(foundIdx === -1) {
@@ -1624,7 +1624,7 @@ const hBtn = document.getElementById('hamburgerBtn');
             if (icon) {
               itemsOnGround.push({ x: player.x, y: player.y, icon });
               player.equipped[dragData.slot] = null;
-              logMsg(`You drop the ${ITEM_DEF[icon]?.name || icon} on the ground.`);
+              logMsg(`You drop the ${ItemDef.byIcon(icon)?.displayName ?? icon} on the ground.`);
               swapEquip(-1, dragData.slot);
               updateUI();
               if (typeof renderEquipModal === 'function') renderEquipModal();
@@ -1826,7 +1826,7 @@ const hBtn = document.getElementById('hamburgerBtn');
       if(!item) return;
       let existing = document.getElementById('floor-ctx-menu');
       if(existing) existing.remove();
-      let def = ITEM_DEF[item.icon];
+      let def = item.def;
       let name = def ? def.name : item.icon;
       let menu = document.createElement('div');
       menu.id = 'floor-ctx-menu';
