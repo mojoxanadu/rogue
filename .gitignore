@@ -1,6 +1,8 @@
 # Binary assets — copied manually by design team, not tracked.
 # See BUILDS.md for the rationale (LFS unavailable on the current git server).
 raw/
+__pycache__/
+*.pyc
 
 # Build artifacts
 roguelike_build*.html
