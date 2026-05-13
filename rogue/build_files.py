@@ -8,6 +8,11 @@ FILES = [
     'audio.js',
     'music_data.js',
     'state.js',
+    # Item model classes (UX-agnostic). items.js defines the classes;
+    # items_registry.js builds the camelCase-name registry from
+    # state.js's legacy emoji-keyed ITEM_DEF, so it must follow both.
+    'items.js',
+    'items_registry.js',
     'player.js',
     'limerick_api.js',
     'ui_logic.js',
