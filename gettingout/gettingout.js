@@ -163,13 +163,21 @@ async function demoGOMessaging(sess, _postLogin, { spendOk } = {}) {
     return;
   }
 
-  const first = contacts[0];
-  console.log(`\n[*] GOMessaging.getBalance() (via ${first.fullName})`);
-  const balance = await msg.getBalance({ contactId: first.contactId });
+  // Target the demo at JARED YAFFE explicitly. Earlier this was just
+  // `contacts[0]`, which worked while Jared was the only contact —
+  // adding more contacts (e.g. KENNETH KIMES) reordered the list and
+  // broke that assumption. Name-matching keeps the recipient stable.
+  const target = contacts.find(c => c.lastName === 'YAFFE' && /^JARED$/i.test(c.firstName ?? ''));
+  if (!target) {
+    console.log('[!] JARED YAFFE not on contact list; skipping balance + messages');
+    return;
+  }
+  console.log(`\n[*] GOMessaging.getBalance() (via ${target.fullName})`);
+  const balance = await msg.getBalance({ contactId: target.contactId });
   console.log(`[+] balance: $${balance}`);
 
-  console.log(`\n[*] GOMessaging.getIncomingMessages(${first.contactId} /* ${first.fullName} */)`);
-  const incoming = await msg.getIncomingMessages(first.contactId);
+  console.log(`\n[*] GOMessaging.getIncomingMessages(${target.contactId} /* ${target.fullName} */)`);
+  const incoming = await msg.getIncomingMessages(target.contactId);
   console.log(`[+] ${incoming.length} incoming message(s)`);
   for (const m of incoming) {
     const date = m.sentAt ? new Date(m.sentAt).toISOString().slice(0, 10) : '?';
@@ -178,8 +186,8 @@ async function demoGOMessaging(sess, _postLogin, { spendOk } = {}) {
 
   if (spendOk) {
     const text = 'The apple fell and Isaac knew thy fate.';
-    console.log(`\n[*] GOMessaging.sendMessage(${first.contactId}, ${JSON.stringify(text)}) [SPENDING ~$0.05]`);
-    const { sent, response } = await msg.sendMessage(first.contactId, text, { iAcceptCost: true });
+    console.log(`\n[*] GOMessaging.sendMessage(${target.contactId}, ${JSON.stringify(text)}) [SPENDING ~$0.05]`);
+    const { sent, response } = await msg.sendMessage(target.contactId, text, { iAcceptCost: true });
     console.log(`[+] safeText: ${JSON.stringify(sent)}`);
     console.log(`[+] response: ${JSON.stringify(response).slice(0, 300)}`);
   } else {

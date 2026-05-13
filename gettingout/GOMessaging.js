@@ -42,17 +42,87 @@ const PAGE_SIZE      = 50;
 const MAX_BODY_LEN   = 2000;
 
 // --- safeText -------------------------------------------------------------
-// Outbound-text filter. Any word NOT in whitelist.txt has its first AEIOU
-// vowel replaced with the grave-accented equivalent (case preserved), so
-// the word stays legible to a reader but no longer matches exact-string
-// moderation rules. Whitelisted words pass through unchanged; words with
-// no AEIOU (e.g. "thy", "by") pass through unchanged. Single auditable
-// point — every wire-bound message body flows through here.
+// Outbound-text filter. Any word NOT in whitelist.txt has ONE letter
+// replaced with a visually-equivalent non-Latin codepoint, case
+// preserved. The word stays legible to a human reader but no longer
+// matches exact-string moderation rules on the inmate side. Whitelisted
+// words pass through unchanged; words with no eligible letter pass
+// through unchanged. Single auditable point — every wire-bound message
+// body flows through here.
+//
+// Two-tier substitution strategy:
+//
+//   1. HOMOGLYPH (preferred) — Greek/Cyrillic codepoints that are
+//      visually indistinguishable from their Latin counterparts. Scanned
+//      first, across the whole word; first match wins.
+//
+//   2. FALLBACK (last resort) — Latin-1 grave-accented Ù/ù. Visually
+//      conspicuous (the accent is obvious), so we only reach for these
+//      when the word has no HOMOGLYPH-eligible letter at all. Example:
+//      "under" → "undеr" (Cyrillic е); "us" → "ùs" (grave fallback,
+//      nothing better available).
+//
+// Map rationale: the gtlconnect.com backend runs NFKC normalization on
+// every stored body before moderation. NFKC FLATTENS mathematical,
+// enclosed, fullwidth, and parenthesized alphanumerics back to plain
+// Latin — those are useless for evasion. What DOES survive intact, per
+// the live Unicode probe:
+//   - Greek block (U+03xx)         — uppercase only
+//                                    (Α Β Ε Η Ι Κ Μ Ν Ο Ρ Τ Χ Υ Ζ)
+//   - Cyrillic block (U+04xx)      — lowercase
+//                                    (а е о р с у х plus і U+0456)
+//   - Latin-1 (U+00xx)             — diacritics including Ù/ù
+//
+// Coverage is one-sided: only UPPER-case Greek lookalikes exist for our
+// purposes, and only LOWER-case Cyrillic ones. So lowercase 'b', 'h',
+// 'k', 'm', 'n', 't', 'z', etc. have no Cyrillic visual twin, and
+// uppercase 'C', 'F', 'G', 'L', 'Q', 'R', 'S', 'V', 'W' have no Greek
+// visual twin. Words consisting only of such letters get no
+// substitution unless they contain U/u (which trigger the FALLBACK).
+//
+// Codepoint picks are visual lookalikes, NOT phonetic equivalents —
+// e.g. Greek Ρ (Rho, U+03A1) maps to Latin P (not R), and Cyrillic у
+// (U+0443) maps to Latin y (not u).
+const HOMOGLYPH = {
+  // Uppercase — Greek block
+  A: 'Α', // Α  Greek Capital Letter Alpha     (U+0391)
+  B: 'Β', // Β  Greek Capital Letter Beta      (U+0392)
+  E: 'Ε', // Ε  Greek Capital Letter Epsilon   (U+0395)
+  H: 'Η', // Η  Greek Capital Letter Eta       (U+0397)
+  I: 'Ι', // Ι  Greek Capital Letter Iota      (U+0399)
+  K: 'Κ', // Κ  Greek Capital Letter Kappa     (U+039A)
+  M: 'Μ', // Μ  Greek Capital Letter Mu        (U+039C)
+  N: 'Ν', // Ν  Greek Capital Letter Nu        (U+039D)
+  O: 'Ο', // Ο  Greek Capital Letter Omicron   (U+039F)
+  P: 'Ρ', // Ρ  Greek Capital Letter Rho       (U+03A1)  — VISUAL match
+  T: 'Τ', // Τ  Greek Capital Letter Tau       (U+03A4)
+  X: 'Χ', // Χ  Greek Capital Letter Chi       (U+03A7)
+  Y: 'Υ', // Υ  Greek Capital Letter Upsilon   (U+03A5)  — VISUAL match
+  Z: 'Ζ', // Ζ  Greek Capital Letter Zeta      (U+0396)
 
-const GRAVE = {
-  A: 'À', E: 'È', I: 'Ì', O: 'Ò', U: 'Ù',
-  a: 'à', e: 'è', i: 'ì', o: 'ò', u: 'ù',
+  // Lowercase — Cyrillic block
+  a: 'а', // а  Cyrillic Small Letter A                          (U+0430)
+  c: 'с', // с  Cyrillic Small Letter Es                         (U+0441)
+  e: 'е', // е  Cyrillic Small Letter Ie                         (U+0435)
+  i: 'і', // і  Cyrillic Small Letter Byelorussian-Ukrainian I   (U+0456)
+  o: 'о', // о  Cyrillic Small Letter O                          (U+043E)
+  p: 'р', // р  Cyrillic Small Letter Er                         (U+0440)  — VISUAL match
+  x: 'х', // х  Cyrillic Small Letter Ha                         (U+0445)  — VISUAL match
+  y: 'у', // у  Cyrillic Small Letter U                          (U+0443)  — VISUAL match
 };
+
+// Last-resort substitutions for letters with no clean Greek/Cyrillic
+// lookalike. The grave accent is visually conspicuous, so we use these
+// only when the word contains no HOMOGLYPH-eligible letter at all.
+const FALLBACK = {
+  U: 'Ù', // Ù  Latin-1 Capital Letter U With Grave (U+00D9)
+  u: 'ù', // ù  Latin-1 Small Letter U With Grave   (U+00F9)
+};
+
+// Precomputed character classes — kept in sync with the maps above
+// automatically. Adding a row to either map extends its class.
+const HOMOGLYPH_RE = new RegExp(`[${Object.keys(HOMOGLYPH).join('')}]`);
+const FALLBACK_RE  = new RegExp(`[${Object.keys(FALLBACK ).join('')}]`);
 
 let whitelistCache = null;
 function loadWhitelist() {
@@ -70,10 +140,15 @@ function safeText(plainText) {
   const whitelist = loadWhitelist();
   return plainText.replace(/[A-Za-z]+/g, word => {
     if (whitelist.has(word.toLowerCase())) return word;
-    const m = word.match(/[AEIOUaeiou]/);
+    // Two-tier scan: prefer an invisible HOMOGLYPH; fall back to the
+    // visually-conspicuous grave-accent FALLBACK only if no HOMOGLYPH-
+    // eligible letter exists in the word.
+    let m = word.match(HOMOGLYPH_RE);
+    let table = HOMOGLYPH;
+    if (!m) { m = word.match(FALLBACK_RE); table = FALLBACK; }
     if (!m) return word;
     const i = m.index;
-    return word.slice(0, i) + GRAVE[word[i]] + word.slice(i + 1);
+    return word.slice(0, i) + table[word[i]] + word.slice(i + 1);
   });
 }
 
