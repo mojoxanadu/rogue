@@ -39,11 +39,17 @@
      the entire viewport (100vw × 100vh). This creates a blank canvas for the game.
      user-select: none prevents accidental text selection during drag‑and‑drop.
   */
-  body, html { 
-    margin: 0; padding: 0; overflow: hidden; background: #000; 
+  body, html {
+    margin: 0; padding: 0; overflow: hidden; background: #000;
     font-family: 'Segoe UI', sans-serif; color: var(--secondary); user-select: none;
     width: 100%; height: 100%; min-height: 100%;
   }
+  /* Allow text selection inside the game log so users can copy error stacks
+     for bug reports. The body has user-select:none to prevent drag-related
+     accidental selections; this override re-enables it just for the log. */
+  #log, #log * { user-select: text; -webkit-user-select: text; cursor: text; }
+  .log-error { display: block; background: rgba(255,0,0,0.10); border-left: 3px solid #f44; padding: 4px 6px; margin: 2px 0; }
+  .log-error pre { white-space: pre-wrap; word-break: break-word; margin: 4px 0 0 0; font-size: 11px; color: #fdd; }
   
   /*
      GAME CANVAS

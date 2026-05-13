@@ -12,6 +12,7 @@ Fails hard if assets.json is missing, schema is unknown, or its build_number
 disagrees with VERSION (catches a stale manifest before it ships).
 """
 import os
+import re
 import json
 import datetime
 
@@ -21,6 +22,15 @@ from build_files import FILES
 _HERE = os.path.dirname(os.path.abspath(__file__))
 
 SUPPORTED_SCHEMA = 1
+
+# Block stripper for the release build. Source files mark dev-only HTML
+# regions with `<!-- DEV-ONLY BEGIN -->` ... `<!-- DEV-ONLY END -->` (e.g.,
+# the in-game error-capture UI, test buttons, copy-stack helpers). Release
+# builds shed these so players don't see diagnostic UI.
+DEV_ONLY_RE = re.compile(
+    r'<!--\s*DEV-ONLY BEGIN.*?-->.*?<!--\s*DEV-ONLY END\s*-->',
+    re.DOTALL
+)
 
 
 def load_manifest():
@@ -111,6 +121,10 @@ def build():
 
             with open(filepath, 'r', encoding='utf-8') as f:
                 content = f.read()
+
+            # Strip dev-only blocks (in-game error capture / copy-stack UI)
+            if ext == '.html':
+                content = DEV_ONLY_RE.sub('', content)
 
             content = content.replace('{{GAME_NAME}}', GAME_NAME)
             content = content.replace('{{BUILD_NUMBER}}', str(BUILD))
