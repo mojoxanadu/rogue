@@ -6,12 +6,15 @@ source file mtimes, the 'Assets: N' header line) before comparing.
 
 Exit 0 if equivalent, 1 otherwise. Used by `make check`.
 
-Usage: check.py <release.html> <reference.html>
+Usage: check.py <release.html> <reference>
+  <reference> is either a file path, or `@<git-ref>:<repo-path>` to fetch
+  from git history. Example: `@HEAD:rogue/roguelike.html`.
 """
 import os
 import re
 import sys
 import difflib
+import subprocess
 
 # Lines/patterns that legitimately differ between builds — strip before diff.
 LINE_DROPS = [
@@ -34,28 +37,45 @@ def normalize(text):
     return out
 
 
+def load(spec):
+    """Return (text, display_label) for either a file path or @<ref>:<path>."""
+    if spec.startswith('@'):
+        ref_path = spec[1:]
+        try:
+            text = subprocess.check_output(
+                ['git', 'show', ref_path], text=True, stderr=subprocess.PIPE,
+            )
+        except subprocess.CalledProcessError as e:
+            raise FileNotFoundError(f"git show {ref_path}: {e.stderr.strip()}")
+        return text, f"git:{ref_path}"
+    if not os.path.exists(spec):
+        raise FileNotFoundError(spec)
+    with open(spec, encoding='utf-8') as f:
+        return f.read(), spec
+
+
 def main():
     if len(sys.argv) != 3:
         print(__doc__, file=sys.stderr)
         return 2
-    a_path, b_path = sys.argv[1], sys.argv[2]
-    for p in (a_path, b_path):
-        if not os.path.exists(p):
-            print(f"✗ missing: {p}", file=sys.stderr)
-            return 2
+    a_spec, b_spec = sys.argv[1], sys.argv[2]
+    try:
+        a_text, a_label = load(a_spec)
+        b_text, b_label = load(b_spec)
+    except FileNotFoundError as e:
+        print(f"✗ {e}", file=sys.stderr)
+        return 2
 
-    with open(a_path, encoding='utf-8') as f:
-        a = normalize(f.read())
-    with open(b_path, encoding='utf-8') as f:
-        b = normalize(f.read())
+    a = normalize(a_text)
+    b = normalize(b_text)
 
-    diff = list(difflib.unified_diff(b, a, fromfile=b_path, tofile=a_path, lineterm=''))
+    diff = list(difflib.unified_diff(b, a, fromfile=b_label, tofile=a_label, lineterm=''))
     if not diff:
-        print(f"✓ {a_path} matches {b_path} (modulo filtered fields)")
+        print(f"✓ {a_label} matches {b_label} (modulo filtered fields)")
         return 0
 
     # Show first ~40 lines of diff for triage
-    print(f"✗ {a_path} diverges from {b_path}", file=sys.stderr)
+    print(f"✗ {a_label} diverges from {b_label}", file=sys.stderr)
     for line in diff[:40]:
         print(line)
     if len(diff) > 40:

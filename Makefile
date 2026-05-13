@@ -14,7 +14,7 @@ include config
 SRC       := $(wildcard src/*.html) $(wildcard src/*.js)
 RAW       := $(shell find raw -type f 2>/dev/null)
 RELEASE   := roguelike.html
-SNAPSHOT  ?= /home/projects/roguelike/roguelike_build$(BUILD).html
+SNAPSHOT  ?= @HEAD:rogue/roguelike.html
 
 PY_SHARED := config.py build_files.py
 
