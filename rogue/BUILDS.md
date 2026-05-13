@@ -93,6 +93,17 @@ Document each tweak here so design team knows where to drop files.
 |-------------------|-----------------------------------------|---------------------------------|---------------------------------------------------------|
 | Pixelify Sans Bold| `fonts/static/PixelifySans-Bold.ttf`    | `raw/fonts/PixelifySans-Bold.ttf` | `static/` was an upstream font-archive artifact, not meaningful here |
 
+## Constraints
+
+- **No ES modules.** The game ships as one self-contained HTML file —
+  `src/*.html` and `src/*.js` are concatenated into a single `<script>`
+  block. There is no module loader, no bundler, no separate fetches.
+  ES module syntax (`import`/`export`) cannot be used in `src/`. Files
+  share global scope by concatenation order; `build_files.py` defines
+  that order (e.g., quest packs before the quest engine). New classes
+  become globally visible to anything concatenated after them — add
+  them to `build_files.py` accordingly.
+
 ## Decisions
 
 - **Build settings** (`BUILD`, `GAME_NAME`) live in a flat `config` file at repo root. Python scripts import them via `config.py`; the Makefile reads the same file via `include config`. Single source of truth.
