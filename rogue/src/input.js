@@ -1307,7 +1307,7 @@ const hBtn = document.getElementById('hamburgerBtn');
         player.equipped.leftHand = '🗡️';   // Sword
         player.equipped.feet = '🥾';         // Fighter Boots (+2 defense)
         if (!player.inventory) player.inventory = [];
-        player.inventory.push({ icon: '🥾', qty: 1 });
+        player.inventory.push(ItemStack.fromIcon('🥾', 1));
         logMsg && logMsg("You are a Fighter! +5 HP, Sword equipped, Fighter Boots worn.");
       } else if (selClass === 'spellcaster') {
         player.startingClass = 'spellcaster';
@@ -1317,7 +1317,7 @@ const hBtn = document.getElementById('hamburgerBtn');
         if (!player.spells.illuminate) player.spells.illuminate = { level: 1 };
         player.equipped.chest = '🥻';        // Robe
         if (!player.inventory) player.inventory = [];
-        player.inventory.push({ icon: '🥻', qty: 1 });
+        player.inventory.push(ItemStack.fromIcon('🥻', 1));
         logMsg && logMsg("You are a Spellcaster! 2 MP, Illumination known, Robe equipped.");
       } else if (selClass === 'rogue') {
         player.startingClass = 'rogue';
@@ -1325,9 +1325,9 @@ const hBtn = document.getElementById('hamburgerBtn');
         // Place lockpicking tools in first empty inventory slot
         const inventorySlot = player.inventory.findIndex(s => !s || !s.icon);
         if (inventorySlot >= 0) {
-          player.inventory[inventorySlot] = { icon: '🔐', qty: 1 };
+          player.inventory[inventorySlot] = ItemStack.fromIcon('🔐', 1);
         } else {
-          player.inventory.push({ icon: '🔐', qty: 1 });
+          player.inventory.push(ItemStack.fromIcon('🔐', 1));
         }
         if (!player.talents) player.talents = {};
         player.talents.lockpicking = true;
@@ -1789,7 +1789,7 @@ const hBtn = document.getElementById('hamburgerBtn');
               if(window.autoLootEnabled && player.talents && player.talents['autoLoot']) {
                 loot.forEach(item => {
                   if(item.icon === '🪙') { changeGold(item.qty); }
-                  else { let s = inventory.findIndex(s => s === null); if(s !== -1) inventory[s] = {icon: item.icon, qty: item.qty}; else tryPlaceInInventory(item); }
+                  else { let s = inventory.findIndex(s => s === null); if(s !== -1) inventory[s] = ItemStack.fromIcon(item.icon, item.qty); else tryPlaceInInventory(item); }
                 });
                 if(!loot.some(item => item.icon === '🪙')) Sound.clink();
               } else {
@@ -1865,7 +1865,7 @@ const hBtn = document.getElementById('hamburgerBtn');
       }
       let slot = inventory.findIndex(s => s === null);
       if(slot !== -1) {
-        inventory[slot] = {icon: item.icon, qty: 1};
+        inventory[slot] = ItemStack.fromIcon(item.icon, 1);
         itemsOnGround.splice(itemIdx, 1);
         logMsg(`Picked up ${item.icon}`);
         Sound.clink();
