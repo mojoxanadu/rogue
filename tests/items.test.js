@@ -168,38 +168,46 @@ test('ItemStack.fromIcon: unknown icon falls back to icon-as-name', (t) => {
 });
 
 
-// ─── Container ────────────────────────────────────────────────
+// ─── ItemStack as container ───────────────────────────────────
+//   No separate Container subclass. An ItemStack whose def is a
+//   container auto-initializes a `slots` array; its absence on
+//   non-container stacks is the "I'm not a bag" signal.
 
-test('Container requires its def to be a container type', () => {
-  const { Container } = setup();
-  assert.throws(() => new Container('healingPotion'), /not a container/);
-  assert.throws(() => new Container('nonexistent'),   /no def for/);
+test('ItemStack of a container def has slots; of a non-container def does not', () => {
+  const { ItemStack } = setup();
+  const bag      = new ItemStack('smallBag');     // bagSlots: 3
+  const potion   = new ItemStack('healingPotion'); // not a container
+  assert.equal(bag.isContainer(),    true);
+  assert.equal(bag.slots.length,     3);
+  assert.deepEqual(bag.slots,        [null, null, null]);
+  assert.equal(potion.isContainer(), false);
+  assert.equal(potion.slots,         undefined);
 });
 
-test('Container allocates slots = def.bagSlots, all null', () => {
-  const { Container } = setup();
-  const bag = new Container('smallBag');   // bagSlots: 3
-  assert.equal(bag.slots.length, 3);
-  assert.deepEqual(bag.slots, [null, null, null]);
+test('ItemStack.findFreeSlot / findRoom are no-ops on non-container stacks', () => {
+  const { ItemStack } = setup();
+  const potion = new ItemStack('healingPotion');
+  assert.equal(potion.findFreeSlot(),  null);
+  assert.equal(potion.findRoom('any'), null);
 });
 
-test('Container.findFreeSlot returns first empty slot, including nested', () => {
-  const { Container, ItemStack } = setup();
-  const outer = new Container('bigBag');     // 5 slots
-  const inner = new Container('smallBag');   // 3 slots
+test('findFreeSlot returns first empty top-level slot (breadth-first)', () => {
+  const { ItemStack } = setup();
+  const outer = new ItemStack('bigBag');     // 5 slots
+  const inner = new ItemStack('smallBag');   // 3 slots
   outer.slots[0] = new ItemStack('oldBoot');
   outer.slots[1] = inner;
   inner.slots[0] = new ItemStack('arrow', 1);
-  // outer.slots[2] is null - first free
+  // outer.slots[2] is null — first free at top level
   const r = outer.findFreeSlot();
   assert.equal(r.container, outer);
   assert.equal(r.idx, 2);
 });
 
-test('Container.findFreeSlot recurses into nested when outer is full', () => {
-  const { Container, ItemStack } = setup();
-  const outer = new Container('smallBag');  // 3 slots
-  const inner = new Container('smallBag');
+test('findFreeSlot recurses into nested only when outer is full', () => {
+  const { ItemStack } = setup();
+  const outer = new ItemStack('smallBag');   // 3 slots
+  const inner = new ItemStack('smallBag');
   outer.slots[0] = new ItemStack('oldBoot');
   outer.slots[1] = inner;
   outer.slots[2] = new ItemStack('oldBoot');
@@ -211,10 +219,10 @@ test('Container.findFreeSlot recurses into nested when outer is full', () => {
   assert.equal(r.idx, 1);
 });
 
-test('Container.findRoom locates an existing stack with room, recursively', () => {
-  const { Container, ItemStack } = setup();
-  const outer = new Container('bigBag');
-  const inner = new Container('smallBag');
+test('findRoom locates an existing stack with room, recursively', () => {
+  const { ItemStack } = setup();
+  const outer = new ItemStack('bigBag');
+  const inner = new ItemStack('smallBag');
   outer.slots[0] = inner;
   inner.slots[0] = new ItemStack('arrow', 5);   // max 50, has room
 
@@ -224,9 +232,9 @@ test('Container.findRoom locates an existing stack with room, recursively', () =
   assert.equal(found.qty, 5);
 });
 
-test('Container.findRoom returns null when no matching stack has room', () => {
-  const { Container, ItemStack } = setup();
-  const outer = new Container('smallBag');
+test('findRoom returns null when no matching stack has room', () => {
+  const { ItemStack } = setup();
+  const outer = new ItemStack('smallBag');
   outer.slots[0] = new ItemStack('arrow', 50);  // full
   assert.equal(outer.findRoom('arrow'),         null);
   assert.equal(outer.findRoom('healingPotion'), null);
