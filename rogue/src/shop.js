@@ -230,20 +230,20 @@
     let remaining = qty;
     let nextInventory = inventory.map(item => item ? { ...item } : null);
     if(def.stackable) {
-      const maxStack = def.maxStack || 10;
+      const maxStack = def.maxStack ?? 10;
       for(let i = 0; i < nextInventory.length && remaining > 0; i++) {
         let item = nextInventory[i];
         if(!item || item.icon !== icon) continue;
-        let room = maxStack - (item.qty || 1);
+        let room = maxStack - (item.qty ?? 1);
         if(room <= 0) continue;
         let moved = Math.min(room, remaining);
-        item.qty = (item.qty || 1) + moved;
+        item.qty = (item.qty ?? 1) + moved;
         remaining -= moved;
       }
     }
     for(let i = 0; i < nextInventory.length && remaining > 0; i++) {
       if(nextInventory[i] !== null) continue;
-      let stackQty = def.stackable ? Math.min(def.maxStack || 10, remaining) : 1;
+      let stackQty = def.stackable ? Math.min(def.maxStack ?? 10, remaining) : 1;
       nextInventory[i] = { icon, qty: stackQty };
       remaining -= stackQty;
     }
@@ -770,7 +770,7 @@
     }
     // #12: Town Guard shop handler
     else if(type === 'town_guard') {
-      const kills = QuestEngine && QuestEngine._counters ? (QuestEngine._counters['kill_dungeon'] || 0) : 0;
+      const kills = QuestEngine && QuestEngine._counters ? (QuestEngine._counters['kill_dungeon'] ?? 0) : 0;
       const hasDiscount = player.guardTalked && kills >= 10;
       html += `<h2>💂 Town Guard</h2>
         ${npcFaceHTML('', '💂', 'town_guard')}`;
@@ -796,7 +796,7 @@
     else if(type === 'dennis') {
       // #1: Dennis refuses service if player killed too many animals and hasn't paid
       if(player.dennisAnimalFurious) {
-        const debt = player.dennisAnimalDebt || 0;
+        const debt = player.dennisAnimalDebt ?? 0;
         html += `<h2>👨‍🌾 Dennis</h2>
           ${npcFaceHTML('npc_dennis', '👨‍🌾', 'dennis')}
           <p><em>"My ANIMALS, you murderous weirdo! I'm not talking to you until you pay me ${debt}g for what you did!"</em></p>`;
@@ -806,7 +806,7 @@
           html += `<p style="color:var(--error); font-size:11px;">You only have ${player.gp}g. Come back with more.</p>`;
         }
         setTimeout(() => playVoiceClip('voice_dennis_animals_furious'), 30);
-      } else if((player.townAnimalKills || 0) >= 2) {
+      } else if((player.townAnimalKills ?? 0) >= 2) {
         html += `<h2>👨‍🌾 Dennis</h2>
           ${npcFaceHTML('npc_dennis', '👨‍🌾', 'dennis')}
           <p><em>"Something strange has been happening to my animals lately... You wouldn't know anything about that, would you?"</em></p>`;
@@ -827,7 +827,7 @@
     // E.HAMLET: Rosencrantz & Guildenstern — multi-stage quest dialog
     else if(type === 'rosencrantz_guildenstern') {
       Sound.gibberish();
-      const step = player._rosenGuildenStep || 0;
+      const step = player._rosenGuildenStep ?? 0;
       const delivered = player._rosenLetterDelivered || false;
       if(delivered) {
         html += `<h2>👬 Rosencrantz & Guildenstern</h2>
@@ -879,7 +879,7 @@
     // E8: Weapon Master — Training Dummy, War Stories, Weapon Appraisal
     else if(type === 'fighting_master') {
       Sound.gibberish();
-      window._wmStoryIdx = window._wmStoryIdx || 0;
+      window._wmStoryIdx = window._wmStoryIdx ?? 0;
       const wmLine = player.level >= 5
         ? `"You fight like a true Hero now. The guild recognizes your skill."`
         : `"Come back when you've reached level 5, recruit. You're only level ${player.level}."`;
@@ -1174,7 +1174,7 @@
         html = '<div style="display:flex; flex-direction:column; gap:4px;">';
         items.forEach(i => {
           html += `<div class="shop-item" style="margin:0; padding:4px;"><span>${i.icon} ${i.name} (<span style="color:var(--warning)">${i.cost}g</span>)</span>
-            <button onclick="buy('${i.icon}', ${i.cost}, '${type}', ${i.qty || 1})">Buy</button></div>`;
+            <button onclick="buy('${i.icon}', ${i.cost}, '${type}', ${i.qty ?? 1})">Buy</button></div>`;
         });
         html += '</div>';
       }
@@ -1305,9 +1305,9 @@
     let it = stolenItems[idx];
     if(!it) return;
     let def = ITEM_DEF[it.icon];
-    let cost = def ? (def.maxGP || 100) * 2 : 200;
+    let cost = def ? (def.maxGP ?? 100) * 2 : 200;
     if(player.gp < cost) return showInsufficientFunds('fence', cost, def?.name || 'that item');
-    if(!addPurchasedItem(it.icon, it.qty || 1)) { logMsg("Inventory full!"); return; }
+    if(!addPurchasedItem(it.icon, it.qty ?? 1)) { logMsg("Inventory full!"); return; }
     changeGold(-cost);
     stolenItems.splice(idx, 1);
     openStore('fence');
@@ -1756,7 +1756,7 @@
         changeGold(-10);
         logMsg(`<span style='color:var(--success)'>${ItemDef.iconOf('wateredDownBeer')} You buy a grog for 10g. It tastes like... well, it tastes like grog.</span>`);
         logMsg("<span style='color:#88FF88'>The pirates sing: 'Yo ho yo ho, a pirate's life for me!'</span>");
-        player.grogTurns = (player.grogTurns || 0) + 1;
+        player.grogTurns = (player.grogTurns ?? 0) + 1;
         if(typeof QuestEngine !== 'undefined') QuestEngine.emit('custom', { id: 'bought_grog', grogs_bought: player.grogTurns });
         if(player.grogTurns >= 3) {
           logMsg("<span style='color:#FFD700'>You've had enough grog. The pirates consider you one of them now!</span>");
@@ -1818,7 +1818,7 @@
     let m = document.getElementById('modal-content');
     
     if(inTarget) {
-      player.astroScore = (player.astroScore || 0) + 1;
+      player.astroScore = (player.astroScore ?? 0) + 1;
       Sound.rocketLaunch();
       
       if(player.astroScore >= 5) {
@@ -2055,7 +2055,7 @@
         </div>`;
     }
     else if(step === 'why_here') {
-      let line = WHY_HERE_LINES[player._grokWhyHereIdx = ((player._grokWhyHereIdx || 0) + 1) % WHY_HERE_LINES.length];
+      let line = WHY_HERE_LINES[player._grokWhyHereIdx = ((player._grokWhyHereIdx ?? 0) + 1) % WHY_HERE_LINES.length];
       m.innerHTML = `<h2>🧌 On the Subject of Residency</h2>
         <p style="color:#ccc; font-size:13px; margin:8px 0;">"${line}"</p>
         <p style="color:#888; font-size:11px; font-style:italic;">He gestures vaguely at the dark room as though it is entirely self-explanatory.</p>
@@ -2229,7 +2229,7 @@
 
   // #1: Dennis animal compensation
   window.compensateDennisAnimals = () => {
-    const debt = player.dennisAnimalDebt || 0;
+    const debt = player.dennisAnimalDebt ?? 0;
     if(player.gp < debt) { logMsg("Not enough gold."); return; }
     changeGold(-debt);
     player.dennisAnimalDebt = 0;
@@ -2249,7 +2249,7 @@
   window.weaponMasterTrain = function() {
     if(player.gp < 10) { logMsg("Not enough gold."); return; }
     window.changeGold(-10);
-    player.trainingBonus = (player.trainingBonus || 0) + 1;
+    player.trainingBonus = (player.trainingBonus ?? 0) + 1;
     logMsg("<span style='color:#4af'>The Weapon Master puts you through brutal drills. You feel sharper. (+1 to your next attack roll)</span>");
     if(typeof Sound !== 'undefined') Sound.playTone(440, 'square', 0.2, 0.05, 300);
     openShop('fighting_master');
@@ -2266,12 +2266,12 @@
     }
     const def = ITEM_DEF[lh];
     if(!def) { openShop('fighting_master'); return; }
-    logMsg(`<span style='color:#fd0'>The Weapon Master examines your ${def.name}: Base damage ${def.baseDmg || 0}, ${def.ranged ? 'Ranged, ' : ''}${def.magicScaling ? 'Magic scaling: '+def.magicScaling : 'no magic scaling'}. "${(def.baseDmg || 0) >= 8 ? 'Now THAT is a weapon.' : (def.baseDmg || 0) >= 4 ? 'Serviceable.' : 'You call that a weapon?'}"</span>`);
+    logMsg(`<span style='color:#fd0'>The Weapon Master examines your ${def.name}: Base damage ${def.baseDmg ?? 0}, ${def.ranged ? 'Ranged, ' : ''}${def.magicScaling ? 'Magic scaling: '+def.magicScaling : 'no magic scaling'}. "${(def.baseDmg ?? 0) >= 8 ? 'Now THAT is a weapon.' : (def.baseDmg ?? 0) >= 4 ? 'Serviceable.' : 'You call that a weapon?'}"</span>`);
     openShop('fighting_master');
   };
 
   window.weaponMasterStory = function() {
-    window._wmStoryIdx = window._wmStoryIdx || 0;
+    window._wmStoryIdx = window._wmStoryIdx ?? 0;
     logMsg(`<span style='color:#c8a86b'>"${_WAR_STORIES_DATA[window._wmStoryIdx % _WAR_STORIES_DATA.length]}"</span>`);
     window._wmStoryIdx++;
     openShop('fighting_master');

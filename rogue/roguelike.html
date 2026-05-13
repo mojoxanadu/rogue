@@ -2,21 +2,21 @@
   ╔══════════════════════════════════════════════════════════════╗
   ║  ROGUELIKE: THE ULTIMATE QUEST — Build 762                    ║
   ╠══════════════════════════════════════════════════════════════╣
-  ║  Built: 2026-05-13 12:57:15                                 ║
+  ║  Built: 2026-05-13 13:11:02                                 ║
   ║  Files: 30                                                  ║
   ║  Assets: 1                                                  ║
   ╠══════════════════════════════════════════════════════════════╣
   ║  Source Files:                                              ║
   ║    header.html (src/header.html, modified: 2026-05-13 10:07) ║
   ║    ui_layout.html (src/ui_layout.html, modified: 2026-05-13 10:07)║
-  ║    audio.js (src/audio.js, modified: 2026-05-13 10:07)       ║
+  ║    audio.js (src/audio.js, modified: 2026-05-13 13:09)       ║
   ║    music_data.js (src/music_data.js, modified: 2026-05-13 10:07)║
-  ║    state.js (src/state.js, modified: 2026-05-13 12:55)       ║
+  ║    state.js (src/state.js, modified: 2026-05-13 13:10)       ║
   ║    items.js (src/items.js, modified: 2026-05-13 11:30)       ║
   ║    items_registry.js (src/items_registry.js, modified: 2026-05-13 12:50)║
-  ║    player.js (src/player.js, modified: 2026-05-13 12:24)     ║
-  ║    limerick_api.js (src/limerick_api.js, modified: 2026-05-13 10:07)║
-  ║    ui_logic.js (src/ui_logic.js, modified: 2026-05-13 12:38) ║
+  ║    player.js (src/player.js, modified: 2026-05-13 13:09)     ║
+  ║    limerick_api.js (src/limerick_api.js, modified: 2026-05-13 13:09)║
+  ║    ui_logic.js (src/ui_logic.js, modified: 2026-05-13 13:10) ║
   ║    quests_base.js (src/quests_base.js, modified: 2026-05-13 10:07)║
   ║    quests_monkey_island.js (src/quests_monkey_island.js, modified: 2026-05-13 10:07)║
   ║    quests_monty_python.js (src/quests_monty_python.js, modified: 2026-05-13 10:07)║
@@ -28,15 +28,15 @@
   ║    quests_larry.js (src/quests_larry.js, modified: 2026-05-13 10:07)║
   ║    quests_space_quest.js (src/quests_space_quest.js, modified: 2026-05-13 10:07)║
   ║    quests_qfg.js (src/quests_qfg.js, modified: 2026-05-13 10:07)║
-  ║    quest_engine.js (src/quest_engine.js, modified: 2026-05-13 10:07)║
+  ║    quest_engine.js (src/quest_engine.js, modified: 2026-05-13 13:10)║
   ║    boundary_data.js (src/boundary_data.js, modified: 2026-05-13 10:07)║
-  ║    map.js (src/map.js, modified: 2026-05-13 12:56)           ║
-  ║    mechanics.js (src/mechanics.js, modified: 2026-05-13 12:25)║
-  ║    engine.js (src/engine.js, modified: 2026-05-13 12:56)     ║
-  ║    shop.js (src/shop.js, modified: 2026-05-13 12:25)         ║
-  ║    webgl_fx.js (src/webgl_fx.js, modified: 2026-05-13 10:07) ║
-  ║    render.js (src/render.js, modified: 2026-05-13 12:55)     ║
-  ║    input.js (src/input.js, modified: 2026-05-13 12:56)       ║
+  ║    map.js (src/map.js, modified: 2026-05-13 13:09)           ║
+  ║    mechanics.js (src/mechanics.js, modified: 2026-05-13 13:09)║
+  ║    engine.js (src/engine.js, modified: 2026-05-13 13:09)     ║
+  ║    shop.js (src/shop.js, modified: 2026-05-13 13:09)         ║
+  ║    webgl_fx.js (src/webgl_fx.js, modified: 2026-05-13 13:10) ║
+  ║    render.js (src/render.js, modified: 2026-05-13 13:10)     ║
+  ║    input.js (src/input.js, modified: 2026-05-13 13:10)       ║
   ╚══════════════════════════════════════════════════════════════╝
 -->
 
@@ -1157,7 +1157,7 @@
 
 <!-- ═══ END: ui_layout.html ═══ -->
 
-// ═══ BEGIN: audio.js (src/audio.js, modified: 2026-05-13 10:07) ═══
+// ═══ BEGIN: audio.js (src/audio.js, modified: 2026-05-13 13:09) ═══
   // === Audio Synthesizer (FM / OPL style) ===
   /*
     AUDIO ENGINE – WEB AUDIO API
@@ -1690,8 +1690,8 @@
           const noteGain = Sound.ctx.createGain();
           const t2 = Sound.ctx.currentTime;
           carrier.frequency.value = note.f;
-          modulator.frequency.value = note.f * (note.r || 2);
-          modGain.gain.value = note.f * (note.i || 5);
+          modulator.frequency.value = note.f * (note.r ?? 2);
+          modGain.gain.value = note.f * (note.i ?? 5);
           modulator.connect(modGain);
           modGain.connect(carrier.frequency);
           carrier.connect(noteGain);
@@ -2137,7 +2137,7 @@
 
 // ═══ END: music_data.js ═══
 
-// ═══ BEGIN: state.js (src/state.js, modified: 2026-05-13 12:55) ═══
+// ═══ BEGIN: state.js (src/state.js, modified: 2026-05-13 13:10) ═══
   // K3: Game name — set via build process template substitution
   window.GAME_NAME = 'NotAName';
 
@@ -2354,8 +2354,8 @@
     }
     let def = ACHIEVEMENT_DEFS.find(a => a.id === id);
     if(def) {
-      achievementPoints += (def.points || 10);
-      logMsg(`<span style="color:#FFD700">🏆 ACHIEVEMENT UNLOCKED: ${def.icon} ${def.name}! (+${def.points || 10}pts)</span>`);
+      achievementPoints += (def.points ?? 10);
+      logMsg(`<span style="color:#FFD700">🏆 ACHIEVEMENT UNLOCKED: ${def.icon} ${def.name}! (+${def.points ?? 10}pts)</span>`);
     }
     // Milestone checks — invite to Hall of Champions
     let count = Object.keys(achievements).length;
@@ -3212,7 +3212,7 @@ window.ItemDefs = ItemDefs;
 
 // ═══ END: items_registry.js ═══
 
-// ═══ BEGIN: player.js (src/player.js, modified: 2026-05-13 12:24) ═══
+// ═══ BEGIN: player.js (src/player.js, modified: 2026-05-13 13:09) ═══
 // ============================================================
 //  PLAYER MODULE  –  src/player.js
 //  Centralizes all player state, defaults, and core functions.
@@ -3314,13 +3314,13 @@ setPlayerDefaults();
 // ─── changeGold ─────────────────────────────────────────────
 window.changeGold = (amount, opts = {}) => {
   if(!amount) return 0;
-  const oldGold = player.gp || 0;
+  const oldGold = player.gp ?? 0;
   const nextGold = Math.max(0, oldGold + amount);
   const actual = nextGold - oldGold;
   if(!actual) return 0;
   player.gp = nextGold;
   if(actual > 0 && opts.floatText) {
-    addFloatingText(opts.x ?? player.x, opts.y ?? player.y, `+${actual}g`, '#fc0', opts.size || 14);
+    addFloatingText(opts.x ?? player.x, opts.y ?? player.y, `+${actual}g`, '#fc0', opts.size ?? 14);
   }
   if(opts.sound !== false && typeof Sound !== 'undefined' && Sound.clink) Sound.clink();
   if(opts.updateUI !== false && typeof updateUI === 'function') updateUI();
@@ -3522,7 +3522,7 @@ function getPlayerHitRate() {
   Object.values(player.equipped).forEach(name => {
     if(name) {
       let def = (typeof ItemDefs !== 'undefined') ? ItemDefs[name] : null;
-      if(def) hitRate += (def.hitRateBonus || 0);
+      if(def) hitRate += (def.hitRateBonus ?? 0);
     }
   });
   return hitRate;
@@ -3535,7 +3535,7 @@ function getPlayerHitRate() {
  * @returns {boolean}
  */
 function getPlayerHits(enemy) {
-  return Math.random() < getPlayerHitRate() * (1 - (enemy && enemy.stats ? (enemy.stats.dodge || 0) : 0));
+  return Math.random() < getPlayerHitRate() * (1 - (enemy && enemy.stats ? (enemy.stats.dodge ?? 0) : 0));
 }
 
 /**
@@ -3546,12 +3546,12 @@ function getPlayerHits(enemy) {
  */
 function getPlayerDmg() {
   let baseDmg  = player.baseDmg  || CONSTANTS.PLAYER_UNARMED_BASE_DMG;
-  let dmgBonus = player.meleeDmgBonus || 0;
+  let dmgBonus = player.meleeDmgBonus ?? 0;
   Object.values(player.equipped).forEach(name => {
     if(name) {
       let def = (typeof ItemDefs !== 'undefined') ? ItemDefs[name] : null;
       if(!def) return;
-      if(def.type === "weapon") baseDmg  = (def.baseDmg || 0);
+      if(def.type === "weapon") baseDmg  = (def.baseDmg ?? 0);
       if(def.meleeDmgBonus)    dmgBonus += def.meleeDmgBonus;
     }
   });
@@ -3598,7 +3598,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
 
 // ═══ END: player.js ═══
 
-// ═══ BEGIN: limerick_api.js (src/limerick_api.js, modified: 2026-05-13 10:07) ═══
+// ═══ BEGIN: limerick_api.js (src/limerick_api.js, modified: 2026-05-13 13:09) ═══
   // Intentionally useless and intentionally isolated.
   // If anyone asks this API for anything practical, it recurses into poetry instead.
   (function() {
@@ -3609,7 +3609,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
     ];
 
     function siphonapteraSiphonaptera(depth) {
-      const idx = Math.abs(depth || 0) % SIPHONAPTERA_LIMERICKS.length;
+      const idx = Math.abs(depth ?? 0) % SIPHONAPTERA_LIMERICKS.length;
       return SIPHONAPTERA_LIMERICKS[idx];
     }
 
@@ -3630,7 +3630,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
 
 // ═══ END: limerick_api.js ═══
 
-// ═══ BEGIN: ui_logic.js (src/ui_logic.js, modified: 2026-05-13 12:38) ═══
+// ═══ BEGIN: ui_logic.js (src/ui_logic.js, modified: 2026-05-13 13:10) ═══
   /*
   UI_LOGIC MODULE – USER INTERFACE, SAVE/LOAD, AND DEBUG SYSTEMS
   ===============================================================
@@ -3785,7 +3785,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
       } else if(player.statusEffects && player.statusEffects.diarrhea) {
         statusUI.style.display = 'block';
         const d = player.statusEffects.diarrhea;
-        const turns = Math.max(0, Math.floor(d.turnsRemaining || 0));
+        const turns = Math.max(0, Math.floor(d.turnsRemaining ?? 0));
         statusUI.innerText = `DIARRHEA${turns ? ` (${turns})` : ''}`;
         statusUI.className = "chip danger";
         player._exhaustedWarnFired = false;
@@ -3800,7 +3800,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
       }
     }
 
-    const totalPts = (player.statPoints || 0) + (player.talentPoints || 0);
+    const totalPts = (player.statPoints ?? 0) + (player.talentPoints ?? 0);
     const badge = document.getElementById('stat-badge');
     if(badge) {
        badge.innerText = totalPts;
@@ -4529,7 +4529,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
 
     panel.style.display = 'block';
     header.firstElementChild.textContent = `${bag.icon} ${bagDef.name}`;
-    subtitle.textContent = `${bagDef.bagSlots || 3} slots`;
+    subtitle.textContent = `${bagDef.bagSlots ?? 3} slots`;
     grid.innerHTML = '';
 
     const cols = Math.min(3, Math.max(1, Math.ceil(Math.sqrt((bag.contents || []).length || 1))));
@@ -4551,8 +4551,8 @@ window.getPlayerCritRate     = getPlayerCritRate;
           if(!destBag || !destBag.contents) return;
           // Swap: if slot is occupied, put displaced item back to src slot
           const displaced = destBag.contents[slotIdx];
-          destBag.contents[slotIdx] = new ItemStack(srcItem.itemName, srcItem.qty || 1);
-          srcArr[window.draggedItemIdx] = displaced ? new ItemStack(displaced.itemName, displaced.qty || 1) : null;
+          destBag.contents[slotIdx] = new ItemStack(srcItem.itemName, srcItem.qty ?? 1);
+          srcArr[window.draggedItemIdx] = displaced ? new ItemStack(displaced.itemName, displaced.qty ?? 1) : null;
           logMsg(`${srcItem.icon} moved into bag.`);
           if(typeof Sound !== 'undefined') Sound.clink();
           window.draggedItemIdx = null; window.draggedSource = null;
@@ -4797,9 +4797,9 @@ window.getPlayerCritRate     = getPlayerCritRate;
         const bagItem = bag.contents[bagSlotIdx];
         const tgtArr = targetSource === 'inv' ? inventory : inventory;
         const displaced = tgtArr[targetIdx];
-        tgtArr[targetIdx] = new ItemStack(bagItem.itemName, bagItem.qty || 1);
+        tgtArr[targetIdx] = new ItemStack(bagItem.itemName, bagItem.qty ?? 1);
         // Put displaced item (if any) into the bag slot we dragged from
-        bag.contents[bagSlotIdx] = displaced ? new ItemStack(displaced.itemName, displaced.qty || 1) : null;
+        bag.contents[bagSlotIdx] = displaced ? new ItemStack(displaced.itemName, displaced.qty ?? 1) : null;
         logMsg(`${bagItem.icon} moved from bag to ${targetSource}.`);
         if(typeof Sound !== 'undefined') Sound.clink();
       }
@@ -4815,7 +4815,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
         let lootItem = c.loot[window._lootDrag.itemIdx];
         let tgtArr = targetSource === 'inv' ? inventory : inventory;
         let displaced = tgtArr[targetIdx];
-        tgtArr[targetIdx] = lootItem.itemName ? new ItemStack(lootItem.itemName, lootItem.qty || 1) : { icon: lootItem.icon, qty: lootItem.qty || 1 };
+        tgtArr[targetIdx] = lootItem.itemName ? new ItemStack(lootItem.itemName, lootItem.qty ?? 1) : { icon: lootItem.icon, qty: lootItem.qty ?? 1 };
         c.loot.splice(window._lootDrag.itemIdx, 1);
         if(displaced) {
           // Try to put displaced item back somewhere
@@ -4838,10 +4838,10 @@ window.getPlayerCritRate     = getPlayerCritRate;
       // Bug 33: If target slot has a bag, try to add dragged item into the bag
       if(tgtItem && srcItem && ITEM_DEF[tgtItem.icon] && ITEM_DEF[tgtItem.icon].type === 'bag') {
         let bagDef = ITEM_DEF[tgtItem.icon];
-        if(!tgtItem.contents) tgtItem.contents = new Array(bagDef.bagSlots || 3).fill(null);
+        if(!tgtItem.contents) tgtItem.contents = new Array(bagDef.bagSlots ?? 3).fill(null);
         let freeSlot = tgtItem.contents.findIndex(s => s === null);
         if(freeSlot !== -1) {
-          tgtItem.contents[freeSlot] = new ItemStack(srcItem.itemName, srcItem.qty || 1);
+          tgtItem.contents[freeSlot] = new ItemStack(srcItem.itemName, srcItem.qty ?? 1);
           srcArr[window.draggedItemIdx] = null;
           logMsg(`${srcItem.icon} placed into ${bagDef.name}.`);
           Sound.clink();
@@ -4854,12 +4854,12 @@ window.getPlayerCritRate     = getPlayerCritRate;
       if(tgtItem && srcItem && tgtItem.itemName === srcItem.itemName) {
         let def = ITEM_DEF[tgtItem.icon];
         if(def && def.stackable) {
-          let maxStack = def.maxStack || 10;
-          let canAdd = maxStack - (tgtItem.qty || 1);
+          let maxStack = def.maxStack ?? 10;
+          let canAdd = maxStack - (tgtItem.qty ?? 1);
           if(canAdd > 0) {
-            let toMove = Math.min(canAdd, srcItem.qty || 1);
-            tgtItem.qty = (tgtItem.qty || 1) + toMove;
-            srcItem.qty = (srcItem.qty || 1) - toMove;
+            let toMove = Math.min(canAdd, srcItem.qty ?? 1);
+            tgtItem.qty = (tgtItem.qty ?? 1) + toMove;
+            srcItem.qty = (srcItem.qty ?? 1) - toMove;
             if(srcItem.qty <= 0) srcArr[window.draggedItemIdx] = null;
             window.draggedItemIdx = null; window.draggedSource = null;
             renderQuickslots(); renderInventory(); updateUI();
@@ -5126,7 +5126,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
     
     // All 5 stats with full names (no abbreviations), values, and allocate buttons
     for(const [key, info] of Object.entries(STAT_INFO)) {
-      let val = player[key] || 0;
+      let val = player[key] ?? 0;
       if (key === 'hitRate' || key === 'critRate' || key === 'dodgeRate')
         val = `${Math.round(val * 100)}%`;
       let hasPoints = player.statPoints >= (key === 'meleeDmgBonus' || key === 'rangedDmgBonus' || key === 'spellDmgBonus' ? 5 : 1);
@@ -5151,7 +5151,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
         let d = ItemDefs[name];
         if(!d) return;
         if(d.type === "weapon") {
-          currentBaseDmg = (d.baseDmg || 0);
+          currentBaseDmg = (d.baseDmg ?? 0);
           meleeDmgMsg = `${currentBaseDmg} (${d.displayName})`;
         }
       }
@@ -5191,7 +5191,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
 
   window.buyTalent = (tree, idx) => {
     const t = TALENT_TREES[tree].talents[idx];
-    const current = player.talents[t.id] || 0;
+    const current = player.talents[t.id] ?? 0;
     if(player.talentPoints > 0 && current < t.max) {
       player.talents[t.id] = current + 1;
       player.talentPoints--;
@@ -5225,11 +5225,11 @@ window.getPlayerCritRate     = getPlayerCritRate;
       svg += `<text x="${cx + BOX_W/2}" y="${HEADER_H - 6}" text-anchor="middle" font-size="11" font-weight="bold" fill="#D0BCFF" font-family="monospace">${tree.name}</text>`;
 
       tree.talents.forEach((t, rowIdx) => {
-        const pts = player.talents[t.id] || 0;
+        const pts = player.talents[t.id] ?? 0;
         const isMaxed = pts >= t.max;
         let meetsReq = true;
         if(t.req) {
-          let treeTotal = tree.talents.reduce((sum, tt) => sum + (player.talents[tt.id] || 0), 0);
+          let treeTotal = tree.talents.reduce((sum, tt) => sum + (player.talents[tt.id] ?? 0), 0);
           if(treeTotal < t.req) meetsReq = false;
         }
         const canBuy = player.talentPoints > 0 && !isMaxed && meetsReq;
@@ -5325,7 +5325,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
       let onCd = cdRem > 0;
       html += `<div style="background:var(--surface-container); padding:6px; border-radius:4px; display:flex; justify-content:space-between; align-items:center; position:relative; ${onCd ? 'opacity:0.7;' : ''}">
         ${onCd ? `<div style="position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.45);border-radius:4px;display:flex;align-items:center;justify-content:center;z-index:1;pointer-events:none;"><span style="color:#FFD700;font-size:14px;font-weight:bold;">${cdRem.toFixed(1)}s</span></div>` : ''}
-        <span style="font-size:12px; cursor:pointer; z-index:2;" onclick="castSpell('${k}')">${k.toUpperCase()} (Lv${sp.level || 1})${onCd ? ' ⏳' : ''}</span>
+        <span style="font-size:12px; cursor:pointer; z-index:2;" onclick="castSpell('${k}')">${k.toUpperCase()} (Lv${sp.level ?? 1})${onCd ? ' ⏳' : ''}</span>
         <div style="display:flex; gap:4px; z-index:2;">
           <button onclick="player.equippedSpell='${k}';showMagic();updateUI();" style="font-size:10px; background:${isEq?'var(--success)':'#444'}; padding:2px 6px;">${isEq?'F:✓':'F'}</button>
           <button onclick="player.secondarySpell='${k}';showMagic();updateUI();" style="font-size:10px; background:${isSec?'var(--primary)':'#444'}; padding:2px 6px;">${isSec?'G:✓':'G'}</button>
@@ -5429,7 +5429,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
               <div style="font-size:11px; color:#aaa;">${a.desc}</div>
             </div>
             <div style="text-align:right;">
-              <div style="color:#FFD700; font-size:12px; font-weight:bold;">+${a.points || 10}</div>
+              <div style="color:#FFD700; font-size:12px; font-weight:bold;">+${a.points ?? 10}</div>
               <div style="color:#81c784; font-size:10px;">✓</div>
             </div>
           </div>`;
@@ -5440,7 +5440,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
               <div style="font-weight:bold; color:#888; font-size:13px;">${a.name}</div>
               <div style="font-size:11px; color:#666;">${a.desc}</div>
             </div>
-            <div style="color:#666; font-size:11px;">${a.points || 10}pts</div>
+            <div style="color:#666; font-size:11px;">${a.points ?? 10}pts</div>
           </div>`;
         }
       }
@@ -5598,7 +5598,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
     html += `<span>Light Turns: ${lightTurns > 0 ? lightTurns + ' remaining' : 'none'}</span><br>`;
     html += `<span>Heal Over Time: ${player.healOverTime > 0 ? player.healOverTime + ' ticks' : 'none'}</span><br>`;
     html += `<span>Status Effect: ${player.statusType || 'none'} (${player.statusTurns} turns)</span><br>`;
-    html += `<span>Vermin Kills: ${player.verminKills || 0}</span><br>`;
+    html += `<span>Vermin Kills: ${player.verminKills ?? 0}</span><br>`;
     html += '</div>';
     html += '<div style="margin:4px 0;">';
     html += '<span style="color:#FFD700;">DECISION NOTES</span><br>';
@@ -5676,13 +5676,13 @@ window.getPlayerCritRate     = getPlayerCritRate;
       logMsg("You don't know Shadowstep. Learn it in the Subtlety talent tree.");
       return;
     }
-    let turnsSinceBlink = (window._turnCount || 0) - _blinkLastTurn;
+    let turnsSinceBlink = (window._turnCount ?? 0) - _blinkLastTurn;
     if(turnsSinceBlink < 8) {
       logMsg(`Shadowstep on cooldown! (${8 - turnsSinceBlink} turns remaining)`);
       return;
     }
     if(player.mp < 3) { logMsg("Not enough mana! (3 MP)"); return; }
-    let dx = player.facing.dx || 0, dy = player.facing.dy || 0;
+    let dx = player.facing.dx ?? 0, dy = player.facing.dy ?? 0;
     if(dx === 0 && dy === 0) dy = 1; // default: forward
     // Find landing tile — 3 tiles ahead, stop at wall
     let lx = player.x, ly = player.y;
@@ -5698,7 +5698,7 @@ window.getPlayerCritRate     = getPlayerCritRate;
     addFloatingText(player.x, player.y, '💨', '#888', 20);
     player.x = lx; player.y = ly;
     player.mp -= 3;
-    _blinkLastTurn = (window._turnCount || 0);
+    _blinkLastTurn = (window._turnCount ?? 0);
     logMsg("<span style='color:var(--primary)'>💨 Shadowstep!</span>");
     Sound.playTone(600, 'sine', 0.2, 0.05, 300);
     calculateFOV(); drawMap(); updateUI(); advanceTurn(1);
@@ -9074,7 +9074,7 @@ ${html}
 
 // ═══ END: quests_qfg.js ═══
 
-// ═══ BEGIN: quest_engine.js (src/quest_engine.js, modified: 2026-05-13 10:07) ═══
+// ═══ BEGIN: quest_engine.js (src/quest_engine.js, modified: 2026-05-13 13:10) ═══
   /*
   ╔══════════════════════════════════════════════════════════════════════════════╗
   ║  QUEST ENGINE MODULE — DATA-DRIVEN QUEST & ACHIEVEMENT SYSTEM              ║
@@ -9411,7 +9411,7 @@ ${html}
       // This is a SOFT GATE — it doesn't block progress, it just gives
       // extra information. Hard gates (you MUST have INT 15 to proceed)
       // should be implemented as requirements on quest triggers instead.
-      if (stageDef.intHint && player.stats.int >= (stageDef.intHintThreshold || 12)) {
+      if (stageDef.intHint && player.stats.int >= (stageDef.intHintThreshold ?? 12)) {
         logMsg(`<span style='color:#88CCFF'>💡 [Insight] ${stageDef.intHint}</span>`);
 
         // If there's also a modal hint (for particularly important insights),
@@ -9451,7 +9451,7 @@ ${html}
         this to check progress without mutating anything. For example:
           if (QuestEngine.check('safe_cracking') >= 30) { showSafeOption(); }
       */
-      return this._questState[questId]?.current || 0;
+      return this._questState[questId]?.current ?? 0;
     },
 
     hasVisited(questId, stageNum) {
@@ -9503,7 +9503,7 @@ ${html}
       }
 
       this._achievements[achieveId] = true;
-      this._achievePoints += (def.points || 10);
+      this._achievePoints += (def.points ?? 10);
 
       logMsg(`<span style="color:#FFD700">🏆 ACHIEVEMENT UNLOCKED: ${def.icon || '🏆'} ${def.name}! (+${def.points || 10}pts)</span>`);
       if (typeof Sound !== 'undefined' && Sound.achieve) Sound.achieve();
@@ -9587,7 +9587,7 @@ ${html}
 
         case 'questProgress':
           // Has the player reached at least this stage?
-          return this.check(req.questId) >= (req.stage || 0);
+          return this.check(req.questId) >= (req.stage ?? 0);
 
         case 'questExact':
           // Has the player visited this SPECIFIC stage? (for branching)
@@ -9601,32 +9601,32 @@ ${html}
 
         case 'inventoryHas':
           // Player has at least qty of an item (does NOT consume it)
-          return inventory.some(i => i && i.icon === req.item && (i.qty || 1) >= (req.qty || 1));
+          return inventory.some(i => i && i.icon === req.item && (i.qty ?? 1) >= (req.qty ?? 1));
 
         case 'inventoryRemove':
           // Like inventoryHas, but CONSUMES the item if the check passes.
           // WARNING: This has a side effect! Only use in reward/action
           // contexts, never in "should I show this option?" UI checks.
-          return this._tryRemoveItem(req.item, req.qty || 1);
+          return this._tryRemoveItem(req.item, req.qty ?? 1);
 
         case 'killedMonster':
-          return (this._counters[`kill_${req.monsterType}`] || 0) >= (req.count || 1);
+          return (this._counters[`kill_${req.monsterType}`] ?? 0) >= (req.count ?? 1);
 
         case 'playerLevel':
-          return player.level >= (req.min || 1);
+          return player.level >= (req.min ?? 1);
 
         case 'playerStat':
           // Check a specific stat (str, dex, int, con, wis)
-          return (player.stats[req.stat] || 0) >= (req.min || 1);
+          return (player.stats[req.stat] ?? 0) >= (req.min ?? 1);
 
         case 'achievementEarned':
           return this.hasAchievement(req.id);
 
         case 'achievementCount':
-          return this.getAchievementCount() >= (req.min || 0);
+          return this.getAchievementCount() >= (req.min ?? 0);
 
         case 'gold':
-          return player.gp >= (req.min || 0);
+          return player.gp >= (req.min ?? 0);
 
         case 'location':
           // Check if player is on a specific floor or scene
@@ -9643,7 +9643,7 @@ ${html}
 
         case 'counter':
           // Check a named counter
-          return (this._counters[req.counter] || 0) >= (req.min || 1);
+          return (this._counters[req.counter] ?? 0) >= (req.min ?? 1);
 
         // ── INT-GATED REQUIREMENT ──
         // LESSON: This requirement type is specifically for INT-gated
@@ -9651,7 +9651,7 @@ ${html}
         // choices that only appear if the player is smart enough to
         // notice them. This rewards character build diversity.
         case 'intCheck':
-          return player.stats.int >= (req.min || 10);
+          return player.stats.int >= (req.min ?? 10);
 
         default:
           console.warn(`[QuestEngine] Unknown requirement type: "${req.type}"`);
@@ -9691,7 +9691,7 @@ ${html}
         case 'giveItem': {
           let emptySlot = inventory.findIndex(i => i === null);
           if (emptySlot !== -1) {
-            inventory[emptySlot] = { icon: reward.item, qty: reward.qty || 1 };
+            inventory[emptySlot] = { icon: reward.item, qty: reward.qty ?? 1 };
             let def = ITEM_DEF[reward.item];
             if (def) logMsg(`<span style='color:var(--success)'>Received: ${def.name}</span>`);
             if (typeof renderQuickslots === 'function') renderQuickslots();
@@ -9703,11 +9703,11 @@ ${html}
         }
 
         case 'giveGold':
-          changeGold(reward.amount || 0, { floatText: (reward.amount || 0) > 0, x: player.x, y: player.y, size: 16 });
+          changeGold(reward.amount ?? 0, { floatText: (reward.amount ?? 0) > 0, x: player.x, y: player.y, size: 16 });
           break;
 
         case 'giveXP':
-          player.xp += (reward.amount || 0);
+          player.xp += (reward.amount ?? 0);
           checkLevelUp();
           break;
 
@@ -9720,11 +9720,11 @@ ${html}
           break;
 
         case 'setCounter':
-          this._counters[reward.counter] = reward.value || 0;
+          this._counters[reward.counter] = reward.value ?? 0;
           break;
 
         case 'incrementCounter':
-          this._counters[reward.counter] = (this._counters[reward.counter] || 0) + (reward.amount || 1);
+          this._counters[reward.counter] = (this._counters[reward.counter] ?? 0) + (reward.amount ?? 1);
           break;
 
         // ── CALLBACK REWARD ──
@@ -9859,25 +9859,25 @@ ${html}
       // Auto-increment counters based on event type
       if (eventType === 'kill' && data.type) {
         const key = `kill_${data.type}`;
-        this._counters[key] = (this._counters[key] || 0) + 1;
+        this._counters[key] = (this._counters[key] ?? 0) + 1;
       }
       if (eventType === 'shop_visit' && data.type) {
         const key = `shop_visit_${data.type}`;
-        this._counters[key] = (this._counters[key] || 0) + 1;
+        this._counters[key] = (this._counters[key] ?? 0) + 1;
       }
       if (eventType === 'npc_talk' && data.type) {
         this._npcInteractions[data.type] = true;
         const key = `npc_talk_${data.type}`;
-        this._counters[key] = (this._counters[key] || 0) + 1;
+        this._counters[key] = (this._counters[key] ?? 0) + 1;
       }
       if (eventType === 'item_use' && data.item) {
         const key = `item_use_${data.item}`;
-        this._counters[key] = (this._counters[key] || 0) + 1;
+        this._counters[key] = (this._counters[key] ?? 0) + 1;
       }
     },
 
     getCounter(name) {
-      return this._counters[name] || 0;
+      return this._counters[name] ?? 0;
     },
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -9934,7 +9934,7 @@ ${html}
       if (!saved) return;
       this._questState = saved.questState || {};
       this._achievements = saved.achievements || {};
-      this._achievePoints = saved.achievePoints || 0;
+      this._achievePoints = saved.achievePoints ?? 0;
       this._counters = saved.counters || {};
       this._flags = saved.flags || {};
       this._npcInteractions = saved.npcInteractions || {};
@@ -10126,7 +10126,7 @@ ${html}
       let found = 0;
       for (let i = 0; i < inventory.length; i++) {
         if (inventory[i] && inventory[i].icon === itemIcon) {
-          found += (inventory[i].qty || 1);
+          found += (inventory[i].qty ?? 1);
         }
       }
       if (found < qty) return false;
@@ -10134,7 +10134,7 @@ ${html}
       let remaining = qty;
       for (let i = 0; i < inventory.length && remaining > 0; i++) {
         if (inventory[i] && inventory[i].icon === itemIcon) {
-          let has = inventory[i].qty || 1;
+          let has = inventory[i].qty ?? 1;
           if (has <= remaining) {
             remaining -= has;
             inventory[i] = null;
@@ -10459,7 +10459,7 @@ window.BOUNDARY_DATA = {
 
 // ═══ END: boundary_data.js ═══
 
-// ═══ BEGIN: map.js (src/map.js, modified: 2026-05-13 12:56) ═══
+// ═══ BEGIN: map.js (src/map.js, modified: 2026-05-13 13:09) ═══
   /*
   MAP MODULE – PROCEDURAL GENERATION AND SCENE MANAGEMENT
   ========================================================
@@ -12121,11 +12121,11 @@ window.BOUNDARY_DATA = {
           type: npc.type,
           stats: {
             icon: npc.icon || def.icon || '🙂',
-            hp: def.hp || 999,
-            maxHp: def.hp || 999,
-            dmg: def.dmg || 0,
-            hit: def.hit || 0,
-            crit: def.crit || 0,
+            hp: def.hp ?? 999,
+            maxHp: def.hp ?? 999,
+            dmg: def.dmg ?? 0,
+            hit: def.hit ?? 0,
+            crit: def.crit ?? 0,
             dodge: def.dodge != null ? def.dodge : 1,
             speed: 0,
             throughWalls: false,
@@ -12401,7 +12401,7 @@ window.BOUNDARY_DATA = {
         stats: { hp: def.hp, maxHp: def.maxHp, atk: def.dmg, def: 0,
                   hit: def.hit, dodge: def.dodge, xp: 1,
                   speed: def.speed, throughWalls: def.throughWalls || false },
-        renderScale: def.renderScale || 1.0,
+        renderScale: def.renderScale ?? 1.0,
         loot: def.loot || [],
         actionTimer: 0,
         // AI flags
@@ -12413,7 +12413,7 @@ window.BOUNDARY_DATA = {
 
 // ═══ END: map.js ═══
 
-// ═══ BEGIN: mechanics.js (src/mechanics.js, modified: 2026-05-13 12:25) ═══
+// ═══ BEGIN: mechanics.js (src/mechanics.js, modified: 2026-05-13 13:09) ═══
 /*
   MECHANICS MODULE – INVENTORY, ITEMS, AND SPECIAL ACTIONS
   =========================================================
@@ -12446,13 +12446,13 @@ window.BOUNDARY_DATA = {
     if(!player.macros || player.macros.length === 0) return;
     for(const macro of player.macros) {
       try {
-        if((macro._cdRemaining || 0) > 0) {
+        if((macro._cdRemaining ?? 0) > 0) {
           macro._cdRemaining--;
           continue;
         }
         if(!evalMacroCondition(macro.condition)) continue;
         execMacroAction(macro.action);
-        if((macro.cooldownTurns || 0) > 0) {
+        if((macro.cooldownTurns ?? 0) > 0) {
           macro._cdRemaining = macro.cooldownTurns;
         }
       } catch(e) { /* silent */ }
@@ -12463,7 +12463,7 @@ window.BOUNDARY_DATA = {
     const vars = {
       '$hp': Math.floor(player.hp),
       '$mp': Math.floor(player.mp),
-      '$hunger': Math.floor(player.hunger || 0),
+      '$hunger': Math.floor(player.hunger ?? 0),
       '$floor': currentLevel,
       '$scene': currentScene,
       '$enemy_count': enemyCount,
@@ -12535,7 +12535,7 @@ window.BOUNDARY_DATA = {
     if(!def || def.type !== 'bag') return;
     // Initialize contents array if new bag
     if(!item.contents) {
-      item.contents = new Array(def.bagSlots || 3).fill(null);
+      item.contents = new Array(def.bagSlots ?? 3).fill(null);
       // Pre-fill new bags with random loot (the "loot bag" aspect)
       if(def.bagSlots <= 3) {
         let lootTable = ['🪙', '🪙', '🧪', '🍖', '🕯️'];
@@ -12568,7 +12568,7 @@ window.BOUNDARY_DATA = {
     // Try to add to inventory
     let slot = inventory.findIndex(s => s === null);
     if(slot !== -1) {
-      inventory[slot] = ItemStack.fromIcon(taken.icon, taken.qty || 1);
+      inventory[slot] = ItemStack.fromIcon(taken.icon, taken.qty ?? 1);
       bag.contents[itemIdx] = null;
       let def = ITEM_DEF[taken.icon];
       logMsg(`Took ${taken.icon} ${def ? def.name : ''} from bag.`);
@@ -12576,7 +12576,7 @@ window.BOUNDARY_DATA = {
       // Try inventory
       let pSlot = inventory.findIndex((s, i) => s === null && !(source === 'inventory' && i === bagIdx));
       if(pSlot !== -1) {
-        inventory[pSlot] = ItemStack.fromIcon(taken.icon, taken.qty || 1);
+        inventory[pSlot] = ItemStack.fromIcon(taken.icon, taken.qty ?? 1);
         bag.contents[itemIdx] = null;
         logMsg(`Took ${taken.icon} to inventory (inventory full).`);
       } else {
@@ -12734,11 +12734,11 @@ window.BOUNDARY_DATA = {
       window._activeBombs.push({
         x: player.x,
         y: player.y,
-        timer: def.fuseTime || 10,
-        maxTimer: def.fuseTime || 10,
-        radius: def.blastRadius || 5,
-        baseDmg: def.baseDamage || 50,
-        dmgPerTile: def.damagePerTile || 10,
+        timer: def.fuseTime ?? 10,
+        maxTimer: def.fuseTime ?? 10,
+        radius: def.blastRadius ?? 5,
+        baseDmg: def.baseDamage ?? 50,
+        dmgPerTile: def.damagePerTile ?? 10,
         icon: itemObj.icon,
         startTime: performance.now()
       });
@@ -12751,7 +12751,7 @@ window.BOUNDARY_DATA = {
 
     // Gold Bag — add gold directly, don't keep in inventory
     if(def.type === "wealth") {
-      let goldValue = def.maxGP || 50;
+      let goldValue = def.maxGP ?? 50;
       changeGold(goldValue);
       logMsg(`<span style='color:var(--success)'>💰 You open the Gold Bag and find ${goldValue}g!</span>`);
       decrementItem(idx);
@@ -12767,7 +12767,7 @@ window.BOUNDARY_DATA = {
         logMsg("<span style='color:#aaa; font-style:italic;'>You raise the candle, then pause. It's perfectly well-lit here. You'd just be wasting it.</span>");
         return;
       }
-      lightTurns = (lightTurns || 0) + (def.lightRange || 15);
+      lightTurns = (lightTurns ?? 0) + (def.lightRange ?? 15);
       logMsg(`<span style='color:var(--success)'>${ItemDef.iconOf('candle')} You light the ${def.name}! (${lightTurns} turns of light)</span>`);
       decrementItem(idx);
       calculateFOV(); drawMap(); updateUI();
@@ -12784,7 +12784,7 @@ window.BOUNDARY_DATA = {
           "You have found a use for the poop! Just kidding. You haven't.",
           "The poop smells. That's all you can say about the poop."
         ];
-        player._poopIdx = ((player._poopIdx || 0) + 1) % poopLines.length;
+        player._poopIdx = ((player._poopIdx ?? 0) + 1) % poopLines.length;
         logMsg(`<span style='color:#888; font-style:italic;'>${poopLines[player._poopIdx]}</span>`);
         return; // don't consume
       }
@@ -12829,7 +12829,7 @@ window.BOUNDARY_DATA = {
         player.hp = Math.max(1, player.hp + def.maxHeal);
         logMsg(`<span style='color:var(--warning)'>That burns! Lost ${Math.abs(def.maxHeal)} HP.</span>`);
       }
-      player.hunger = Math.max(0, player.hunger - (def.foodValue || 0));
+      player.hunger = Math.max(0, player.hunger - (def.foodValue ?? 0));
       // B10: Game Log message for consuming food/potion
       if(def.maxHeal >= 0 && itemObj.icon !== '🥤') {
         if(def.type === "potion") {
@@ -12861,7 +12861,7 @@ window.BOUNDARY_DATA = {
           shield: 3,
           haste: 3
         };
-        const requiredMp = spellManaCost[def.spell] || 0;
+        const requiredMp = spellManaCost[def.spell] ?? 0;
         if(player.mp < requiredMp) {
           if(typeof Sound !== 'undefined' && Sound.errorBuzz) Sound.errorBuzz();
           logMsg(`<span style='color:var(--error)'>Not enough mana to read this scroll! (${requiredMp} MP required)</span>`);
@@ -12911,7 +12911,7 @@ window.BOUNDARY_DATA = {
     else if(itemObj.itemName === 'magicTeapot') {
       // Magic Teapot — create a healing potion (60min cooldown)
       let now = Date.now();
-      let lastUse = player.teapotLastUse || 0;
+      let lastUse = player.teapotLastUse ?? 0;
       let cooldownMs = 60 * 60 * 1000; // 60 minutes
       let remaining = cooldownMs - (now - lastUse);
       if(remaining > 0) {
@@ -13020,7 +13020,7 @@ window.BOUNDARY_DATA = {
 
         // Gold Bag — auto-convert to gold on pickup
         if(def.type === "wealth") {
-          let goldValue = def.maxGP || 50;
+          let goldValue = def.maxGP ?? 50;
           changeGold(goldValue, { x: player.x, y: player.y, floatText: true });
           logMsg(`<span style='color:var(--success)'>💰 Found ${goldValue}g!</span>`);
           toRemove.push(index);
@@ -13030,9 +13030,9 @@ window.BOUNDARY_DATA = {
         // Try Main Inventory First
         let stacked = false;
         if(def.stackable) {
-          let maxStack = def.maxStack || 10;
-          let slot = inventory.find(i => i && i.icon === item.icon && (i.qty || 1) < maxStack);
-          if(slot) { slot.qty = (slot.qty || 1) + 1; stacked = true; }
+          let maxStack = def.maxStack ?? 10;
+          let slot = inventory.find(i => i && i.icon === item.icon && (i.qty ?? 1) < maxStack);
+          if(slot) { slot.qty = (slot.qty ?? 1) + 1; stacked = true; }
         }
         if(!stacked) {
           let emptyIdx = inventory.findIndex(i => i === null);
@@ -13042,9 +13042,9 @@ window.BOUNDARY_DATA = {
         // Try Inventory Second
         if(!stacked) {
           if(def.stackable) {
-            let maxStack = def.maxStack || 10;
-            let ps = inventory.find(i => i && i.icon === item.icon && (i.qty || 1) < maxStack);
-            if(ps) { ps.qty = (ps.qty || 1) + 1; stacked = true; }
+            let maxStack = def.maxStack ?? 10;
+            let ps = inventory.find(i => i && i.icon === item.icon && (i.qty ?? 1) < maxStack);
+            if(ps) { ps.qty = (ps.qty ?? 1) + 1; stacked = true; }
           }
           if(!stacked) {
             let pIdx = inventory.findIndex(i => i === null);
@@ -13085,8 +13085,8 @@ window.BOUNDARY_DATA = {
 
   function countItemByIcon(icon) {
     let total = 0;
-    inventory.forEach(item => { if(item && item.icon === icon) total += item.qty || 1; });
-    inventory.forEach(item => { if(item && item.icon === icon) total += item.qty || 1; });
+    inventory.forEach(item => { if(item && item.icon === icon) total += item.qty ?? 1; });
+    inventory.forEach(item => { if(item && item.icon === icon) total += item.qty ?? 1; });
     return total;
   }
 
@@ -13096,7 +13096,7 @@ window.BOUNDARY_DATA = {
       for(let i = 0; i < arr.length && remaining > 0; i++) {
         let item = arr[i];
         if(!item || item.icon !== icon) continue;
-        let stackQty = item.qty || 1;
+        let stackQty = item.qty ?? 1;
         let used = Math.min(stackQty, remaining);
         stackQty -= used;
         remaining -= used;
@@ -13148,7 +13148,7 @@ window.BOUNDARY_DATA = {
     if(spellName === 'portal') {
       // Town Portal: create a portal 2 tiles in front of player
       if(currentLevel === 0) { logMsg("You're already in town!"); return; }
-      let dx = player.facing.dx || 0, dy = player.facing.dy || 1;
+      let dx = player.facing.dx ?? 0, dy = player.facing.dy ?? 1;
       let px = player.x + dx * 2, py = player.y + dy * 2;
       // Find nearest floor tile if target is blocked
       if(px < 0 || px >= mapW || py < 0 || py >= mapH || theMap[py][px] === TILES.WALL) {
@@ -13291,7 +13291,7 @@ window.BOUNDARY_DATA = {
     }
     if(spellName === 'tunnel') {
       if(player.mp < 4) { logMsg("Not enough mana! (4 MP)"); return; }
-      let dx = player.facing.dx || 1, dy = player.facing.dy || 0;
+      let dx = player.facing.dx ?? 1, dy = player.facing.dy ?? 0;
       let tx = player.x + dx, ty = player.y + dy;
       if(!theMap[ty] || theMap[ty][tx] !== TILES.WALL) {
         logMsg("You must be facing a wall to tunnel.");
@@ -13330,10 +13330,10 @@ window.BOUNDARY_DATA = {
       if(dist > 8) { logMsg("No target close enough for Icebolt. (8 tiles)"); return; }
       player.mp -= 4;
       if(window.WebGLFX && WebGLFX.onManaUse) WebGLFX.onManaUse(4);
-      const dmg = Math.max(6, Math.floor(10 + (player.spellDmgBonus || 0)));
+      const dmg = Math.max(6, Math.floor(10 + (player.spellDmgBonus ?? 0)));
       target.stats.hp -= dmg;
       // Freeze the enemy
-      target._frozenTurns = (target._frozenTurns || 0) + 3;
+      target._frozenTurns = (target._frozenTurns ?? 0) + 3;
       activeEffects.push({ kind: 'icebeam', x1: player.x, y1: player.y, x2: target.x, y2: target.y, color: '#aaddff', life: 1.0, power: 1.0 });
       addFloatingText(target.x, target.y, `-${dmg}❄️`, '#aef', 20);
       logMsg(`<span style='color:#aef'>❄️ Icebolt strikes ${target.type} for ${dmg} cold damage and freezes it!</span>`);
@@ -13354,8 +13354,8 @@ window.BOUNDARY_DATA = {
       const target = visibleHostiles[0];
       player.mp -= 3;
       if(window.WebGLFX && WebGLFX.onManaUse) WebGLFX.onManaUse(3);
-      target._poisonTurns = (target._poisonTurns || 0) + 8;
-      target._poisonDmg = Math.max(2, Math.floor(3 + (player.spellDmgBonus || 0) * 0.5));
+      target._poisonTurns = (target._poisonTurns ?? 0) + 8;
+      target._poisonDmg = Math.max(2, Math.floor(3 + (player.spellDmgBonus ?? 0) * 0.5));
       addFloatingText(target.x, target.y, '☠️', '#7f2', 18);
       logMsg(`<span style='color:#7f2'>☠️ Poison clouds the ${target.type}!</span>`);
       Sound.playTone(220, 'sawtooth', 0.06, 0.15, 300);
@@ -13367,7 +13367,7 @@ window.BOUNDARY_DATA = {
       if(player.mp < 3) { logMsg("Not enough mana! (3 MP)"); return; }
       player.mp -= 3;
       if(window.WebGLFX && WebGLFX.onManaUse) WebGLFX.onManaUse(3);
-      player._shieldTurns = (player._shieldTurns || 0) + 10;
+      player._shieldTurns = (player._shieldTurns ?? 0) + 10;
       logMsg("<span style='color:#88f'>🛡️ A magical shield surrounds you! (10 turns)</span>");
       Sound.playTone(440, 'sine', 0.15, 0.12, 800);
       drawMap(); updateUI(); advanceTurn(1);
@@ -13431,7 +13431,7 @@ window.BOUNDARY_DATA = {
     let dx = tx - player.x, dy = ty - player.y;
     let dist = Math.sqrt(dx * dx + dy * dy);
     if(dist < 1) { logMsg("Aim away from your own face."); return; }
-    if(dist > (weaponDef.range || 8)) { logMsg(`Too far! (max ${weaponDef.range || 8} tiles)`); return; }
+    if(dist > (weaponDef.range ?? 8)) { logMsg(`Too far! (max ${weaponDef.range ?? 8} tiles)`); return; }
     if(weaponDef.ammoIcon && !consumeItemByIcon(weaponDef.ammoIcon, 1)) {
       logMsg(`<span style='color:var(--error)'>Out of ${ITEM_DEF[weaponDef.ammoIcon]?.name || 'ammo'}.</span>`);
       return;
@@ -13563,7 +13563,7 @@ window.BOUNDARY_DATA = {
         if(m.stats.isBoss) baseDmg = Math.floor(baseDmg * 0.5);
         if(m.type === 'ifrit' && m.isIfrit) {
           const heal = Math.max(8, Math.floor(baseDmg * 0.8));
-          m.stats.hp = Math.min(m.stats.maxHp || 999, m.stats.hp + heal);
+          m.stats.hp = Math.min(m.stats.maxHp ?? 999, m.stats.hp + heal);
           addFloatingText(cx, cy, `+${heal}🔥`, '#7f7', 22);
           activeEffects.push({ kind: 'fireballBurst', x: cx, y: cy, color: '#ffb347', life: 0.95, power: 1.15 });
           logMsg("<span style='color:#f90'>Ifrit absorbs the fireball. \"Thanks for the light!\"</span>");
@@ -13629,8 +13629,8 @@ window.BOUNDARY_DATA = {
       if(name) {
         let d = ItemDefs[name];
         if(!d) return;
-        if(d.type === "weapon") totalDmg = (d.baseDmg || 0);
-        totalEvade += (d.evadePercent||0);
+        if(d.type === "weapon") totalDmg = (d.baseDmg ?? 0);
+        totalEvade += (d.evadePercent ?? 0);
         // Boots of Blinding Speed
         if(name === 'bootsOfBlindingSpeed') {
           speedBonus = 1;
@@ -13675,7 +13675,7 @@ window.BOUNDARY_DATA = {
 
 // ═══ END: mechanics.js ═══
 
-// ═══ BEGIN: engine.js (src/engine.js, modified: 2026-05-13 12:56) ═══
+// ═══ BEGIN: engine.js (src/engine.js, modified: 2026-05-13 13:09) ═══
   /*
   ENGINE MODULE – CORE GAME LOOPS, AI, AND COMBAT
   ================================================
@@ -13839,20 +13839,20 @@ window.BOUNDARY_DATA = {
         let placed = false;
         let def = ITEM_DEF[item.icon];
         if(def && def.stackable) {
-          let maxStack = def.maxStack || 10;
-          let stackSlot = inventory.find(s => s && s.itemName === item.itemName && (s.qty || 1) < maxStack);
+          let maxStack = def.maxStack ?? 10;
+          let stackSlot = inventory.find(s => s && s.itemName === item.itemName && (s.qty ?? 1) < maxStack);
           if(stackSlot) {
-            let can = maxStack - (stackSlot.qty || 1);
-            let add = Math.min(can, item.qty || 1);
-            stackSlot.qty = (stackSlot.qty || 1) + add;
-            item.qty = (item.qty || 1) - add;
-            placed = (item.qty || 0) <= 0;
+            let can = maxStack - (stackSlot.qty ?? 1);
+            let add = Math.min(can, item.qty ?? 1);
+            stackSlot.qty = (stackSlot.qty ?? 1) + add;
+            item.qty = (item.qty ?? 1) - add;
+            placed = (item.qty ?? 0) <= 0;
           }
         }
         // Try inventory
         let slot = inventory.findIndex(s => s === null);
         if(!placed && slot !== -1) {
-          inventory[slot] = new ItemStack(item.itemName, item.qty || 1);
+          inventory[slot] = new ItemStack(item.itemName, item.qty ?? 1);
           placed = true;
         }
         // Try inventory and bags
@@ -13870,17 +13870,17 @@ window.BOUNDARY_DATA = {
   // Try to place an item in inventory or inside a bag
   function tryPlaceInInventory(item) {
     const def = ITEM_DEF[item.icon] || { stackable:false };
-    const qty = item.qty || 1;
+    const qty = item.qty ?? 1;
 
     // Stack in existing inventory slots first
     if(def.stackable) {
-      const maxStack = def.maxStack || 10;
+      const maxStack = def.maxStack ?? 10;
       for(let i = 0; i < inventory.length; i++) {
         const s = inventory[i];
-        if(s && s.itemName === item.itemName && (s.qty || 1) < maxStack) {
-          const can = maxStack - (s.qty || 1);
+        if(s && s.itemName === item.itemName && (s.qty ?? 1) < maxStack) {
+          const can = maxStack - (s.qty ?? 1);
           const add = Math.min(can, qty);
-          s.qty = (s.qty || 1) + add;
+          s.qty = (s.qty ?? 1) + add;
           item.qty = qty - add;
           if(item.qty <= 0) return true;
           break;
@@ -13891,30 +13891,30 @@ window.BOUNDARY_DATA = {
     // Direct inventory slot
     let pSlot = inventory.findIndex(s => s === null);
     if(pSlot !== -1) {
-      inventory[pSlot] = new ItemStack(item.itemName, item.qty || 1);
+      inventory[pSlot] = new ItemStack(item.itemName, item.qty ?? 1);
       return true;
     }
     // Inside a bag
     for(let i = 0; i < inventory.length; i++) {
       let bag = inventory[i];
       if(bag && ITEM_DEF[bag.icon] && ITEM_DEF[bag.icon].type === 'bag') {
-        if(!bag.contents) bag.contents = new Array(ITEM_DEF[bag.icon].bagSlots || 3).fill(null);
+        if(!bag.contents) bag.contents = new Array(ITEM_DEF[bag.icon].bagSlots ?? 3).fill(null);
         if(def.stackable) {
-          const maxStack = def.maxStack || 10;
+          const maxStack = def.maxStack ?? 10;
           for(let bi = 0; bi < bag.contents.length; bi++) {
             const bs = bag.contents[bi];
-            if(bs && bs.itemName === item.itemName && (bs.qty || 1) < maxStack) {
-              const can = maxStack - (bs.qty || 1);
-              const add = Math.min(can, item.qty || 1);
-              bs.qty = (bs.qty || 1) + add;
-              item.qty = (item.qty || 1) - add;
-              if((item.qty || 0) <= 0) return true;
+            if(bs && bs.itemName === item.itemName && (bs.qty ?? 1) < maxStack) {
+              const can = maxStack - (bs.qty ?? 1);
+              const add = Math.min(can, item.qty ?? 1);
+              bs.qty = (bs.qty ?? 1) + add;
+              item.qty = (item.qty ?? 1) - add;
+              if((item.qty ?? 0) <= 0) return true;
             }
           }
         }
         let emptySlot = bag.contents.findIndex(s => s === null);
         if(emptySlot !== -1) {
-          bag.contents[emptySlot] = new ItemStack(item.itemName, item.qty || 1);
+          bag.contents[emptySlot] = new ItemStack(item.itemName, item.qty ?? 1);
           return true;
         }
       }
@@ -13984,7 +13984,7 @@ window.BOUNDARY_DATA = {
       } else {
         let slot = inventory.findIndex(s => s === null);
         if(slot !== -1) {
-          inventory[slot] = new ItemStack(item.itemName, item.qty || 1);
+          inventory[slot] = new ItemStack(item.itemName, item.qty ?? 1);
           didLoot = true;
         } else {
           let placed = tryPlaceInInventory(item);
@@ -14017,7 +14017,7 @@ window.BOUNDARY_DATA = {
     } else {
       let slot = inventory.findIndex(s => s === null);
       if(slot !== -1) {
-        inventory[slot] = new ItemStack(item.itemName, item.qty || 1);
+        inventory[slot] = new ItemStack(item.itemName, item.qty ?? 1);
         c.loot.splice(itemIdx, 1);
         Sound.clink();
       } else {
@@ -14118,7 +14118,7 @@ window.BOUNDARY_DATA = {
 
   function playRandomVoice(prefix, count) {
     if(!(typeof Sound !== 'undefined' && Sound.playVoice)) return;
-    const idx = Math.floor(Math.random() * Math.max(1, count || 1));
+    const idx = Math.floor(Math.random() * Math.max(1, count ?? 1));
     Sound.playVoice(`${prefix}${idx}`);
   }
 
@@ -14216,11 +14216,11 @@ window.BOUNDARY_DATA = {
     // Patrol NPCs
     enemies.forEach(e => {
       if(!e || !e.isSceneNPC || !e.patrolPath || e.patrolPath.length === 0) return;
-      const moveInterval = Math.max(250, e.sceneMoveIntervalMs || 800);
+      const moveInterval = Math.max(250, e.sceneMoveIntervalMs ?? 800);
       if(typeof e._sceneNextMoveAt !== 'number') e._sceneNextMoveAt = nowMs;
       if(nowMs < e._sceneNextMoveAt) return;
       e._sceneNextMoveAt = nowMs + moveInterval;
-      let nextIndex = ((e.patrolIndex || 0) + 1) % e.patrolPath.length;
+      let nextIndex = ((e.patrolIndex ?? 0) + 1) % e.patrolPath.length;
       let nextStep = e.patrolPath[nextIndex];
       if(!nextStep) return;
       if(player.x === nextStep.x && player.y === nextStep.y) return;
@@ -14238,7 +14238,7 @@ window.BOUNDARY_DATA = {
   function advanceTurn(steps = 1) {
     if(isDead) return;
     advanceSceneNPCs();
-    window._turnCount = (window._turnCount || 0) + steps;
+    window._turnCount = (window._turnCount ?? 0) + steps;
     
     // Atronach & Regen Suppression (v7.2.0)
     if (!player.atronach) {
@@ -14247,7 +14247,7 @@ window.BOUNDARY_DATA = {
 
     // Roc Capture
     if(currentLevel === 11 && !player.rocCaptured) {
-      player.mountainSteps = (player.mountainSteps || 0) + steps;
+      player.mountainSteps = (player.mountainSteps ?? 0) + steps;
       if(player.mountainSteps >= 5) {
         player.rocCaptured = true;
         logMsg("<span style='color:var(--error)'>⚠️ A GIANT ROC SWOOPS DOWN AND GRABS YOU!</span>");
@@ -14324,7 +14324,7 @@ window.BOUNDARY_DATA = {
         player.grueDanger = 0;
       } else {
         // In the dark — accumulate danger
-        player.grueDanger = (player.grueDanger || 0) + steps;
+        player.grueDanger = (player.grueDanger ?? 0) + steps;
         let danger = player.grueDanger;
         // Messages at thresholds
         let msgIdx = null;
@@ -14369,7 +14369,7 @@ window.BOUNDARY_DATA = {
     // E.753.MILK: diarrhea status ticking, periodic fart SFX, timed expiry
     if(player.statusEffects && player.statusEffects.diarrhea) {
       const fx = player.statusEffects.diarrhea;
-      fx.turnsRemaining = Math.max(0, (fx.turnsRemaining || 0) - steps);
+      fx.turnsRemaining = Math.max(0, (fx.turnsRemaining ?? 0) - steps);
 
       const nowMs = Date.now();
       if(!fx.nextFartMs) fx.nextFartMs = nowMs + 6000;
@@ -14438,7 +14438,7 @@ window.BOUNDARY_DATA = {
 
       // Bug 25: Wandering NPC AI — random walk every 5 turns, no player chasing
       if(e.stats.wandering) {
-        e.stats.wanderTimer = (e.stats.wanderTimer || 0) + steps;
+        e.stats.wanderTimer = (e.stats.wanderTimer ?? 0) + steps;
         if(e.stats.wanderTimer >= 5) {
           e.stats.wanderTimer = 0;
           const wDirs = [[0,-1],[1,0],[0,1],[-1,0]];
@@ -14474,7 +14474,7 @@ window.BOUNDARY_DATA = {
             if(typeof Sound !== 'undefined' && Sound.playVoice) Sound.playVoice(t.voice);
           }
           // Patrol AI: cycle between patrol/sit/stand every few turns
-          e._patrolTurnCount = (e._patrolTurnCount || 0) + steps;
+          e._patrolTurnCount = (e._patrolTurnCount ?? 0) + steps;
           if (e._patrolTurnCount >= 8) {
             e._patrolTurnCount = 0;
             const roll = Math.random();
@@ -14482,9 +14482,9 @@ window.BOUNDARY_DATA = {
               e._ifritAction = 'patrol';
               // Pick a new random patrol target around chamber center.
               const mapW2 = theMap[0] ? theMap[0].length : 30;
-              const mapH2 = theMap.length || 30;
+              const mapH2 = theMap.length ?? 30;
               const c = e.patrolCenter || { x: e.x, y: e.y };
-              const pr = e.patrolRadius || 4;
+              const pr = e.patrolRadius ?? 4;
               for (let attempt = 0; attempt < 10; attempt++) {
                 const tx = c.x + Math.floor((Math.random() - 0.5) * (pr * 2 + 1));
                 const ty = c.y + Math.floor((Math.random() - 0.5) * (pr * 2 + 1));
@@ -14507,7 +14507,7 @@ window.BOUNDARY_DATA = {
             if (pdx !== 0 || pdy !== 0) {
               const nx = e.x + pdx, ny = e.y + pdy;
               const mapW2 = theMap[0] ? theMap[0].length : 30;
-              const mapH2 = theMap.length || 30;
+              const mapH2 = theMap.length ?? 30;
               if (nx >= 0 && nx < mapW2 && ny >= 0 && ny < mapH2 &&
                   theMap[ny] && isTileFloor(theMap[ny][nx]) &&
                   !enemies.some(o => o !== e && o.x === nx && o.y === ny) &&
@@ -14582,7 +14582,7 @@ window.BOUNDARY_DATA = {
         let dist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
         // Patrol AI: move toward stationary player if within 4 tiles
         if(e.stats.patrolling) {
-          if(dist <= 4 && (player.stationaryTurns || 0) >= 2) {
+          if(dist <= 4 && (player.stationaryTurns ?? 0) >= 2) {
             // Move toward player
             let pdx = Math.sign(player.x - e.x), pdy = Math.sign(player.y - e.y);
             let nx2 = e.x + pdx, ny2 = e.y + pdy;
@@ -14608,7 +14608,7 @@ window.BOUNDARY_DATA = {
 
       // E20: Friendly outdoor animals — flee from player when nearby
       if(e.fleePlayer) {
-        e.actionTimer = (e.actionTimer || 0) + ((e.stats.speed || 1) * steps);
+        e.actionTimer = (e.actionTimer ?? 0) + ((e.stats.speed ?? 1) * steps);
         while(e.actionTimer >= 1) {
           e.actionTimer -= 1;
           const distToPlayer = Math.hypot(e.x - player.x, e.y - player.y);
@@ -14682,7 +14682,7 @@ window.BOUNDARY_DATA = {
 
       // #32 FIX: Fence patrols near the bar entrance instead of standing still
       if(e.type === 'fence') {
-        e.actionTimer = (e.actionTimer || 0) + (e.stats.speed * steps);
+        e.actionTimer = (e.actionTimer ?? 0) + (e.stats.speed * steps);
         let barX = window._fenceBarX || player.x;
         let barY = window._fenceBarY || player.y;
         const onEntrance = (e.x === barX && e.y === barY) || (e.x === barX && e.y === barY + 1) || (e.x === barX - 1 && e.y === barY + 1) || (e.x === barX + 1 && e.y === barY + 1);
@@ -14716,7 +14716,7 @@ window.BOUNDARY_DATA = {
 
       // B760.MIMIC: awakened mimic can spit coin projectiles at range.
       if(e.type === 'mimic' && e.isMimic) {
-        e.actionTimer = (e.actionTimer || 0) + (e.stats.speed * steps);
+        e.actionTimer = (e.actionTimer ?? 0) + (e.stats.speed * steps);
         while(e.actionTimer >= 1) {
           e.actionTimer -= 1;
           const dist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
@@ -14726,7 +14726,7 @@ window.BOUNDARY_DATA = {
               if(Sound.playSample) Sound.playSample('ka_ching', 0.55);
             }
             activeEffects.push({ kind:'goldCoins', x1:e.x, y1:e.y, x2:player.x, y2:player.y, color:'#FFD700', life:1.0, power:0.9 });
-            const pdmg = Math.max(2, Math.floor((e.stats.dmg || 8) * 0.6));
+            const pdmg = Math.max(2, Math.floor((e.stats.dmg ?? 8) * 0.6));
             player.hp -= pdmg;
             addFloatingText(player.x, player.y, `-${pdmg}🪙`, '#FFD700', 16);
             logMsg("<span style='color:var(--error)'>🪙 The Mimic spits a volley of gold coins!</span>");
@@ -14749,7 +14749,7 @@ window.BOUNDARY_DATA = {
       if(e.type === 'shark' && e.stats.stalks) {
         let playerOnWater = theMap[player.y] && (theMap[player.y][player.x] === TILES.WATER || theMap[player.y][player.x] === TILES.DEEP_WATER);
         let dist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
-        let aggroRange = e.stats.aggro || 6;
+        let aggroRange = e.stats.aggro ?? 6;
         if(playerOnWater && dist <= aggroRange) {
           // Provoke shark — it will always chase now
           e.provoked = true;
@@ -14773,7 +14773,7 @@ window.BOUNDARY_DATA = {
       // E.753.ZOMBIE: Slow shambling patrol until aggro range, then pursue
       if(e.type === 'zombie') {
         e.actionTimer += (e.stats.speed * steps);
-        const aggroRange = e.stats.aggro || 5;
+        const aggroRange = e.stats.aggro ?? 5;
         while(e.actionTimer >= 1) {
           e.actionTimer -= 1;
           const dist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
@@ -14874,7 +14874,7 @@ window.BOUNDARY_DATA = {
 
     // Track player stationaryTurns for thief patrol AI
     if(player._lastX === player.x && player._lastY === player.y) {
-      player.stationaryTurns = (player.stationaryTurns || 0) + steps;
+      player.stationaryTurns = (player.stationaryTurns ?? 0) + steps;
     } else {
       player.stationaryTurns = 0;
     }
@@ -15034,7 +15034,7 @@ window.BOUNDARY_DATA = {
 
     // Bug 11+13: Heal ticks during sleep, scaled by CON, with visible +HP text
     // #37 FIX: Also regenerate MP during sleep
-    let conBonus = (player.stats.con || 10) - 10;
+    let conBonus = (player.stats.con ?? 10) - 10;
     let tickHeal = Math.max(1, Math.floor((5 + conBonus) / 2));
     let tickMana = Math.max(1, Math.floor(3 + conBonus / 2));
     let sleepHealTotal = 0;
@@ -15250,9 +15250,9 @@ window.BOUNDARY_DATA = {
 
     if (typeof QuestEngine !== 'undefined') {
       QuestEngine.emit('kill', { type: e.type });
-      QuestEngine._counters['kill_total'] = (QuestEngine._counters['kill_total'] || 0) + 1;
+      QuestEngine._counters['kill_total'] = (QuestEngine._counters['kill_total'] ?? 0) + 1;
       if (e.type === 'mouse' || e.type === 'cockroach') {
-        QuestEngine._counters['kill_vermin'] = (QuestEngine._counters['kill_vermin'] || 0) + 1;
+        QuestEngine._counters['kill_vermin'] = (QuestEngine._counters['kill_vermin'] ?? 0) + 1;
       }
       // B2: Only count kills toward the guard dungeon quest when actually in the dungeon
       // (not in town, beach, fields, or other non-dungeon scenes, and not farm animals/vermin)
@@ -15263,7 +15263,7 @@ window.BOUNDARY_DATA = {
         currentScene !== 'fields' && currentScene !== 'nest' &&
         !FARM_ANIMAL_TYPES_KILL.has(e.type) && !VERMIN_TYPES.has(e.type);
       if (isDungeonKill) {
-        QuestEngine._counters['kill_dungeon'] = (QuestEngine._counters['kill_dungeon'] || 0) + 1;
+        QuestEngine._counters['kill_dungeon'] = (QuestEngine._counters['kill_dungeon'] ?? 0) + 1;
       }
     }
     if (e.type === 'cow' || e.type === 'chicken') player.killedPassive = true;
@@ -15275,12 +15275,12 @@ window.BOUNDARY_DATA = {
 
     // #1: Farm animal kill in town — Dennis warning/debt escalation
     if(currentScene === 'town' && (e.type === 'cow' || e.type === 'chicken' || e.type === 'duck')) {
-      player.townAnimalKills = (player.townAnimalKills || 0) + 1;
+      player.townAnimalKills = (player.townAnimalKills ?? 0) + 1;
       if(!player.dennisWarned && player.townAnimalKills >= 2) {
         player.dennisWarned = true;
         logMsg("<span style='color:#aaa; font-style:italic;'>You hear Dennis muttering in the distance: \"Something strange is happening to the animals...\"</span>");
       } else if(player.dennisWarned) {
-        player.dennisAnimalDebt = (player.dennisAnimalDebt || 0) + 100;
+        player.dennisAnimalDebt = (player.dennisAnimalDebt ?? 0) + 100;
         player.dennisAnimalFurious = true;
         const cost = player.dennisAnimalDebt;
         logMsg(`<span style='color:var(--error)'>Dennis storms over, face red: "MY ANIMALS! You MONSTER! Get away from me until you pay ${cost}g!"</span>`);
@@ -15306,12 +15306,12 @@ window.BOUNDARY_DATA = {
       if(roll < 0.05) corpseLoot.push(new ItemStack('plansForWorldDomination', 1));
       else if(roll < 0.25) corpseLoot.push(new ItemStack('cheese', 1));
       corpseLoot.push(new ItemStack('gold', 1 + Math.floor(Math.random() * 3)));
-      player.xp += 10; player.verminKills = (player.verminKills || 0) + 1;
+      player.xp += 10; player.verminKills = (player.verminKills ?? 0) + 1;
       if(player.verminKills >= 10) awardAchievement('vermin_slayer');
     } else if(e.type === 'cockroach') {
       corpseLoot.push(new ItemStack('cockroachLegStale', 1));
       if(Math.random() < 0.3) corpseLoot.push(new ItemStack('gold', 1));
-      player.xp += 5; player.verminKills = (player.verminKills || 0) + 1;
+      player.xp += 5; player.verminKills = (player.verminKills ?? 0) + 1;
       if(player.verminKills >= 10) awardAchievement('vermin_slayer');
     } else if(e.type === 'chicken') {
       if(typeof Sound !== 'undefined' && Sound.cluck) Sound.cluck();
@@ -15334,7 +15334,7 @@ window.BOUNDARY_DATA = {
       // E17: 15% poop drop from ducks
       if(Math.random() < 0.15) corpseLoot.push(new ItemStack('poop', 1));
       player.xp += 15;
-      player.duckKills = (player.duckKills || 0) + 1;
+      player.duckKills = (player.duckKills ?? 0) + 1;
       if(player.duckKills >= 5 && !achievements['duck_hunter']) {
         showDuckHuntDogLaugh();
         awardAchievement('duck_hunter');
@@ -15449,7 +15449,7 @@ window.BOUNDARY_DATA = {
             changeGold(item.qty, { x: e.x, y: e.y, floatText: true });
           } else {
             let slot = inventory.findIndex(s => s === null);
-            if(slot !== -1) { inventory[slot] = new ItemStack(item.itemName, item.qty || 1); }
+            if(slot !== -1) { inventory[slot] = new ItemStack(item.itemName, item.qty ?? 1); }
             else tryPlaceInInventory(item);
           }
         });
@@ -15465,10 +15465,10 @@ window.BOUNDARY_DATA = {
 
   // Stubs — replaced by player.js functions when loaded
   if(typeof getPlayerDmgVersus === 'undefined') {
-    window.getPlayerDmgVersus = function(e) { return Math.floor(Math.random() * (player.baseDmg||3) + 1 + (player.meleeDmgBonus||0)); };
-    window.getPlayerHits = function(e) { return Math.random() < (player.hitRate||0.85); };
+    window.getPlayerDmgVersus = function(e) { return Math.floor(Math.random() * (player.baseDmg ?? 3) + 1 + (player.meleeDmgBonus ?? 0)); };
+    window.getPlayerHits = function(e) { return Math.random() < (player.hitRate ?? 0.85); };
     window.getPlayerPrimaryHand = function() { return player.equipped && player.equipped.leftHand; };
-    window.getPlayerCritRate = function() { return player.critRate || 0; };
+    window.getPlayerCritRate = function() { return player.critRate ?? 0; };
   }
 
   // Damages enemy (if dmg passed is > 0).
@@ -15493,7 +15493,7 @@ window.BOUNDARY_DATA = {
       if(!e.provoked) {
         e.provoked = true;
         e.stats.passive = false;
-        e.stats.speed = Math.max(0.9, e.stats.speed || 0.9);
+        e.stats.speed = Math.max(0.9, e.stats.speed ?? 0.9);
         logMsg("<span style='color:var(--error)'>📦 The chest splits open — it's a mimic!</span>");
         if(typeof Sound !== 'undefined' && Sound.playSample) Sound.playSample('mimic_reveal', 0.75);
       }
@@ -15594,7 +15594,7 @@ window.BOUNDARY_DATA = {
           e.stats.passive = false;
           if(Math.random() < 0.5) {
             e.fleePlayer = true;
-            e.stats.speed = (e.stats.speed || 1) * 2;
+            e.stats.speed = (e.stats.speed ?? 1) * 2;
           }
         }
 
@@ -15736,7 +15736,7 @@ window.BOUNDARY_DATA = {
     }
     e._insultPlayerOpened = false;
 
-    e._insultRoundCount = (e._insultRoundCount || 0) + 1;
+    e._insultRoundCount = (e._insultRoundCount ?? 0) + 1;
 
     // INSULT LEARNING SYSTEM:
     let round;
@@ -15882,7 +15882,7 @@ window.BOUNDARY_DATA = {
       }
 
       // Pirate loses pride — flees to another part of the area
-      e._prideLosses = (e._prideLosses || 0) + 1;
+      e._prideLosses = (e._prideLosses ?? 0) + 1;
       if(e._prideLosses >= 1 || type === 'master') {
         // Pirate flees — teleport to random location
         let fleeX, fleeY, attempts = 0;
@@ -15929,7 +15929,7 @@ window.BOUNDARY_DATA = {
     }
 
     // Monster damage is from 1 to their max, not always their max.
-    let dmg = Math.floor(Math.random() * (e.stats.dmg || 1)) + 1;
+    let dmg = Math.floor(Math.random() * (e.stats.dmg ?? 1)) + 1;
     player.hp -= dmg;
 
     // Bug 13: Always show damage tint and floating text regardless of sleep state
@@ -16127,7 +16127,7 @@ window.BOUNDARY_DATA = {
           }
         } else {
           // Various dark-encounter hints, escalating with danger
-          let grueDanger = player.grueDanger || 0;
+          let grueDanger = player.grueDanger ?? 0;
           if(grueDanger > 8) {
             logMsg("<span style='color:#444; font-style:italic;'>Something enormous breathes very close to your face. Two things, actually. One of them sounds like it is trying not to laugh.</span>");
           } else {
@@ -16336,7 +16336,7 @@ window.BOUNDARY_DATA = {
       enemies.forEach(e => {
         if(e.type === 'shark' && e.stats && e.stats.stalks) {
           let dist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
-          if(dist <= (e.stats.aggro || 6)) {
+          if(dist <= (e.stats.aggro ?? 6)) {
             if(!e.provoked) {
               e.provoked = true;
               logMsg("<span style='color:var(--error)'>🦈 Something large stirs in the water nearby...</span>");
@@ -16582,7 +16582,7 @@ window.BOUNDARY_DATA = {
     // Restore durability on all equipped items (if durability system exists)
     Object.values(player.equipped || {}).forEach(name => {
       const def = name ? ItemDefs[name] : null;
-      if(def && def.durability !== undefined) def.durability = def.maxDurability || 100;
+      if(def && def.durability !== undefined) def.durability = def.maxDurability ?? 100;
     });
     addFloatingText(player.x, player.y, '🔨 REPAIRED', '#fc0', 16);
     logMsg("<span style='color:var(--success)'>🧑‍🔧 Griswold hammers away for a moment. \"There! Good as new. Well, good as it's going to get.\"</span>");
@@ -16651,7 +16651,7 @@ window.BOUNDARY_DATA = {
     let machine = machines.find(m => m.x === mx && m.y === my);
     if(!machine) return;
 
-    let beadCount = inventory.reduce((sum, i) => sum + (i && i.itemName === 'orichalcumBead' ? (i.qty || 1) : 0), 0);
+    let beadCount = inventory.reduce((sum, i) => sum + (i && i.itemName === 'orichalcumBead' ? (i.qty ?? 1) : 0), 0);
 
     let m = document.getElementById('modal-content');
     Sound.machine();
@@ -16697,8 +16697,8 @@ window.BOUNDARY_DATA = {
     let toConsume = machine.beadCost;
     for(let i = 0; i < inventory.length && toConsume > 0; i++) {
       if(inventory[i] && inventory[i].itemName === 'orichalcumBead') {
-        let take = Math.min(inventory[i].qty || 1, toConsume);
-        inventory[i].qty = (inventory[i].qty || 1) - take;
+        let take = Math.min(inventory[i].qty ?? 1, toConsume);
+        inventory[i].qty = (inventory[i].qty ?? 1) - take;
         toConsume -= take;
         if(inventory[i].qty <= 0) inventory[i] = null;
       }
@@ -16853,7 +16853,7 @@ window.BOUNDARY_DATA = {
 
 // ═══ END: engine.js ═══
 
-// ═══ BEGIN: shop.js (src/shop.js, modified: 2026-05-13 12:25) ═══
+// ═══ BEGIN: shop.js (src/shop.js, modified: 2026-05-13 13:09) ═══
   /*
   SHOP MODULE – NPC MERCHANTS, TRADING, AND QUEST INTERACTIONS
   =============================================================
@@ -17086,20 +17086,20 @@ window.BOUNDARY_DATA = {
     let remaining = qty;
     let nextInventory = inventory.map(item => item ? { ...item } : null);
     if(def.stackable) {
-      const maxStack = def.maxStack || 10;
+      const maxStack = def.maxStack ?? 10;
       for(let i = 0; i < nextInventory.length && remaining > 0; i++) {
         let item = nextInventory[i];
         if(!item || item.icon !== icon) continue;
-        let room = maxStack - (item.qty || 1);
+        let room = maxStack - (item.qty ?? 1);
         if(room <= 0) continue;
         let moved = Math.min(room, remaining);
-        item.qty = (item.qty || 1) + moved;
+        item.qty = (item.qty ?? 1) + moved;
         remaining -= moved;
       }
     }
     for(let i = 0; i < nextInventory.length && remaining > 0; i++) {
       if(nextInventory[i] !== null) continue;
-      let stackQty = def.stackable ? Math.min(def.maxStack || 10, remaining) : 1;
+      let stackQty = def.stackable ? Math.min(def.maxStack ?? 10, remaining) : 1;
       nextInventory[i] = { icon, qty: stackQty };
       remaining -= stackQty;
     }
@@ -17626,7 +17626,7 @@ window.BOUNDARY_DATA = {
     }
     // #12: Town Guard shop handler
     else if(type === 'town_guard') {
-      const kills = QuestEngine && QuestEngine._counters ? (QuestEngine._counters['kill_dungeon'] || 0) : 0;
+      const kills = QuestEngine && QuestEngine._counters ? (QuestEngine._counters['kill_dungeon'] ?? 0) : 0;
       const hasDiscount = player.guardTalked && kills >= 10;
       html += `<h2>💂 Town Guard</h2>
         ${npcFaceHTML('', '💂', 'town_guard')}`;
@@ -17652,7 +17652,7 @@ window.BOUNDARY_DATA = {
     else if(type === 'dennis') {
       // #1: Dennis refuses service if player killed too many animals and hasn't paid
       if(player.dennisAnimalFurious) {
-        const debt = player.dennisAnimalDebt || 0;
+        const debt = player.dennisAnimalDebt ?? 0;
         html += `<h2>👨‍🌾 Dennis</h2>
           ${npcFaceHTML('npc_dennis', '👨‍🌾', 'dennis')}
           <p><em>"My ANIMALS, you murderous weirdo! I'm not talking to you until you pay me ${debt}g for what you did!"</em></p>`;
@@ -17662,7 +17662,7 @@ window.BOUNDARY_DATA = {
           html += `<p style="color:var(--error); font-size:11px;">You only have ${player.gp}g. Come back with more.</p>`;
         }
         setTimeout(() => playVoiceClip('voice_dennis_animals_furious'), 30);
-      } else if((player.townAnimalKills || 0) >= 2) {
+      } else if((player.townAnimalKills ?? 0) >= 2) {
         html += `<h2>👨‍🌾 Dennis</h2>
           ${npcFaceHTML('npc_dennis', '👨‍🌾', 'dennis')}
           <p><em>"Something strange has been happening to my animals lately... You wouldn't know anything about that, would you?"</em></p>`;
@@ -17683,7 +17683,7 @@ window.BOUNDARY_DATA = {
     // E.HAMLET: Rosencrantz & Guildenstern — multi-stage quest dialog
     else if(type === 'rosencrantz_guildenstern') {
       Sound.gibberish();
-      const step = player._rosenGuildenStep || 0;
+      const step = player._rosenGuildenStep ?? 0;
       const delivered = player._rosenLetterDelivered || false;
       if(delivered) {
         html += `<h2>👬 Rosencrantz & Guildenstern</h2>
@@ -17735,7 +17735,7 @@ window.BOUNDARY_DATA = {
     // E8: Weapon Master — Training Dummy, War Stories, Weapon Appraisal
     else if(type === 'fighting_master') {
       Sound.gibberish();
-      window._wmStoryIdx = window._wmStoryIdx || 0;
+      window._wmStoryIdx = window._wmStoryIdx ?? 0;
       const wmLine = player.level >= 5
         ? `"You fight like a true Hero now. The guild recognizes your skill."`
         : `"Come back when you've reached level 5, recruit. You're only level ${player.level}."`;
@@ -18030,7 +18030,7 @@ window.BOUNDARY_DATA = {
         html = '<div style="display:flex; flex-direction:column; gap:4px;">';
         items.forEach(i => {
           html += `<div class="shop-item" style="margin:0; padding:4px;"><span>${i.icon} ${i.name} (<span style="color:var(--warning)">${i.cost}g</span>)</span>
-            <button onclick="buy('${i.icon}', ${i.cost}, '${type}', ${i.qty || 1})">Buy</button></div>`;
+            <button onclick="buy('${i.icon}', ${i.cost}, '${type}', ${i.qty ?? 1})">Buy</button></div>`;
         });
         html += '</div>';
       }
@@ -18161,9 +18161,9 @@ window.BOUNDARY_DATA = {
     let it = stolenItems[idx];
     if(!it) return;
     let def = ITEM_DEF[it.icon];
-    let cost = def ? (def.maxGP || 100) * 2 : 200;
+    let cost = def ? (def.maxGP ?? 100) * 2 : 200;
     if(player.gp < cost) return showInsufficientFunds('fence', cost, def?.name || 'that item');
-    if(!addPurchasedItem(it.icon, it.qty || 1)) { logMsg("Inventory full!"); return; }
+    if(!addPurchasedItem(it.icon, it.qty ?? 1)) { logMsg("Inventory full!"); return; }
     changeGold(-cost);
     stolenItems.splice(idx, 1);
     openStore('fence');
@@ -18612,7 +18612,7 @@ window.BOUNDARY_DATA = {
         changeGold(-10);
         logMsg(`<span style='color:var(--success)'>${ItemDef.iconOf('wateredDownBeer')} You buy a grog for 10g. It tastes like... well, it tastes like grog.</span>`);
         logMsg("<span style='color:#88FF88'>The pirates sing: 'Yo ho yo ho, a pirate's life for me!'</span>");
-        player.grogTurns = (player.grogTurns || 0) + 1;
+        player.grogTurns = (player.grogTurns ?? 0) + 1;
         if(typeof QuestEngine !== 'undefined') QuestEngine.emit('custom', { id: 'bought_grog', grogs_bought: player.grogTurns });
         if(player.grogTurns >= 3) {
           logMsg("<span style='color:#FFD700'>You've had enough grog. The pirates consider you one of them now!</span>");
@@ -18674,7 +18674,7 @@ window.BOUNDARY_DATA = {
     let m = document.getElementById('modal-content');
     
     if(inTarget) {
-      player.astroScore = (player.astroScore || 0) + 1;
+      player.astroScore = (player.astroScore ?? 0) + 1;
       Sound.rocketLaunch();
       
       if(player.astroScore >= 5) {
@@ -18911,7 +18911,7 @@ window.BOUNDARY_DATA = {
         </div>`;
     }
     else if(step === 'why_here') {
-      let line = WHY_HERE_LINES[player._grokWhyHereIdx = ((player._grokWhyHereIdx || 0) + 1) % WHY_HERE_LINES.length];
+      let line = WHY_HERE_LINES[player._grokWhyHereIdx = ((player._grokWhyHereIdx ?? 0) + 1) % WHY_HERE_LINES.length];
       m.innerHTML = `<h2>🧌 On the Subject of Residency</h2>
         <p style="color:#ccc; font-size:13px; margin:8px 0;">"${line}"</p>
         <p style="color:#888; font-size:11px; font-style:italic;">He gestures vaguely at the dark room as though it is entirely self-explanatory.</p>
@@ -19085,7 +19085,7 @@ window.BOUNDARY_DATA = {
 
   // #1: Dennis animal compensation
   window.compensateDennisAnimals = () => {
-    const debt = player.dennisAnimalDebt || 0;
+    const debt = player.dennisAnimalDebt ?? 0;
     if(player.gp < debt) { logMsg("Not enough gold."); return; }
     changeGold(-debt);
     player.dennisAnimalDebt = 0;
@@ -19105,7 +19105,7 @@ window.BOUNDARY_DATA = {
   window.weaponMasterTrain = function() {
     if(player.gp < 10) { logMsg("Not enough gold."); return; }
     window.changeGold(-10);
-    player.trainingBonus = (player.trainingBonus || 0) + 1;
+    player.trainingBonus = (player.trainingBonus ?? 0) + 1;
     logMsg("<span style='color:#4af'>The Weapon Master puts you through brutal drills. You feel sharper. (+1 to your next attack roll)</span>");
     if(typeof Sound !== 'undefined') Sound.playTone(440, 'square', 0.2, 0.05, 300);
     openShop('fighting_master');
@@ -19122,12 +19122,12 @@ window.BOUNDARY_DATA = {
     }
     const def = ITEM_DEF[lh];
     if(!def) { openShop('fighting_master'); return; }
-    logMsg(`<span style='color:#fd0'>The Weapon Master examines your ${def.name}: Base damage ${def.baseDmg || 0}, ${def.ranged ? 'Ranged, ' : ''}${def.magicScaling ? 'Magic scaling: '+def.magicScaling : 'no magic scaling'}. "${(def.baseDmg || 0) >= 8 ? 'Now THAT is a weapon.' : (def.baseDmg || 0) >= 4 ? 'Serviceable.' : 'You call that a weapon?'}"</span>`);
+    logMsg(`<span style='color:#fd0'>The Weapon Master examines your ${def.name}: Base damage ${def.baseDmg ?? 0}, ${def.ranged ? 'Ranged, ' : ''}${def.magicScaling ? 'Magic scaling: '+def.magicScaling : 'no magic scaling'}. "${(def.baseDmg ?? 0) >= 8 ? 'Now THAT is a weapon.' : (def.baseDmg ?? 0) >= 4 ? 'Serviceable.' : 'You call that a weapon?'}"</span>`);
     openShop('fighting_master');
   };
 
   window.weaponMasterStory = function() {
-    window._wmStoryIdx = window._wmStoryIdx || 0;
+    window._wmStoryIdx = window._wmStoryIdx ?? 0;
     logMsg(`<span style='color:#c8a86b'>"${_WAR_STORIES_DATA[window._wmStoryIdx % _WAR_STORIES_DATA.length]}"</span>`);
     window._wmStoryIdx++;
     openShop('fighting_master');
@@ -19151,7 +19151,7 @@ window.BOUNDARY_DATA = {
 
 // ═══ END: shop.js ═══
 
-// ═══ BEGIN: webgl_fx.js (src/webgl_fx.js, modified: 2026-05-13 10:07) ═══
+// ═══ BEGIN: webgl_fx.js (src/webgl_fx.js, modified: 2026-05-13 13:10) ═══
   // Lightweight WebGL-backed effects manager.
   // If WebGL cannot initialize, methods return false and callers keep their old paths.
   window.WebGLFX = (function() {
@@ -19350,8 +19350,8 @@ window.BOUNDARY_DATA = {
       if(!ensureStarted()) return null;
       const gl = state.gl;
       const glCanvas = state.glCanvas;
-      const w = Math.max(16, Math.round(width || 128));
-      const h = Math.max(16, Math.round(height || 128));
+      const w = Math.max(16, Math.round(width ?? 128));
+      const h = Math.max(16, Math.round(height ?? 128));
       if(glCanvas.width !== w || glCanvas.height !== h) {
         glCanvas.width = w;
         glCanvas.height = h;
@@ -19401,7 +19401,7 @@ window.BOUNDARY_DATA = {
       orb.pulse = clamp(orb.pulse + amount, 0, 4.5);
       // Also energise NS fluid orb
       if(state.nsOrbs && state.nsOrbs.orbs[kind]) {
-        state.nsOrbs.orbs[kind].energy = Math.min(1.0, (state.nsOrbs.orbs[kind].energy||0) + amount * 0.4);
+        state.nsOrbs.orbs[kind].energy = Math.min(1.0, (state.nsOrbs.orbs[kind].energy ?? 0) + amount * 0.4);
       }
       orb.impacts.unshift({
         x: clamp(centerX == null ? 0.5 : centerX, 0.08, 0.92),
@@ -20157,8 +20157,8 @@ window.BOUNDARY_DATA = {
       if(!targetCtx || !effect) return false;
       const start = toScreen(effect.x1, effect.y1, playerX, playerY, viewCx, viewCy, tileSize);
       const end   = toScreen(effect.x2, effect.y2, playerX, playerY, viewCx, viewCy, tileSize);
-      const life  = clamp(effect.life || 0.6, 0, 1.5);
-      const power = effect.power || 1;
+      const life  = clamp(effect.life ?? 0.6, 0, 1.5);
+      const power = effect.power ?? 1;
 
       // Build fractal lightning segments via midpoint displacement
       // Re-seed each frame for flickering
@@ -20453,7 +20453,7 @@ window.BOUNDARY_DATA = {
       const worldY = effect.y != null ? effect.y : effect.y2;
       const screen = toScreen(worldX, worldY, playerX, playerY, viewCx, viewCy, tileSize);
       const isBurst = effect.kind === 'fireballBurst';
-      const power = effect.power || 1;
+      const power = effect.power ?? 1;
       const drawSize = isBurst
         ? Math.ceil(tileSize * (1.15 + power * 0.35) * 2)
         : Math.ceil(tileSize * (0.65 + power * 0.25) * 2);
@@ -20641,7 +20641,7 @@ window.BOUNDARY_DATA = {
       // E16: Active bombs need per-frame animation for pulsing glow and countdown
       if(window._activeBombs && window._activeBombs.length > 0) return true;
       if(typeof theMap !== 'undefined' && typeof TILES !== 'undefined') {
-        for(let y = 0; y < (theMap.length || 0); y++)
+        for(let y = 0; y < (theMap.length ?? 0); y++)
           for(let x = 0; x < ((theMap[y] || []).length || 0); x++)
             if(theMap[y][x] === TILES.PORTAL) return true;
       }
@@ -21130,7 +21130,7 @@ window.BOUNDARY_DATA = {
 
 // ═══ END: webgl_fx.js ═══
 
-// ═══ BEGIN: render.js (src/render.js, modified: 2026-05-13 12:55) ═══
+// ═══ BEGIN: render.js (src/render.js, modified: 2026-05-13 13:10) ═══
   /*
   RENDER MODULE – CANVAS GRAPHICS, FIELD OF VIEW, AND VISUAL EFFECTS
   ==================================================================
@@ -21200,7 +21200,7 @@ window.BOUNDARY_DATA = {
   function grassHeight(x, y) {
     ensureGrassHeightMap();
     if (!_grassHeightMap[y]) return 0.5;
-    return _grassHeightMap[y][x] || 0;
+    return _grassHeightMap[y][x] ?? 0;
   }
 
   // ── E23: Tile Edge Smoothing ──────────────────────────────────────────────
@@ -22093,7 +22093,7 @@ window.BOUNDARY_DATA = {
         const vx = a.x - player.x + cx;
         const vy = a.y - player.y + cy;
         if(vx >= -1 && vx <= VIEW_COLS && vy >= -1 && vy <= VIEW_ROWS && visible[a.y] && visible[a.y][a.x]) {
-          const scale = a.scale || 3;
+          const scale = a.scale ?? 3;
           const fontSize = Math.floor(TILE_SIZE * scale * 0.8);
           ctx.font = `${fontSize}px sans-serif`;
           ctx.textAlign = 'center';
@@ -22327,7 +22327,7 @@ window.BOUNDARY_DATA = {
       if(now - _avatarLastTick > 120) { _avatarFrame = (_avatarFrame + 1) % 2; _avatarLastTick = now; }
       emoji = _avatarFrame === 0 ? '🏃' : '🚶';
     } else {
-      let timeSinceMove = now - (window._lastPlayerMoveTime || 0);
+      let timeSinceMove = now - (window._lastPlayerMoveTime ?? 0);
       if(timeSinceMove < 400) {
         if(now - _avatarLastTick > 200) { _avatarFrame = (_avatarFrame + 1) % 2; _avatarLastTick = now; }
         emoji = _avatarFrame === 0 ? '🚶' : '🧍';
@@ -22413,7 +22413,7 @@ function drawMinimap() {
   }
 
   // #12: Zoom level (tile radius) — controlled by +/- buttons in UI
-  const radiusTiles = window._minimapZoom || 8;
+  const radiusTiles = window._minimapZoom ?? 8;
   const cells = radiusTiles * 2 + 1;
   const scale = MW / cells;
   const centerX = MW / 2;
@@ -22584,7 +22584,7 @@ window.mapSweepTransition = function(direction, callback) {
 
 // ═══ END: render.js ═══
 
-// ═══ BEGIN: input.js (src/input.js, modified: 2026-05-13 12:56) ═══
+// ═══ BEGIN: input.js (src/input.js, modified: 2026-05-13 13:10) ═══
   /*
   INPUT MODULE – KEYBOARD, MOUSE, AND GAME LOOP MANAGEMENT
   =========================================================
@@ -22737,7 +22737,7 @@ const hBtn = document.getElementById('hamburgerBtn');
     }
 
     // Sight distance
-    chips.push(chip('#033', `👁 ${C.SIGHT_RADIUS || 6}`));
+    chips.push(chip('#033', `👁 ${C.SIGHT_RADIUS ?? 6}`));
 
     // FoW toggle
     const fowOn = typeof debugFlags !== 'undefined' && !debugFlags.revealMap;
@@ -22913,7 +22913,7 @@ const hBtn = document.getElementById('hamburgerBtn');
       const out = window._dpsOrigApplyDamageToEnemy(dmg, enemy);
       if(window._dpsSession && window._dpsSession.active) {
         const dealt = Number.isFinite(out) ? out : dmg;
-        window._dpsSession.total += Math.max(0, dealt || 0);
+        window._dpsSession.total += Math.max(0, dealt ?? 0);
         window._dpsSession.hits += 1;
       }
       return out;
@@ -23038,7 +23038,7 @@ const hBtn = document.getElementById('hamburgerBtn');
           debugLog(`Inventory: ${nonEmpty.length} items`);
           nonEmpty.forEach((item) => {
             let name = ITEM_DEF[item.icon] ? ITEM_DEF[item.icon].name : item.icon;
-            debugLog(`  ${item.icon} ${name} x${item.qty || 1}`);
+            debugLog(`  ${item.icon} ${name} x${item.qty ?? 1}`);
           });
           break;
         case '/clear': {
@@ -23185,7 +23185,7 @@ const hBtn = document.getElementById('hamburgerBtn');
             window.debugFlags = window.debugFlags || {};
             debugFlags.godMode = true;
             debugFlags.fullLight = true;
-            player.speedMod = Math.max(player.speedMod || 1, 1.5);
+            player.speedMod = Math.max(player.speedMod ?? 1, 1.5);
             debugLog('GM mode enabled.');
           } else if(sub === 'off') {
             window.debugFlags = window.debugFlags || {};
@@ -23573,7 +23573,7 @@ const hBtn = document.getElementById('hamburgerBtn');
             const turns = Math.max(0, parseInt(args[2], 10) || 0);
             if(isNaN(idx) || !player.macros[idx]) { debugLog('Usage: /macro setcd <index> <turns>'); break; }
             player.macros[idx].cooldownTurns = turns;
-            player.macros[idx]._cdRemaining = Math.min(player.macros[idx]._cdRemaining || 0, turns);
+            player.macros[idx]._cdRemaining = Math.min(player.macros[idx]._cdRemaining ?? 0, turns);
             debugLog(`Macro ${idx} cooldown set to ${turns} turn(s).`);
           } else if(subcmd === 'clear') {
             const which = args[1];
@@ -23797,7 +23797,7 @@ const hBtn = document.getElementById('hamburgerBtn');
   consolePullTab.addEventListener('mousedown', (e) => {
     _tabDragging = true;
     _tabDragStartY = e.clientY;
-    _tabDragStartH = debugOverlay.offsetHeight || 150;
+    _tabDragStartH = debugOverlay.offsetHeight ?? 150;
     e.preventDefault();
   });
   document.addEventListener('mousemove', (e) => {
@@ -24104,8 +24104,8 @@ const hBtn = document.getElementById('hamburgerBtn');
 
       // Update and draw stars
       particles = particles.filter(p => {
-        p.x += (p.vx || 0);
-        p.y += (p.vy || 0);
+        p.x += (p.vx ?? 0);
+        p.y += (p.vy ?? 0);
         p.twinkle += 0.03 + (p.size * 0.005);
         p.life = 0.35 + (Math.sin(p.twinkle) + 1) * 0.3;
         if(p.y > h + 8) { p.y = -8; p.x = Math.random() * w; }
@@ -24351,7 +24351,7 @@ const hBtn = document.getElementById('hamburgerBtn');
             }
             return;
         }
-        if((state || 0) === 0) {
+        if((state ?? 0) === 0) {
           // Check if player has a key
           let hasKey = inventory.some(i => i && i.icon === '🗝️') || (player.inventory && player.inventory.some(i => i && i.icon === '🗝️'));
           if(hasKey) {

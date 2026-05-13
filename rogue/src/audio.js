@@ -530,8 +530,8 @@
           const noteGain = Sound.ctx.createGain();
           const t2 = Sound.ctx.currentTime;
           carrier.frequency.value = note.f;
-          modulator.frequency.value = note.f * (note.r || 2);
-          modGain.gain.value = note.f * (note.i || 5);
+          modulator.frequency.value = note.f * (note.r ?? 2);
+          modGain.gain.value = note.f * (note.i ?? 5);
           modulator.connect(modGain);
           modGain.connect(carrier.frequency);
           carrier.connect(noteGain);

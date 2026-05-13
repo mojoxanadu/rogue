@@ -334,7 +334,7 @@
       // This is a SOFT GATE — it doesn't block progress, it just gives
       // extra information. Hard gates (you MUST have INT 15 to proceed)
       // should be implemented as requirements on quest triggers instead.
-      if (stageDef.intHint && player.stats.int >= (stageDef.intHintThreshold || 12)) {
+      if (stageDef.intHint && player.stats.int >= (stageDef.intHintThreshold ?? 12)) {
         logMsg(`<span style='color:#88CCFF'>💡 [Insight] ${stageDef.intHint}</span>`);
 
         // If there's also a modal hint (for particularly important insights),
@@ -374,7 +374,7 @@
         this to check progress without mutating anything. For example:
           if (QuestEngine.check('safe_cracking') >= 30) { showSafeOption(); }
       */
-      return this._questState[questId]?.current || 0;
+      return this._questState[questId]?.current ?? 0;
     },
 
     hasVisited(questId, stageNum) {
@@ -426,7 +426,7 @@
       }
 
       this._achievements[achieveId] = true;
-      this._achievePoints += (def.points || 10);
+      this._achievePoints += (def.points ?? 10);
 
       logMsg(`<span style="color:#FFD700">🏆 ACHIEVEMENT UNLOCKED: ${def.icon || '🏆'} ${def.name}! (+${def.points || 10}pts)</span>`);
       if (typeof Sound !== 'undefined' && Sound.achieve) Sound.achieve();
@@ -510,7 +510,7 @@
 
         case 'questProgress':
           // Has the player reached at least this stage?
-          return this.check(req.questId) >= (req.stage || 0);
+          return this.check(req.questId) >= (req.stage ?? 0);
 
         case 'questExact':
           // Has the player visited this SPECIFIC stage? (for branching)
@@ -524,32 +524,32 @@
 
         case 'inventoryHas':
           // Player has at least qty of an item (does NOT consume it)
-          return inventory.some(i => i && i.icon === req.item && (i.qty || 1) >= (req.qty || 1));
+          return inventory.some(i => i && i.icon === req.item && (i.qty ?? 1) >= (req.qty ?? 1));
 
         case 'inventoryRemove':
           // Like inventoryHas, but CONSUMES the item if the check passes.
           // WARNING: This has a side effect! Only use in reward/action
           // contexts, never in "should I show this option?" UI checks.
-          return this._tryRemoveItem(req.item, req.qty || 1);
+          return this._tryRemoveItem(req.item, req.qty ?? 1);
 
         case 'killedMonster':
-          return (this._counters[`kill_${req.monsterType}`] || 0) >= (req.count || 1);
+          return (this._counters[`kill_${req.monsterType}`] ?? 0) >= (req.count ?? 1);
 
         case 'playerLevel':
-          return player.level >= (req.min || 1);
+          return player.level >= (req.min ?? 1);
 
         case 'playerStat':
           // Check a specific stat (str, dex, int, con, wis)
-          return (player.stats[req.stat] || 0) >= (req.min || 1);
+          return (player.stats[req.stat] ?? 0) >= (req.min ?? 1);
 
         case 'achievementEarned':
           return this.hasAchievement(req.id);
 
         case 'achievementCount':
-          return this.getAchievementCount() >= (req.min || 0);
+          return this.getAchievementCount() >= (req.min ?? 0);
 
         case 'gold':
-          return player.gp >= (req.min || 0);
+          return player.gp >= (req.min ?? 0);
 
         case 'location':
           // Check if player is on a specific floor or scene
@@ -566,7 +566,7 @@
 
         case 'counter':
           // Check a named counter
-          return (this._counters[req.counter] || 0) >= (req.min || 1);
+          return (this._counters[req.counter] ?? 0) >= (req.min ?? 1);
 
         // ── INT-GATED REQUIREMENT ──
         // LESSON: This requirement type is specifically for INT-gated
@@ -574,7 +574,7 @@
         // choices that only appear if the player is smart enough to
         // notice them. This rewards character build diversity.
         case 'intCheck':
-          return player.stats.int >= (req.min || 10);
+          return player.stats.int >= (req.min ?? 10);
 
         default:
           console.warn(`[QuestEngine] Unknown requirement type: "${req.type}"`);
@@ -614,7 +614,7 @@
         case 'giveItem': {
           let emptySlot = inventory.findIndex(i => i === null);
           if (emptySlot !== -1) {
-            inventory[emptySlot] = { icon: reward.item, qty: reward.qty || 1 };
+            inventory[emptySlot] = { icon: reward.item, qty: reward.qty ?? 1 };
             let def = ITEM_DEF[reward.item];
             if (def) logMsg(`<span style='color:var(--success)'>Received: ${def.name}</span>`);
             if (typeof renderQuickslots === 'function') renderQuickslots();
@@ -626,11 +626,11 @@
         }
 
         case 'giveGold':
-          changeGold(reward.amount || 0, { floatText: (reward.amount || 0) > 0, x: player.x, y: player.y, size: 16 });
+          changeGold(reward.amount ?? 0, { floatText: (reward.amount ?? 0) > 0, x: player.x, y: player.y, size: 16 });
           break;
 
         case 'giveXP':
-          player.xp += (reward.amount || 0);
+          player.xp += (reward.amount ?? 0);
           checkLevelUp();
           break;
 
@@ -643,11 +643,11 @@
           break;
 
         case 'setCounter':
-          this._counters[reward.counter] = reward.value || 0;
+          this._counters[reward.counter] = reward.value ?? 0;
           break;
 
         case 'incrementCounter':
-          this._counters[reward.counter] = (this._counters[reward.counter] || 0) + (reward.amount || 1);
+          this._counters[reward.counter] = (this._counters[reward.counter] ?? 0) + (reward.amount ?? 1);
           break;
 
         // ── CALLBACK REWARD ──
@@ -782,25 +782,25 @@
       // Auto-increment counters based on event type
       if (eventType === 'kill' && data.type) {
         const key = `kill_${data.type}`;
-        this._counters[key] = (this._counters[key] || 0) + 1;
+        this._counters[key] = (this._counters[key] ?? 0) + 1;
       }
       if (eventType === 'shop_visit' && data.type) {
         const key = `shop_visit_${data.type}`;
-        this._counters[key] = (this._counters[key] || 0) + 1;
+        this._counters[key] = (this._counters[key] ?? 0) + 1;
       }
       if (eventType === 'npc_talk' && data.type) {
         this._npcInteractions[data.type] = true;
         const key = `npc_talk_${data.type}`;
-        this._counters[key] = (this._counters[key] || 0) + 1;
+        this._counters[key] = (this._counters[key] ?? 0) + 1;
       }
       if (eventType === 'item_use' && data.item) {
         const key = `item_use_${data.item}`;
-        this._counters[key] = (this._counters[key] || 0) + 1;
+        this._counters[key] = (this._counters[key] ?? 0) + 1;
       }
     },
 
     getCounter(name) {
-      return this._counters[name] || 0;
+      return this._counters[name] ?? 0;
     },
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -857,7 +857,7 @@
       if (!saved) return;
       this._questState = saved.questState || {};
       this._achievements = saved.achievements || {};
-      this._achievePoints = saved.achievePoints || 0;
+      this._achievePoints = saved.achievePoints ?? 0;
       this._counters = saved.counters || {};
       this._flags = saved.flags || {};
       this._npcInteractions = saved.npcInteractions || {};
@@ -1049,7 +1049,7 @@
       let found = 0;
       for (let i = 0; i < inventory.length; i++) {
         if (inventory[i] && inventory[i].icon === itemIcon) {
-          found += (inventory[i].qty || 1);
+          found += (inventory[i].qty ?? 1);
         }
       }
       if (found < qty) return false;
@@ -1057,7 +1057,7 @@
       let remaining = qty;
       for (let i = 0; i < inventory.length && remaining > 0; i++) {
         if (inventory[i] && inventory[i].icon === itemIcon) {
-          let has = inventory[i].qty || 1;
+          let has = inventory[i].qty ?? 1;
           if (has <= remaining) {
             remaining -= has;
             inventory[i] = null;
