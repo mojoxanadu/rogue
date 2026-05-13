@@ -13,7 +13,7 @@ include config
 
 SRC       := $(wildcard src/*.html) $(wildcard src/*.js)
 RAW       := $(shell find raw -type f 2>/dev/null)
-RELEASE   := roguelike_build$(BUILD).html
+RELEASE   := roguelike.html
 SNAPSHOT  ?= /home/projects/roguelike/roguelike_build$(BUILD).html
 
 PY_SHARED := config.py build_files.py
@@ -42,4 +42,4 @@ check: $(RELEASE) check.py
 	python3 check.py $(RELEASE) $(SNAPSHOT)
 
 clean:
-	rm -f dev_build.html assets.json roguelike_build*.html raw/title_rendered.png
+	rm -f dev_build.html assets.json roguelike.html roguelike_build*.html raw/title_rendered.png
