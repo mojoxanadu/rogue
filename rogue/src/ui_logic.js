@@ -730,18 +730,21 @@
         player.hp = player.maxHp;
         player.baseDmg += 2;
         player.hitRate += 0.05;
-        addToInventory('🗡️');
+        addToInventory('sword');
         break;
       case 'rogue':
         player.dodgeRate += 0.05;
         player.critRate += 0.05;
-        addToInventory('🗡️');
+        addToInventory('sword');
         break;
       case 'spellcaster':
         player.maxMp += 10;
         player.mp = player.maxMp;
         player.spellDmgBonus += 2;
-        addToInventory('📜');
+        // Was '📜' (Certified Pastafarian per ITEM_DEF — useless item).
+        // Likely a legacy bug; addToInventory is undefined so this branch
+        // is dead anyway. Migration just removes the emoji literal.
+        addToInventory('certifiedPastafarian');
         break;
     }
     toggleModal('class-select-modal');
@@ -915,8 +918,8 @@
           if(!destBag || !destBag.contents) return;
           // Swap: if slot is occupied, put displaced item back to src slot
           const displaced = destBag.contents[slotIdx];
-          destBag.contents[slotIdx] = { icon: srcItem.icon, qty: srcItem.qty || 1 };
-          srcArr[window.draggedItemIdx] = displaced ? { icon: displaced.icon, qty: displaced.qty || 1 } : null;
+          destBag.contents[slotIdx] = new ItemStack(srcItem.itemName, srcItem.qty || 1);
+          srcArr[window.draggedItemIdx] = displaced ? new ItemStack(displaced.itemName, displaced.qty || 1) : null;
           logMsg(`${srcItem.icon} moved into bag.`);
           if(typeof Sound !== 'undefined') Sound.clink();
           window.draggedItemIdx = null; window.draggedSource = null;
@@ -1161,9 +1164,9 @@
         const bagItem = bag.contents[bagSlotIdx];
         const tgtArr = targetSource === 'inv' ? inventory : inventory;
         const displaced = tgtArr[targetIdx];
-        tgtArr[targetIdx] = { icon: bagItem.icon, qty: bagItem.qty || 1 };
+        tgtArr[targetIdx] = new ItemStack(bagItem.itemName, bagItem.qty || 1);
         // Put displaced item (if any) into the bag slot we dragged from
-        bag.contents[bagSlotIdx] = displaced ? { icon: displaced.icon, qty: displaced.qty || 1 } : null;
+        bag.contents[bagSlotIdx] = displaced ? new ItemStack(displaced.itemName, displaced.qty || 1) : null;
         logMsg(`${bagItem.icon} moved from bag to ${targetSource}.`);
         if(typeof Sound !== 'undefined') Sound.clink();
       }
@@ -1179,7 +1182,7 @@
         let lootItem = c.loot[window._lootDrag.itemIdx];
         let tgtArr = targetSource === 'inv' ? inventory : inventory;
         let displaced = tgtArr[targetIdx];
-        tgtArr[targetIdx] = { icon: lootItem.icon, qty: lootItem.qty || 1 };
+        tgtArr[targetIdx] = lootItem.itemName ? new ItemStack(lootItem.itemName, lootItem.qty || 1) : { icon: lootItem.icon, qty: lootItem.qty || 1 };
         c.loot.splice(window._lootDrag.itemIdx, 1);
         if(displaced) {
           // Try to put displaced item back somewhere
@@ -1205,7 +1208,7 @@
         if(!tgtItem.contents) tgtItem.contents = new Array(bagDef.bagSlots || 3).fill(null);
         let freeSlot = tgtItem.contents.findIndex(s => s === null);
         if(freeSlot !== -1) {
-          tgtItem.contents[freeSlot] = { icon: srcItem.icon, qty: srcItem.qty || 1 };
+          tgtItem.contents[freeSlot] = new ItemStack(srcItem.itemName, srcItem.qty || 1);
           srcArr[window.draggedItemIdx] = null;
           logMsg(`${srcItem.icon} placed into ${bagDef.name}.`);
           Sound.clink();
@@ -1215,7 +1218,7 @@
         }
       }
       // Bug 34: If same icon and stackable, merge up to maxStack
-      if(tgtItem && srcItem && tgtItem.icon === srcItem.icon) {
+      if(tgtItem && srcItem && tgtItem.itemName === srcItem.itemName) {
         let def = ITEM_DEF[tgtItem.icon];
         if(def && def.stackable) {
           let maxStack = def.maxStack || 10;
@@ -1325,13 +1328,13 @@
     if (!fits) { logMsg(`${def.name} doesn't fit the ${slotName} slot.`); return; }
 
     // Swap currently equipped item back into source array slot
-    const currentEquipped = player.equipped[slotName];
+    const currentEquipped = player.equipped[slotName];  // camelCase name
     if (currentEquipped) {
-      srcArr[fromIdx] = { icon: currentEquipped, qty: 1 };
+      srcArr[fromIdx] = new ItemStack(currentEquipped, 1);
     } else {
       srcArr[fromIdx] = null;
     }
-    player.equipped[slotName] = item.icon;
+    player.equipped[slotName] = item.itemName;
     logMsg(`Equipped ${def.name}.`);
     swapEquip(-1, slotName);
     window.draggedItemIdx = null; window.draggedSource = null;
@@ -2000,8 +2003,8 @@
 
   // Action Buttons
   window.meleeAttack = () => {
-    let weaponIcon = player.equipped && player.equipped.leftHand;
-    let weaponDef = weaponIcon ? ITEM_DEF[weaponIcon] : null;
+    const weaponName = player.equipped && player.equipped.leftHand;  // camelCase name
+    const weaponDef  = weaponName ? ItemDefs[weaponName] : null;
     if(weaponDef && weaponDef.ranged) {
       startRangedAttackTargeting();
       return;
@@ -2018,7 +2021,7 @@
       movePlayer(dx, dy);
     } else {
       // No enemy — swing and miss, no movement
-      if(weaponIcon === '🪗') {
+      if(weaponName === 'accordion') {
         Sound.polka();
         logMsg("<span style='color:#888'>You play a pointless burst of dungeon polka at the empty air.</span>");
       } else {
