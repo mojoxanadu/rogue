@@ -152,7 +152,7 @@
       } else if(player.statusEffects && player.statusEffects.diarrhea) {
         statusUI.style.display = 'block';
         const d = player.statusEffects.diarrhea;
-        const turns = Math.max(0, Math.floor(d.turnsRemaining || 0));
+        const turns = Math.max(0, Math.floor(d.turnsRemaining ?? 0));
         statusUI.innerText = `DIARRHEA${turns ? ` (${turns})` : ''}`;
         statusUI.className = "chip danger";
         player._exhaustedWarnFired = false;
@@ -167,7 +167,7 @@
       }
     }
 
-    const totalPts = (player.statPoints || 0) + (player.talentPoints || 0);
+    const totalPts = (player.statPoints ?? 0) + (player.talentPoints ?? 0);
     const badge = document.getElementById('stat-badge');
     if(badge) {
        badge.innerText = totalPts;
@@ -896,7 +896,7 @@
 
     panel.style.display = 'block';
     header.firstElementChild.textContent = `${bag.icon} ${bagDef.name}`;
-    subtitle.textContent = `${bagDef.bagSlots || 3} slots`;
+    subtitle.textContent = `${bagDef.bagSlots ?? 3} slots`;
     grid.innerHTML = '';
 
     const cols = Math.min(3, Math.max(1, Math.ceil(Math.sqrt((bag.contents || []).length || 1))));
@@ -918,8 +918,8 @@
           if(!destBag || !destBag.contents) return;
           // Swap: if slot is occupied, put displaced item back to src slot
           const displaced = destBag.contents[slotIdx];
-          destBag.contents[slotIdx] = new ItemStack(srcItem.itemName, srcItem.qty || 1);
-          srcArr[window.draggedItemIdx] = displaced ? new ItemStack(displaced.itemName, displaced.qty || 1) : null;
+          destBag.contents[slotIdx] = new ItemStack(srcItem.itemName, srcItem.qty ?? 1);
+          srcArr[window.draggedItemIdx] = displaced ? new ItemStack(displaced.itemName, displaced.qty ?? 1) : null;
           logMsg(`${srcItem.icon} moved into bag.`);
           if(typeof Sound !== 'undefined') Sound.clink();
           window.draggedItemIdx = null; window.draggedSource = null;
@@ -1164,9 +1164,9 @@
         const bagItem = bag.contents[bagSlotIdx];
         const tgtArr = targetSource === 'inv' ? inventory : inventory;
         const displaced = tgtArr[targetIdx];
-        tgtArr[targetIdx] = new ItemStack(bagItem.itemName, bagItem.qty || 1);
+        tgtArr[targetIdx] = new ItemStack(bagItem.itemName, bagItem.qty ?? 1);
         // Put displaced item (if any) into the bag slot we dragged from
-        bag.contents[bagSlotIdx] = displaced ? new ItemStack(displaced.itemName, displaced.qty || 1) : null;
+        bag.contents[bagSlotIdx] = displaced ? new ItemStack(displaced.itemName, displaced.qty ?? 1) : null;
         logMsg(`${bagItem.icon} moved from bag to ${targetSource}.`);
         if(typeof Sound !== 'undefined') Sound.clink();
       }
@@ -1182,7 +1182,7 @@
         let lootItem = c.loot[window._lootDrag.itemIdx];
         let tgtArr = targetSource === 'inv' ? inventory : inventory;
         let displaced = tgtArr[targetIdx];
-        tgtArr[targetIdx] = lootItem.itemName ? new ItemStack(lootItem.itemName, lootItem.qty || 1) : { icon: lootItem.icon, qty: lootItem.qty || 1 };
+        tgtArr[targetIdx] = lootItem.itemName ? new ItemStack(lootItem.itemName, lootItem.qty ?? 1) : { icon: lootItem.icon, qty: lootItem.qty ?? 1 };
         c.loot.splice(window._lootDrag.itemIdx, 1);
         if(displaced) {
           // Try to put displaced item back somewhere
@@ -1205,10 +1205,10 @@
       // Bug 33: If target slot has a bag, try to add dragged item into the bag
       if(tgtItem && srcItem && ITEM_DEF[tgtItem.icon] && ITEM_DEF[tgtItem.icon].type === 'bag') {
         let bagDef = ITEM_DEF[tgtItem.icon];
-        if(!tgtItem.contents) tgtItem.contents = new Array(bagDef.bagSlots || 3).fill(null);
+        if(!tgtItem.contents) tgtItem.contents = new Array(bagDef.bagSlots ?? 3).fill(null);
         let freeSlot = tgtItem.contents.findIndex(s => s === null);
         if(freeSlot !== -1) {
-          tgtItem.contents[freeSlot] = new ItemStack(srcItem.itemName, srcItem.qty || 1);
+          tgtItem.contents[freeSlot] = new ItemStack(srcItem.itemName, srcItem.qty ?? 1);
           srcArr[window.draggedItemIdx] = null;
           logMsg(`${srcItem.icon} placed into ${bagDef.name}.`);
           Sound.clink();
@@ -1221,12 +1221,12 @@
       if(tgtItem && srcItem && tgtItem.itemName === srcItem.itemName) {
         let def = ITEM_DEF[tgtItem.icon];
         if(def && def.stackable) {
-          let maxStack = def.maxStack || 10;
-          let canAdd = maxStack - (tgtItem.qty || 1);
+          let maxStack = def.maxStack ?? 10;
+          let canAdd = maxStack - (tgtItem.qty ?? 1);
           if(canAdd > 0) {
-            let toMove = Math.min(canAdd, srcItem.qty || 1);
-            tgtItem.qty = (tgtItem.qty || 1) + toMove;
-            srcItem.qty = (srcItem.qty || 1) - toMove;
+            let toMove = Math.min(canAdd, srcItem.qty ?? 1);
+            tgtItem.qty = (tgtItem.qty ?? 1) + toMove;
+            srcItem.qty = (srcItem.qty ?? 1) - toMove;
             if(srcItem.qty <= 0) srcArr[window.draggedItemIdx] = null;
             window.draggedItemIdx = null; window.draggedSource = null;
             renderQuickslots(); renderInventory(); updateUI();
@@ -1493,7 +1493,7 @@
     
     // All 5 stats with full names (no abbreviations), values, and allocate buttons
     for(const [key, info] of Object.entries(STAT_INFO)) {
-      let val = player[key] || 0;
+      let val = player[key] ?? 0;
       if (key === 'hitRate' || key === 'critRate' || key === 'dodgeRate')
         val = `${Math.round(val * 100)}%`;
       let hasPoints = player.statPoints >= (key === 'meleeDmgBonus' || key === 'rangedDmgBonus' || key === 'spellDmgBonus' ? 5 : 1);
@@ -1518,7 +1518,7 @@
         let d = ItemDefs[name];
         if(!d) return;
         if(d.type === "weapon") {
-          currentBaseDmg = (d.baseDmg || 0);
+          currentBaseDmg = (d.baseDmg ?? 0);
           meleeDmgMsg = `${currentBaseDmg} (${d.displayName})`;
         }
       }
@@ -1558,7 +1558,7 @@
 
   window.buyTalent = (tree, idx) => {
     const t = TALENT_TREES[tree].talents[idx];
-    const current = player.talents[t.id] || 0;
+    const current = player.talents[t.id] ?? 0;
     if(player.talentPoints > 0 && current < t.max) {
       player.talents[t.id] = current + 1;
       player.talentPoints--;
@@ -1592,11 +1592,11 @@
       svg += `<text x="${cx + BOX_W/2}" y="${HEADER_H - 6}" text-anchor="middle" font-size="11" font-weight="bold" fill="#D0BCFF" font-family="monospace">${tree.name}</text>`;
 
       tree.talents.forEach((t, rowIdx) => {
-        const pts = player.talents[t.id] || 0;
+        const pts = player.talents[t.id] ?? 0;
         const isMaxed = pts >= t.max;
         let meetsReq = true;
         if(t.req) {
-          let treeTotal = tree.talents.reduce((sum, tt) => sum + (player.talents[tt.id] || 0), 0);
+          let treeTotal = tree.talents.reduce((sum, tt) => sum + (player.talents[tt.id] ?? 0), 0);
           if(treeTotal < t.req) meetsReq = false;
         }
         const canBuy = player.talentPoints > 0 && !isMaxed && meetsReq;
@@ -1692,7 +1692,7 @@
       let onCd = cdRem > 0;
       html += `<div style="background:var(--surface-container); padding:6px; border-radius:4px; display:flex; justify-content:space-between; align-items:center; position:relative; ${onCd ? 'opacity:0.7;' : ''}">
         ${onCd ? `<div style="position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.45);border-radius:4px;display:flex;align-items:center;justify-content:center;z-index:1;pointer-events:none;"><span style="color:#FFD700;font-size:14px;font-weight:bold;">${cdRem.toFixed(1)}s</span></div>` : ''}
-        <span style="font-size:12px; cursor:pointer; z-index:2;" onclick="castSpell('${k}')">${k.toUpperCase()} (Lv${sp.level || 1})${onCd ? ' ⏳' : ''}</span>
+        <span style="font-size:12px; cursor:pointer; z-index:2;" onclick="castSpell('${k}')">${k.toUpperCase()} (Lv${sp.level ?? 1})${onCd ? ' ⏳' : ''}</span>
         <div style="display:flex; gap:4px; z-index:2;">
           <button onclick="player.equippedSpell='${k}';showMagic();updateUI();" style="font-size:10px; background:${isEq?'var(--success)':'#444'}; padding:2px 6px;">${isEq?'F:✓':'F'}</button>
           <button onclick="player.secondarySpell='${k}';showMagic();updateUI();" style="font-size:10px; background:${isSec?'var(--primary)':'#444'}; padding:2px 6px;">${isSec?'G:✓':'G'}</button>
@@ -1796,7 +1796,7 @@
               <div style="font-size:11px; color:#aaa;">${a.desc}</div>
             </div>
             <div style="text-align:right;">
-              <div style="color:#FFD700; font-size:12px; font-weight:bold;">+${a.points || 10}</div>
+              <div style="color:#FFD700; font-size:12px; font-weight:bold;">+${a.points ?? 10}</div>
               <div style="color:#81c784; font-size:10px;">✓</div>
             </div>
           </div>`;
@@ -1807,7 +1807,7 @@
               <div style="font-weight:bold; color:#888; font-size:13px;">${a.name}</div>
               <div style="font-size:11px; color:#666;">${a.desc}</div>
             </div>
-            <div style="color:#666; font-size:11px;">${a.points || 10}pts</div>
+            <div style="color:#666; font-size:11px;">${a.points ?? 10}pts</div>
           </div>`;
         }
       }
@@ -1965,7 +1965,7 @@
     html += `<span>Light Turns: ${lightTurns > 0 ? lightTurns + ' remaining' : 'none'}</span><br>`;
     html += `<span>Heal Over Time: ${player.healOverTime > 0 ? player.healOverTime + ' ticks' : 'none'}</span><br>`;
     html += `<span>Status Effect: ${player.statusType || 'none'} (${player.statusTurns} turns)</span><br>`;
-    html += `<span>Vermin Kills: ${player.verminKills || 0}</span><br>`;
+    html += `<span>Vermin Kills: ${player.verminKills ?? 0}</span><br>`;
     html += '</div>';
     html += '<div style="margin:4px 0;">';
     html += '<span style="color:#FFD700;">DECISION NOTES</span><br>';
@@ -2043,13 +2043,13 @@
       logMsg("You don't know Shadowstep. Learn it in the Subtlety talent tree.");
       return;
     }
-    let turnsSinceBlink = (window._turnCount || 0) - _blinkLastTurn;
+    let turnsSinceBlink = (window._turnCount ?? 0) - _blinkLastTurn;
     if(turnsSinceBlink < 8) {
       logMsg(`Shadowstep on cooldown! (${8 - turnsSinceBlink} turns remaining)`);
       return;
     }
     if(player.mp < 3) { logMsg("Not enough mana! (3 MP)"); return; }
-    let dx = player.facing.dx || 0, dy = player.facing.dy || 0;
+    let dx = player.facing.dx ?? 0, dy = player.facing.dy ?? 0;
     if(dx === 0 && dy === 0) dy = 1; // default: forward
     // Find landing tile — 3 tiles ahead, stop at wall
     let lx = player.x, ly = player.y;
@@ -2065,7 +2065,7 @@
     addFloatingText(player.x, player.y, '💨', '#888', 20);
     player.x = lx; player.y = ly;
     player.mp -= 3;
-    _blinkLastTurn = (window._turnCount || 0);
+    _blinkLastTurn = (window._turnCount ?? 0);
     logMsg("<span style='color:var(--primary)'>💨 Shadowstep!</span>");
     Sound.playTone(600, 'sine', 0.2, 0.05, 300);
     calculateFOV(); drawMap(); updateUI(); advanceTurn(1);

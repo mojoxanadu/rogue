@@ -30,13 +30,13 @@
     if(!player.macros || player.macros.length === 0) return;
     for(const macro of player.macros) {
       try {
-        if((macro._cdRemaining || 0) > 0) {
+        if((macro._cdRemaining ?? 0) > 0) {
           macro._cdRemaining--;
           continue;
         }
         if(!evalMacroCondition(macro.condition)) continue;
         execMacroAction(macro.action);
-        if((macro.cooldownTurns || 0) > 0) {
+        if((macro.cooldownTurns ?? 0) > 0) {
           macro._cdRemaining = macro.cooldownTurns;
         }
       } catch(e) { /* silent */ }
@@ -47,7 +47,7 @@
     const vars = {
       '$hp': Math.floor(player.hp),
       '$mp': Math.floor(player.mp),
-      '$hunger': Math.floor(player.hunger || 0),
+      '$hunger': Math.floor(player.hunger ?? 0),
       '$floor': currentLevel,
       '$scene': currentScene,
       '$enemy_count': enemyCount,
@@ -119,7 +119,7 @@
     if(!def || def.type !== 'bag') return;
     // Initialize contents array if new bag
     if(!item.contents) {
-      item.contents = new Array(def.bagSlots || 3).fill(null);
+      item.contents = new Array(def.bagSlots ?? 3).fill(null);
       // Pre-fill new bags with random loot (the "loot bag" aspect)
       if(def.bagSlots <= 3) {
         let lootTable = ['🪙', '🪙', '🧪', '🍖', '🕯️'];
@@ -152,7 +152,7 @@
     // Try to add to inventory
     let slot = inventory.findIndex(s => s === null);
     if(slot !== -1) {
-      inventory[slot] = ItemStack.fromIcon(taken.icon, taken.qty || 1);
+      inventory[slot] = ItemStack.fromIcon(taken.icon, taken.qty ?? 1);
       bag.contents[itemIdx] = null;
       let def = ITEM_DEF[taken.icon];
       logMsg(`Took ${taken.icon} ${def ? def.name : ''} from bag.`);
@@ -160,7 +160,7 @@
       // Try inventory
       let pSlot = inventory.findIndex((s, i) => s === null && !(source === 'inventory' && i === bagIdx));
       if(pSlot !== -1) {
-        inventory[pSlot] = ItemStack.fromIcon(taken.icon, taken.qty || 1);
+        inventory[pSlot] = ItemStack.fromIcon(taken.icon, taken.qty ?? 1);
         bag.contents[itemIdx] = null;
         logMsg(`Took ${taken.icon} to inventory (inventory full).`);
       } else {
@@ -318,11 +318,11 @@
       window._activeBombs.push({
         x: player.x,
         y: player.y,
-        timer: def.fuseTime || 10,
-        maxTimer: def.fuseTime || 10,
-        radius: def.blastRadius || 5,
-        baseDmg: def.baseDamage || 50,
-        dmgPerTile: def.damagePerTile || 10,
+        timer: def.fuseTime ?? 10,
+        maxTimer: def.fuseTime ?? 10,
+        radius: def.blastRadius ?? 5,
+        baseDmg: def.baseDamage ?? 50,
+        dmgPerTile: def.damagePerTile ?? 10,
         icon: itemObj.icon,
         startTime: performance.now()
       });
@@ -335,7 +335,7 @@
 
     // Gold Bag — add gold directly, don't keep in inventory
     if(def.type === "wealth") {
-      let goldValue = def.maxGP || 50;
+      let goldValue = def.maxGP ?? 50;
       changeGold(goldValue);
       logMsg(`<span style='color:var(--success)'>💰 You open the Gold Bag and find ${goldValue}g!</span>`);
       decrementItem(idx);
@@ -351,7 +351,7 @@
         logMsg("<span style='color:#aaa; font-style:italic;'>You raise the candle, then pause. It's perfectly well-lit here. You'd just be wasting it.</span>");
         return;
       }
-      lightTurns = (lightTurns || 0) + (def.lightRange || 15);
+      lightTurns = (lightTurns ?? 0) + (def.lightRange ?? 15);
       logMsg(`<span style='color:var(--success)'>${ItemDef.iconOf('candle')} You light the ${def.name}! (${lightTurns} turns of light)</span>`);
       decrementItem(idx);
       calculateFOV(); drawMap(); updateUI();
@@ -368,7 +368,7 @@
           "You have found a use for the poop! Just kidding. You haven't.",
           "The poop smells. That's all you can say about the poop."
         ];
-        player._poopIdx = ((player._poopIdx || 0) + 1) % poopLines.length;
+        player._poopIdx = ((player._poopIdx ?? 0) + 1) % poopLines.length;
         logMsg(`<span style='color:#888; font-style:italic;'>${poopLines[player._poopIdx]}</span>`);
         return; // don't consume
       }
@@ -413,7 +413,7 @@
         player.hp = Math.max(1, player.hp + def.maxHeal);
         logMsg(`<span style='color:var(--warning)'>That burns! Lost ${Math.abs(def.maxHeal)} HP.</span>`);
       }
-      player.hunger = Math.max(0, player.hunger - (def.foodValue || 0));
+      player.hunger = Math.max(0, player.hunger - (def.foodValue ?? 0));
       // B10: Game Log message for consuming food/potion
       if(def.maxHeal >= 0 && itemObj.icon !== '🥤') {
         if(def.type === "potion") {
@@ -445,7 +445,7 @@
           shield: 3,
           haste: 3
         };
-        const requiredMp = spellManaCost[def.spell] || 0;
+        const requiredMp = spellManaCost[def.spell] ?? 0;
         if(player.mp < requiredMp) {
           if(typeof Sound !== 'undefined' && Sound.errorBuzz) Sound.errorBuzz();
           logMsg(`<span style='color:var(--error)'>Not enough mana to read this scroll! (${requiredMp} MP required)</span>`);
@@ -495,7 +495,7 @@
     else if(itemObj.itemName === 'magicTeapot') {
       // Magic Teapot — create a healing potion (60min cooldown)
       let now = Date.now();
-      let lastUse = player.teapotLastUse || 0;
+      let lastUse = player.teapotLastUse ?? 0;
       let cooldownMs = 60 * 60 * 1000; // 60 minutes
       let remaining = cooldownMs - (now - lastUse);
       if(remaining > 0) {
@@ -604,7 +604,7 @@
 
         // Gold Bag — auto-convert to gold on pickup
         if(def.type === "wealth") {
-          let goldValue = def.maxGP || 50;
+          let goldValue = def.maxGP ?? 50;
           changeGold(goldValue, { x: player.x, y: player.y, floatText: true });
           logMsg(`<span style='color:var(--success)'>💰 Found ${goldValue}g!</span>`);
           toRemove.push(index);
@@ -614,9 +614,9 @@
         // Try Main Inventory First
         let stacked = false;
         if(def.stackable) {
-          let maxStack = def.maxStack || 10;
-          let slot = inventory.find(i => i && i.icon === item.icon && (i.qty || 1) < maxStack);
-          if(slot) { slot.qty = (slot.qty || 1) + 1; stacked = true; }
+          let maxStack = def.maxStack ?? 10;
+          let slot = inventory.find(i => i && i.icon === item.icon && (i.qty ?? 1) < maxStack);
+          if(slot) { slot.qty = (slot.qty ?? 1) + 1; stacked = true; }
         }
         if(!stacked) {
           let emptyIdx = inventory.findIndex(i => i === null);
@@ -626,9 +626,9 @@
         // Try Inventory Second
         if(!stacked) {
           if(def.stackable) {
-            let maxStack = def.maxStack || 10;
-            let ps = inventory.find(i => i && i.icon === item.icon && (i.qty || 1) < maxStack);
-            if(ps) { ps.qty = (ps.qty || 1) + 1; stacked = true; }
+            let maxStack = def.maxStack ?? 10;
+            let ps = inventory.find(i => i && i.icon === item.icon && (i.qty ?? 1) < maxStack);
+            if(ps) { ps.qty = (ps.qty ?? 1) + 1; stacked = true; }
           }
           if(!stacked) {
             let pIdx = inventory.findIndex(i => i === null);
@@ -669,8 +669,8 @@
 
   function countItemByIcon(icon) {
     let total = 0;
-    inventory.forEach(item => { if(item && item.icon === icon) total += item.qty || 1; });
-    inventory.forEach(item => { if(item && item.icon === icon) total += item.qty || 1; });
+    inventory.forEach(item => { if(item && item.icon === icon) total += item.qty ?? 1; });
+    inventory.forEach(item => { if(item && item.icon === icon) total += item.qty ?? 1; });
     return total;
   }
 
@@ -680,7 +680,7 @@
       for(let i = 0; i < arr.length && remaining > 0; i++) {
         let item = arr[i];
         if(!item || item.icon !== icon) continue;
-        let stackQty = item.qty || 1;
+        let stackQty = item.qty ?? 1;
         let used = Math.min(stackQty, remaining);
         stackQty -= used;
         remaining -= used;
@@ -732,7 +732,7 @@
     if(spellName === 'portal') {
       // Town Portal: create a portal 2 tiles in front of player
       if(currentLevel === 0) { logMsg("You're already in town!"); return; }
-      let dx = player.facing.dx || 0, dy = player.facing.dy || 1;
+      let dx = player.facing.dx ?? 0, dy = player.facing.dy ?? 1;
       let px = player.x + dx * 2, py = player.y + dy * 2;
       // Find nearest floor tile if target is blocked
       if(px < 0 || px >= mapW || py < 0 || py >= mapH || theMap[py][px] === TILES.WALL) {
@@ -875,7 +875,7 @@
     }
     if(spellName === 'tunnel') {
       if(player.mp < 4) { logMsg("Not enough mana! (4 MP)"); return; }
-      let dx = player.facing.dx || 1, dy = player.facing.dy || 0;
+      let dx = player.facing.dx ?? 1, dy = player.facing.dy ?? 0;
       let tx = player.x + dx, ty = player.y + dy;
       if(!theMap[ty] || theMap[ty][tx] !== TILES.WALL) {
         logMsg("You must be facing a wall to tunnel.");
@@ -914,10 +914,10 @@
       if(dist > 8) { logMsg("No target close enough for Icebolt. (8 tiles)"); return; }
       player.mp -= 4;
       if(window.WebGLFX && WebGLFX.onManaUse) WebGLFX.onManaUse(4);
-      const dmg = Math.max(6, Math.floor(10 + (player.spellDmgBonus || 0)));
+      const dmg = Math.max(6, Math.floor(10 + (player.spellDmgBonus ?? 0)));
       target.stats.hp -= dmg;
       // Freeze the enemy
-      target._frozenTurns = (target._frozenTurns || 0) + 3;
+      target._frozenTurns = (target._frozenTurns ?? 0) + 3;
       activeEffects.push({ kind: 'icebeam', x1: player.x, y1: player.y, x2: target.x, y2: target.y, color: '#aaddff', life: 1.0, power: 1.0 });
       addFloatingText(target.x, target.y, `-${dmg}❄️`, '#aef', 20);
       logMsg(`<span style='color:#aef'>❄️ Icebolt strikes ${target.type} for ${dmg} cold damage and freezes it!</span>`);
@@ -938,8 +938,8 @@
       const target = visibleHostiles[0];
       player.mp -= 3;
       if(window.WebGLFX && WebGLFX.onManaUse) WebGLFX.onManaUse(3);
-      target._poisonTurns = (target._poisonTurns || 0) + 8;
-      target._poisonDmg = Math.max(2, Math.floor(3 + (player.spellDmgBonus || 0) * 0.5));
+      target._poisonTurns = (target._poisonTurns ?? 0) + 8;
+      target._poisonDmg = Math.max(2, Math.floor(3 + (player.spellDmgBonus ?? 0) * 0.5));
       addFloatingText(target.x, target.y, '☠️', '#7f2', 18);
       logMsg(`<span style='color:#7f2'>☠️ Poison clouds the ${target.type}!</span>`);
       Sound.playTone(220, 'sawtooth', 0.06, 0.15, 300);
@@ -951,7 +951,7 @@
       if(player.mp < 3) { logMsg("Not enough mana! (3 MP)"); return; }
       player.mp -= 3;
       if(window.WebGLFX && WebGLFX.onManaUse) WebGLFX.onManaUse(3);
-      player._shieldTurns = (player._shieldTurns || 0) + 10;
+      player._shieldTurns = (player._shieldTurns ?? 0) + 10;
       logMsg("<span style='color:#88f'>🛡️ A magical shield surrounds you! (10 turns)</span>");
       Sound.playTone(440, 'sine', 0.15, 0.12, 800);
       drawMap(); updateUI(); advanceTurn(1);
@@ -1015,7 +1015,7 @@
     let dx = tx - player.x, dy = ty - player.y;
     let dist = Math.sqrt(dx * dx + dy * dy);
     if(dist < 1) { logMsg("Aim away from your own face."); return; }
-    if(dist > (weaponDef.range || 8)) { logMsg(`Too far! (max ${weaponDef.range || 8} tiles)`); return; }
+    if(dist > (weaponDef.range ?? 8)) { logMsg(`Too far! (max ${weaponDef.range ?? 8} tiles)`); return; }
     if(weaponDef.ammoIcon && !consumeItemByIcon(weaponDef.ammoIcon, 1)) {
       logMsg(`<span style='color:var(--error)'>Out of ${ITEM_DEF[weaponDef.ammoIcon]?.name || 'ammo'}.</span>`);
       return;
@@ -1147,7 +1147,7 @@
         if(m.stats.isBoss) baseDmg = Math.floor(baseDmg * 0.5);
         if(m.type === 'ifrit' && m.isIfrit) {
           const heal = Math.max(8, Math.floor(baseDmg * 0.8));
-          m.stats.hp = Math.min(m.stats.maxHp || 999, m.stats.hp + heal);
+          m.stats.hp = Math.min(m.stats.maxHp ?? 999, m.stats.hp + heal);
           addFloatingText(cx, cy, `+${heal}🔥`, '#7f7', 22);
           activeEffects.push({ kind: 'fireballBurst', x: cx, y: cy, color: '#ffb347', life: 0.95, power: 1.15 });
           logMsg("<span style='color:#f90'>Ifrit absorbs the fireball. \"Thanks for the light!\"</span>");
@@ -1213,8 +1213,8 @@
       if(name) {
         let d = ItemDefs[name];
         if(!d) return;
-        if(d.type === "weapon") totalDmg = (d.baseDmg || 0);
-        totalEvade += (d.evadePercent||0);
+        if(d.type === "weapon") totalDmg = (d.baseDmg ?? 0);
+        totalEvade += (d.evadePercent ?? 0);
         // Boots of Blinding Speed
         if(name === 'bootsOfBlindingSpeed') {
           speedBonus = 1;

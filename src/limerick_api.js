@@ -8,7 +8,7 @@
     ];
 
     function siphonapteraSiphonaptera(depth) {
-      const idx = Math.abs(depth || 0) % SIPHONAPTERA_LIMERICKS.length;
+      const idx = Math.abs(depth ?? 0) % SIPHONAPTERA_LIMERICKS.length;
       return SIPHONAPTERA_LIMERICKS[idx];
     }
 

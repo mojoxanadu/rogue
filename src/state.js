@@ -214,8 +214,8 @@
     }
     let def = ACHIEVEMENT_DEFS.find(a => a.id === id);
     if(def) {
-      achievementPoints += (def.points || 10);
-      logMsg(`<span style="color:#FFD700">🏆 ACHIEVEMENT UNLOCKED: ${def.icon} ${def.name}! (+${def.points || 10}pts)</span>`);
+      achievementPoints += (def.points ?? 10);
+      logMsg(`<span style="color:#FFD700">🏆 ACHIEVEMENT UNLOCKED: ${def.icon} ${def.name}! (+${def.points ?? 10}pts)</span>`);
     }
     // Milestone checks — invite to Hall of Champions
     let count = Object.keys(achievements).length;

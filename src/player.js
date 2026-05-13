@@ -99,13 +99,13 @@ setPlayerDefaults();
 // ─── changeGold ─────────────────────────────────────────────
 window.changeGold = (amount, opts = {}) => {
   if(!amount) return 0;
-  const oldGold = player.gp || 0;
+  const oldGold = player.gp ?? 0;
   const nextGold = Math.max(0, oldGold + amount);
   const actual = nextGold - oldGold;
   if(!actual) return 0;
   player.gp = nextGold;
   if(actual > 0 && opts.floatText) {
-    addFloatingText(opts.x ?? player.x, opts.y ?? player.y, `+${actual}g`, '#fc0', opts.size || 14);
+    addFloatingText(opts.x ?? player.x, opts.y ?? player.y, `+${actual}g`, '#fc0', opts.size ?? 14);
   }
   if(opts.sound !== false && typeof Sound !== 'undefined' && Sound.clink) Sound.clink();
   if(opts.updateUI !== false && typeof updateUI === 'function') updateUI();
@@ -307,7 +307,7 @@ function getPlayerHitRate() {
   Object.values(player.equipped).forEach(name => {
     if(name) {
       let def = (typeof ItemDefs !== 'undefined') ? ItemDefs[name] : null;
-      if(def) hitRate += (def.hitRateBonus || 0);
+      if(def) hitRate += (def.hitRateBonus ?? 0);
     }
   });
   return hitRate;
@@ -320,7 +320,7 @@ function getPlayerHitRate() {
  * @returns {boolean}
  */
 function getPlayerHits(enemy) {
-  return Math.random() < getPlayerHitRate() * (1 - (enemy && enemy.stats ? (enemy.stats.dodge || 0) : 0));
+  return Math.random() < getPlayerHitRate() * (1 - (enemy && enemy.stats ? (enemy.stats.dodge ?? 0) : 0));
 }
 
 /**
@@ -331,12 +331,12 @@ function getPlayerHits(enemy) {
  */
 function getPlayerDmg() {
   let baseDmg  = player.baseDmg  || CONSTANTS.PLAYER_UNARMED_BASE_DMG;
-  let dmgBonus = player.meleeDmgBonus || 0;
+  let dmgBonus = player.meleeDmgBonus ?? 0;
   Object.values(player.equipped).forEach(name => {
     if(name) {
       let def = (typeof ItemDefs !== 'undefined') ? ItemDefs[name] : null;
       if(!def) return;
-      if(def.type === "weapon") baseDmg  = (def.baseDmg || 0);
+      if(def.type === "weapon") baseDmg  = (def.baseDmg ?? 0);
       if(def.meleeDmgBonus)    dmgBonus += def.meleeDmgBonus;
     }
   });

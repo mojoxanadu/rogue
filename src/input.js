@@ -150,7 +150,7 @@ const hBtn = document.getElementById('hamburgerBtn');
     }
 
     // Sight distance
-    chips.push(chip('#033', `👁 ${C.SIGHT_RADIUS || 6}`));
+    chips.push(chip('#033', `👁 ${C.SIGHT_RADIUS ?? 6}`));
 
     // FoW toggle
     const fowOn = typeof debugFlags !== 'undefined' && !debugFlags.revealMap;
@@ -326,7 +326,7 @@ const hBtn = document.getElementById('hamburgerBtn');
       const out = window._dpsOrigApplyDamageToEnemy(dmg, enemy);
       if(window._dpsSession && window._dpsSession.active) {
         const dealt = Number.isFinite(out) ? out : dmg;
-        window._dpsSession.total += Math.max(0, dealt || 0);
+        window._dpsSession.total += Math.max(0, dealt ?? 0);
         window._dpsSession.hits += 1;
       }
       return out;
@@ -451,7 +451,7 @@ const hBtn = document.getElementById('hamburgerBtn');
           debugLog(`Inventory: ${nonEmpty.length} items`);
           nonEmpty.forEach((item) => {
             let name = ITEM_DEF[item.icon] ? ITEM_DEF[item.icon].name : item.icon;
-            debugLog(`  ${item.icon} ${name} x${item.qty || 1}`);
+            debugLog(`  ${item.icon} ${name} x${item.qty ?? 1}`);
           });
           break;
         case '/clear': {
@@ -598,7 +598,7 @@ const hBtn = document.getElementById('hamburgerBtn');
             window.debugFlags = window.debugFlags || {};
             debugFlags.godMode = true;
             debugFlags.fullLight = true;
-            player.speedMod = Math.max(player.speedMod || 1, 1.5);
+            player.speedMod = Math.max(player.speedMod ?? 1, 1.5);
             debugLog('GM mode enabled.');
           } else if(sub === 'off') {
             window.debugFlags = window.debugFlags || {};
@@ -986,7 +986,7 @@ const hBtn = document.getElementById('hamburgerBtn');
             const turns = Math.max(0, parseInt(args[2], 10) || 0);
             if(isNaN(idx) || !player.macros[idx]) { debugLog('Usage: /macro setcd <index> <turns>'); break; }
             player.macros[idx].cooldownTurns = turns;
-            player.macros[idx]._cdRemaining = Math.min(player.macros[idx]._cdRemaining || 0, turns);
+            player.macros[idx]._cdRemaining = Math.min(player.macros[idx]._cdRemaining ?? 0, turns);
             debugLog(`Macro ${idx} cooldown set to ${turns} turn(s).`);
           } else if(subcmd === 'clear') {
             const which = args[1];
@@ -1210,7 +1210,7 @@ const hBtn = document.getElementById('hamburgerBtn');
   consolePullTab.addEventListener('mousedown', (e) => {
     _tabDragging = true;
     _tabDragStartY = e.clientY;
-    _tabDragStartH = debugOverlay.offsetHeight || 150;
+    _tabDragStartH = debugOverlay.offsetHeight ?? 150;
     e.preventDefault();
   });
   document.addEventListener('mousemove', (e) => {
@@ -1517,8 +1517,8 @@ const hBtn = document.getElementById('hamburgerBtn');
 
       // Update and draw stars
       particles = particles.filter(p => {
-        p.x += (p.vx || 0);
-        p.y += (p.vy || 0);
+        p.x += (p.vx ?? 0);
+        p.y += (p.vy ?? 0);
         p.twinkle += 0.03 + (p.size * 0.005);
         p.life = 0.35 + (Math.sin(p.twinkle) + 1) * 0.3;
         if(p.y > h + 8) { p.y = -8; p.x = Math.random() * w; }
@@ -1764,7 +1764,7 @@ const hBtn = document.getElementById('hamburgerBtn');
             }
             return;
         }
-        if((state || 0) === 0) {
+        if((state ?? 0) === 0) {
           // Check if player has a key
           let hasKey = inventory.some(i => i && i.icon === '🗝️') || (player.inventory && player.inventory.some(i => i && i.icon === '🗝️'));
           if(hasKey) {

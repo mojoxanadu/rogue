@@ -196,8 +196,8 @@
       if(!ensureStarted()) return null;
       const gl = state.gl;
       const glCanvas = state.glCanvas;
-      const w = Math.max(16, Math.round(width || 128));
-      const h = Math.max(16, Math.round(height || 128));
+      const w = Math.max(16, Math.round(width ?? 128));
+      const h = Math.max(16, Math.round(height ?? 128));
       if(glCanvas.width !== w || glCanvas.height !== h) {
         glCanvas.width = w;
         glCanvas.height = h;
@@ -247,7 +247,7 @@
       orb.pulse = clamp(orb.pulse + amount, 0, 4.5);
       // Also energise NS fluid orb
       if(state.nsOrbs && state.nsOrbs.orbs[kind]) {
-        state.nsOrbs.orbs[kind].energy = Math.min(1.0, (state.nsOrbs.orbs[kind].energy||0) + amount * 0.4);
+        state.nsOrbs.orbs[kind].energy = Math.min(1.0, (state.nsOrbs.orbs[kind].energy ?? 0) + amount * 0.4);
       }
       orb.impacts.unshift({
         x: clamp(centerX == null ? 0.5 : centerX, 0.08, 0.92),
@@ -1003,8 +1003,8 @@
       if(!targetCtx || !effect) return false;
       const start = toScreen(effect.x1, effect.y1, playerX, playerY, viewCx, viewCy, tileSize);
       const end   = toScreen(effect.x2, effect.y2, playerX, playerY, viewCx, viewCy, tileSize);
-      const life  = clamp(effect.life || 0.6, 0, 1.5);
-      const power = effect.power || 1;
+      const life  = clamp(effect.life ?? 0.6, 0, 1.5);
+      const power = effect.power ?? 1;
 
       // Build fractal lightning segments via midpoint displacement
       // Re-seed each frame for flickering
@@ -1299,7 +1299,7 @@
       const worldY = effect.y != null ? effect.y : effect.y2;
       const screen = toScreen(worldX, worldY, playerX, playerY, viewCx, viewCy, tileSize);
       const isBurst = effect.kind === 'fireballBurst';
-      const power = effect.power || 1;
+      const power = effect.power ?? 1;
       const drawSize = isBurst
         ? Math.ceil(tileSize * (1.15 + power * 0.35) * 2)
         : Math.ceil(tileSize * (0.65 + power * 0.25) * 2);
@@ -1487,7 +1487,7 @@
       // E16: Active bombs need per-frame animation for pulsing glow and countdown
       if(window._activeBombs && window._activeBombs.length > 0) return true;
       if(typeof theMap !== 'undefined' && typeof TILES !== 'undefined') {
-        for(let y = 0; y < (theMap.length || 0); y++)
+        for(let y = 0; y < (theMap.length ?? 0); y++)
           for(let x = 0; x < ((theMap[y] || []).length || 0); x++)
             if(theMap[y][x] === TILES.PORTAL) return true;
       }

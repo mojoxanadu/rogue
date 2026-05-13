@@ -67,7 +67,7 @@
   function grassHeight(x, y) {
     ensureGrassHeightMap();
     if (!_grassHeightMap[y]) return 0.5;
-    return _grassHeightMap[y][x] || 0;
+    return _grassHeightMap[y][x] ?? 0;
   }
 
   // ── E23: Tile Edge Smoothing ──────────────────────────────────────────────
@@ -960,7 +960,7 @@
         const vx = a.x - player.x + cx;
         const vy = a.y - player.y + cy;
         if(vx >= -1 && vx <= VIEW_COLS && vy >= -1 && vy <= VIEW_ROWS && visible[a.y] && visible[a.y][a.x]) {
-          const scale = a.scale || 3;
+          const scale = a.scale ?? 3;
           const fontSize = Math.floor(TILE_SIZE * scale * 0.8);
           ctx.font = `${fontSize}px sans-serif`;
           ctx.textAlign = 'center';
@@ -1194,7 +1194,7 @@
       if(now - _avatarLastTick > 120) { _avatarFrame = (_avatarFrame + 1) % 2; _avatarLastTick = now; }
       emoji = _avatarFrame === 0 ? '🏃' : '🚶';
     } else {
-      let timeSinceMove = now - (window._lastPlayerMoveTime || 0);
+      let timeSinceMove = now - (window._lastPlayerMoveTime ?? 0);
       if(timeSinceMove < 400) {
         if(now - _avatarLastTick > 200) { _avatarFrame = (_avatarFrame + 1) % 2; _avatarLastTick = now; }
         emoji = _avatarFrame === 0 ? '🚶' : '🧍';
@@ -1280,7 +1280,7 @@ function drawMinimap() {
   }
 
   // #12: Zoom level (tile radius) — controlled by +/- buttons in UI
-  const radiusTiles = window._minimapZoom || 8;
+  const radiusTiles = window._minimapZoom ?? 8;
   const cells = radiusTiles * 2 + 1;
   const scale = MW / cells;
   const centerX = MW / 2;

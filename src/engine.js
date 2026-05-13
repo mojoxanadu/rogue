@@ -161,20 +161,20 @@
         let placed = false;
         let def = ITEM_DEF[item.icon];
         if(def && def.stackable) {
-          let maxStack = def.maxStack || 10;
-          let stackSlot = inventory.find(s => s && s.itemName === item.itemName && (s.qty || 1) < maxStack);
+          let maxStack = def.maxStack ?? 10;
+          let stackSlot = inventory.find(s => s && s.itemName === item.itemName && (s.qty ?? 1) < maxStack);
           if(stackSlot) {
-            let can = maxStack - (stackSlot.qty || 1);
-            let add = Math.min(can, item.qty || 1);
-            stackSlot.qty = (stackSlot.qty || 1) + add;
-            item.qty = (item.qty || 1) - add;
-            placed = (item.qty || 0) <= 0;
+            let can = maxStack - (stackSlot.qty ?? 1);
+            let add = Math.min(can, item.qty ?? 1);
+            stackSlot.qty = (stackSlot.qty ?? 1) + add;
+            item.qty = (item.qty ?? 1) - add;
+            placed = (item.qty ?? 0) <= 0;
           }
         }
         // Try inventory
         let slot = inventory.findIndex(s => s === null);
         if(!placed && slot !== -1) {
-          inventory[slot] = new ItemStack(item.itemName, item.qty || 1);
+          inventory[slot] = new ItemStack(item.itemName, item.qty ?? 1);
           placed = true;
         }
         // Try inventory and bags
@@ -192,17 +192,17 @@
   // Try to place an item in inventory or inside a bag
   function tryPlaceInInventory(item) {
     const def = ITEM_DEF[item.icon] || { stackable:false };
-    const qty = item.qty || 1;
+    const qty = item.qty ?? 1;
 
     // Stack in existing inventory slots first
     if(def.stackable) {
-      const maxStack = def.maxStack || 10;
+      const maxStack = def.maxStack ?? 10;
       for(let i = 0; i < inventory.length; i++) {
         const s = inventory[i];
-        if(s && s.itemName === item.itemName && (s.qty || 1) < maxStack) {
-          const can = maxStack - (s.qty || 1);
+        if(s && s.itemName === item.itemName && (s.qty ?? 1) < maxStack) {
+          const can = maxStack - (s.qty ?? 1);
           const add = Math.min(can, qty);
-          s.qty = (s.qty || 1) + add;
+          s.qty = (s.qty ?? 1) + add;
           item.qty = qty - add;
           if(item.qty <= 0) return true;
           break;
@@ -213,30 +213,30 @@
     // Direct inventory slot
     let pSlot = inventory.findIndex(s => s === null);
     if(pSlot !== -1) {
-      inventory[pSlot] = new ItemStack(item.itemName, item.qty || 1);
+      inventory[pSlot] = new ItemStack(item.itemName, item.qty ?? 1);
       return true;
     }
     // Inside a bag
     for(let i = 0; i < inventory.length; i++) {
       let bag = inventory[i];
       if(bag && ITEM_DEF[bag.icon] && ITEM_DEF[bag.icon].type === 'bag') {
-        if(!bag.contents) bag.contents = new Array(ITEM_DEF[bag.icon].bagSlots || 3).fill(null);
+        if(!bag.contents) bag.contents = new Array(ITEM_DEF[bag.icon].bagSlots ?? 3).fill(null);
         if(def.stackable) {
-          const maxStack = def.maxStack || 10;
+          const maxStack = def.maxStack ?? 10;
           for(let bi = 0; bi < bag.contents.length; bi++) {
             const bs = bag.contents[bi];
-            if(bs && bs.itemName === item.itemName && (bs.qty || 1) < maxStack) {
-              const can = maxStack - (bs.qty || 1);
-              const add = Math.min(can, item.qty || 1);
-              bs.qty = (bs.qty || 1) + add;
-              item.qty = (item.qty || 1) - add;
-              if((item.qty || 0) <= 0) return true;
+            if(bs && bs.itemName === item.itemName && (bs.qty ?? 1) < maxStack) {
+              const can = maxStack - (bs.qty ?? 1);
+              const add = Math.min(can, item.qty ?? 1);
+              bs.qty = (bs.qty ?? 1) + add;
+              item.qty = (item.qty ?? 1) - add;
+              if((item.qty ?? 0) <= 0) return true;
             }
           }
         }
         let emptySlot = bag.contents.findIndex(s => s === null);
         if(emptySlot !== -1) {
-          bag.contents[emptySlot] = new ItemStack(item.itemName, item.qty || 1);
+          bag.contents[emptySlot] = new ItemStack(item.itemName, item.qty ?? 1);
           return true;
         }
       }
@@ -306,7 +306,7 @@
       } else {
         let slot = inventory.findIndex(s => s === null);
         if(slot !== -1) {
-          inventory[slot] = new ItemStack(item.itemName, item.qty || 1);
+          inventory[slot] = new ItemStack(item.itemName, item.qty ?? 1);
           didLoot = true;
         } else {
           let placed = tryPlaceInInventory(item);
@@ -339,7 +339,7 @@
     } else {
       let slot = inventory.findIndex(s => s === null);
       if(slot !== -1) {
-        inventory[slot] = new ItemStack(item.itemName, item.qty || 1);
+        inventory[slot] = new ItemStack(item.itemName, item.qty ?? 1);
         c.loot.splice(itemIdx, 1);
         Sound.clink();
       } else {
@@ -440,7 +440,7 @@
 
   function playRandomVoice(prefix, count) {
     if(!(typeof Sound !== 'undefined' && Sound.playVoice)) return;
-    const idx = Math.floor(Math.random() * Math.max(1, count || 1));
+    const idx = Math.floor(Math.random() * Math.max(1, count ?? 1));
     Sound.playVoice(`${prefix}${idx}`);
   }
 
@@ -538,11 +538,11 @@
     // Patrol NPCs
     enemies.forEach(e => {
       if(!e || !e.isSceneNPC || !e.patrolPath || e.patrolPath.length === 0) return;
-      const moveInterval = Math.max(250, e.sceneMoveIntervalMs || 800);
+      const moveInterval = Math.max(250, e.sceneMoveIntervalMs ?? 800);
       if(typeof e._sceneNextMoveAt !== 'number') e._sceneNextMoveAt = nowMs;
       if(nowMs < e._sceneNextMoveAt) return;
       e._sceneNextMoveAt = nowMs + moveInterval;
-      let nextIndex = ((e.patrolIndex || 0) + 1) % e.patrolPath.length;
+      let nextIndex = ((e.patrolIndex ?? 0) + 1) % e.patrolPath.length;
       let nextStep = e.patrolPath[nextIndex];
       if(!nextStep) return;
       if(player.x === nextStep.x && player.y === nextStep.y) return;
@@ -560,7 +560,7 @@
   function advanceTurn(steps = 1) {
     if(isDead) return;
     advanceSceneNPCs();
-    window._turnCount = (window._turnCount || 0) + steps;
+    window._turnCount = (window._turnCount ?? 0) + steps;
     
     // Atronach & Regen Suppression (v7.2.0)
     if (!player.atronach) {
@@ -569,7 +569,7 @@
 
     // Roc Capture
     if(currentLevel === 11 && !player.rocCaptured) {
-      player.mountainSteps = (player.mountainSteps || 0) + steps;
+      player.mountainSteps = (player.mountainSteps ?? 0) + steps;
       if(player.mountainSteps >= 5) {
         player.rocCaptured = true;
         logMsg("<span style='color:var(--error)'>⚠️ A GIANT ROC SWOOPS DOWN AND GRABS YOU!</span>");
@@ -646,7 +646,7 @@
         player.grueDanger = 0;
       } else {
         // In the dark — accumulate danger
-        player.grueDanger = (player.grueDanger || 0) + steps;
+        player.grueDanger = (player.grueDanger ?? 0) + steps;
         let danger = player.grueDanger;
         // Messages at thresholds
         let msgIdx = null;
@@ -691,7 +691,7 @@
     // E.753.MILK: diarrhea status ticking, periodic fart SFX, timed expiry
     if(player.statusEffects && player.statusEffects.diarrhea) {
       const fx = player.statusEffects.diarrhea;
-      fx.turnsRemaining = Math.max(0, (fx.turnsRemaining || 0) - steps);
+      fx.turnsRemaining = Math.max(0, (fx.turnsRemaining ?? 0) - steps);
 
       const nowMs = Date.now();
       if(!fx.nextFartMs) fx.nextFartMs = nowMs + 6000;
@@ -760,7 +760,7 @@
 
       // Bug 25: Wandering NPC AI — random walk every 5 turns, no player chasing
       if(e.stats.wandering) {
-        e.stats.wanderTimer = (e.stats.wanderTimer || 0) + steps;
+        e.stats.wanderTimer = (e.stats.wanderTimer ?? 0) + steps;
         if(e.stats.wanderTimer >= 5) {
           e.stats.wanderTimer = 0;
           const wDirs = [[0,-1],[1,0],[0,1],[-1,0]];
@@ -796,7 +796,7 @@
             if(typeof Sound !== 'undefined' && Sound.playVoice) Sound.playVoice(t.voice);
           }
           // Patrol AI: cycle between patrol/sit/stand every few turns
-          e._patrolTurnCount = (e._patrolTurnCount || 0) + steps;
+          e._patrolTurnCount = (e._patrolTurnCount ?? 0) + steps;
           if (e._patrolTurnCount >= 8) {
             e._patrolTurnCount = 0;
             const roll = Math.random();
@@ -804,9 +804,9 @@
               e._ifritAction = 'patrol';
               // Pick a new random patrol target around chamber center.
               const mapW2 = theMap[0] ? theMap[0].length : 30;
-              const mapH2 = theMap.length || 30;
+              const mapH2 = theMap.length ?? 30;
               const c = e.patrolCenter || { x: e.x, y: e.y };
-              const pr = e.patrolRadius || 4;
+              const pr = e.patrolRadius ?? 4;
               for (let attempt = 0; attempt < 10; attempt++) {
                 const tx = c.x + Math.floor((Math.random() - 0.5) * (pr * 2 + 1));
                 const ty = c.y + Math.floor((Math.random() - 0.5) * (pr * 2 + 1));
@@ -829,7 +829,7 @@
             if (pdx !== 0 || pdy !== 0) {
               const nx = e.x + pdx, ny = e.y + pdy;
               const mapW2 = theMap[0] ? theMap[0].length : 30;
-              const mapH2 = theMap.length || 30;
+              const mapH2 = theMap.length ?? 30;
               if (nx >= 0 && nx < mapW2 && ny >= 0 && ny < mapH2 &&
                   theMap[ny] && isTileFloor(theMap[ny][nx]) &&
                   !enemies.some(o => o !== e && o.x === nx && o.y === ny) &&
@@ -904,7 +904,7 @@
         let dist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
         // Patrol AI: move toward stationary player if within 4 tiles
         if(e.stats.patrolling) {
-          if(dist <= 4 && (player.stationaryTurns || 0) >= 2) {
+          if(dist <= 4 && (player.stationaryTurns ?? 0) >= 2) {
             // Move toward player
             let pdx = Math.sign(player.x - e.x), pdy = Math.sign(player.y - e.y);
             let nx2 = e.x + pdx, ny2 = e.y + pdy;
@@ -930,7 +930,7 @@
 
       // E20: Friendly outdoor animals — flee from player when nearby
       if(e.fleePlayer) {
-        e.actionTimer = (e.actionTimer || 0) + ((e.stats.speed || 1) * steps);
+        e.actionTimer = (e.actionTimer ?? 0) + ((e.stats.speed ?? 1) * steps);
         while(e.actionTimer >= 1) {
           e.actionTimer -= 1;
           const distToPlayer = Math.hypot(e.x - player.x, e.y - player.y);
@@ -1004,7 +1004,7 @@
 
       // #32 FIX: Fence patrols near the bar entrance instead of standing still
       if(e.type === 'fence') {
-        e.actionTimer = (e.actionTimer || 0) + (e.stats.speed * steps);
+        e.actionTimer = (e.actionTimer ?? 0) + (e.stats.speed * steps);
         let barX = window._fenceBarX || player.x;
         let barY = window._fenceBarY || player.y;
         const onEntrance = (e.x === barX && e.y === barY) || (e.x === barX && e.y === barY + 1) || (e.x === barX - 1 && e.y === barY + 1) || (e.x === barX + 1 && e.y === barY + 1);
@@ -1038,7 +1038,7 @@
 
       // B760.MIMIC: awakened mimic can spit coin projectiles at range.
       if(e.type === 'mimic' && e.isMimic) {
-        e.actionTimer = (e.actionTimer || 0) + (e.stats.speed * steps);
+        e.actionTimer = (e.actionTimer ?? 0) + (e.stats.speed * steps);
         while(e.actionTimer >= 1) {
           e.actionTimer -= 1;
           const dist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
@@ -1048,7 +1048,7 @@
               if(Sound.playSample) Sound.playSample('ka_ching', 0.55);
             }
             activeEffects.push({ kind:'goldCoins', x1:e.x, y1:e.y, x2:player.x, y2:player.y, color:'#FFD700', life:1.0, power:0.9 });
-            const pdmg = Math.max(2, Math.floor((e.stats.dmg || 8) * 0.6));
+            const pdmg = Math.max(2, Math.floor((e.stats.dmg ?? 8) * 0.6));
             player.hp -= pdmg;
             addFloatingText(player.x, player.y, `-${pdmg}🪙`, '#FFD700', 16);
             logMsg("<span style='color:var(--error)'>🪙 The Mimic spits a volley of gold coins!</span>");
@@ -1071,7 +1071,7 @@
       if(e.type === 'shark' && e.stats.stalks) {
         let playerOnWater = theMap[player.y] && (theMap[player.y][player.x] === TILES.WATER || theMap[player.y][player.x] === TILES.DEEP_WATER);
         let dist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
-        let aggroRange = e.stats.aggro || 6;
+        let aggroRange = e.stats.aggro ?? 6;
         if(playerOnWater && dist <= aggroRange) {
           // Provoke shark — it will always chase now
           e.provoked = true;
@@ -1095,7 +1095,7 @@
       // E.753.ZOMBIE: Slow shambling patrol until aggro range, then pursue
       if(e.type === 'zombie') {
         e.actionTimer += (e.stats.speed * steps);
-        const aggroRange = e.stats.aggro || 5;
+        const aggroRange = e.stats.aggro ?? 5;
         while(e.actionTimer >= 1) {
           e.actionTimer -= 1;
           const dist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
@@ -1196,7 +1196,7 @@
 
     // Track player stationaryTurns for thief patrol AI
     if(player._lastX === player.x && player._lastY === player.y) {
-      player.stationaryTurns = (player.stationaryTurns || 0) + steps;
+      player.stationaryTurns = (player.stationaryTurns ?? 0) + steps;
     } else {
       player.stationaryTurns = 0;
     }
@@ -1356,7 +1356,7 @@
 
     // Bug 11+13: Heal ticks during sleep, scaled by CON, with visible +HP text
     // #37 FIX: Also regenerate MP during sleep
-    let conBonus = (player.stats.con || 10) - 10;
+    let conBonus = (player.stats.con ?? 10) - 10;
     let tickHeal = Math.max(1, Math.floor((5 + conBonus) / 2));
     let tickMana = Math.max(1, Math.floor(3 + conBonus / 2));
     let sleepHealTotal = 0;
@@ -1572,9 +1572,9 @@
 
     if (typeof QuestEngine !== 'undefined') {
       QuestEngine.emit('kill', { type: e.type });
-      QuestEngine._counters['kill_total'] = (QuestEngine._counters['kill_total'] || 0) + 1;
+      QuestEngine._counters['kill_total'] = (QuestEngine._counters['kill_total'] ?? 0) + 1;
       if (e.type === 'mouse' || e.type === 'cockroach') {
-        QuestEngine._counters['kill_vermin'] = (QuestEngine._counters['kill_vermin'] || 0) + 1;
+        QuestEngine._counters['kill_vermin'] = (QuestEngine._counters['kill_vermin'] ?? 0) + 1;
       }
       // B2: Only count kills toward the guard dungeon quest when actually in the dungeon
       // (not in town, beach, fields, or other non-dungeon scenes, and not farm animals/vermin)
@@ -1585,7 +1585,7 @@
         currentScene !== 'fields' && currentScene !== 'nest' &&
         !FARM_ANIMAL_TYPES_KILL.has(e.type) && !VERMIN_TYPES.has(e.type);
       if (isDungeonKill) {
-        QuestEngine._counters['kill_dungeon'] = (QuestEngine._counters['kill_dungeon'] || 0) + 1;
+        QuestEngine._counters['kill_dungeon'] = (QuestEngine._counters['kill_dungeon'] ?? 0) + 1;
       }
     }
     if (e.type === 'cow' || e.type === 'chicken') player.killedPassive = true;
@@ -1597,12 +1597,12 @@
 
     // #1: Farm animal kill in town — Dennis warning/debt escalation
     if(currentScene === 'town' && (e.type === 'cow' || e.type === 'chicken' || e.type === 'duck')) {
-      player.townAnimalKills = (player.townAnimalKills || 0) + 1;
+      player.townAnimalKills = (player.townAnimalKills ?? 0) + 1;
       if(!player.dennisWarned && player.townAnimalKills >= 2) {
         player.dennisWarned = true;
         logMsg("<span style='color:#aaa; font-style:italic;'>You hear Dennis muttering in the distance: \"Something strange is happening to the animals...\"</span>");
       } else if(player.dennisWarned) {
-        player.dennisAnimalDebt = (player.dennisAnimalDebt || 0) + 100;
+        player.dennisAnimalDebt = (player.dennisAnimalDebt ?? 0) + 100;
         player.dennisAnimalFurious = true;
         const cost = player.dennisAnimalDebt;
         logMsg(`<span style='color:var(--error)'>Dennis storms over, face red: "MY ANIMALS! You MONSTER! Get away from me until you pay ${cost}g!"</span>`);
@@ -1628,12 +1628,12 @@
       if(roll < 0.05) corpseLoot.push(new ItemStack('plansForWorldDomination', 1));
       else if(roll < 0.25) corpseLoot.push(new ItemStack('cheese', 1));
       corpseLoot.push(new ItemStack('gold', 1 + Math.floor(Math.random() * 3)));
-      player.xp += 10; player.verminKills = (player.verminKills || 0) + 1;
+      player.xp += 10; player.verminKills = (player.verminKills ?? 0) + 1;
       if(player.verminKills >= 10) awardAchievement('vermin_slayer');
     } else if(e.type === 'cockroach') {
       corpseLoot.push(new ItemStack('cockroachLegStale', 1));
       if(Math.random() < 0.3) corpseLoot.push(new ItemStack('gold', 1));
-      player.xp += 5; player.verminKills = (player.verminKills || 0) + 1;
+      player.xp += 5; player.verminKills = (player.verminKills ?? 0) + 1;
       if(player.verminKills >= 10) awardAchievement('vermin_slayer');
     } else if(e.type === 'chicken') {
       if(typeof Sound !== 'undefined' && Sound.cluck) Sound.cluck();
@@ -1656,7 +1656,7 @@
       // E17: 15% poop drop from ducks
       if(Math.random() < 0.15) corpseLoot.push(new ItemStack('poop', 1));
       player.xp += 15;
-      player.duckKills = (player.duckKills || 0) + 1;
+      player.duckKills = (player.duckKills ?? 0) + 1;
       if(player.duckKills >= 5 && !achievements['duck_hunter']) {
         showDuckHuntDogLaugh();
         awardAchievement('duck_hunter');
@@ -1771,7 +1771,7 @@
             changeGold(item.qty, { x: e.x, y: e.y, floatText: true });
           } else {
             let slot = inventory.findIndex(s => s === null);
-            if(slot !== -1) { inventory[slot] = new ItemStack(item.itemName, item.qty || 1); }
+            if(slot !== -1) { inventory[slot] = new ItemStack(item.itemName, item.qty ?? 1); }
             else tryPlaceInInventory(item);
           }
         });
@@ -1787,10 +1787,10 @@
 
   // Stubs — replaced by player.js functions when loaded
   if(typeof getPlayerDmgVersus === 'undefined') {
-    window.getPlayerDmgVersus = function(e) { return Math.floor(Math.random() * (player.baseDmg||3) + 1 + (player.meleeDmgBonus||0)); };
-    window.getPlayerHits = function(e) { return Math.random() < (player.hitRate||0.85); };
+    window.getPlayerDmgVersus = function(e) { return Math.floor(Math.random() * (player.baseDmg ?? 3) + 1 + (player.meleeDmgBonus ?? 0)); };
+    window.getPlayerHits = function(e) { return Math.random() < (player.hitRate ?? 0.85); };
     window.getPlayerPrimaryHand = function() { return player.equipped && player.equipped.leftHand; };
-    window.getPlayerCritRate = function() { return player.critRate || 0; };
+    window.getPlayerCritRate = function() { return player.critRate ?? 0; };
   }
 
   // Damages enemy (if dmg passed is > 0).
@@ -1815,7 +1815,7 @@
       if(!e.provoked) {
         e.provoked = true;
         e.stats.passive = false;
-        e.stats.speed = Math.max(0.9, e.stats.speed || 0.9);
+        e.stats.speed = Math.max(0.9, e.stats.speed ?? 0.9);
         logMsg("<span style='color:var(--error)'>📦 The chest splits open — it's a mimic!</span>");
         if(typeof Sound !== 'undefined' && Sound.playSample) Sound.playSample('mimic_reveal', 0.75);
       }
@@ -1916,7 +1916,7 @@
           e.stats.passive = false;
           if(Math.random() < 0.5) {
             e.fleePlayer = true;
-            e.stats.speed = (e.stats.speed || 1) * 2;
+            e.stats.speed = (e.stats.speed ?? 1) * 2;
           }
         }
 
@@ -2058,7 +2058,7 @@
     }
     e._insultPlayerOpened = false;
 
-    e._insultRoundCount = (e._insultRoundCount || 0) + 1;
+    e._insultRoundCount = (e._insultRoundCount ?? 0) + 1;
 
     // INSULT LEARNING SYSTEM:
     let round;
@@ -2204,7 +2204,7 @@
       }
 
       // Pirate loses pride — flees to another part of the area
-      e._prideLosses = (e._prideLosses || 0) + 1;
+      e._prideLosses = (e._prideLosses ?? 0) + 1;
       if(e._prideLosses >= 1 || type === 'master') {
         // Pirate flees — teleport to random location
         let fleeX, fleeY, attempts = 0;
@@ -2251,7 +2251,7 @@
     }
 
     // Monster damage is from 1 to their max, not always their max.
-    let dmg = Math.floor(Math.random() * (e.stats.dmg || 1)) + 1;
+    let dmg = Math.floor(Math.random() * (e.stats.dmg ?? 1)) + 1;
     player.hp -= dmg;
 
     // Bug 13: Always show damage tint and floating text regardless of sleep state
@@ -2449,7 +2449,7 @@
           }
         } else {
           // Various dark-encounter hints, escalating with danger
-          let grueDanger = player.grueDanger || 0;
+          let grueDanger = player.grueDanger ?? 0;
           if(grueDanger > 8) {
             logMsg("<span style='color:#444; font-style:italic;'>Something enormous breathes very close to your face. Two things, actually. One of them sounds like it is trying not to laugh.</span>");
           } else {
@@ -2658,7 +2658,7 @@
       enemies.forEach(e => {
         if(e.type === 'shark' && e.stats && e.stats.stalks) {
           let dist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
-          if(dist <= (e.stats.aggro || 6)) {
+          if(dist <= (e.stats.aggro ?? 6)) {
             if(!e.provoked) {
               e.provoked = true;
               logMsg("<span style='color:var(--error)'>🦈 Something large stirs in the water nearby...</span>");
@@ -2904,7 +2904,7 @@
     // Restore durability on all equipped items (if durability system exists)
     Object.values(player.equipped || {}).forEach(name => {
       const def = name ? ItemDefs[name] : null;
-      if(def && def.durability !== undefined) def.durability = def.maxDurability || 100;
+      if(def && def.durability !== undefined) def.durability = def.maxDurability ?? 100;
     });
     addFloatingText(player.x, player.y, '🔨 REPAIRED', '#fc0', 16);
     logMsg("<span style='color:var(--success)'>🧑‍🔧 Griswold hammers away for a moment. \"There! Good as new. Well, good as it's going to get.\"</span>");
@@ -2973,7 +2973,7 @@
     let machine = machines.find(m => m.x === mx && m.y === my);
     if(!machine) return;
 
-    let beadCount = inventory.reduce((sum, i) => sum + (i && i.itemName === 'orichalcumBead' ? (i.qty || 1) : 0), 0);
+    let beadCount = inventory.reduce((sum, i) => sum + (i && i.itemName === 'orichalcumBead' ? (i.qty ?? 1) : 0), 0);
 
     let m = document.getElementById('modal-content');
     Sound.machine();
@@ -3019,8 +3019,8 @@
     let toConsume = machine.beadCost;
     for(let i = 0; i < inventory.length && toConsume > 0; i++) {
       if(inventory[i] && inventory[i].itemName === 'orichalcumBead') {
-        let take = Math.min(inventory[i].qty || 1, toConsume);
-        inventory[i].qty = (inventory[i].qty || 1) - take;
+        let take = Math.min(inventory[i].qty ?? 1, toConsume);
+        inventory[i].qty = (inventory[i].qty ?? 1) - take;
         toConsume -= take;
         if(inventory[i].qty <= 0) inventory[i] = null;
       }
