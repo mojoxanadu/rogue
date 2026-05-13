@@ -124,7 +124,7 @@
             rewards: [
               { type: "achievement", id: "safe_cranked" },
               { type: "giveGold", amount: 500 },
-              { type: "giveItem", item: "🏺" }
+              { type: "giveItem", item: "brassBottle" }
             ],
             rewardExperience: 300,
             finishesQuest: true

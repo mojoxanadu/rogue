@@ -105,7 +105,7 @@
             logText: "I found an Orichalcum Bead in the desert — a small blue stone with an inner glow. It feels strangely warm. What is it for?",
             trigger: {
               event: "pickup",
-              filter: { item: "📿" },
+              filter: { item: "orichalcumBead" },
               requirements: []
             },
             rewardExperience: 25,

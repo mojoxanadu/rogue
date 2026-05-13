@@ -387,7 +387,7 @@
     }
     else if(step === 1) {
       // Application fee: 10 cockroach legs
-      let hasLegs = inventory.some(i => i && i.icon === '🦗') || inventory.some(i => i && i.icon === '🦗');
+      let hasLegs = inventory.some(i => i && i.itemName === 'cockroachLegStale');
       m.innerHTML = `<h2>🏪 Application Fee</h2>
         ${npcFaceHTML('npc_apu', '🧔🏿', 'apu')}
         <p>🧔🏿‍♂️ "First, we need to verify your commitment. The application fee is 10 cockroach legs."</p>
@@ -401,7 +401,7 @@
       if(hasLegs) {
         // Remove cockroach legs if they somehow have them
         for(let i = 0; i < inventory.length; i++) {
-          if(inventory[i] && inventory[i].icon === '🦗') { inventory[i] = null; break; }
+          if(inventory[i] && inventory[i].itemName === 'cockroachLegStale') { inventory[i] = null; break; }
         }
         renderQuickslots();
       }
@@ -1186,7 +1186,7 @@
           let def = it.def;
           if(def && def.maxGP > 0) {
             hasSellable = true;
-            let count = inventory.filter(i => i && i.icon === it.icon).length;
+            let count = inventory.filter(i => i && i.itemName === it.itemName).length;
             let badge = count > 1 ? `<span style="background:var(--warning); color:#000; font-size:9px; padding:0 4px; border-radius:8px; margin-left:4px;">${count}</span>` : '';
             html += `<div class="shop-item" style="margin:0; padding:4px;"><span>${it.icon} ${def.name} (+${def.maxGP}g)${badge}</span>
               <button onclick="sell(${idx}, '${type}')">Sell</button></div>`;

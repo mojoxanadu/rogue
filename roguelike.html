@@ -2,7 +2,7 @@
   ╔══════════════════════════════════════════════════════════════╗
   ║  ROGUELIKE: THE ULTIMATE QUEST — Build 762                    ║
   ╠══════════════════════════════════════════════════════════════╣
-  ║  Built: 2026-05-13 15:25:16                                 ║
+  ║  Built: 2026-05-13 15:28:39                                 ║
   ║  Files: 30                                                  ║
   ║  Assets: 1                                                  ║
   ╠══════════════════════════════════════════════════════════════╣
@@ -18,25 +18,25 @@
   ║    limerick_api.js (src/limerick_api.js, modified: 2026-05-13 13:09)║
   ║    ui_logic.js (src/ui_logic.js, modified: 2026-05-13 15:19) ║
   ║    quests_base.js (src/quests_base.js, modified: 2026-05-13 10:07)║
-  ║    quests_monkey_island.js (src/quests_monkey_island.js, modified: 2026-05-13 10:07)║
+  ║    quests_monkey_island.js (src/quests_monkey_island.js, modified: 2026-05-13 15:27)║
   ║    quests_monty_python.js (src/quests_monty_python.js, modified: 2026-05-13 10:07)║
   ║    quests_black_cauldron.js (src/quests_black_cauldron.js, modified: 2026-05-13 10:07)║
-  ║    quests_indiana_jones.js (src/quests_indiana_jones.js, modified: 2026-05-13 10:07)║
-  ║    quests_kq5.js (src/quests_kq5.js, modified: 2026-05-13 10:07)║
+  ║    quests_indiana_jones.js (src/quests_indiana_jones.js, modified: 2026-05-13 15:27)║
+  ║    quests_kq5.js (src/quests_kq5.js, modified: 2026-05-13 15:27)║
   ║    quests_zork.js (src/quests_zork.js, modified: 2026-05-13 10:07)║
   ║    quests_elder_scrolls.js (src/quests_elder_scrolls.js, modified: 2026-05-13 10:07)║
   ║    quests_larry.js (src/quests_larry.js, modified: 2026-05-13 10:07)║
   ║    quests_space_quest.js (src/quests_space_quest.js, modified: 2026-05-13 10:07)║
   ║    quests_qfg.js (src/quests_qfg.js, modified: 2026-05-13 10:07)║
-  ║    quest_engine.js (src/quest_engine.js, modified: 2026-05-13 13:10)║
+  ║    quest_engine.js (src/quest_engine.js, modified: 2026-05-13 15:27)║
   ║    boundary_data.js (src/boundary_data.js, modified: 2026-05-13 10:07)║
   ║    map.js (src/map.js, modified: 2026-05-13 13:09)           ║
-  ║    mechanics.js (src/mechanics.js, modified: 2026-05-13 15:24)║
+  ║    mechanics.js (src/mechanics.js, modified: 2026-05-13 15:27)║
   ║    engine.js (src/engine.js, modified: 2026-05-13 15:19)     ║
-  ║    shop.js (src/shop.js, modified: 2026-05-13 15:19)         ║
+  ║    shop.js (src/shop.js, modified: 2026-05-13 15:28)         ║
   ║    webgl_fx.js (src/webgl_fx.js, modified: 2026-05-13 13:10) ║
   ║    render.js (src/render.js, modified: 2026-05-13 13:10)     ║
-  ║    input.js (src/input.js, modified: 2026-05-13 15:19)       ║
+  ║    input.js (src/input.js, modified: 2026-05-13 15:27)       ║
   ╚══════════════════════════════════════════════════════════════╝
 -->
 
@@ -7080,7 +7080,7 @@ ${html}
 
 // ═══ END: quests_base.js ═══
 
-// ═══ BEGIN: quests_monkey_island.js (src/quests_monkey_island.js, modified: 2026-05-13 10:07) ═══
+// ═══ BEGIN: quests_monkey_island.js (src/quests_monkey_island.js, modified: 2026-05-13 15:27) ═══
   /*
   ╔══════════════════════════════════════════════════════════════════════════════╗
   ║  QUEST PACK: MONKEY ISLAND — Insult Sword Fighting, Grog, and Piracy      ║
@@ -7207,7 +7207,7 @@ ${html}
             rewards: [
               { type: "achievement", id: "safe_cranked" },
               { type: "giveGold", amount: 500 },
-              { type: "giveItem", item: "🏺" }
+              { type: "giveItem", item: "brassBottle" }
             ],
             rewardExperience: 300,
             finishesQuest: true
@@ -7833,7 +7833,7 @@ ${html}
 
 // ═══ END: quests_black_cauldron.js ═══
 
-// ═══ BEGIN: quests_indiana_jones.js (src/quests_indiana_jones.js, modified: 2026-05-13 10:07) ═══
+// ═══ BEGIN: quests_indiana_jones.js (src/quests_indiana_jones.js, modified: 2026-05-13 15:27) ═══
   /*
   ╔══════════════════════════════════════════════════════════════════════════════╗
   ║  QUEST PACK: INDIANA JONES — Last Crusade + Fate of Atlantis               ║
@@ -7941,7 +7941,7 @@ ${html}
             logText: "I found an Orichalcum Bead in the desert — a small blue stone with an inner glow. It feels strangely warm. What is it for?",
             trigger: {
               event: "pickup",
-              filter: { item: "📿" },
+              filter: { item: "orichalcumBead" },
               requirements: []
             },
             rewardExperience: 25,
@@ -8006,7 +8006,7 @@ ${html}
 
 // ═══ END: quests_indiana_jones.js ═══
 
-// ═══ BEGIN: quests_kq5.js (src/quests_kq5.js, modified: 2026-05-13 10:07) ═══
+// ═══ BEGIN: quests_kq5.js (src/quests_kq5.js, modified: 2026-05-13 15:27) ═══
   // === King's Quest V Quest Pack ===
   /*
     KING'S QUEST V – RAT RESCUE & TEMPLE OF GREED
@@ -8119,7 +8119,7 @@ ${html}
               },
               rewards: [
                 { type: 'achievement', id: 'greed_survived' },
-                { type: 'item', item: '🏺', name: 'Golden Chalice' }
+                { type: 'item', item: 'brassBottle', name: 'Golden Chalice' }
               ],
               rewardExperience: 50,
               finishesQuest: true
@@ -8277,7 +8277,7 @@ ${html}
             rat.stats.icon = '🐀💖';
             if(typeof emitQuestEvent === 'function') emitQuestEvent('rat_saved', {});
             logMsg('<span style="color:var(--primary)">🐀 The rat looks at you gratefully!</span>');
-            const bootIndex = inventory.findIndex(i => i && i.icon === '🥾');
+            const bootIndex = inventory.findIndex(i => i && i.itemName === 'oldBoot');
             if(bootIndex > -1) { inventory[bootIndex] = null; renderQuickslots(); }
           }
         },
@@ -9123,7 +9123,7 @@ ${html}
 
 // ═══ END: quests_qfg.js ═══
 
-// ═══ BEGIN: quest_engine.js (src/quest_engine.js, modified: 2026-05-13 13:10) ═══
+// ═══ BEGIN: quest_engine.js (src/quest_engine.js, modified: 2026-05-13 15:27) ═══
   /*
   ╔══════════════════════════════════════════════════════════════════════════════╗
   ║  QUEST ENGINE MODULE — DATA-DRIVEN QUEST & ACHIEVEMENT SYSTEM              ║
@@ -9650,7 +9650,7 @@ ${html}
 
         case 'inventoryHas':
           // Player has at least qty of an item (does NOT consume it)
-          return inventory.some(i => i && i.icon === req.item && (i.qty ?? 1) >= (req.qty ?? 1));
+          return inventory.some(i => i && i.itemName === req.item && (i.qty ?? 1) >= (req.qty ?? 1));
 
         case 'inventoryRemove':
           // Like inventoryHas, but CONSUMES the item if the check passes.
@@ -10171,10 +10171,10 @@ ${html}
     // UTILITY METHODS
     // ──────────────────────────────────────────────────────────────────────────
 
-    _tryRemoveItem(itemIcon, qty) {
+    _tryRemoveItem(itemName, qty) {
       let found = 0;
       for (let i = 0; i < inventory.length; i++) {
-        if (inventory[i] && inventory[i].icon === itemIcon) {
+        if (inventory[i] && inventory[i].itemName === itemName) {
           found += (inventory[i].qty ?? 1);
         }
       }
@@ -10182,7 +10182,7 @@ ${html}
       // Actually remove
       let remaining = qty;
       for (let i = 0; i < inventory.length && remaining > 0; i++) {
-        if (inventory[i] && inventory[i].icon === itemIcon) {
+        if (inventory[i] && inventory[i].itemName === itemName) {
           let has = inventory[i].qty ?? 1;
           if (has <= remaining) {
             remaining -= has;
@@ -12462,7 +12462,7 @@ window.BOUNDARY_DATA = {
 
 // ═══ END: map.js ═══
 
-// ═══ BEGIN: mechanics.js (src/mechanics.js, modified: 2026-05-13 15:24) ═══
+// ═══ BEGIN: mechanics.js (src/mechanics.js, modified: 2026-05-13 15:27) ═══
 /*
   MECHANICS MODULE – INVENTORY, ITEMS, AND SPECIAL ACTIONS
   =========================================================
@@ -13080,7 +13080,7 @@ window.BOUNDARY_DATA = {
         let stacked = false;
         if(def.stackable) {
           let maxStack = def.maxStack ?? 10;
-          let slot = inventory.find(i => i && i.icon === item.icon && (i.qty ?? 1) < maxStack);
+          let slot = inventory.find(i => i && i.itemName === item.itemName && (i.qty ?? 1) < maxStack);
           if(slot) { slot.qty = (slot.qty ?? 1) + 1; stacked = true; }
         }
         if(!stacked) {
@@ -13092,7 +13092,7 @@ window.BOUNDARY_DATA = {
         if(!stacked) {
           if(def.stackable) {
             let maxStack = def.maxStack ?? 10;
-            let ps = inventory.find(i => i && i.icon === item.icon && (i.qty ?? 1) < maxStack);
+            let ps = inventory.find(i => i && i.itemName === item.itemName && (i.qty ?? 1) < maxStack);
             if(ps) { ps.qty = (ps.qty ?? 1) + 1; stacked = true; }
           }
           if(!stacked) {
@@ -16899,7 +16899,7 @@ window.BOUNDARY_DATA = {
 
 // ═══ END: engine.js ═══
 
-// ═══ BEGIN: shop.js (src/shop.js, modified: 2026-05-13 15:19) ═══
+// ═══ BEGIN: shop.js (src/shop.js, modified: 2026-05-13 15:28) ═══
   /*
   SHOP MODULE – NPC MERCHANTS, TRADING, AND QUEST INTERACTIONS
   =============================================================
@@ -17289,7 +17289,7 @@ window.BOUNDARY_DATA = {
     }
     else if(step === 1) {
       // Application fee: 10 cockroach legs
-      let hasLegs = inventory.some(i => i && i.icon === '🦗') || inventory.some(i => i && i.icon === '🦗');
+      let hasLegs = inventory.some(i => i && i.itemName === 'cockroachLegStale');
       m.innerHTML = `<h2>🏪 Application Fee</h2>
         ${npcFaceHTML('npc_apu', '🧔🏿', 'apu')}
         <p>🧔🏿‍♂️ "First, we need to verify your commitment. The application fee is 10 cockroach legs."</p>
@@ -17303,7 +17303,7 @@ window.BOUNDARY_DATA = {
       if(hasLegs) {
         // Remove cockroach legs if they somehow have them
         for(let i = 0; i < inventory.length; i++) {
-          if(inventory[i] && inventory[i].icon === '🦗') { inventory[i] = null; break; }
+          if(inventory[i] && inventory[i].itemName === 'cockroachLegStale') { inventory[i] = null; break; }
         }
         renderQuickslots();
       }
@@ -18088,7 +18088,7 @@ window.BOUNDARY_DATA = {
           let def = it.def;
           if(def && def.maxGP > 0) {
             hasSellable = true;
-            let count = inventory.filter(i => i && i.icon === it.icon).length;
+            let count = inventory.filter(i => i && i.itemName === it.itemName).length;
             let badge = count > 1 ? `<span style="background:var(--warning); color:#000; font-size:9px; padding:0 4px; border-radius:8px; margin-left:4px;">${count}</span>` : '';
             html += `<div class="shop-item" style="margin:0; padding:4px;"><span>${it.icon} ${def.name} (+${def.maxGP}g)${badge}</span>
               <button onclick="sell(${idx}, '${type}')">Sell</button></div>`;
@@ -22630,7 +22630,7 @@ window.mapSweepTransition = function(direction, callback) {
 
 // ═══ END: render.js ═══
 
-// ═══ BEGIN: input.js (src/input.js, modified: 2026-05-13 15:19) ═══
+// ═══ BEGIN: input.js (src/input.js, modified: 2026-05-13 15:27) ═══
   /*
   INPUT MODULE – KEYBOARD, MOUSE, AND GAME LOOP MANAGEMENT
   =========================================================
@@ -23665,9 +23665,9 @@ const hBtn = document.getElementById('hamburgerBtn');
           for(let i = 0; i < inventory.length; i++) {
             const item = inventory[i];
             if(!item) continue;
-            if(item.icon === query) { foundIdx = i; break; }
+            if(item.icon === query || item.itemName === query) { foundIdx = i; break; }
             const def = item.def;
-            if(def && def.name.toLowerCase().includes(query)) { foundIdx = i; break; }
+            if(def && def.displayName.toLowerCase().includes(query)) { foundIdx = i; break; }
           }
           if(foundIdx === -1) {
             debugLog(`No item matching '${query}' in inventory.`);
@@ -24399,15 +24399,15 @@ const hBtn = document.getElementById('hamburgerBtn');
         }
         if((state ?? 0) === 0) {
           // Check if player has a key
-          let hasKey = inventory.some(i => i && i.icon === '🗝️') || (player.inventory && player.inventory.some(i => i && i.icon === '🗝️'));
+          let hasKey = inventory.some(i => i && i.itemName === 'key') || (player.inventory && player.inventory.some(i => i && i.itemName === 'key'));
           if(hasKey) {
             // Use key from inventory first, then inventory
-            let keyIdx = inventory.findIndex(i => i && i.icon === '🗝️');
+            let keyIdx = inventory.findIndex(i => i && i.itemName === 'key');
             if(keyIdx !== -1) {
               inventory[keyIdx].qty--;
               if(inventory[keyIdx].qty <= 0) inventory[keyIdx] = null;
             } else {
-              let inventoryIdx = player.inventory.findIndex(i => i && i.icon === '🗝️');
+              let inventoryIdx = player.inventory.findIndex(i => i && i.itemName === 'key');
               if(inventoryIdx !== -1) {
                 player.inventory[inventoryIdx].qty--;
                 if(player.inventory[inventoryIdx].qty <= 0) player.inventory[inventoryIdx] = null;
@@ -24424,7 +24424,7 @@ const hBtn = document.getElementById('hamburgerBtn');
                   if(item.def?.pickupTo === 'gp') { changeGold(item.qty); }
                   else { let s = inventory.findIndex(s => s === null); if(s !== -1) inventory[s] = new ItemStack(item.itemName, item.qty); else tryPlaceInInventory(item); }
                 });
-                if(!loot.some(item => item.icon === '🪙')) Sound.clink();
+                if(!loot.some(item => item.itemName === 'gold')) Sound.clink();
               } else {
                 createCorpse(tileX, tileY, 'chest', {icon:'📦'}, loot);
               }
