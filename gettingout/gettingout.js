@@ -118,12 +118,13 @@ async function demoGOContactSearch(sess /*, postLogin */) {
   }
 }
 
-async function demoGOMessaging(sess /*, postLogin */) {
-  // Demo of GOMessaging: read-only walkthrough of the message center.
+async function demoGOMessaging(sess, _postLogin, { spendOk } = {}) {
+  // Demo of GOMessaging: walkthrough of the message center.
   // Authenticates via OAuth-PKCE against sso.gtlconnect.com (which works
   // because the preceding SSO login already seeded _usso_session), then
   // hits messaging.gtlconnect.com for contacts, balance, and incoming
-  // messages for the first contact. No state-changing calls.
+  // messages for the first contact. Send is gated behind --spend-ok.
+  console.log(`[*] spend-ok: ${spendOk ? 'YES (sending may incur ~$0.05)' : 'no (read-only)'}`);
   const msg = new GOMessaging(sess);
 
   console.log('\n[*] GOMessaging.authenticate() (OAuth-PKCE)');
@@ -153,6 +154,16 @@ async function demoGOMessaging(sess /*, postLogin */) {
     const date = m.sentAt ? new Date(m.sentAt).toISOString().slice(0, 10) : '?';
     console.log(`     [${date}] ${m.sender}: ${m.body}`);
   }
+
+  if (spendOk) {
+    const text = 'The apple fell and Isaac knew thy fate.';
+    console.log(`\n[*] GOMessaging.sendMessage(${first.contactId}, ${JSON.stringify(text)}) [SPENDING ~$0.05]`);
+    const { sent, response } = await msg.sendMessage(first.contactId, text, { iAcceptCost: true });
+    console.log(`[+] safeText: ${JSON.stringify(sent)}`);
+    console.log(`[+] response: ${JSON.stringify(response).slice(0, 300)}`);
+  } else {
+    console.log('\n[*] sendMessage skipped (pass --spend-ok to enable)');
+  }
 }
 
 const DEMOS = {
@@ -160,40 +171,53 @@ const DEMOS = {
   GOMessaging:     demoGOMessaging,
 };
 
-function parseDemoArg(argv) {
+function parseArgs(argv) {
   // Accepts: --demo GOMessaging   or   --demo=GOMessaging
+  //          --spend-ok           (boolean, only meaningful with GOMessaging)
+  //          --help / -h
+  let demo = null;
+  let spendOk = false;
+  let help = false;
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
-    if (a === '--demo' || a === '-d') return argv[i + 1] ?? null;
-    if (a.startsWith('--demo=')) return a.slice('--demo='.length);
-    if (a === '--help' || a === '-h') return '__help__';
+    if (a === '--demo' || a === '-d') { demo = argv[i + 1] ?? null; i++; continue; }
+    if (a.startsWith('--demo=')) { demo = a.slice('--demo='.length); continue; }
+    if (a === '--spend-ok') { spendOk = true; continue; }
+    if (a === '--help' || a === '-h') { help = true; continue; }
   }
-  return null;
+  return { demo, spendOk, help };
 }
 
 function printHelp() {
   const names = Object.keys(DEMOS).join(' | ');
-  console.log(`Usage: node gettingout.js --demo <${names}>`);
+  console.log(`Usage: node gettingout.js --demo <${names}> [--spend-ok]`);
   console.log('');
   console.log('Demos:');
   console.log('  GOContactSearch  Public pay.gettingout.com search (states → facilities → inmates).');
-  console.log('  GOMessaging      Authenticated read-only message-center walkthrough');
-  console.log('                   (contacts, balance, incoming messages).');
+  console.log('  GOMessaging      Authenticated message-center walkthrough');
+  console.log('                   (contacts, balance, incoming messages; sends only with --spend-ok).');
+  console.log('');
+  console.log('Flags:');
+  console.log('  --spend-ok       Enable cost-incurring calls (sendMessage charges ~$0.05/msg).');
+  console.log('                   Only meaningful with --demo GOMessaging. Default: off.');
   console.log('');
   console.log('Both demos share the same SSO login + VPN-pinned session.');
 }
 
 async function main() {
-  const demoArg = parseDemoArg(process.argv.slice(2));
-  if (demoArg === '__help__' || demoArg === null) {
+  const { demo, spendOk, help } = parseArgs(process.argv.slice(2));
+  if (help || demo === null) {
     printHelp();
-    process.exit(demoArg === '__help__' ? 0 : 1);
+    process.exit(help ? 0 : 1);
   }
-  const demoFn = DEMOS[demoArg];
+  const demoFn = DEMOS[demo];
   if (!demoFn) {
-    console.error(`Unknown --demo "${demoArg}". Available: ${Object.keys(DEMOS).join(', ')}`);
+    console.error(`Unknown --demo "${demo}". Available: ${Object.keys(DEMOS).join(', ')}`);
     printHelp();
     process.exit(1);
+  }
+  if (spendOk && demo !== 'GOMessaging') {
+    console.error(`--spend-ok has no effect with --demo ${demo}; it only gates GOMessaging.sendMessage.`);
   }
 
   // my.viapath.com sends only the leaf cert and omits its DigiCert
@@ -205,8 +229,8 @@ async function main() {
   console.log(`[+] Egress IP confirmed: ${egress}`);
 
   const postLogin = await login(sess);
-  console.log(`\n[*] Running demo: ${demoArg}`);
-  await demoFn(sess, postLogin);
+  console.log(`\n[*] Running demo: ${demo}${spendOk ? ' (--spend-ok)' : ''}`);
+  await demoFn(sess, postLogin, { spendOk });
 
   sess.shutdown();
   if (sess.vpnDown) process.exit(2);

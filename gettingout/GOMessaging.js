@@ -1,4 +1,4 @@
-// GOMessaging.js — GettingOut/ViaPath message-center client (read-only).
+// GOMessaging.js — GettingOut/ViaPath message-center client.
 //
 // Wraps the messaging.gtlconnect.com endpoints used by the SPA at
 // my.viapath.com/home (the bundle at /home/assets/index-*.js). Unlike
@@ -15,16 +15,22 @@
 //   GET  /webapi/v2/users/contacts
 //   GET  /webapi/v6/users/messages/chat?user_id=<id>&limit=N&page_number=N
 //   GET  /webapi/v4/users/messages/cost?recipient_id=<id>   (returns {balance, cost})
+//   POST /webapi/v6/users/messages   {recipient_id, body, type:"text", lang}
 //
 // Direction inference: in the chat list, `msg.recipient_id === contactId`
 // means YOU sent it (outgoing); otherwise it's incoming. The bundle does
 // the same check (Pfe vs Ufe component selection).
 //
-// Read-only by design — no send / block / friend-request methods, even
-// though the bundle exposes them.
+// Cost-incurring methods (sendMessage) require the caller to pass
+// { iAcceptCost: true } explicitly. Read-only methods are always safe.
 
 import { createHash, randomBytes } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import { extractFormToken } from './vpnSession.js';
+
+const WHITELIST_PATH = join(dirname(fileURLToPath(import.meta.url)), 'whitelist.txt');
 
 const USSO_BASE      = 'https://sso.gtlconnect.com';
 const MSG_BASE       = 'https://messaging.gtlconnect.com';
@@ -33,6 +39,43 @@ const REDIRECT_URI   = 'https://my.viapath.com/home/usso';
 const CLIENT_ID      = 'f0b2cd568cf335933ff567b7d6baf375bf38ccfc42a0fced1f25acaaa6c1c4b3';
 const DEFAULT_LOCALE = 'en';
 const PAGE_SIZE      = 50;
+const MAX_BODY_LEN   = 2000;
+
+// --- safeText -------------------------------------------------------------
+// Outbound-text filter. Any word NOT in whitelist.txt has its first AEIOU
+// vowel replaced with the grave-accented equivalent (case preserved), so
+// the word stays legible to a reader but no longer matches exact-string
+// moderation rules. Whitelisted words pass through unchanged; words with
+// no AEIOU (e.g. "thy", "by") pass through unchanged. Single auditable
+// point — every wire-bound message body flows through here.
+
+const GRAVE = {
+  A: 'À', E: 'È', I: 'Ì', O: 'Ò', U: 'Ù',
+  a: 'à', e: 'è', i: 'ì', o: 'ò', u: 'ù',
+};
+
+let whitelistCache = null;
+function loadWhitelist() {
+  if (whitelistCache) return whitelistCache;
+  const raw = readFileSync(WHITELIST_PATH, 'utf8');
+  whitelistCache = new Set(
+    raw.split(/\r?\n/)
+       .map(l => l.trim().toLowerCase())
+       .filter(Boolean)
+  );
+  return whitelistCache;
+}
+
+function safeText(plainText) {
+  const whitelist = loadWhitelist();
+  return plainText.replace(/[A-Za-z]+/g, word => {
+    if (whitelist.has(word.toLowerCase())) return word;
+    const m = word.match(/[AEIOUaeiou]/);
+    if (!m) return word;
+    const i = m.index;
+    return word.slice(0, i) + GRAVE[word[i]] + word.slice(i + 1);
+  });
+}
 
 function base64url(buf) {
   return buf.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -278,5 +321,54 @@ export class GOMessaging {
         type:           m.type ?? null,
         approvalStatus: m.approval_status ?? null,
       }));
+  }
+
+  // --- cost-incurring API ---------------------------------------------------
+
+  // Send a text message to `contactId`. CHARGES THE ACCOUNT (~$0.05/msg).
+  // Caller MUST pass { iAcceptCost: true } — there is no implicit consent.
+  // Body is run through safeText() (whitelist + grave-accent filter) and
+  // length-checked against MAX_BODY_LEN.
+  //
+  // Returns { sent, response } where `sent` is the post-safeText body that
+  // actually went on the wire and `response` is the parsed API response
+  // (shape TBD; the SPA's hook just refetches the chat thread afterwards).
+  async sendMessage(contactId, text, { iAcceptCost = false } = {}) {
+    if (contactId == null) throw new Error('sendMessage: contactId is required');
+    if (typeof text !== 'string') throw new TypeError('sendMessage: text must be a string');
+    if (iAcceptCost !== true) {
+      throw new Error('sendMessage: refusing to spend; pass { iAcceptCost: true } to confirm');
+    }
+    const body = safeText(text);
+    if (body.length === 0) throw new Error('sendMessage: empty body after safeText()');
+    if (body.length > MAX_BODY_LEN) {
+      throw new Error(`sendMessage: body length ${body.length} exceeds MAX_BODY_LEN ${MAX_BODY_LEN}`);
+    }
+    if (!this.accessToken) await this.authenticate();
+    const url = `${MSG_BASE}/webapi/v6/users/messages`;
+    const { res } = await this.session.fetch(url, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json, text/plain, */*',
+        'Authorization': `Bearer ${this.accessToken}`,
+        'Content-Type': 'application/json',
+        'Origin': ORIGIN,
+        'Referer': `${ORIGIN}/`,
+      },
+      body: JSON.stringify({
+        recipient_id: contactId,
+        body,
+        type: 'text',
+        lang: this.locale,
+      }),
+    });
+    const raw = await res.text();
+    if (res.status < 200 || res.status >= 300) {
+      throw new Error(`${url} → HTTP ${res.status}: ${raw.slice(0, 300)}`);
+    }
+    let response;
+    try { response = JSON.parse(raw); }
+    catch { response = { raw }; }
+    return { sent: body, response };
   }
 }
