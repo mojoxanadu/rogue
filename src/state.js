@@ -577,6 +577,9 @@
     "🍖": { name: "Meat", type: "food", stackable: true, maxStack: 99, maxHeal: 12, foodValue: 25, maxGP: 10 },
     "🍕": { name: "Pizza", type: "food", stackable: true, maxStack: 99, maxHeal: 10, foodValue: 30, maxGP: 15 },
     "🌊": { name: "Ramen of the Deep", type: "food", stackable: true, maxStack: 99, maxHeal: 15, foodValue: 20, maxGP: 10 },
+    "🥛": { name: "Milk",    type: "food", maxStack: 99, maxHeal: 2, foodValue: 5,  maxGP: 3 },
+    "🥜": { name: "Peanuts", type: "food", maxStack: 99, maxHeal: 1, foodValue: 4,  maxGP: 1 },
+    "🦪": { name: "Oyster",  type: "food", maxStack: 99, maxHeal: 4, foodValue: 6,  maxGP: 2 },
     "🥤": { name: "Slurpee", type: "food", stackable: true, maxStack: 99, maxHeal: 5, foodValue: 10, maxGP: 8 },
     "🍜": { name: "Soup of Transcendence", type: "food", stackable: true, maxStack: 99, maxHeal: 25, foodValue: 30, maxGP: 15 },
     "🍺": { name: "Watered Down Beer", type: "food", stackable: true, maxStack: 99, maxHeal: 0, foodValue: 3, maxGP: 5 },
@@ -618,6 +621,7 @@
     "🦷": { name: "Shark Tooth", type: "quest", stackable: true, maxGP: 50 },
     "🪙": { name: "Unique Coin", type: "quest", stackable: false, maxGP: 0 },
     "🐀💦": { name: "Wet Rat Tail", type: "quest", stackable: true, maxGP: 0 },
+    "🦆":   { name: "Rubber Duck",  type: "quest", maxStack: 1, maxGP: 0 },
 
     // ── SCROLL ───────────────────────────────────────
     "📜📜": { name: "Constitutional Convention", type: "scroll", stackable: true, maxStack: 99, maxGP: 0 },
