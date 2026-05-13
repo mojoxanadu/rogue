@@ -693,6 +693,7 @@
     "🐀💦": { name: "Wet Rat Tail", type: "useless", stackable: true, maxGP: 0 },
     "🧶": { name: "Yarn", type: "useless", stackable: true, maxGP: 2 },
     "🪱": { name: "Earthworm", type: "useless", stackable: true, maxGP: 0 },
+    "🧴": { name: "Prophylactic", type: "useless", maxStack: 1, maxGP: 0 },
 
     // ── WEALTH ───────────────────────────────────────
     "💰": { name: "Gold Bag", type: "wealth", stackable: false, maxGP: 50 },

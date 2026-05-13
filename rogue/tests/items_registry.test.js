@@ -86,3 +86,20 @@ test('Lock: input.js class-init items resolve to expected camelCase names', () =
   assert.ok(ctx.ItemDefs.robe,             'robe missing — input.js spellcaster init will break');
   assert.ok(ctx.ItemDefs.lockpickingTools, 'lockpickingTools missing — input.js rogue init will break');
 });
+
+test('Lock: shop.js items resolve to expected camelCase names', () => {
+  const ctx = buildRegistry({
+    '🧴':   { name: 'Prophylactic',             type: 'useless', maxStack: 1,  maxGP: 0 },
+    '💳':   { name: "Apu's Club Card",          type: 'useless', stackable: false },
+    '📜📜': { name: 'Constitutional Convention', type: 'scroll',  stackable: true, maxStack: 99 },
+    '🏺':   { name: 'Brass Bottle',             type: 'misc',    stackable: false },
+    '🍺':   { name: 'Watered Down Beer',        type: 'food',    stackable: true, maxStack: 99 },
+    '🐟':   { name: 'Red Herring',              type: 'quest',   stackable: false },
+    '🕯️':   { name: 'Candle',                   type: 'light',   stackable: true, maxStack: 99 },
+  });
+  // Each name below is referenced literally in shop.js after migration.
+  for (const n of ['prophylactic', 'apusClubCard', 'constitutionalConvention',
+                   'brassBottle',  'wateredDownBeer', 'redHerring', 'candle']) {
+    assert.ok(ctx.ItemDefs[n], `${n} missing — shop.js will produce broken stacks`);
+  }
+});

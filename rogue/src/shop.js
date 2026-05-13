@@ -310,7 +310,7 @@
     let emptyIdx = inventory.findIndex(i => i === null);
     if(emptyIdx !== -1) {
       changeGold(-1);
-      inventory[emptyIdx] = {icon:'🧴', qty:1};
+      inventory[emptyIdx] = new ItemStack('prophylactic', 1);
       renderQuickslots(); updateUI();
     }
     openStore('apu');
@@ -455,7 +455,7 @@
       player.xp += 100; checkLevelUp();
       // Give player a useless but flavorful item
       let slot = inventory.findIndex(i => i === null);
-      if(slot !== -1) inventory[slot] = {icon: '💳', qty: 1};
+      if(slot !== -1) inventory[slot] = new ItemStack('apusClubCard', 1);
       renderQuickslots();
       m.innerHTML = `<h2>🏪 Congratulations!</h2>
         ${npcFaceHTML('npc_apu', '🧔🏿', 'apu')}
@@ -646,7 +646,7 @@
     logMsg("Dennis: \"Come see the violence inherent in the system! Help! Help! I'm being repressed!\"");
     player.xp += 200; checkLevelUp();
     let empty = inventory.findIndex(i => i === null);
-    if(empty !== -1) inventory[empty] = {icon:'📜📜', qty:1};
+    if(empty !== -1) inventory[empty] = new ItemStack('constitutionalConvention', 1);
     renderQuickslots(); hideOverlay();
   };
 
@@ -1511,7 +1511,7 @@
 
     let slot = inventory.findIndex(i => i === null);
     if(slot !== -1) {
-      inventory[slot] = { icon: prize.icon, qty: 1 };
+      inventory[slot] = ItemStack.fromIcon(prize.icon, 1);
       logMsg(`<span style='color:#FFD700'>⛪ You receive: ${prize.icon} <strong>${prize.name}</strong>! "${prize.desc}"</span>`);
     } else {
       logMsg(`<span style='color:var(--warning)'>⛪ No inventory room for ${prize.icon} ${prize.name}! It fades away sadly.</span>`);
@@ -1630,7 +1630,7 @@
       // Give a special item
       let empty = inventory.findIndex(i => i === null);
       if(empty !== -1) {
-        inventory[empty] = {icon: '🏺', qty: 1}; // Brass Bottle
+        inventory[empty] = new ItemStack('brassBottle', 1);
         logMsg("You receive a Brass Bottle! It feels... magical.");
       }
       
@@ -1922,7 +1922,7 @@
     // Give caustic grog item
     let empty = inventory.findIndex(i => i === null);
     if(empty !== -1) {
-      inventory[empty] = {icon: '🍺', qty: 1}; // Grog
+      inventory[empty] = new ItemStack('wateredDownBeer', 1); // Grog
       logMsg("<span style='color:#FFD700'>🍺 You create the legendary Caustic Grog!</span>");
       logMsg("<span style='color:var(--success)'>It burns going down, but it gives you incredible power!</span>");
       logMsg("<span style='color:#88FF88'>+50% damage for 10 turns!</span>");
@@ -1956,7 +1956,7 @@
       
       let empty = inventory.findIndex(i => i === null);
       if(empty !== -1) {
-        inventory[empty] = {icon: '🐟', qty: 1};
+        inventory[empty] = new ItemStack('redHerring', 1);
         logMsg("<span style='color:#88FF88'>This could be useful for distracting someone...</span>");
       }
       renderQuickslots();
@@ -2123,7 +2123,7 @@
         </div>`;
       if(!hasCandles) {
         let slot = inventory.findIndex(s => s === null);
-        if(slot !== -1) { inventory[slot] = {icon:'🕯️', qty:3}; renderQuickslots(); }
+        if(slot !== -1) { inventory[slot] = new ItemStack('candle', 3); renderQuickslots(); }
       }
     }
     else if(step === 'chaplain') {
