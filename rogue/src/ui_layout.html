@@ -1,0 +1,741 @@
+<body>
+<!--
+  UI LAYOUT – HTML STRUCTURE
+  ==========================
+  This file contains the complete HTML markup for the game's user interface.
+  It is divided into three main layers:
+  1. The <canvas> element (the game world)
+  2. The HUD (Heads‑Up Display) with stats, minimap, action bar, log, and inventory
+  3. Draggable modal windows for menus, inventory, equipment, etc.
+
+  All UI elements are positioned absolutely and layered using z‑index.
+  The layout is designed to be fully responsive via CSS (see header.html).
+-->
+
+<!-- The primary game canvas. All dungeon rendering happens here via JavaScript. -->
+<canvas id="game"></canvas>
+
+<!--
+  HUD (Heads‑Up Display) – Contains all overlay UI elements.
+  The .interactive class enables pointer‑events for this container.
+-->
+<div id="hud">
+  
+  <!-- Top‑left stat chips: GP, Hunger, Status. Updated dynamically by ui_logic.js. -->
+  <div id="top-left-stats" class="interactive">
+    <div class="chip" id="gpUI">💰 0</div>
+    <div class="chip" id="hungerUI">Hunger: 0%</div>
+    <div class="chip" id="statusUI" style="display:none;"></div>
+  </div>
+
+  <!-- Minimap canvas container. The canvas is drawn by render.js. -->
+  <div id="minimap-container" class="interactive">
+    <div id="minimap-label">Floor 1</div>
+    <div id="minimap-zoom-btns">
+      <button onclick="window._minimapZoom=Math.max(4,(window._minimapZoom||8)-2); drawMinimap();" title="Zoom in">+</button>
+      <button onclick="window._minimapZoom=Math.min(16,(window._minimapZoom||8)+2); drawMinimap();" title="Zoom out">−</button>
+      <button id="minimap-toggle-btn" onclick="window.toggleMinimap()" title="Show/hide minimap">👁</button>
+    </div>
+    <canvas id="minimap" width="150" height="150"></canvas>
+  </div>
+  <!-- Magic quickslots below minimap, separate element -->
+  <div id="magic-quickslots" class="interactive" style="position:absolute; top:216px; right:16px; display:flex; gap:6px; justify-content:center; background:rgba(20,18,24,0.7); border:1px solid #444; border-radius:6px; padding:4px 6px;">
+    <div onclick="castEquippedSpell()" title="Cast Spell (F)" style="width:32px; height:32px; border:1px solid var(--primary); border-radius:6px; display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative; background:rgba(29,27,32,0.9);">
+      <span style="font-size:8px; position:absolute; top:0px; left:2px; color:#aaa;">F</span><span id="spell-icon-1" style="font-size:16px;">🔘</span>
+    </div>
+    <div onclick="castSecondarySpell()" title="Spell 2 (G)" style="width:32px; height:32px; border:1px solid var(--secondary); border-radius:6px; display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative; background:rgba(29,27,32,0.9);">
+      <span style="font-size:8px; position:absolute; top:0px; left:2px; color:#aaa;">G</span><span id="spell-icon-2" style="font-size:16px;">🔘</span>
+    </div>
+  </div>
+
+  <!--
+    Left action bar – icon buttons for menus, actions, and spells.
+    Each button includes a hidden keybind hint (shown via CSS class).
+  -->
+  <div id="left-bar" class="interactive">
+    <div class="icon-btn" id="menu-toggle-btn" onclick="toggleMenu()" title="Menu (ESC)"><div class="keybind-hint">ESC / ^X</div><span class="sparkle-star">✦</span>&#9776;<div class="badge" id="stat-badge" style="display:none;">0</div></div>
+    <div class="icon-btn" id="pouch-drop-target" onclick="toggleModal('pouch-modal')" title="Pouch (P / I) — drag items here"
+      ondragover="event.preventDefault(); event.dataTransfer.dropEffect='move'; this.style.borderColor='var(--success)'"
+      ondragleave="this.style.borderColor=''"
+      ondrop="dropToPouch(event); this.style.borderColor=''">
+      <div class="keybind-hint">I</div>🎒<div class="badge" id="pouch-badge" style="display:none;">0</div>
+    </div>
+    <div class="icon-btn" onclick="toggleModal('equip-modal')" title="Equipment (E)"><div class="keybind-hint">E</div>🛡️</div>
+    <div class="icon-btn" onclick="toggleModal('magic-modal')" title="Magic (M)"><div class="keybind-hint">M</div>✨</div>
+    
+    <div style="flex-grow:0; height: 10px;"></div>
+    
+    <div class="icon-btn" onclick="listenAction()" title="Listen (L)"><div class="keybind-hint">L</div>👂</div>
+    <div class="icon-btn" onclick="kneelAction()" title="Kneel (K)" id="kneelBtn"><div class="keybind-hint">K</div>🙇</div>
+    <div class="icon-btn" onclick="restPlayer()" title="Sleep (Z)"><div class="keybind-hint">Z</div>💤</div>
+    
+    <div style="flex-grow:0; height: 10px;"></div>
+    
+    <div class="icon-btn" onclick="meleeAttack()" title="Melee Attack (Space)"><div class="keybind-hint">SPC</div><span id="melee-icon">🗡️</span></div>
+  </div>
+
+  <!-- Game message log. Entries are added via logMsg() in ui_logic.js. Draggable but not closable. -->
+  <div id="log-overlay" class="interactive">
+    <div id="log-body" style="cursor:move;">
+      <div id="log"></div>
+    </div>
+  </div>
+
+  <!--
+    Bottom bar – XP progress, HP/MP orbs, and 10‑slot inventory hotbar.
+    The inventory slots are populated by renderInventory() in ui_logic.js.
+  -->
+  <div id="bottom-bar" class="interactive">
+    <div id="xp-container" title="Experience">
+      <div id="xp-bar-fill" style="width: 0%;"></div>
+      <div id="xp-text">Lvl 1 - 0/100 XP</div>
+    </div>
+    
+    <div id="resource-row">
+      <div class="orb" id="hp-orb" title="Health">
+        <div class="orb-fill"></div>
+        <canvas id="hp-wave-canvas" width="75" height="75" style="position:absolute;top:0;left:0;width:75px;height:75px;pointer-events:none;border-radius:50%;z-index:1;"></canvas>
+        <div class="orb-bubble" id="hp-bubble-1" style="left:30%; bottom:20%; animation-delay:0s;"></div>
+        <div class="orb-bubble" id="hp-bubble-2" style="left:60%; bottom:10%; animation-delay:0.8s;"></div>
+        <span class="orb-text">50/50</span>
+      </div>
+      
+      <div id="inventoryUI">
+        <!-- Slots generated by JS -->
+      </div>
+      
+      <div class="orb" id="mp-orb" title="Mana">
+        <div class="orb-fill"></div>
+        <canvas id="mp-wave-canvas" width="75" height="75" style="position:absolute;top:0;left:0;width:75px;height:75px;pointer-events:none;border-radius:50%;z-index:1;"></canvas>
+        <div class="orb-bubble" id="mp-bubble-1" style="left:35%; bottom:25%; animation-delay:0.3s;"></div>
+        <div class="orb-bubble" id="mp-bubble-2" style="left:55%; bottom:15%; animation-delay:1.2s;"></div>
+        <span class="orb-text">20/20</span>
+      </div>
+    </div>
+  </div>
+
+</div> <!-- End HUD -->
+
+<!--
+  DRAGGABLE MODALS
+  ================
+  All modal windows are initially hidden (display:none) and are shown via
+  toggleModal(). Each modal has a header with a close button and a body
+  that is filled dynamically by JavaScript.
+-->
+<div id="overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); display:none; justify-content:center; align-items:center; z-index:200;">
+  <div class="modal" id="modal-content" style="background:var(--surface); border:2px solid var(--secondary); padding:24px; border-radius:8px; text-align:center;"></div>
+</div>
+
+<div class="draggable-modal" id="class-select-modal" style="top: 100px; left: 100px; width: 700px; display:none;">
+  <div class="modal-header"><span>🎮 Choose Your Class</span><button class="modal-close" onclick="toggleModal('class-select-modal')">✖</button></div>
+  <div class="modal-body" style="text-align:center;">
+    <p>Select a class to begin your adventure. Each class has unique strengths and starting items.</p>
+    <div style="display:flex; gap:20px; margin-top:20px;">
+      <div class="class-option" style="flex:1; border:2px solid var(--primary); border-radius:8px; padding:15px;">
+        <h3>⚔️ Fighter</h3>
+        <div id="fighter-portrait" style="font-size:80px;">🛡️</div>
+        <p>Sturdy warrior with high health and melee damage.</p>
+        <ul style="text-align:left; font-size:14px;">
+          <li>+5 Max HP</li>
+          <li>+2 Base Damage</li>
+          <li>+5% Hit Rate</li>
+          <li>Starting item: Sword (🗡️)</li>
+        </ul>
+        <button onclick="selectClass('fighter')" style="margin-top:10px;">Select Fighter</button>
+      </div>
+      <div class="class-option" style="flex:1; border:2px solid var(--secondary); border-radius:8px; padding:15px;">
+        <h3>🏹 Rogue</h3>
+        <div id="rogue-portrait" style="font-size:80px;">👤</div>
+        <p>Agile scoundrel with high crit and dodge.</p>
+        <ul style="text-align:left; font-size:14px;">
+          <li>+5% Dodge</li>
+          <li>+5% Crit Chance</li>
+          <li>Starting item: Dagger (🗡️)</li>
+        </ul>
+        <button onclick="selectClass('rogue')" style="margin-top:10px;">Select Rogue</button>
+      </div>
+      <div class="class-option" style="flex:1; border:2px solid var(--tertiary); border-radius:8px; padding:15px;">
+        <h3>🔮 Spellcaster</h3>
+        <div id="spellcaster-portrait" style="font-size:80px;">🧙</div>
+        <p>Arcane adept with mana and spell power.</p>
+        <ul style="text-align:left; font-size:14px;">
+          <li>+10 Max MP</li>
+          <li>+2 Spell Damage Bonus</li>
+          <li>Starting item: Scroll (📜)</li>
+        </ul>
+        <button onclick="selectClass('spellcaster')" style="margin-top:10px;">Select Spellcaster</button>
+      </div>
+    </div>
+    <div style="margin-top:20px;">
+      <button onclick="toggleModal('class-select-modal'); toggleModal('menu-modal')">Back to Menu</button>
+    </div>
+  </div>
+</div>
+
+<div class="draggable-modal" id="pouch-modal" style="top: 100px; left: 200px; width: 628px;">
+  <div class="modal-header"><span>🎒 Pouch</span><button class="modal-close" onclick="toggleModal('pouch-modal')">✖</button></div>
+  <div class="modal-body" style="padding:6px 8px; display:flex; gap:10px; align-items:flex-start;">
+    <div style="flex:1; min-width:0;">
+      <div id="pouch-grid" style="display:grid; grid-template-columns: repeat(10, 1fr); grid-template-rows: repeat(4, 1fr); gap:0;"></div>
+    </div>
+    <div id="pouch-bag-panel" style="display:none; width:172px; min-height:160px; padding:10px; border-radius:10px; border:1px solid rgba(208,188,255,0.35); background:linear-gradient(180deg, rgba(28,22,16,0.98), rgba(18,14,10,0.98)), repeating-linear-gradient(135deg, rgba(255,255,255,0.03) 0 6px, rgba(0,0,0,0.03) 6px 12px); box-shadow: inset 0 0 0 1px rgba(255,214,170,0.05);">
+      <div id="pouch-bag-panel-header" style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; color:#dbc7a7; font-size:11px; letter-spacing:0.04em; text-transform:uppercase;">
+        <span>Bag</span>
+        <button onclick="closeBagPanel()" style="padding:1px 6px; font-size:10px; color:#dbc7a7; background:rgba(0,0,0,0.25); border:1px solid rgba(219,199,167,0.25);">x</button>
+      </div>
+      <div id="pouch-bag-panel-subtitle" style="margin-bottom:8px; color:#8f8578; font-size:10px;"></div>
+      <div id="pouch-bag-panel-grid" style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px;"></div>
+    </div>
+  </div>
+</div>
+
+<div class="draggable-modal" id="equip-modal" style="top: 100px; left: 100px; width: 220px;">
+  <div class="modal-header"><span>🛡️ Equipment</span><button class="modal-close" onclick="toggleModal('equip-modal')">✖</button></div>
+  <div class="modal-body">
+    <div class="equip-container">
+      <div class="equip-slot" id="eqhead" style="top: 5px;"><div class="equip-label">Head</div></div>
+      <div class="equip-slot" id="eqchest" style="top: 55px;"><div class="equip-label">Chest</div></div>
+      <div class="equip-slot" id="eqleftHand" style="top: 55px; left: 20px;"><div class="equip-label">L-Hand</div></div>
+      <div class="equip-slot" id="eqrightHand" style="top: 55px; right: 20px;"><div class="equip-label">R-Hand</div></div>
+      <div class="equip-slot" id="eqlegs" style="top: 105px;"><div class="equip-label">Legs</div></div>
+      <div class="equip-slot" id="eqfeet" style="top: 155px; scale: 0.7;"><div class="equip-label">Feet</div></div>
+      <svg style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:-1;" viewBox="0 0 160 200" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="80" cy="25" r="18" fill="none" stroke="#555" stroke-width="1.5" opacity="0.5"/>
+        <line x1="80" y1="43" x2="80" y2="110" stroke="#555" stroke-width="1.5" opacity="0.5"/>
+        <line x1="80" y1="65" x2="40" y2="90" stroke="#555" stroke-width="1.5" opacity="0.5"/>
+        <line x1="80" y1="65" x2="120" y2="90" stroke="#555" stroke-width="1.5" opacity="0.5"/>
+        <line x1="80" y1="110" x2="50" y2="170" stroke="#555" stroke-width="1.5" opacity="0.5"/>
+        <line x1="80" y1="110" x2="110" y2="170" stroke="#555" stroke-width="1.5" opacity="0.5"/>
+        <circle cx="80" cy="95" r="45" fill="none" stroke="#444" stroke-width="0.5" opacity="0.3"/>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<div class="draggable-modal" id="stats-modal" style="top: 100px; left: 300px; width: 520px;">
+  <div class="modal-header"><span>📊 Stats &amp; Talents</span><button class="modal-close" onclick="toggleModal('stats-modal')">✖</button></div>
+  <div class="modal-body">
+    <!-- Tab buttons -->
+    <div style="display:flex; gap:4px; margin-bottom:10px; border-bottom:1px solid #555; padding-bottom:6px;">
+      <button id="tab-btn-stats" onclick="showStatsTab('stats')"
+        style="flex:1; padding:6px; font-size:12px; background:var(--secondary); color:#fff; border:none; border-radius:4px 4px 0 0; cursor:pointer;">📊 Stats</button>
+      <button id="tab-btn-talents" onclick="showStatsTab('talents')"
+        style="flex:1; padding:6px; font-size:12px; background:var(--surface-container); color:#aaa; border:none; border-radius:4px 4px 0 0; cursor:pointer;">🌳 Talents</button>
+    </div>
+    <!-- Stats tab content -->
+    <div id="stats-tab-panel" style="display:block;">
+      <div id="stats-body"></div>
+    </div>
+    <!-- Talents tab content -->
+    <div id="talents-tab-panel" style="display:none; height:380px; overflow-y:auto;">
+      <div id="talents-body"></div>
+    </div>
+  </div>
+</div>
+
+<div class="draggable-modal" id="magic-modal" style="top: 100px; left: 500px; width: 300px;">
+  <div class="modal-header"><span>✨ Magic</span><button class="modal-close" onclick="toggleModal('magic-modal')">✖</button></div>
+  <div class="modal-body" id="magic-body"></div>
+</div>
+
+<div class="draggable-modal" id="achieve-modal" style="top: 100px; left: 700px; width: 380px;">
+  <div class="modal-header"><span>🏆 Achievements</span><button class="modal-close" onclick="toggleModal('achieve-modal')">✖</button></div>
+  <div class="modal-body" id="achieve-body" style="max-height:400px; overflow-y:auto;"></div>
+</div>
+
+<div class="draggable-modal" id="quest-modal" style="top: 80px; left: 400px; width: 420px;">
+  <div class="modal-header"><span>📜 Quest Log</span><button class="modal-close" onclick="toggleModal('quest-modal')">✖</button></div>
+  <div class="modal-body" id="quest-body" style="max-height:450px; overflow-y:auto;"></div>
+</div>
+
+<div class="draggable-modal" id="menu-modal" style="top: 60px; left: 60px;">
+  <div class="modal-header"><span>&#9776; Menu</span><button class="modal-close" onclick="toggleModal('menu-modal')">✖</button></div>
+  <div class="modal-body" style="display:flex; flex-direction:column; gap:8px;">
+    <button onclick="toggleModal('achieve-modal')">🏆 Achievements (Chord: ^X Y)</button>
+    <button onclick="toggleModal('quest-modal')">📜 Quest Log (Chord: ^X Q)</button>
+    <button id="stats-talents-menu-btn" onclick="toggleModal('stats-modal')" style="position:relative;">📊 Stats &amp; Talents (Chord: ^X C)<span class="sparkle-star">✦</span><span id="stat-badge-menu" style="display:none; margin-left:4px; background:var(--error); color:#000; border-radius:999px; min-width:16px; height:16px; padding:0 4px; font-size:10px; text-align:center; line-height:16px; vertical-align:middle;">0</span></button>
+    <hr style="border-color:#444; margin:2px 0;">
+    <button onclick="startNewGame()">🆕 New Game (Chord: ^X N)</button>
+    <button onclick="saveGame()">💾 Save Game <span style="font-size:10px; color:#aaa;">(Chord: ^X Shift+S)</span></button>
+    <button onclick="loadGame()">📂 Load Game <span style="font-size:10px; color:#aaa;">(Chord: ^X L)</span></button>
+    <button onclick="toggleModal('settings-modal'); initSettingsUI()">⚙️ Settings (Chord: ^X S)</button>
+    <button onclick="toggleModal('debug-modal')">🐛 Debug Menu (Chord: ^X M)</button>
+    <button id="autoLootBtn" onclick="toggleAutoLoot()" style="display:none;">🔄 Auto-Loot: OFF</button>
+  </div>
+</div>
+
+<div class="draggable-modal" id="debug-modal" style="top: 60px; left: 200px; width: 620px;">
+  <div class="modal-header"><span>🐛 Debug Menu</span><button class="modal-close" onclick="toggleModal('debug-modal')">✖</button></div>
+  <div class="modal-body" style="max-height:70vh; overflow-y:auto;">
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:5px;">
+      <div style="grid-column:1/-1; color:var(--primary); font-size:11px; font-weight:bold; border-bottom:1px solid #555; padding-bottom:4px; margin-bottom:2px;">MAP / NAVIGATION</div>
+      <button onclick="toggleFog()">👁 Toggle Fog of War</button>
+      <button onclick="toggleLight()">💡 Toggle Full Light</button>
+      <button onclick="debugWarpNextFloor()">⬇️ Warp Next Floor</button>
+      <button onclick="debugWarpPrevFloor()">⬆️ Warp Prev Floor</button>
+      <button onclick="debugSetFloorPrompt()">🔢 Set Floor...</button>
+      <button onclick="debugWarpPortal('town')">🌀 Town Portal</button>
+      <button onclick="debugWarpPortal('beach')">🏖️ Beach Portal</button>
+      <button onclick="toggleModal('asset-viewer-modal')">📂 Asset Viewer</button>
+
+      <div style="grid-column:1/-1; color:var(--primary); font-size:11px; font-weight:bold; border-bottom:1px solid #555; padding-bottom:4px; margin-top:6px;">CHARACTER</div>
+      <button onclick="debugToggleGodMode()">🌩️😶‍🌫️ Toggle God Mode</button>
+      <button onclick="debugToggleNoRegen()">🔋 Toggle No Regen</button>
+      <button onclick="debugHealFull()">❤️ Heal to Full</button>
+      <button onclick="debugResurrect()">🔄 Resurrect</button>
+      <button onclick="debugRestoreMana()">🔵 Restore Mana</button>
+      <button onclick="debugAddStatPoints(10)">📊 +10 Stat Points</button>
+      <button onclick="debugAddTalentPoints(10)">⭐ +10 Talent Points</button>
+      <button onclick="debugEditStats()">✏️ Edit Stats</button>
+      <button onclick="debugAddGold(1000)">💰 +1000 Gold</button>
+
+      <div style="grid-column:1/-1; color:var(--primary); font-size:11px; font-weight:bold; border-bottom:1px solid #555; padding-bottom:4px; margin-top:6px;">ITEMS</div>
+      <div style="grid-column:1/-1;">
+        <input id="debug-item-search" type="text" placeholder="Add item: type name or emoji..." 
+          style="width:100%; padding:6px; background:#2D2B32; border:1px solid #4A4458; color:#fff; border-radius:4px;"
+          oninput="debugItemSearch(this.value)" onkeypress="if(event.key==='Enter') debugAddSearchedItem()">
+        <div id="debug-item-dropdown" style="display:none; background:#2D2B32; border:1px solid #4A4458; border-radius:4px; margin-top:2px; max-height:120px; overflow-y:auto;"></div>
+        <button style="width:100%; margin-top:4px;" onclick="debugAddSearchedItem()">➕ Add Selected Item</button>
+      </div>
+
+      <div style="grid-column:1/-1; color:var(--primary); font-size:11px; font-weight:bold; border-bottom:1px solid #555; padding-bottom:4px; margin-top:6px;">SAVE / SYSTEM</div>
+      <button onclick="debugToggleEncryption()">🔒 Toggle Encryption</button>
+      <button onclick="location.reload()">🔄 Reload Game</button>
+
+      <div style="grid-column:1/-1; color:var(--primary); font-size:11px; font-weight:bold; border-bottom:1px solid #555; padding-bottom:4px; margin-top:6px;">⏱️ EFFECT TIMING AUDIT</div>
+      <div id="debug-timing" style="grid-column:1/-1; font-size:10px; font-family:monospace; color:#aaa; background:#1D1B20; padding:8px; border-radius:4px; max-height:140px; overflow-y:auto;"></div>
+      <div style="grid-column:1/-1; margin-top:8px;">
+        <button style="width:100%; background:var(--secondary);" onclick="copyDebugLog()">📋 Copy Game Log to Clipboard</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="draggable-modal" id="asset-viewer-modal" style="top: 50px; left: 50px; width: 600px;">
+  <div class="modal-header"><span>📂 Asset Viewer</span><button class="modal-close" onclick="toggleModal('asset-viewer-modal')">✖</button></div>
+  <div class="modal-body" id="asset-viewer-body" style="height: 400px; overflow-y: auto;"></div>
+</div>
+
+<div class="draggable-modal" id="settings-modal" style="top: 150px; left: 150px; width: 320px;">
+  <div class="modal-header"><span>⚙️ Settings</span><button class="modal-close" onclick="toggleModal('settings-modal')">✖</button></div>
+  <div class="modal-body">
+    <div style="display:flex; flex-direction:column; gap:14px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div style="font-weight:bold;">🔊 Sound Effects</div>
+          <div style="font-size:11px; color:#aaa;">Footsteps, combat, UI clicks</div>
+        </div>
+        <label style="position:relative; display:inline-block; width:48px; height:24px; cursor:pointer;">
+          <input type="checkbox" id="sfx-toggle" checked
+            style="opacity:0; width:0; height:0;"
+            onchange="toggleSetting('sfx', this.checked)">
+          <span id="sfx-knob" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background:#4A4458; border-radius:24px; transition:0.3s;">
+            <span style="position:absolute; height:18px; width:18px; left:3px; bottom:3px; background:white; border-radius:50%; transition:0.3s; display:block;"></span>
+          </span>
+        </label>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div style="font-weight:bold;">🎵 Music</div>
+          <div style="font-size:11px; color:#aaa;">FM synthesized background music</div>
+        </div>
+        <label style="position:relative; display:inline-block; width:48px; height:24px; cursor:pointer;">
+          <input type="checkbox" id="music-toggle" checked
+            style="opacity:0; width:0; height:0;"
+            onchange="toggleSetting('music', this.checked)">
+          <span id="music-knob" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background:#4A4458; border-radius:24px; transition:0.3s;">
+            <span style="position:absolute; height:18px; width:18px; left:3px; bottom:3px; background:white; border-radius:50%; transition:0.3s; display:block;"></span>
+          </span>
+        </label>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div style="font-weight:bold;">💡 Sprite Mode</div>
+          <div style="font-size:11px; color:#aaa;">Use SVG sprites instead of emoji</div>
+        </div>
+        <label style="position:relative; display:inline-block; width:48px; height:24px; cursor:pointer;">
+          <input type="checkbox" id="sprites-toggle"
+            style="opacity:0; width:0; height:0;"
+            onchange="toggleSetting('sprites', this.checked)">
+          <span id="sprites-knob" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background:#4A4458; border-radius:24px; transition:0.3s;">
+            <span style="position:absolute; height:18px; width:18px; left:3px; bottom:3px; background:white; border-radius:50%; transition:0.3s; display:block;"></span>
+          </span>
+        </label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!--
+  START SCREEN – shown before the game begins.
+  Includes ASCII art title, asset loader, and the start button.
+-->
+<div id="start-screen">
+  <img src="{{TITLE_IMAGE}}" alt="NotAName" class="title-img">
+  <p style="color:#aaa; max-width: 600px; text-align:center; line-height: 1.5;">"I've faced dragons, ogres, and the dreaded math homework."</p>
+  <!-- Asset loader + Start button — side by side -->
+  <div style="display:flex; align-items:center; gap:16px; margin-top:2px;">
+  <div style="margin: 12px; width:200px; padding: 10px; border: 1px solid rgba(204,194,220,0.32); border-radius: 12px; text-align:center; background: rgba(9,9,12,0.72); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; color:#b3acbc; font-size:11px; letter-spacing:0.05em; text-transform:uppercase;">
+      <span>Load</span>
+      <span style="color:#75707d; font-size:9px;">optional</span>
+    </div>
+    <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:6px; margin-bottom:8px;">
+      <div>
+        <div id="asset-slot-1" onclick="document.getElementById('asset-loader').click()"
+          style="height:60px; background:rgba(23,22,28,0.92); border:1px solid #4b4655; border-radius:9px; display:flex; flex-direction:column; justify-content:center; align-items:center; cursor:pointer; position:relative;"
+          title="Load core assets — roguelike_assets.dat">
+          <span id="asset-slot-1-icon" style="font-size:18px; color:#ddd;">+</span>
+          <span id="asset-slot-1-count" style="margin-top:3px; font-size:9px; color:#9f98ab;"></span>
+        </div>
+        <div style="margin-top:4px; color:#8d8897; font-size:9px; font-weight:300; text-align:center;">Assets</div>
+        <input type="file" id="asset-loader" accept=".dat" style="display:none;">
+      </div>
+      <div>
+        <div id="asset-slot-2" onclick="document.getElementById('asset-loader-audio').click()"
+          style="height:60px; background:rgba(23,22,28,0.92); border:1px solid #4b4655; border-radius:9px; display:flex; flex-direction:column; justify-content:center; align-items:center; cursor:pointer; position:relative;"
+          title="Load ambient+movies bundle — roguelike_assets_ambient_movies.dat">
+          <span id="asset-slot-2-icon" style="font-size:18px; color:#ddd;">+</span>
+          <span id="asset-slot-2-count" style="margin-top:3px; font-size:9px; color:#9f98ab;"></span>
+        </div>
+        <div style="margin-top:4px; color:#8d8897; font-size:9px; font-weight:300; text-align:center;">Ambient<br>Movies</div>
+        <input type="file" id="asset-loader-audio" accept=".dat" style="display:none;">
+      </div>
+      <div>
+        <div id="asset-slot-3" onclick="document.getElementById('asset-loader-extra').click()"
+          style="height:60px; background:rgba(23,22,28,0.92); border:1px solid #4b4655; border-radius:9px; display:flex; flex-direction:column; justify-content:center; align-items:center; cursor:pointer; position:relative;"
+          title="Load arcade bundle — roguelike_assets_arcade.dat">
+          <span id="asset-slot-3-icon" style="font-size:18px; color:#ddd;">+</span>
+          <span id="asset-slot-3-count" style="margin-top:3px; font-size:9px; color:#9f98ab;"></span>
+        </div>
+        <div style="margin-top:4px; color:#8d8897; font-size:9px; font-weight:300; text-align:center;">Arcade</div>
+        <input type="file" id="asset-loader-extra" accept=".dat" style="display:none;">
+      </div>
+    </div>
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; color:#6d6875; font-size:9px;">
+      <span>Playable plain</span>
+      <button onclick="resetLoadedAssets()" style="font-size:10px; padding:2px 8px; background:rgba(242,184,181,0.08); color:#d7c0be; border:1px solid rgba(242,184,181,0.35); border-radius:999px;">Reset</button>
+    </div>
+  </div>
+  <div style="display:flex; gap:14px; margin-top:0; flex-direction:column; align-items:center;">
+    <div style="display:flex; gap:12px; flex-direction:column; width:260px;">
+      <button id="startBtn" style="padding:12px 24px; font-size:18px; background:var(--success); color:#000; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">⚔️ BEGIN ADVENTURE</button>
+      <button id="loadGameBtn" onclick="loadGame()" style="padding:12px 24px; font-size:18px; background:#3a3550; color:#ccc; border:1px solid #6655aa; border-radius:8px; cursor:pointer; font-weight:bold;">📂 LOAD GAME</button>
+    </div>
+  </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     CLASS SELECTION MODAL (E14)
+     Shown when player clicks NEW GAME on the start screen.
+     ═══════════════════════════════════════════════════ -->
+<div id="class-modal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.88); overflow-y:auto; overflow-x:hidden;">
+  <style>
+    @keyframes goldSparkle {
+      0%, 100% { box-shadow: 0 0 8px 2px rgba(255,200,0,0.4), 0 0 20px 4px rgba(255,180,0,0.2); }
+      50% { box-shadow: 0 0 16px 6px rgba(255,220,50,0.8), 0 0 40px 12px rgba(255,200,0,0.4), inset 0 0 10px rgba(255,220,50,0.1); }
+    }
+    .portrait-frame {
+      position: relative;
+      border: 2px solid #555;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+      background: #111;
+      overflow: hidden;
+      flex: 1;
+      min-width: 160px;
+      max-width: 260px;
+    }
+    .portrait-frame:hover, .portrait-frame.selected {
+      animation: goldSparkle 0.8s ease-in-out infinite;
+      border-color: #ffd700 !important;
+    }
+    .portrait-frame video {
+      width: 100%;
+      display: block;
+      aspect-ratio: 794 / 1286;
+      object-fit: cover;
+      background: #000;
+      pointer-events: none;
+    }
+    .portrait-frame .class-info {
+      padding: 10px 10px 12px;
+      background: linear-gradient(to bottom, rgba(10,8,18,0.92), rgba(4,4,10,0.98));
+      border-top: 1px solid #333;
+    }
+    .portrait-frame .class-title {
+      font-size: 15px;
+      font-weight: bold;
+      color: #e8d88a;
+      margin-bottom: 5px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .portrait-frame .class-desc {
+      font-size: 11px;
+      color: #aaa;
+      line-height: 1.4;
+      margin-bottom: 6px;
+    }
+    .portrait-frame .class-bonus {
+      font-size: 10px;
+      color: #88cc88;
+      line-height: 1.35;
+    }
+    #class-modal-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 24px 16px 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    #class-modal-backdrop {
+      width: 100%;
+      position: relative;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 0 40px rgba(0,0,0,0.8);
+    }
+    #class-modal-backdrop img {
+      width: 100%;
+      display: block;
+      border-radius: 10px;
+    }
+    .class-vid-slot {
+      cursor: pointer;
+      border: 2px solid transparent;
+      border-radius: 6px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      box-sizing: border-box;
+    }
+    .class-vid-slot:hover {
+      border-color: rgba(255,220,100,0.7);
+      box-shadow: 0 0 16px rgba(255,220,100,0.4);
+    }
+    .class-vid-slot.selected {
+      border-color: rgba(80,220,80,0.9);
+      box-shadow: 0 0 20px rgba(80,220,80,0.5);
+    }
+    #class-portraits-row {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      margin-top: 20px;
+      width: 100%;
+      flex-wrap: wrap;
+    }
+    #beginAdventureBtn {
+      margin-top: 24px;
+      padding: 14px 48px;
+      font-size: 20px;
+      font-weight: bold;
+      background: #2a6b2a;
+      color: #90ee90;
+      border: 2px solid #55aa55;
+      border-radius: 10px;
+      cursor: not-allowed;
+      opacity: 0.45;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      transition: opacity 0.2s, background 0.2s;
+    }
+    #beginAdventureBtn.enabled {
+      cursor: pointer;
+      opacity: 1;
+      background: #33aa33;
+      color: #000;
+      box-shadow: 0 0 18px rgba(80,220,80,0.35);
+    }
+    #beginAdventureBtn.enabled:hover {
+      background: #44cc44;
+      box-shadow: 0 0 28px rgba(80,255,80,0.5);
+    }
+    #class-modal-title {
+      color: #ccc;
+      font-size: 13px;
+      line-height: 1.6;
+      max-width: 680px;
+      text-align: center;
+      margin: 12px 0 0;
+      padding: 0 8px;
+    }
+    #class-modal-heading {
+      font-size: 26px;
+      font-weight: bold;
+      color: #e8d050;
+      text-align: center;
+      letter-spacing: 0.08em;
+      text-shadow: 0 0 12px rgba(255,200,0,0.4);
+      margin-bottom: 4px;
+    }
+  </style>
+
+   <div id="class-modal-inner">
+    <div id="class-modal-backdrop">
+      <img id="class-backdrop-img" alt="Class selection backdrop">
+      <!-- Video portraits overlaid on backdrop rectangles -->
+      <div class="class-vid-slot" id="slot-fighter"
+        style="position:absolute; left:9.1%; top:30.1%; width:19.2%; height:27.7%;"
+        onmouseenter="_classHover('fighter', true)"
+        onmouseleave="_classHover('fighter', false)"
+        onclick="_selectClass('fighter')">
+        <video id="vid-fighter" data-video-type="fighter" muted preload="metadata" playsinline autoplay loop style="width:100%;height:100%;object-fit:cover;border-radius:4px;"></video>
+      </div>
+      <div class="class-vid-slot" id="slot-rogue"
+        style="position:absolute; left:40.2%; top:30.1%; width:19.1%; height:27.7%;"
+        onmouseenter="_classHover('rogue', true)"
+        onmouseleave="_classHover('rogue', false)"
+        onclick="_selectClass('rogue')">
+        <video id="vid-rogue" data-video-type="rogue" muted preload="metadata" playsinline autoplay loop style="width:100%;height:100%;object-fit:cover;border-radius:4px;"></video>
+      </div>
+      <div class="class-vid-slot" id="slot-spellcaster"
+        style="position:absolute; left:71.6%; top:30.1%; width:19.2%; height:27.7%;"
+        onmouseenter="_classHover('spellcaster', true)"
+        onmouseleave="_classHover('spellcaster', false)"
+        onclick="_selectClass('spellcaster')">
+        <video id="vid-spellcaster" data-video-type="spellcaster" muted preload="metadata" playsinline autoplay loop style="width:100%;height:100%;object-fit:cover;border-radius:4px;"></video>
+      </div>
+    </div>
+
+    <button id="beginAdventureBtn" disabled onclick="_beginAdventure()">🏰 BEGIN ADVENTURE</button>
+    <p style="color:#aaa; font-size:13px; line-height:1.6; max-width:680px; text-align:center; margin:12px 0 0;">Don't worry too much &mdash; as you gain experience, you may learn skills from the other classes.</p>
+  </div><!-- end class-modal-inner -->
+</div><!-- end class-modal -->
+
+<script>
+  // ── E14: Class Selection Modal ──────────────────────────────
+  window._selectedClass = null;
+
+   window.showClassModal = function() {
+     document.getElementById('class-modal').style.display = 'block';
+     // Kill any sound/music that might be playing
+     if(typeof Sound !== 'undefined') {
+       if(Sound.stopAll) Sound.stopAll();
+       if(Sound.stopMusic) Sound.stopMusic();
+       if(Sound.stopAmbient) Sound.stopAmbient();
+     }
+     if(typeof window.initClassVideos === 'function') window.initClassVideos();
+   };
+
+  window._classHover = function(cls, entering) {
+    const vid = document.getElementById('vid-' + cls);
+    if (!vid) return;
+    if (entering) {
+      vid.currentTime = 0;
+      vid.play().catch(function(){});
+    } else {
+      vid.pause();
+      vid.currentTime = 0;
+    }
+  };
+
+   window._selectClass = function(cls) {
+     // Clear previous selection highlight
+     ['fighter','spellcaster','rogue'].forEach(function(c) {
+       var slot = document.getElementById('slot-' + c);
+       if (slot) slot.classList.remove('selected');
+     });
+     // Highlight new selection
+     var slot = document.getElementById('slot-' + cls);
+     if (slot) slot.classList.add('selected');
+     window._selectedClass = cls;
+     // Enable the begin button
+     var btn = document.getElementById('beginAdventureBtn');
+     if (btn) {
+       btn.disabled = false;
+       btn.classList.add('enabled');
+     }
+   };
+
+    // Initialize class videos and backdrop from asset bundle
+    window.initClassVideos = function() {
+      const hasAssets = !!(window.assets);
+      const hasMovies = hasAssets && window.assets.movies && Object.keys(window.assets.movies).length > 0;
+      const hasSprites = hasAssets && window.assets.sprites && Object.keys(window.assets.sprites).length > 0;
+      
+      if(typeof logMsg === 'function') {
+        logMsg("<span style='color:#888'>Class modal: assets=" + hasAssets + " movies=" + (hasMovies ? Object.keys(window.assets.movies).length : 0) + " sprites=" + (hasSprites ? Object.keys(window.assets.sprites).length : 0) + "</span>");
+      }
+      
+      // Helper: convert data URL to blob URL
+      function dataUrlToBlobUrl(dataUrl) {
+        if(!dataUrl || typeof dataUrl !== 'string') return null;
+        try {
+          var parts = dataUrl.split(',');
+          var mime = parts[0].match(/:(.*?);/)[1];
+          var b64 = atob(parts[1]);
+          var arr = new Uint8Array(b64.length);
+          for(var i = 0; i < b64.length; i++) arr[i] = b64.charCodeAt(i);
+          var blob = new Blob([arr], {type: mime});
+          return URL.createObjectURL(blob);
+        } catch(e) {
+          return null;
+        }
+      }
+      
+      // Load backdrop image from asset bundle
+      var backdropImg = document.getElementById('class-backdrop-img');
+      if(backdropImg) {
+        if(hasSprites && window.assets.sprites['classes_backdrop']) {
+          var backdrop = window.assets.sprites['classes_backdrop'];
+          // sprites are stored as Image objects by loadAssetData, or as {src:...} objects
+          if(backdrop instanceof Image) {
+            backdropImg.src = backdrop.src;
+          } else if(typeof backdrop === 'string') {
+            backdropImg.src = backdrop;
+          } else if(backdrop && backdrop.src) {
+            backdropImg.src = backdrop.src;
+          }
+          if(typeof logMsg === 'function') logMsg("<span style='color:#8f8'>Class backdrop loaded. type=" + typeof backdrop + "</span>");
+        } else if(typeof logMsg === 'function') {
+          logMsg("<span style='color:#f88'>Class backdrop not in sprites.</span>");
+        }
+      }
+      
+      // Load class videos from asset bundle using blob URLs
+      ['fighter', 'rogue', 'spellcaster'].forEach(function(cls) {
+        var vid = document.getElementById('vid-' + cls);
+        if(!vid) { 
+          if(typeof logMsg === 'function') logMsg("<span style='color:#f88'>Video element vid-" + cls + " not found.</span>");
+          return; 
+        }
+        var assetKey = 'movie_' + cls;
+        if(hasMovies && window.assets.movies[assetKey]) {
+          var blobUrl = dataUrlToBlobUrl(window.assets.movies[assetKey]);
+          if(blobUrl) {
+            vid.src = blobUrl;
+            vid.load();
+            vid.play().catch(function(){});
+            if(typeof logMsg === 'function') logMsg("<span style='color:#8f8'>Class video " + cls + " loaded via blob URL.</span>");
+          } else {
+            if(typeof logMsg === 'function') logMsg("<span style='color:#f88'>Failed to create blob URL for " + cls + ".</span>");
+          }
+        } else if(typeof logMsg === 'function') {
+          logMsg("<span style='color:#f88'>Class video '" + cls + "' not in movies.</span>");
+        }
+      });
+    };
+
+  window._beginAdventure = function() {
+    if (!window._selectedClass) return;
+    // Hide the class modal
+    document.getElementById('class-modal').style.display = 'none';
+    // Pause all videos
+    ['fighter','spellcaster','rogue'].forEach(function(c) {
+      var v = document.getElementById('vid-' + c);
+      if (v) { v.pause(); v.currentTime = 0; }
+    });
+    // Signal that class was chosen, then trigger the startBtn click
+    window._classChosen = true;
+    var startBtn = document.getElementById('startBtn');
+    if (startBtn) startBtn.click();
+  };
+</script>
+
+<script>
