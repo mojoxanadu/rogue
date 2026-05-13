@@ -1,6 +1,8 @@
 node_modules/
 old_ignore_these/
 resume.sh
+insight.txt
+test.txt
 
 # scratch / runtime
 /tmp/
