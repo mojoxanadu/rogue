@@ -322,11 +322,16 @@ const hBtn = document.getElementById('hamburgerBtn');
 
   const _dpsEnsurePatched = () => {
     if(window._dpsPatched) return;
-    if(typeof applyDamageToEnemy !== 'function') return;
+    // Iter 5: applyDamageToEnemy → NPC.prototype.takeDamage. The DPS
+    // tracker wraps the new prototype method so all NPC subclasses
+    // (Ifrit, Mimic, Shark, Zombie, Pixie, Thief, Fence, FrenchTaunter,
+    // plus the base NPC) get tracked through one hook.
+    if(typeof NPC === 'undefined' || !NPC.prototype || typeof NPC.prototype.takeDamage !== 'function') return;
     window._dpsPatched = true;
-    window._dpsOrigApplyDamageToEnemy = applyDamageToEnemy;
-    applyDamageToEnemy = function(dmg, enemy) {
-      const out = window._dpsOrigApplyDamageToEnemy(dmg, enemy);
+    const orig = NPC.prototype.takeDamage;
+    window._dpsOrigTakeDamage = orig;
+    NPC.prototype.takeDamage = function(dmg, attacker) {
+      const out = orig.call(this, dmg, attacker);
       if(window._dpsSession && window._dpsSession.active) {
         const dealt = Number.isFinite(out) ? out : dmg;
         window._dpsSession.total += Math.max(0, dealt ?? 0);

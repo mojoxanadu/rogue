@@ -105,6 +105,49 @@ test('duck attack fires quack + the duck-quote log line', () => {
 });
 
 
+// ─── takeDamage (damage in) ──────────────────────────────────
+
+test('takeDamage applies dmg to stats.hp and returns dealt amount', () => {
+  const ctx = setup();
+  const list = [];
+  const npc = ctx.spawnNpc(list, 0, 0, 'bat');
+  npc.stats.hp = 10;
+  const attacker = { effectiveCritRate: () => 0 };  // never crits
+  const dealt = npc.takeDamage(3, attacker);
+  assert.equal(dealt, 3);
+  assert.equal(npc.stats.hp, 7);
+});
+
+test('takeDamage rolls crit and applies 50% bonus', () => {
+  const ctx = setup();
+  ctx.logMsg = () => {};  // stub the crit log
+  const list = [];
+  const npc = ctx.spawnNpc(list, 0, 0, 'bat');
+  npc.stats.hp = 100;
+  const origRandom = Math.random;
+  Math.random = () => 0;  // always under crit chance
+  try {
+    const attacker = { effectiveCritRate: () => 1.0 };  // always crits
+    const dealt = npc.takeDamage(10, attacker);
+    // crit bonus = max(1, round(10 * 0.5)) = 5 → 10 + 5 = 15
+    assert.equal(dealt, 15);
+    assert.equal(npc.stats.hp, 85);
+  } finally {
+    Math.random = origRandom;
+  }
+});
+
+test('takeDamage with no attacker skips crit roll', () => {
+  const ctx = setup();
+  const list = [];
+  const npc = ctx.spawnNpc(list, 0, 0, 'bat');
+  npc.stats.hp = 10;
+  const dealt = npc.takeDamage(3, null);
+  assert.equal(dealt, 3);
+  assert.equal(npc.stats.hp, 7);
+});
+
+
 // ─── Crown of Thorns reflection ──────────────────────────────
 
 test('thorns reflection reduces attacker HP and removes on kill', () => {
