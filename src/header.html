@@ -366,6 +366,13 @@
   body.touch #quickslots-grid { gap: 2px; padding: 4px; }
   body.touch .inv-slot       { width: 32px; height: 32px; font-size: 16px; }
 
+  /* Mobile start screen: stack the asset-loader box and the
+     start-buttons column vertically (DOM order is asset-loader then
+     buttons; column-reverse promotes the buttons to the top so the
+     primary action lands first). Inline style on the wrapper used
+     flex-direction:row by default; !important wins over the inline. */
+  body.touch #start-action-row { flex-direction: column-reverse !important; gap: 8px !important; }
+
   body.touch .draggable-modal {
     /* position: fixed anchors to the visual viewport (the area
        actually visible to the user, below the URL bar) — so

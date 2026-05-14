@@ -518,8 +518,12 @@
 <div id="start-screen">
   <img src="{{TITLE_IMAGE}}" alt="NotAName" class="title-img">
   <p style="color:#aaa; max-width: 600px; text-align:center; line-height: 1.5;">"I've faced dragons, ogres, and the dreaded math homework."</p>
-  <!-- Asset loader + Start button — side by side -->
-  <div style="display:flex; align-items:center; gap:16px; margin-top:2px;">
+  <!-- Asset loader + Start button — side by side on desktop, stacked
+       on touch (buttons above the asset loader box). The 200px+260px
+       desktop layout overflows a 384-CSS-px portrait viewport; the
+       body.touch override switches to flex-direction:column-reverse
+       so the primary action (BEGIN ADVENTURE) sits at the top. -->
+  <div id="start-action-row" style="display:flex; align-items:center; gap:16px; margin-top:2px;">
   <div style="margin: 12px; width:200px; padding: 10px; border: 1px solid rgba(204,194,220,0.32); border-radius: 12px; text-align:center; background: rgba(9,9,12,0.72); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);">
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; color:#b3acbc; font-size:11px; letter-spacing:0.05em; text-transform:uppercase;">
       <span>Load</span>

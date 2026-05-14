@@ -739,31 +739,6 @@ function _performStickyMove(src, targetSource, target) {
     // 30). Only the wraparound state at 30 → 150 flips the glyph
     // to ▴, handled inside toggleLogCollapse.)
 
-    // ── DEV: size telemetry ───────────────────────────────────
-    // Log usable window/canvas/devicePixelRatio dimensions to the
-    // game log on boot and whenever the window resizes (handy for
-    // mobile UX tuning — knowing "what am I actually working with?"
-    // is step one for any layout call). Stripped from release by
-    // build_release.py if needed; for now it stays in dev builds.
-    const _logSize = (label) => {
-      try {
-        const $ = (id) => document.getElementById(id);
-        const w = (el) => el ? el.getBoundingClientRect().width.toFixed(0) : '?';
-        const vw  = window.innerWidth;
-        const vh  = window.innerHeight;
-        const dpr = window.devicePixelRatio || 1;
-        const mode = window.IS_TOUCH ? 'touch' : 'desktop';
-        const scrollW = document.documentElement.scrollWidth;
-        const overflows = scrollW > vw ? ` OVERFLOWS by ${scrollW - vw}` : '';
-        if (typeof logMsg === 'function') {
-          logMsg(`<span style='color:#8af'>[size ${label}] vp=${vw}×${vh} dpr=${dpr} mode=${mode} docW=${scrollW}${overflows}</span>`);
-          logMsg(`<span style='color:#8af'>  canvas=${w($('gameCanvas'))} hud=${w($('hud'))} bottom-bar=${w($('bottom-bar'))} resource-row=${w($('resource-row'))} quickslots=${w($('quickslots-grid'))}</span>`);
-        }
-      } catch (_) { /* ignore */ }
-    };
-    setTimeout(() => _logSize('init'), 50);
-    window.addEventListener('resize', () => _logSize('resize'));
-
     const sfxToggle = document.getElementById('sfx-toggle');
     const musicToggle = document.getElementById('music-toggle');
     if(sfxToggle) sfxToggle.checked = window.gameSettings.sfx;
@@ -979,24 +954,6 @@ function _performStickyMove(src, targetSource, target) {
   window.renderQuickslots = () => {
     const grid = document.getElementById('quickslots-grid'); if(!grid) return;
     grid.innerHTML = '';
-    // One-shot size diagnostic: pre-game logs (DOMContentLoaded) miss
-    // the actual HUD widths because quickslots aren't rendered yet.
-    // Log the first in-game pass so we can see the real layout.
-    if (!window._sizeLoggedIngame) {
-      window._sizeLoggedIngame = true;
-      setTimeout(() => {
-        try {
-          const $ = (id) => document.getElementById(id);
-          const w = (el) => el ? el.getBoundingClientRect().width.toFixed(0) : '?';
-          const vw = window.innerWidth;
-          const scrollW = document.documentElement.scrollWidth;
-          const ovr = scrollW > vw ? ` OVERFLOW=${scrollW - vw}` : '';
-          if (typeof logMsg === 'function') {
-            logMsg(`<span style='color:#8af'>[size ingame] vp=${vw} docW=${scrollW}${ovr} canvas=${w($('gameCanvas'))} bottom-bar=${w($('bottom-bar'))} resource-row=${w($('resource-row'))} hp-orb=${w($('hp-orb'))} quickslots=${w($('quickslots-grid'))} mp-orb=${w($('mp-orb'))} qcount=${player.quickslotCount}</span>`);
-          }
-        } catch (_) { /* ignore */ }
-      }, 60);
-    }
     for(let i=0; i<player.quickslotCount; i++) {
       let item = inventory[i], slot = document.createElement('div');
       slot.className = isIdentifying ? 'inv-slot selected' : 'inv-slot';
