@@ -1612,6 +1612,78 @@ const hBtn = document.getElementById('hamburgerBtn');
         else if(window._rangedTargeting) rangedWeaponTarget(tileX, tileY);
       }
     });
+
+    // ─── Tap-to-move (mobile) ────────────────────────────────────
+    //
+    //  Tap a map tile → take ONE step toward it along the shortest
+    //  8-way path. The user re-taps to keep moving (same input
+    //  granularity as a WASD press in this turn-based game). This
+    //  avoids the "auto-walk until disturbed" footgun and keeps the
+    //  user steering frame-by-frame.
+    //
+    //  Pathfinding rules:
+    //    - 8-way BFS over walkable tiles (isTileFloor and no enemy).
+    //    - The TARGET tile is a goal regardless of walkability — so
+    //      tapping a wall / closed door / NPC / enemy still pathfinds
+    //      adjacent and the final step bumps. movePlayer() handles
+    //      bump logic (combat, dialog, doors) as it does for WASD.
+    //    - If no path exists, do nothing.
+
+    // Compute the dx/dy for the first step of the shortest 8-way
+    // path from (sx,sy) to (tx,ty). Returns {dx,dy} or null.
+    function _firstStepToward(sx, sy, tx, ty) {
+      if(tx === sx && ty === sy) return null;
+      if(tx < 0 || tx >= mapW || ty < 0 || ty >= mapH) return null;
+      // Enemy index for O(1) blocking-tile lookup during BFS.
+      const enemyAt = new Set();
+      for(const en of enemies) enemyAt.add(`${en.x},${en.y}`);
+      // visited[y][x] stores the {dx,dy} of the FIRST step taken from
+      // (sx,sy) to reach that cell — propagated as BFS expands.
+      const firstStep = new Array(mapH).fill(null).map(() => new Array(mapW).fill(null));
+      const visited   = new Array(mapH).fill(null).map(() => new Array(mapW).fill(false));
+      const queue = [[sx, sy]];
+      visited[sy][sx] = true;
+      while(queue.length) {
+        const [x, y] = queue.shift();
+        for(let ddy = -1; ddy <= 1; ddy++) {
+          for(let ddx = -1; ddx <= 1; ddx++) {
+            if(ddx === 0 && ddy === 0) continue;
+            const nx = x + ddx, ny = y + ddy;
+            if(nx < 0 || nx >= mapW || ny < 0 || ny >= mapH) continue;
+            if(visited[ny][nx]) continue;
+            const isGoal = (nx === tx && ny === ty);
+            // Non-goal intermediates must be walkable & enemy-free.
+            // The goal is always reachable as a final step so bump
+            // logic (combat / NPC dialog) can fire.
+            if(!isGoal) {
+              if(!theMap[ny] || !isTileFloor(theMap[ny][nx])) continue;
+              if(enemyAt.has(`${nx},${ny}`)) continue;
+            }
+            visited[ny][nx] = true;
+            // First step is captured from start cell; deeper cells
+            // inherit their parent's first-step direction.
+            firstStep[ny][nx] = (x === sx && y === sy)
+              ? { dx: ddx, dy: ddy }
+              : firstStep[y][x];
+            if(isGoal) return firstStep[ny][nx];
+            queue.push([nx, ny]);
+          }
+        }
+      }
+      return null;
+    }
+
+    gameCanvas.addEventListener('click', (e) => {
+      if(isDead) return;
+      // Yield to the targeting handlers above — they consume the click.
+      if(window._fireballTargeting || window._rangedTargeting) return;
+      const rect = gameCanvas.getBoundingClientRect();
+      const cx = Math.floor(VIEW_COLS / 2), cy = Math.floor(VIEW_ROWS / 2);
+      const tx = player.x + Math.floor((e.clientX - rect.left) / TILE_SIZE) - cx;
+      const ty = player.y + Math.floor((e.clientY - rect.top)  / TILE_SIZE) - cy;
+      const step = _firstStepToward(player.x, player.y, tx, ty);
+      if(step) movePlayer(step.dx, step.dy);
+    });
     // Bug 26: Handle drag-drop of inventory items onto the map
     gameCanvas.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
     gameCanvas.addEventListener('drop', (e) => {
