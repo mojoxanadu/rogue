@@ -53,10 +53,28 @@ class NPC extends Sentient {
     this.type     = spec.type     ?? 'unknown';
     this.attitude = spec.attitude ?? NPC_ATTITUDE.HOSTILE;
     this.behavior = spec.behavior ?? NPC_BEHAVIOR.CHASE;
-    // Legacy speed accumulator. Each per-NPC block today does
-    // `actionTimer += speed * steps` then drains via `while(>=1)`.
-    // Step 5d retires this in favor of Sentient.actionCooldown.
+    // actionTimer retained on the instance for any not-yet-migrated
+    // callers but is no longer ticked here — Sentient.actionCooldown
+    // is the canonical clock and the scheduler drives it.
     this.actionTimer = spec.actionTimer ?? 0;
+
+    // Derive per-NPC cooldown costs from stats.speed. The legacy
+    // pattern `actionTimer += speed * steps; while (>=1) act();` made
+    // a NPC with speed=2 act twice per player turn. We translate to
+    // cooldown form: cost-per-action = 1/speed (so the scheduler
+    // calls a speed=2 entity every 0.5 ticks → twice per player turn).
+    // Edge cases:
+    //   speed === 0 (or missing): defaults to 1.0 — guards divide-by-
+    //     zero AND keeps stationary NPCs schedulable; their actual
+    //     behavior tag is usually STATIONARY which no-ops takeTurn,
+    //     so the cooldown value is mostly cosmetic for them.
+    //   speed > 0: move = 1/speed, attack = max(1.0, 1/speed). The
+    //     attack floor prevents melee from feeling absurdly fast on
+    //     hyper-speed monsters (matches Brogue convention).
+    const sp = (this.stats && typeof this.stats.speed === 'number') ? this.stats.speed : 0;
+    const moveCost   = sp > 0 ? (1.0 / sp) : 1.0;
+    const attackCost = sp > 0 ? Math.max(1.0, 1.0 / sp) : 1.0;
+    this.cooldowns = { move: moveCost, attack: attackCost };
     // Preserve every legacy spawn-spec field that downstream code
     // reads — keep names so the moved logic still compiles.
     for (const k of [
@@ -106,38 +124,36 @@ class NPC extends Sentient {
 
   _takeChaseTurn(ctx) {
     const e = this;
-    const { player, theMap, enemies, isTileFloor, steps } = ctx;
-    if (!e.stats) return;
-    e.actionTimer = (e.actionTimer ?? 0) + (e.stats.speed * steps);
-    while (e.actionTimer >= 1) {
-      e.actionTimer -= 1;
-      const isAdj = Math.abs(e.x - player.x) <= 1 && Math.abs(e.y - player.y) <= 1;
-      if (isAdj) { ctx.monsterAttack(e); }
-      else {
-        let dx = Math.sign(player.x - e.x), dy = Math.sign(player.y - e.y);
-        if (dx !== 0 && dy !== 0) {
-          switch (Math.floor(Math.random() * 3)) {
-            case 0: dx = 0; break;
-            case 1: dy = 0; break;
-            case 2: break;
-          }
-        }
-        const tile = theMap[e.y+dy] && theMap[e.y+dy][e.x+dx];
-        if (!enemies.some(e2 => e !== e2 && e.x+dx === e2.x && e.y+dy === e2.y)
-            && (isTileFloor(tile) || (e.stats.throughWalls && tile === ctx.TILES.WALL))) {
-          e.x += dx; e.y += dy;
-          if (dx !== 0) e._lastDx = dx;
-        }
+    const { player, theMap, enemies, isTileFloor } = ctx;
+    if (!e.stats) return 'move';
+    const isAdj = Math.abs(e.x - player.x) <= 1 && Math.abs(e.y - player.y) <= 1;
+    if (isAdj) { ctx.monsterAttack(e); return 'attack'; }
+    let dx = Math.sign(player.x - e.x), dy = Math.sign(player.y - e.y);
+    if (dx !== 0 && dy !== 0) {
+      switch (Math.floor(Math.random() * 3)) {
+        case 0: dx = 0; break;
+        case 1: dy = 0; break;
+        case 2: break;
       }
     }
+    const tile = theMap[e.y+dy] && theMap[e.y+dy][e.x+dx];
+    if (!enemies.some(e2 => e !== e2 && e.x+dx === e2.x && e.y+dy === e2.y)
+        && (isTileFloor(tile) || (e.stats.throughWalls && tile === ctx.TILES.WALL))) {
+      e.x += dx; e.y += dy;
+      if (dx !== 0) e._lastDx = dx;
+    }
+    return 'move';
   }
 
   _takeWanderTurn(ctx) {
     const e = this;
-    const { player, theMap, mapW, mapH, enemies, isTileFloor, steps } = ctx;
-    if (!e.stats) return;
-    e.stats.wanderTimer = (e.stats.wanderTimer ?? 0) + steps;
-    if (e.stats.wanderTimer < 5) return;
+    const { player, theMap, mapW, mapH, enemies, isTileFloor } = ctx;
+    if (!e.stats) return 'move';
+    // Legacy wandered every 5 player-turns. With the scheduler, this
+    // NPC's takeTurn is called every 1/speed of a player-turn — so we
+    // count own-ticks (5 == "wait 5 of MY turns before moving").
+    e.stats.wanderTimer = (e.stats.wanderTimer ?? 0) + 1;
+    if (e.stats.wanderTimer < 5) return 'move';
     e.stats.wanderTimer = 0;
     const wDirs = [[0,-1],[1,0],[0,1],[-1,0]].sort(() => Math.random() - 0.5);
     for (const [wdx, wdy] of wDirs) {
@@ -150,79 +166,74 @@ class NPC extends Sentient {
         break;
       }
     }
+    return 'move';
   }
 
   _takeFleeTurn(ctx) {
     const e = this;
-    const { player, theMap, mapW, mapH, enemies, steps } = ctx;
-    if (!e.stats) return;
+    const { player, theMap, mapW, mapH, enemies } = ctx;
+    if (!e.stats) return 'move';
     const TILES = ctx.TILES;
-    e.actionTimer = (e.actionTimer ?? 0) + ((e.stats.speed ?? 1) * steps);
-    while (e.actionTimer >= 1) {
-      e.actionTimer -= 1;
-      const distToPlayer = Math.hypot(e.x - player.x, e.y - player.y);
-      if (distToPlayer <= 3) {
-        const fdx = e.x - player.x;
-        const fdy = e.y - player.y;
-        const steps2 = [
-          {dx: Math.sign(fdx) || 1,  dy: 0},
-          {dx: 0,                     dy: Math.sign(fdy) || 1},
-          {dx: -(Math.sign(fdx) || 1), dy: 0},
-          {dx: 0,                     dy: -(Math.sign(fdy) || 1)},
-        ];
-        for (const s of steps2) {
-          const nx = e.x + s.dx, ny = e.y + s.dy;
-          if (nx >= 0 && nx < mapW && ny >= 0 && ny < mapH &&
-              theMap[ny] && theMap[ny][nx] !== TILES.WALL &&
-              !enemies.some(o => o !== e && o.x === nx && o.y === ny)) {
-            e.x = nx; e.y = ny; break;
-          }
-        }
-      } else if (distToPlayer > 8 && e.preferPlants) {
-        const dirs = [{dx:1,dy:0},{dx:-1,dy:0},{dx:0,dy:1},{dx:0,dy:-1}];
-        const d = dirs[Math.floor(Math.random() * dirs.length)];
-        const nx = e.x + d.dx, ny = e.y + d.dy;
-        if (nx >= 1 && nx < mapW-1 && ny >= 1 && ny < mapH-1 &&
+    const distToPlayer = Math.hypot(e.x - player.x, e.y - player.y);
+    if (distToPlayer <= 3) {
+      const fdx = e.x - player.x;
+      const fdy = e.y - player.y;
+      const steps2 = [
+        {dx: Math.sign(fdx) || 1,  dy: 0},
+        {dx: 0,                     dy: Math.sign(fdy) || 1},
+        {dx: -(Math.sign(fdx) || 1), dy: 0},
+        {dx: 0,                     dy: -(Math.sign(fdy) || 1)},
+      ];
+      for (const s of steps2) {
+        const nx = e.x + s.dx, ny = e.y + s.dy;
+        if (nx >= 0 && nx < mapW && ny >= 0 && ny < mapH &&
             theMap[ny] && theMap[ny][nx] !== TILES.WALL &&
             !enemies.some(o => o !== e && o.x === nx && o.y === ny)) {
-          e.x = nx; e.y = ny;
+          e.x = nx; e.y = ny; break;
         }
       }
+    } else if (distToPlayer > 8 && e.preferPlants) {
+      const dirs = [{dx:1,dy:0},{dx:-1,dy:0},{dx:0,dy:1},{dx:0,dy:-1}];
+      const d = dirs[Math.floor(Math.random() * dirs.length)];
+      const nx = e.x + d.dx, ny = e.y + d.dy;
+      if (nx >= 1 && nx < mapW-1 && ny >= 1 && ny < mapH-1 &&
+          theMap[ny] && theMap[ny][nx] !== TILES.WALL &&
+          !enemies.some(o => o !== e && o.x === nx && o.y === ny)) {
+        e.x = nx; e.y = ny;
+      }
     }
+    return 'move';
   }
 
   _takeVerminTurn(ctx) {
     const e = this;
-    const { player, theMap, enemies, isTileFloor, steps } = ctx;
-    if (!e.stats) return;
-    e.actionTimer += (e.stats.speed * steps);
-    while (e.actionTimer >= 1) {
-      e.actionTimer -= 1;
-      const dist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
-      if (dist < 3) {
-        let fleeDx = -Math.sign(player.x - e.x);
-        let fleeDy = -Math.sign(player.y - e.y);
-        if (dist === 2 && Math.random() < 0.6) {
-          if (Math.abs(player.x - e.x) > Math.abs(player.y - e.y)) {
-            fleeDx = 0; fleeDy = Math.random() > 0.5 ? 1 : -1;
-          } else {
-            fleeDy = 0; fleeDx = Math.random() > 0.5 ? 1 : -1;
-          }
-        }
-        const nx = e.x + fleeDx, ny = e.y + fleeDy;
-        if (theMap[ny] && isTileFloor(theMap[ny][nx]) &&
-            !enemies.some(o => o.x === nx && o.y === ny)) {
-          e.x = nx; e.y = ny;
-        }
-      } else if (dist > 4) {
-        const dx = Math.sign(player.x - e.x), dy = Math.sign(player.y - e.y);
-        const nx = e.x + dx, ny = e.y + dy;
-        if (theMap[ny] && isTileFloor(theMap[ny][nx]) &&
-            !enemies.some(o => o.x === nx && o.y === ny)) {
-          e.x = nx; e.y = ny;
+    const { player, theMap, enemies, isTileFloor } = ctx;
+    if (!e.stats) return 'move';
+    const dist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
+    if (dist < 3) {
+      let fleeDx = -Math.sign(player.x - e.x);
+      let fleeDy = -Math.sign(player.y - e.y);
+      if (dist === 2 && Math.random() < 0.6) {
+        if (Math.abs(player.x - e.x) > Math.abs(player.y - e.y)) {
+          fleeDx = 0; fleeDy = Math.random() > 0.5 ? 1 : -1;
+        } else {
+          fleeDy = 0; fleeDx = Math.random() > 0.5 ? 1 : -1;
         }
       }
+      const nx = e.x + fleeDx, ny = e.y + fleeDy;
+      if (theMap[ny] && isTileFloor(theMap[ny][nx]) &&
+          !enemies.some(o => o.x === nx && o.y === ny)) {
+        e.x = nx; e.y = ny;
+      }
+    } else if (dist > 4) {
+      const dx = Math.sign(player.x - e.x), dy = Math.sign(player.y - e.y);
+      const nx = e.x + dx, ny = e.y + dy;
+      if (theMap[ny] && isTileFloor(theMap[ny][nx]) &&
+          !enemies.some(o => o.x === nx && o.y === ny)) {
+        e.x = nx; e.y = ny;
+      }
     }
+    return 'move';
   }
 
   _takePatrolTurn(ctx) {
@@ -282,10 +293,10 @@ class Ifrit extends NPC {
     super({ ...spec, behavior: NPC_BEHAVIOR.PATROL });  // semantic; takeTurn fully overrides
   }
   takeTurn(ctx) {
-    if (ctx.isScene) return;
+    if (ctx.isScene) return 'move';
     const e = this;
-    const { player, theMap, enemies, isTileFloor, steps } = ctx;
-    if (!e.isIfrit) return;  // ifrit branch is gated on isIfrit flag in legacy
+    const { player, theMap, enemies, isTileFloor } = ctx;
+    if (!e.isIfrit) return 'move';  // legacy gate
     const dist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
     if (!e.provoked) {
       if (dist <= 5 && Math.random() < 0.3) {
@@ -299,7 +310,9 @@ class Ifrit extends NPC {
         ctx.log(t.text);
         ctx.voice(t.voice);
       }
-      e._patrolTurnCount = (e._patrolTurnCount ?? 0) + steps;
+      // Count own-ticks now (was player-steps); 8 own-ticks ≈ same
+      // cadence at speed 1.0 as the legacy version.
+      e._patrolTurnCount = (e._patrolTurnCount ?? 0) + 1;
       if (e._patrolTurnCount >= 8) {
         e._patrolTurnCount = 0;
         const roll = Math.random();
@@ -343,7 +356,7 @@ class Ifrit extends NPC {
           }
         }
       }
-      return;
+      return 'move';
     }
     // Provoked branch
     if (!e.taunted && player.level < 5) {
@@ -374,13 +387,16 @@ class Ifrit extends NPC {
         ctx.floatText(fx, fy, '🔥', '#f60', 20);
       }
       const dmg = 15 + Math.floor(Math.random() * 10);
-      if (ctx.damagePlayer(dmg, 'ifrit_fireball', 22)) return;
+      if (ctx.damagePlayer(dmg, 'ifrit_fireball', 22)) return 'attack';
       ctx.log(`You take ${dmg} fire damage!`);
+      return 'attack';
     } else if (dist <= 1) {
       ctx.log("<span style='color:var(--error)'>🔥 Ifrit engulfs you in flames!</span>");
       const dmg = 20 + Math.floor(Math.random() * 10);
-      if (ctx.damagePlayer(dmg, 'ifrit_aura', 24, '🔥')) return;
+      if (ctx.damagePlayer(dmg, 'ifrit_aura', 24, '🔥')) return 'attack';
+      return 'attack';
     }
+    return 'move';
   }
 }
 
@@ -390,20 +406,22 @@ class FrenchTaunter extends NPC {
     super({ ...spec, behavior: NPC_BEHAVIOR.STATIONARY });
   }
   takeTurn(ctx) {
-    if (ctx.isScene) return;
+    if (ctx.isScene) return 'move';
     const e = this;
     const { player } = ctx;
     if (Math.abs(e.x - player.x) + Math.abs(e.y - player.y) <= 5 && Math.random() < 0.1) {
       ctx.log("<span style='color:var(--error)'>The French Taunter flings a COW at you!</span>");
-      if (ctx.damagePlayer(10, 'cow_toss', 24, '🐄')) return;
+      if (ctx.damagePlayer(10, 'cow_toss', 24, '🐄')) return 'attack';
+      return 'attack';
     }
+    return 'move';
   }
 }
 
 
 class Thief extends NPC {
   takeTurn(ctx) {
-    if (ctx.isScene) return;
+    if (ctx.isScene) return 'move';
     const e = this;
     const { player, theMap, mapW, mapH, enemies, itemsOnGround, isTileFloor, CONSTANTS } = ctx;
     const dist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
@@ -417,26 +435,26 @@ class Thief extends NPC {
           e.x = nx2; e.y = ny2;
         }
         const newDist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
-        if (newDist === 1 && Math.random() < CONSTANTS.STEAL_CHANCE) ctx.thiefSteal(e);
+        if (newDist === 1 && Math.random() < CONSTANTS.STEAL_CHANCE) { ctx.thiefSteal(e); return 'attack'; }
       } else if (dist === 1 && Math.random() < CONSTANTS.STEAL_CHANCE) {
-        ctx.thiefSteal(e);
+        ctx.thiefSteal(e); return 'attack';
       }
     } else {
-      if (dist === 1 && Math.random() < CONSTANTS.STEAL_CHANCE) ctx.thiefSteal(e);
+      if (dist === 1 && Math.random() < CONSTANTS.STEAL_CHANCE) { ctx.thiefSteal(e); return 'attack'; }
       const item = itemsOnGround.find(i => Math.abs(i.x-e.x)+Math.abs(i.y-e.y) <= 5);
       if (item) { e.x += Math.sign(item.x-e.x); e.y += Math.sign(item.y-e.y); }
       else      { e.x += (Math.random()>0.5?1:-1); e.y += (Math.random()>0.5?1:-1); }
     }
+    return 'move';
   }
 }
 
 
 class Fence extends NPC {
   takeTurn(ctx) {
-    if (ctx.isScene) return;
+    if (ctx.isScene) return 'move';
     const e = this;
-    const { player, theMap, enemies, isTileFloor, steps } = ctx;
-    e.actionTimer = (e.actionTimer ?? 0) + (e.stats.speed * steps);
+    const { player, theMap, enemies, isTileFloor } = ctx;
     const barX = (typeof window !== 'undefined' && window._fenceBarX) || player.x;
     const barY = (typeof window !== 'undefined' && window._fenceBarY) || player.y;
     const onEntrance = (e.x === barX && e.y === barY) ||
@@ -445,127 +463,117 @@ class Fence extends NPC {
                        (e.x === barX + 1 && e.y === barY + 1);
     if (onEntrance) {
       const nx = barX + 3, ny = barY + 2;
-      if (theMap[ny] && isTileFloor(theMap[ny][nx])) { e.x = nx; e.y = ny; }
+      if (theMap[ny] && isTileFloor(theMap[ny][nx])) { e.x = nx; e.y = ny; return 'move'; }
     }
-    while (e.actionTimer >= 1) {
-      e.actionTimer -= 1;
-      if (Math.random() < 0.4) {
-        const dirs = [[0,1],[0,-1],[1,0],[-1,0]];
-        const [fdx, fdy] = dirs[Math.floor(Math.random() * dirs.length)];
-        const nx2 = e.x + fdx, ny2 = e.y + fdy;
-        const blocksEntrance =
-          (nx2 === barX && ny2 === barY) ||
-          (nx2 === barX && ny2 === barY + 1) ||
-          (nx2 === barX - 1 && ny2 === barY + 1) ||
-          (nx2 === barX + 1 && ny2 === barY + 1);
-        if (theMap[ny2] && isTileFloor(theMap[ny2][nx2]) &&
-            Math.abs(nx2 - barX) <= 6 && Math.abs(ny2 - barY) <= 6 &&
-            !blocksEntrance &&
-            !enemies.some(o => o !== e && o.x === nx2 && o.y === ny2)) {
-          e.x = nx2; e.y = ny2;
-        }
+    // Legacy gated the wander on speed (actionTimer never accumulated
+    // for speed=0). Preserved here so MONSTER_DEF['fence'].speed = 0
+    // keeps Fence anchored unless a future def bumps it.
+    if (e.stats.speed > 0 && Math.random() < 0.4) {
+      const dirs = [[0,1],[0,-1],[1,0],[-1,0]];
+      const [fdx, fdy] = dirs[Math.floor(Math.random() * dirs.length)];
+      const nx2 = e.x + fdx, ny2 = e.y + fdy;
+      const blocksEntrance =
+        (nx2 === barX && ny2 === barY) ||
+        (nx2 === barX && ny2 === barY + 1) ||
+        (nx2 === barX - 1 && ny2 === barY + 1) ||
+        (nx2 === barX + 1 && ny2 === barY + 1);
+      if (theMap[ny2] && isTileFloor(theMap[ny2][nx2]) &&
+          Math.abs(nx2 - barX) <= 6 && Math.abs(ny2 - barY) <= 6 &&
+          !blocksEntrance &&
+          !enemies.some(o => o !== e && o.x === nx2 && o.y === ny2)) {
+        e.x = nx2; e.y = ny2;
       }
     }
+    return 'move';
   }
 }
 
 
 class Mimic extends NPC {
   takeTurn(ctx) {
-    if (ctx.isScene) return;
+    if (ctx.isScene) return 'move';
     const e = this;
-    const { player, theMap, enemies, isTileFloor, steps } = ctx;
-    if (!e.isMimic) return;  // legacy gate: only awakened mimics act
-    e.actionTimer = (e.actionTimer ?? 0) + (e.stats.speed * steps);
-    while (e.actionTimer >= 1) {
-      e.actionTimer -= 1;
-      const dist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
-      if ((e.provoked || e._mimicAwake) && dist >= 2 && dist <= 6 && Math.random() < 0.45) {
-        ctx.sound('mimic_attack', 0.75);
-        ctx.sound('ka_ching', 0.55);
-        ctx.spawnFx({ kind:'goldCoins', x1:e.x, y1:e.y, x2:player.x, y2:player.y, color:'#FFD700', life:1.0, power:0.9 });
-        const pdmg = Math.max(2, Math.floor((e.stats.dmg ?? 8) * 0.6));
-        ctx.log("<span style='color:var(--error)'>🪙 The Mimic spits a volley of gold coins!</span>");
-        if (ctx.damagePlayer(pdmg, 'mimic_coin', 16, '🪙', '#FFD700')) return;
-        continue;
-      }
-      if (dist <= 1) { ctx.monsterAttack(e); continue; }
-      const dx = Math.sign(player.x - e.x), dy = Math.sign(player.y - e.y);
-      const nx = e.x + dx, ny = e.y + dy;
-      if (theMap[ny] && isTileFloor(theMap[ny][nx]) &&
-          !enemies.some(o => o !== e && o.x === nx && o.y === ny)) {
-        e.x = nx; e.y = ny;
-      }
+    const { player, theMap, enemies, isTileFloor } = ctx;
+    if (!e.isMimic) return 'move';  // legacy gate: only awakened mimics act
+    const dist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
+    if ((e.provoked || e._mimicAwake) && dist >= 2 && dist <= 6 && Math.random() < 0.45) {
+      ctx.sound('mimic_attack', 0.75);
+      ctx.sound('ka_ching', 0.55);
+      ctx.spawnFx({ kind:'goldCoins', x1:e.x, y1:e.y, x2:player.x, y2:player.y, color:'#FFD700', life:1.0, power:0.9 });
+      const pdmg = Math.max(2, Math.floor((e.stats.dmg ?? 8) * 0.6));
+      ctx.log("<span style='color:var(--error)'>🪙 The Mimic spits a volley of gold coins!</span>");
+      if (ctx.damagePlayer(pdmg, 'mimic_coin', 16, '🪙', '#FFD700')) return 'attack';
+      return 'attack';
     }
+    if (dist <= 1) { ctx.monsterAttack(e); return 'attack'; }
+    const dx = Math.sign(player.x - e.x), dy = Math.sign(player.y - e.y);
+    const nx = e.x + dx, ny = e.y + dy;
+    if (theMap[ny] && isTileFloor(theMap[ny][nx]) &&
+        !enemies.some(o => o !== e && o.x === nx && o.y === ny)) {
+      e.x = nx; e.y = ny;
+    }
+    return 'move';
   }
 }
 
 
 class Shark extends NPC {
   takeTurn(ctx) {
-    if (ctx.isScene) return;
+    if (ctx.isScene) return 'move';
     const e = this;
-    const { player, theMap, steps } = ctx;
+    const { player, theMap } = ctx;
     const TILES = ctx.TILES;
-    if (!e.stats.stalks) return;
+    if (!e.stats.stalks) return 'move';
     const playerOnWater = theMap[player.y] && (theMap[player.y][player.x] === TILES.WATER || theMap[player.y][player.x] === TILES.DEEP_WATER);
     const dist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
     const aggroRange = e.stats.aggro ?? 6;
     if (playerOnWater && dist <= aggroRange) e.provoked = true;
     if (e.provoked || dist <= aggroRange) {
-      e.actionTimer += (e.stats.speed * steps);
-      while (e.actionTimer >= 1) {
-        e.actionTimer -= 1;
-        const isAdj = Math.abs(e.x - player.x) <= 1 && Math.abs(e.y - player.y) <= 1;
-        if (isAdj) { ctx.monsterAttack(e); }
-        else {
-          const dx = Math.sign(player.x - e.x), dy = Math.sign(player.y - e.y);
-          const targetTile = theMap[e.y+dy] && theMap[e.y+dy][e.x+dx];
-          if (targetTile === TILES.WATER || targetTile === TILES.DEEP_WATER) {
-            e.x += dx; e.y += dy;
-          }
-        }
+      const isAdj = Math.abs(e.x - player.x) <= 1 && Math.abs(e.y - player.y) <= 1;
+      if (isAdj) { ctx.monsterAttack(e); return 'attack'; }
+      const dx = Math.sign(player.x - e.x), dy = Math.sign(player.y - e.y);
+      const targetTile = theMap[e.y+dy] && theMap[e.y+dy][e.x+dx];
+      if (targetTile === TILES.WATER || targetTile === TILES.DEEP_WATER) {
+        e.x += dx; e.y += dy;
       }
     }
+    return 'move';
   }
 }
 
 
 class Zombie extends NPC {
   takeTurn(ctx) {
-    if (ctx.isScene) return;
+    if (ctx.isScene) return 'move';
     const e = this;
-    const { player, theMap, enemies, isTileFloor, steps } = ctx;
-    e.actionTimer += (e.stats.speed * steps);
+    const { player, theMap, enemies, isTileFloor } = ctx;
     const aggroRange = e.stats.aggro ?? 5;
-    while (e.actionTimer >= 1) {
-      e.actionTimer -= 1;
-      const dist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
-      const isAdj = dist <= 1;
-      if (dist <= aggroRange) e.provoked = true;
-      if (isAdj && e.provoked) { ctx.monsterAttack(e); continue; }
-      if (e.provoked) {
-        let dx = Math.sign(player.x - e.x), dy = Math.sign(player.y - e.y);
-        if (dx !== 0 && dy !== 0) {
-          if (Math.random() < 0.5) dx = 0; else dy = 0;
-        }
-        const tile = theMap[e.y+dy] && theMap[e.y+dy][e.x+dx];
-        if (!enemies.some(e2 => e !== e2 && e.x+dx === e2.x && e.y+dy === e2.y)
-            && isTileFloor(tile)) {
-          e.x += dx; e.y += dy;
-          if (dx !== 0) e._lastDx = dx;
-        }
-      } else if (Math.random() < 0.45) {
-        const dirs = [[0,-1],[1,0],[0,1],[-1,0]];
-        const [dx, dy] = dirs[Math.floor(Math.random() * dirs.length)];
-        const tile = theMap[e.y+dy] && theMap[e.y+dy][e.x+dx];
-        if (!enemies.some(e2 => e !== e2 && e.x+dx === e2.x && e.y+dy === e2.y)
-            && isTileFloor(tile)) {
-          e.x += dx; e.y += dy;
-          if (dx !== 0) e._lastDx = dx;
-        }
+    const dist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
+    const isAdj = dist <= 1;
+    if (dist <= aggroRange) e.provoked = true;
+    if (isAdj && e.provoked) { ctx.monsterAttack(e); return 'attack'; }
+    if (e.provoked) {
+      let dx = Math.sign(player.x - e.x), dy = Math.sign(player.y - e.y);
+      if (dx !== 0 && dy !== 0) {
+        if (Math.random() < 0.5) dx = 0; else dy = 0;
+      }
+      const tile = theMap[e.y+dy] && theMap[e.y+dy][e.x+dx];
+      if (!enemies.some(e2 => e !== e2 && e.x+dx === e2.x && e.y+dy === e2.y)
+          && isTileFloor(tile)) {
+        e.x += dx; e.y += dy;
+        if (dx !== 0) e._lastDx = dx;
+      }
+    } else if (Math.random() < 0.45) {
+      const dirs = [[0,-1],[1,0],[0,1],[-1,0]];
+      const [dx, dy] = dirs[Math.floor(Math.random() * dirs.length)];
+      const tile = theMap[e.y+dy] && theMap[e.y+dy][e.x+dx];
+      if (!enemies.some(e2 => e !== e2 && e.x+dx === e2.x && e.y+dy === e2.y)
+          && isTileFloor(tile)) {
+        e.x += dx; e.y += dy;
+        if (dx !== 0) e._lastDx = dx;
       }
     }
+    return 'move';
   }
 }
 
@@ -574,18 +582,20 @@ class Pixie extends NPC {
   // Pixie is a chaser with extra voice/sfx flavor when near the player.
   // Delegates motion to the default chase behavior after the flavor pass.
   takeTurn(ctx) {
-    if (ctx.isScene) return;
+    if (ctx.isScene) return 'move';
     const e = this;
-    const { player, steps, nowMs } = ctx;
+    const { player, nowMs } = ctx;
     const dist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
-    if (dist <= 6 && Math.random() < 0.06 * steps) {
+    // Per own-tick (was 0.06 * player-steps); now triggers per Pixie
+    // call which the scheduler paces by speed.
+    if (dist <= 6 && Math.random() < 0.06) {
       ctx.sound('squeak', 0.16, { freq: 900, freqJitter: 400, kind: 'sawtooth', vol: 0.08, dur: 0.06, decay: 1800 });
     }
     if (dist <= 4 && (!e._nextPixieVoiceMs || nowMs >= e._nextPixieVoiceMs)) {
       ctx.voice(`voice_pixie_${Math.floor(Math.random() * 3)}`);
       e._nextPixieVoiceMs = nowMs + 12000 + Math.floor(Math.random() * 10000);
     }
-    this._takeChaseTurn(ctx);
+    return this._takeChaseTurn(ctx);
   }
 }
 
@@ -622,13 +632,28 @@ NPC.fromSpec = function (spec = {}) {
   if (Cls) return new Cls(spec);
   let behavior = NPC_BEHAVIOR.CHASE;
   const stats = spec.stats || {};
+  // Priority order matters: many quest NPCs are also flagged
+  // `passive: true` (Blacksmith, Rosencrantz, town guard) — those
+  // should NOT be routed to VERMIN (which makes them flee the
+  // player). Resolve "what kind of NPC is this?" by the strongest
+  // signal first:
+  //   1. Hard-coded stationary names (specific shopkeepers).
+  //   2. patrolPath + isSceneNPC (scene-clock waypoint walkers).
+  //   3. _followTarget (scene-clock follower).
+  //   4. stats.quest (talk-to NPCs: Griswold, Cain, Dennis, town
+  //      guard, retired soldier, etc — they sit and chat).
+  //   5. stats.wandering (explicit opt-in to random walk).
+  //   6. fleePlayer (outdoor animals fleeing when scared).
+  //   7. stats.passive (only true vermin — mice/cockroaches — reach
+  //      here because they have no quest flag).
+  //   8. default → CHASE.
   if (spec._stayInShop || STATIONARY_TYPES.has(spec.type)) behavior = NPC_BEHAVIOR.STATIONARY;
-  else if (stats.wandering)         behavior = NPC_BEHAVIOR.WANDER;
-  else if (spec.fleePlayer)         behavior = NPC_BEHAVIOR.FLEE;
-  else if (stats.passive)           behavior = NPC_BEHAVIOR.VERMIN;
   else if (spec.patrolPath && spec.isSceneNPC) behavior = NPC_BEHAVIOR.PATROL;
   else if (spec._followTarget)      behavior = NPC_BEHAVIOR.FOLLOW;
   else if (stats.quest)             behavior = NPC_BEHAVIOR.STATIONARY;
+  else if (stats.wandering)         behavior = NPC_BEHAVIOR.WANDER;
+  else if (spec.fleePlayer)         behavior = NPC_BEHAVIOR.FLEE;
+  else if (stats.passive)           behavior = NPC_BEHAVIOR.VERMIN;
   return new NPC({ ...spec, behavior });
 };
 
