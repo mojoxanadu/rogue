@@ -78,6 +78,32 @@ class Entity {
  * shape can grow without breaking constructors. Status effects
  * are a name→state object (e.g., { poison: {turns: 5, tick: 2} }).
  */
+/**
+ * A timed background effect attached to a Sentient (poison, regeneration,
+ * burning, etc). Conditions DO NOT prevent the host from acting — they
+ * just fire their `onTick` callback every `interval` time-units for
+ * `pointsRemaining` applications, then auto-remove.
+ *
+ * Lifecycle managed by Sentient.tick() (decrements cooldown) and
+ * Sentient.fireDueConditions() (calls onTick, decrements pointsRemaining,
+ * removes when exhausted).
+ *
+ * Stackable: a Sentient can hold multiple Conditions with the same name
+ * (e.g., two poison applications), each ticking independently.
+ */
+class Condition {
+  constructor(spec = {}) {
+    this.name            = spec.name            ?? 'unnamed';
+    this.interval        = spec.interval        ?? 1.0;
+    this.pointsRemaining = spec.pointsRemaining ?? 1;
+    this.cooldown        = spec.cooldown        ?? this.interval;
+    this.onTick          = spec.onTick          ?? (() => {});
+  }
+  isDue()       { return this.cooldown        <= 0; }
+  isExhausted() { return this.pointsRemaining <= 0; }
+}
+
+
 class Sentient extends Entity {
   constructor(spec = {}) {
     super(spec);
@@ -98,10 +124,72 @@ class Sentient extends Entity {
     this.spellDmgBonus  = spec.spellDmgBonus  ?? 0;
     this.stats         = spec.stats         ?? {};
     this.statusEffects = spec.statusEffects ?? {};
+    // ── Cooldown turn-loop fields ──────────────────────────────
+    // actionCooldown: time-units until this Sentient may take its
+    //   next action. > 0 → canAct() === false. Decremented by tick().
+    // cooldowns: per-action-name cost hash. Reset by *acting*: when
+    //   a Sentient performs an action, its actionCooldown gets set
+    //   to the value at cooldowns[actionName] (5c will own that wiring).
+    //   Defaults are { move: 1.0, attack: 1.0 }; monsters typically
+    //   derive from speed (move: 1/speed; attack: max(1.0, 1/speed)).
+    // conditions: array of Condition instances (stackable — two
+    //   independent poisons are two entries).
+    this.actionCooldown = spec.actionCooldown ?? 0;
+    this.cooldowns      = spec.cooldowns      ?? { ...Sentient.DEFAULT_COOLDOWNS };
+    this.conditions     = spec.conditions     ?? [];
   }
 
   isAlive()    { return this.hp > 0; }
   isHostile()  { return false; }       // default; subclasses override
+
+  // ── Cooldown / condition helpers ───────────────────────────
+  /** True if this Sentient's action cooldown has elapsed. */
+  canAct() { return this.actionCooldown <= 0; }
+
+  /**
+   * Cost (in time-units) of performing the named action. Falls back to
+   * 1.0 if the action isn't listed — keeps unknown actions consistent
+   * with the global default round length.
+   */
+  actionCost(name) {
+    return this.cooldowns?.[name] ?? 1.0;
+  }
+
+  /**
+   * Advance time by `delta` for this Sentient: decrement its own
+   * actionCooldown (floored at 0) and tick every attached Condition's
+   * cooldown. Does NOT fire condition effects — call
+   * fireDueConditions() separately so the scheduler can decide ordering.
+   */
+  tick(delta) {
+    if (this.actionCooldown > 0) {
+      this.actionCooldown = Math.max(0, this.actionCooldown - delta);
+    }
+    for (const c of this.conditions) c.cooldown -= delta;
+  }
+
+  /**
+   * Fire any conditions whose cooldown has elapsed and that still have
+   * points remaining. A single condition can fire multiple times in
+   * one call if its cooldown went very negative (large delta). After
+   * firing, exhausted conditions (pointsRemaining ≤ 0) are removed.
+   * Returns the names of the fired condition applications, in order.
+   */
+  fireDueConditions() {
+    const fired = [];
+    for (const c of this.conditions) {
+      while (c.isDue() && !c.isExhausted()) {
+        c.onTick(this);
+        c.pointsRemaining -= 1;
+        c.cooldown        += c.interval;
+        fired.push(c.name);
+      }
+    }
+    for (let i = this.conditions.length - 1; i >= 0; i--) {
+      if (this.conditions[i].isExhausted()) this.conditions.splice(i, 1);
+    }
+    return fired;
+  }
 
   // ── Combat helpers ──────────────────────────────────────────
   // The effective*() methods exist as override points for subclasses
@@ -289,8 +377,11 @@ class LocalPlayer extends Player {
 LocalPlayer.DEFAULT_QUICKSLOT_COUNT = 10;
 
 
+Sentient.DEFAULT_COOLDOWNS = { move: 1.0, attack: 1.0 };
+
 // Expose to the global concat scope.
 window.Entity      = Entity;
 window.Sentient    = Sentient;
 window.Player      = Player;
 window.LocalPlayer = LocalPlayer;
+window.Condition   = Condition;
