@@ -689,30 +689,32 @@
       player.hp = Math.min(player.maxHp, player.hp + CONSTANTS.HUNGER_HEAL * steps);
     }
 
-    // E.753.MILK: diarrhea status ticking, periodic fart SFX, timed expiry
-    if(player.statusEffects && player.statusEffects.diarrhea) {
-      const fx = player.statusEffects.diarrhea;
-      fx.turnsRemaining = Math.max(0, (fx.turnsRemaining ?? 0) - steps);
-
+    // E.753.MILK: diarrhea — game-time expiry lives on the Condition
+    // (auto-removed by fireDueConditions when pointsRemaining hits 0;
+    // onRemove restores speedMod and logs). We just emit wall-clock
+    // fart SFX while the condition is active, plus a real-time safety
+    // purge in case the player idles past untilMs without taking turns.
+    if (player.hasCondition && player.hasCondition('diarrhea')) {
       const nowMs = Date.now();
-      if(!fx.nextFartMs) fx.nextFartMs = nowMs + 6000;
-      if(nowMs >= fx.nextFartMs) {
-        if(typeof Sound !== 'undefined') {
-          if(!Sound.playSample || !Sound.playSample('whoopie', 0.3)) {
+      if (!player._diarrheaNextFartMs) player._diarrheaNextFartMs = nowMs + 6000;
+      if (nowMs >= player._diarrheaNextFartMs) {
+        if (typeof Sound !== 'undefined') {
+          if (!Sound.playSample || !Sound.playSample('whoopie', 0.3)) {
             Sound.playTone(90 + Math.random() * 30, 'sawtooth', 0.18, 0.08, 25);
           }
         }
-        if(Array.isArray(itemsOnGround)) {
+        if (Array.isArray(itemsOnGround)) {
           itemsOnGround.push({ x: player.x, y: player.y, icon: '💩' });
         }
-        fx.nextFartMs = nowMs + 8000 + Math.floor(Math.random() * 12000);
+        player._diarrheaNextFartMs = nowMs + 8000 + Math.floor(Math.random() * 12000);
       }
-
-      const timedOut = !!fx.untilMs && nowMs >= fx.untilMs;
-      if(fx.turnsRemaining <= 0 || timedOut) {
-        delete player.statusEffects.diarrhea;
-        player.speedMod = 1.0;
-        logMsg("<span style='color:#8f8'>Your stomach finally settles down.</span>");
+      // Wall-clock safety: if the player has been idle past untilMs,
+      // exhaust the Condition immediately so onRemove cleanup runs.
+      if (player._diarrheaUntilMs && nowMs >= player._diarrheaUntilMs) {
+        for (const c of player.conditions) {
+          if (c.name === 'diarrhea') c.pointsRemaining = 0;
+        }
+        player.fireDueConditions();
       }
     }
 

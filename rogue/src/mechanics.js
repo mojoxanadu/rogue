@@ -263,15 +263,29 @@
     if(itemObj.itemName === 'milk') {
       logMsg("<span style='color:#fa0'>Turns out I'm lactose intolerant.</span>");
       player.hp -= 5; addFloatingText(player.x, player.y, '-5', '#f00', 16);
-      // Diarrhea status: reduced speed for 100 turns, intermittent farts (~10 min)
+      // Diarrhea: 100-turn Condition (game-time) carries the speed
+      // penalty + auto-cleanup; wall-clock fart SFX cadence still lives
+      // in engine.js since it's UX timing, not game mechanics.
       const now = Date.now();
-      player.statusEffects = player.statusEffects || {};
-      player.statusEffects['diarrhea'] = {
-        turnsRemaining: 100,
-        untilMs: now + (10 * 60 * 1000),
-        nextFartMs: now + 6000 + Math.floor(Math.random() * 6000)
-      };
-      player.speedMod = 0.6;
+      player.speedMod      = 0.6;
+      player._diarrheaUntilMs    = now + (10 * 60 * 1000);
+      player._diarrheaNextFartMs = now + 6000 + Math.floor(Math.random() * 6000);
+      if (typeof Condition !== 'undefined') {
+        player.conditions.push(new Condition({
+          name: 'diarrhea',
+          interval: 1.0,
+          pointsRemaining: 100,
+          onTick: () => {},
+          onRemove: (p) => {
+            p.speedMod = 1.0;
+            p._diarrheaUntilMs    = 0;
+            p._diarrheaNextFartMs = 0;
+            if (typeof logMsg === 'function') {
+              logMsg("<span style='color:#8f8'>Your stomach finally settles down.</span>");
+            }
+          },
+        }));
+      }
       if(typeof Sound !== 'undefined') {
         if(!Sound.playSample || !Sound.playSample('whoopie', 0.35)) {
           Sound.playTone(120, 'sawtooth', 0.2, 0.1, 30);
