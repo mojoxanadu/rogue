@@ -323,11 +323,7 @@
     window._mendedDrumX = drumX;
     window._mendedDrumY = drumY;
     // Place Mended Drum NPCs
-    town.enemies.push({
-      x: drumX - 1, y: drumY - 1, type: "mended_drum_barman",
-      stats: { icon: '🧔', hp: 999, maxHp: 999, dmg: 0, hit: 0, crit: 0, dodge: 0, speed: 0, throughWalls: false, passive: true, quest: true },
-      actionTimer: 0, isQuestNPC: true, _stayInShop: true
-    });
+    spawnNpc(town.enemies, drumX - 1, drumY - 1, "mended_drum_barman", { stats: { icon: '🧔', hp: 999, maxHp: 999, dmg: 0, hit: 0, crit: 0, dodge: 0, speed: 0, throughWalls: false, passive: true, quest: true }, isQuestNPC: true, _stayInShop: true });
 
     // Ensure guaranteed clear routes from town gate to key buildings and Mended Drum
     const gateInsideX = absGateX;
@@ -454,7 +450,7 @@
       for(let i = 0; i < desiredPixies && pixieCandidates.length > 0; i++) {
         const idx = Math.floor(vnoise(i * 41 + 7, i * 97 + 13) * pixieCandidates.length);
         const p = pixieCandidates.splice(idx, 1)[0];
-        town.enemies.push({ x: p.x, y: p.y, type: 'pixie', stats: { ...MONSTER_DEF['pixie'] }, actionTimer: 0, isSceneNPC: true });
+        spawnNpc(town.enemies, p.x, p.y, 'pixie', { stats: { ...MONSTER_DEF['pixie'] }, isSceneNPC: true });
       }
     }
 
@@ -511,15 +507,11 @@
       while(livePeasants.length < 3 && candidates.length > 0) {
         const idx = Math.floor(vnoise(livePeasants.length * 37 + 11, livePeasants.length * 53 + 19) * candidates.length);
         const p = candidates.splice(idx, 1)[0];
-        const peasant = {
-          x: p.x, y: p.y,
-          type: 'muck_peasant',
-          stats: {...MONSTER_DEF['muck_peasant']},
-          actionTimer: 0, isQuestNPC: true, isSceneNPC: true,
+        const peasant = spawnNpc(town.enemies, p.x, p.y, 'muck_peasant', {
+          isQuestNPC: true, isSceneNPC: true,
           patrolPath: [{x:p.x,y:p.y},{x:p.x+1,y:p.y},{x:p.x+1,y:p.y+1},{x:p.x,y:p.y+1}],
-          patrolIndex: 0, _sceneMoveCooldown: Math.floor(Math.random() * 5)
-        };
-        town.enemies.push(peasant);
+          patrolIndex: 0, _sceneMoveCooldown: Math.floor(Math.random() * 5),
+        });
         livePeasants.push(peasant);
       }
     }
@@ -601,7 +593,7 @@
         case 'f': t = TILES.FLOOR; break;
         case 'T': t = TILES.TREE; break;
             
-        case 'c': town.enemies.push({ x: x, y: y, type: "cow", stats: {...MONSTER_DEF["cow"]} }); break;
+        case 'c': spawnNpc(town.enemies, x, y, "cow"); break;
 
         case '1': t = TILES.PORTAL; break;
         case '2': t = TILES.HALL; break;
@@ -614,75 +606,92 @@
       town.map[y][x] = t;
     }
 
-    town.enemies.push({ x: 12, y: 14, type: "cain", stats: {...MONSTER_DEF["cain"], icon: '🧙🏽‍♂️'} });
-    // E5: Blacksmith NPC — stands adjacent to the FORGE tile (tristMap '5' at x=30, y=11). Spawn 1 tile to the left.
-    town.enemies.push({ x: 29, y: 11, type: "blacksmith", stats: {...MONSTER_DEF["blacksmith"]}, actionTimer: 0, isQuestNPC: true, _blacksmithDialogIdx: 0 });
-    town.enemies.push({ x: 15, y: 20, type: "dennis", stats: {...MONSTER_DEF["dennis"]} });
-    // E.753.FARM: Dennis's expanded farm — chickens, cows, ram, ewe, mule, goose, pigs
-    const farmStats = (icon, hp, speed) => ({ icon, hp, maxHp: hp, dmg: 0, hit: 0.0, crit: 0.0, dodge: 0.05, speed, throughWalls: false, passive: true });
-    town.enemies.push({ x: 5, y: 21, type: "chicken", stats: farmStats('🐔', 8, 0.5), actionTimer: 0, isFarmAnimal: true });
-    town.enemies.push({ x: 7, y: 24, type: "chicken", stats: farmStats('🐔', 8, 0.5), actionTimer: 0, isFarmAnimal: true });
-    town.enemies.push({ x: 4, y: 23, type: "chicken", stats: farmStats('🐔', 8, 0.5), actionTimer: 0, isFarmAnimal: true });
-    town.enemies.push({ x: 6, y: 22, type: "chicken", stats: farmStats('🐔', 8, 0.5), actionTimer: 0, isFarmAnimal: true });
-    town.enemies.push({ x: 9, y: 22, type: "cow", stats: farmStats('🐄', 20, 0.3), actionTimer: 0, isFarmAnimal: true });
-    town.enemies.push({ x: 10, y: 24, type: "cow", stats: farmStats('🐄', 20, 0.3), actionTimer: 0, isFarmAnimal: true });
-    town.enemies.push({ x: 3, y: 25, type: "ram", stats: farmStats('🐏', 15, 0.4), actionTimer: 0, isFarmAnimal: true });
-    town.enemies.push({ x: 4, y: 26, type: "ewe", stats: farmStats('🐑', 12, 0.4), actionTimer: 0, isFarmAnimal: true });
-    town.enemies.push({ x: 11, y: 21, type: "mule", stats: farmStats('🫏', 25, 0.3), actionTimer: 0, isFarmAnimal: true });
-    town.enemies.push({ x: 6, y: 25, type: "goose", stats: farmStats('🪿', 6, 0.6), actionTimer: 0, isFarmAnimal: true });
-    town.enemies.push({ x: 2, y: 24, type: "pig", stats: farmStats('🐷', 15, 0.2), actionTimer: 0, isFarmAnimal: true });
-    town.enemies.push({ x: 3, y: 23, type: "pig", stats: farmStats('🐷', 15, 0.2), actionTimer: 0, isFarmAnimal: true });
-    town.enemies.push({ x: 8, y: 7, type: "mouse", stats: {...MONSTER_DEF["mouse"]}, actionTimer: 0, isVermin: true });
-    town.enemies.push({ x: 27, y: 16, type: "mouse", stats: {...MONSTER_DEF["mouse"]}, actionTimer: 0, isVermin: true });
-    town.enemies.push({ x: 29, y: 13, type: "cockroach", stats: {...MONSTER_DEF["cockroach"]}, actionTimer: 0, isVermin: true });
-    // #12: Town guard — near the town entrance (south gate area)
-    town.enemies.push({ x: Math.floor(town.mapW / 2), y: town.mapH - 4, type: "town_guard", stats: { icon: '💂', hp: 200, maxHp: 200, dmg: 0, hit: 0.5, crit: 0.0, dodge: 0.2, speed: 0.0, throughWalls: false, passive: true, quest: true }, actionTimer: 0, isQuestNPC: true });
-
-    // E.HAMLET: Rosencrantz & Guildenstern — patrol between The Mended Drum and Tristram gates
-    // Looking for their childhood friend Prince Hamlet who stayed at the Drum last night.
-    town.enemies.push({
-      x: Math.floor(town.mapW / 2), y: Math.floor(town.mapH / 2) + 2,
-      type: "rosencrantz_guildenstern",
-      stats: {...MONSTER_DEF["rosencrantz_guildenstern"]},
-      actionTimer: 0,
-      isQuestNPC: true,
-      isSceneNPC: true,
-      patrolPath: [
-        { x: Math.floor(town.mapW / 2), y: Math.floor(town.mapH / 2) + 2 },  // near center
-        { x: Math.floor(town.mapW / 2), y: town.mapH - 5 },                  // near south gate
-        { x: Math.floor(town.mapW / 2) + 1, y: town.mapH - 5 },
-        { x: Math.floor(town.mapW / 2) + 1, y: Math.floor(town.mapH / 2) + 2 }
-      ],
-      patrolIndex: 0,
-      _sceneMoveCooldown: 0
+    // ── Tristram NPC manifest ─────────────────────────────────
+    // Curated, hand-placed townsfolk. The manifest is *data* — read
+    // it top-to-bottom to see exactly who lives in Tristram and where.
+    // Each entry's `x`/`y`/`type` are split out by the iteration loop
+    // below; all other fields ride through as spawnNpc opts. Stats
+    // default to MONSTER_DEF[type] when omitted; specify `stats:` only
+    // to override the def (e.g., cain's custom icon, the town guard's
+    // bespoke stat block, or the procedural farmStats animals).
+    const farmStats = (icon, hp, speed) => ({
+      icon, hp, maxHp: hp, dmg: 0, hit: 0.0, crit: 0.0, dodge: 0.05,
+      speed, throughWalls: false, passive: true,
     });
+    const tcw = town.mapW, tch = town.mapH;
+    const gateX = Math.floor(tcw / 2);
+    const gateY = tch - 3;
+    const wifePatrol = [
+      { x: gateX + 3, y: gateY - 2 }, { x: gateX + 4, y: gateY - 2 },
+      { x: gateX + 4, y: gateY - 1 }, { x: gateX + 3, y: gateY - 1 },
+    ];
+
+    const TRISTRAM_NPCS = [
+      // E.TRIST.1: Cain the chronicler — custom icon override on top of MONSTER_DEF
+      { x: 12, y: 14, type: 'cain', stats: { ...MONSTER_DEF['cain'], icon: '🧙🏽‍♂️' } },
+      // E5: Blacksmith — adjacent to the FORGE tile (tristMap '5' at x=30,y=11)
+      { x: 29, y: 11, type: 'blacksmith', isQuestNPC: true, _blacksmithDialogIdx: 0 },
+      // Dennis
+      { x: 15, y: 20, type: 'dennis' },
+      // E.753.FARM: Dennis's farm — chickens, cows, ram, ewe, mule, goose, pigs
+      { x:  5, y: 21, type: 'chicken', stats: farmStats('🐔',  8, 0.5), isFarmAnimal: true },
+      { x:  7, y: 24, type: 'chicken', stats: farmStats('🐔',  8, 0.5), isFarmAnimal: true },
+      { x:  4, y: 23, type: 'chicken', stats: farmStats('🐔',  8, 0.5), isFarmAnimal: true },
+      { x:  6, y: 22, type: 'chicken', stats: farmStats('🐔',  8, 0.5), isFarmAnimal: true },
+      { x:  9, y: 22, type: 'cow',     stats: farmStats('🐄', 20, 0.3), isFarmAnimal: true },
+      { x: 10, y: 24, type: 'cow',     stats: farmStats('🐄', 20, 0.3), isFarmAnimal: true },
+      { x:  3, y: 25, type: 'ram',     stats: farmStats('🐏', 15, 0.4), isFarmAnimal: true },
+      { x:  4, y: 26, type: 'ewe',     stats: farmStats('🐑', 12, 0.4), isFarmAnimal: true },
+      { x: 11, y: 21, type: 'mule',    stats: farmStats('🫏', 25, 0.3), isFarmAnimal: true },
+      { x:  6, y: 25, type: 'goose',   stats: farmStats('🪿',  6, 0.6), isFarmAnimal: true },
+      { x:  2, y: 24, type: 'pig',     stats: farmStats('🐷', 15, 0.2), isFarmAnimal: true },
+      { x:  3, y: 23, type: 'pig',     stats: farmStats('🐷', 15, 0.2), isFarmAnimal: true },
+      // Vermin around stores
+      { x:  8, y:  7, type: 'mouse',     isVermin: true },
+      { x: 27, y: 16, type: 'mouse',     isVermin: true },
+      { x: 29, y: 13, type: 'cockroach', isVermin: true },
+      // #12: Town guard — near the south gate
+      {
+        x: gateX, y: tch - 4, type: 'town_guard',
+        stats: {
+          icon: '💂', hp: 200, maxHp: 200, dmg: 0, hit: 0.5, crit: 0.0,
+          dodge: 0.2, speed: 0.0, throughWalls: false, passive: true, quest: true,
+        },
+        isQuestNPC: true,
+      },
+      // E.HAMLET: Rosencrantz & Guildenstern — patrol between Mended Drum and gates
+      {
+        x: gateX, y: Math.floor(tch / 2) + 2, type: 'rosencrantz_guildenstern',
+        isQuestNPC: true, isSceneNPC: true,
+        patrolPath: [
+          { x: gateX,     y: Math.floor(tch / 2) + 2 },
+          { x: gateX,     y: tch - 5 },
+          { x: gateX + 1, y: tch - 5 },
+          { x: gateX + 1, y: Math.floor(tch / 2) + 2 },
+        ],
+        patrolIndex: 0, _sceneMoveCooldown: 0,
+      },
+      // E.TRIST.4: Dennis's Wife — patrol in front of hut (near gate, east side)
+      {
+        x: wifePatrol[0].x, y: wifePatrol[0].y, type: 'dennis_wife',
+        isQuestNPC: true, isSceneNPC: true,
+        patrolPath: wifePatrol, patrolIndex: 0, _sceneMoveCooldown: 0,
+      },
+      // Sheep follows Dennis's Wife — start near her
+      {
+        x: wifePatrol[0].x + 1, y: wifePatrol[0].y, type: 'sheep',
+        farmAnimal: true, _followTarget: 'dennis_wife',
+      },
+      // E.TRIST.6: Retired soldier — stands in front of a house (north area)
+      { x: gateX - 10, y: 5, type: 'retired_soldier', isQuestNPC: true },
+    ];
+
+    for (const { x, y, type, ...opts } of TRISTRAM_NPCS) {
+      spawnNpc(town.enemies, x, y, type, opts);
+    }
 
     // Wire the fence bar position so patrol logic can find it
-    window._fenceBarX = Math.floor(town.mapW / 2) + 4; window._fenceBarY = town.mapH - 8;
-
-    // E.TRIST.4: Dennis's Hut — near the gate, just off the path
-    const gateX = Math.floor(town.mapW / 2);
-    const gateY = town.mapH - 3;
-    // Dennis's Wife patrols in front of hut (near gate, east side)
-    const wifePatrol = [
-      {x: gateX + 3, y: gateY - 2}, {x: gateX + 4, y: gateY - 2},
-      {x: gateX + 4, y: gateY - 1}, {x: gateX + 3, y: gateY - 1}
-    ];
-    town.enemies.push({
-      x: wifePatrol[0].x, y: wifePatrol[0].y,
-      type: "dennis_wife",
-      stats: {...MONSTER_DEF["dennis_wife"]},
-      actionTimer: 0, isQuestNPC: true, isSceneNPC: true,
-      patrolPath: wifePatrol, patrolIndex: 0, _sceneMoveCooldown: 0
-    });
-    // Sheep follows Dennis's Wife — start near her
-    town.enemies.push({
-      x: wifePatrol[0].x + 1, y: wifePatrol[0].y,
-      type: "sheep",
-      stats: {...MONSTER_DEF["sheep"]},
-      actionTimer: 0, farmAnimal: true,
-      _followTarget: 'dennis_wife'
-    });
+    window._fenceBarX = gateX + 4; window._fenceBarY = tch - 8;
 
     // E.TRIST.5: Muck peasants — wander the fields (south of town)
     const peasantSpots = [
@@ -690,30 +699,18 @@
       {x: gateX - 5, y: gateY + 3}
     ];
     peasantSpots.forEach(function(spot, idx) {
-      const peasant = {
-        x: spot.x, y: spot.y,
-        type: "muck_peasant",
-        stats: {...MONSTER_DEF["muck_peasant"]},
-        actionTimer: 0, isQuestNPC: true, isSceneNPC: true,
+      spawnNpc(town.enemies, spot.x, spot.y, "muck_peasant", {
+        isQuestNPC: true, isSceneNPC: true,
         patrolPath: [
           {x: spot.x, y: spot.y},
           {x: spot.x + (idx % 2 === 0 ? 2 : -2), y: spot.y},
           {x: spot.x + (idx % 2 === 0 ? 2 : -2), y: spot.y + 1},
-          {x: spot.x, y: spot.y + 1}
+          {x: spot.x, y: spot.y + 1},
         ],
-        patrolIndex: 0, _sceneMoveCooldown: Math.floor(Math.random() * 5)
-      };
-      town.enemies.push(peasant);
+        patrolIndex: 0, _sceneMoveCooldown: Math.floor(Math.random() * 5),
+      });
     });
 
-    // E.TRIST.6: Retired soldier — stands in front of a house (north area)
-    town.enemies.push({
-      x: gateX - 10, y: 5,
-      type: "retired_soldier",
-      stats: {...MONSTER_DEF["retired_soldier"]},
-      actionTimer: 0, isQuestNPC: true
-    });
-      
     // ── MUSIC: Tristram sample loop if available, FM fallback otherwise ──
     //Sound.playMusic('tristram');
     //Sound.stopAmbient(); // Town has no ambient loop
@@ -864,7 +861,7 @@
         }
         if(!fencePos) fencePos = { x: leftyPos.x + 2, y: leftyPos.y + 1 };
         reserved.add(`${fencePos.x},${fencePos.y}`);
-        enemies.push({ x: fencePos.x, y: fencePos.y, type: "fence", stats: {...MONSTER_DEF["fence"]} });
+        spawnNpc(enemies, fencePos.x, fencePos.y, "fence", { stats: {...MONSTER_DEF["fence"]} });
         let corpsePos = findNearbyFloorTile(leftyPos.x, leftyPos.y, 4, reserved);
         if(corpsePos && typeof createCorpse === 'function') {
           createCorpse(corpsePos.x, corpsePos.y, 'busker', { icon: '🧑‍🎤' }, [new ItemStack('accordion', 1), new ItemStack('paperclip', 1)]);
@@ -903,12 +900,7 @@
           }
         }
         // Add thief and loot
-        enemies.push({
-          x: hideoutRoom.cx, y: hideoutRoom.cy,
-          type: 'thief',
-          stats: {...MONSTER_DEF['thief'], patrolling: false, wandering: true},
-          actionTimer: 0
-        });
+        spawnNpc(enemies, hideoutRoom.cx, hideoutRoom.cy, 'thief', { stats: {...MONSTER_DEF['thief'], patrolling: false, wandering: true} });
         // Add some loot
         itemsOnGround.push({ x: hideoutRoom.cx + 1, y: hideoutRoom.cy, icon: '💰' });
         itemsOnGround.push({ x: hideoutRoom.cx - 1, y: hideoutRoom.cy, icon: '🗝️' });
@@ -927,13 +919,7 @@
           }
         }
         // Spawn FightingMaster at the center
-        enemies.push({
-          x: yardRoom.cx, y: yardRoom.cy,
-          type: 'fighting_master',
-          stats: { hp: 999, dmg: 0, speed: 0, dodge: 1.0, icon: '🤺', passive: true, quest: true },
-          actionTimer: 0,
-          isQuestNPC: true
-        });
+        spawnNpc(enemies, yardRoom.cx, yardRoom.cy, 'fighting_master', { stats: { hp: 999, dmg: 0, speed: 0, dodge: 1.0, icon: '🤺', passive: true, quest: true }, isQuestNPC: true });
         if(Math.random() < 0.3) {
           logMsg("<span style='color:#888; font-style:italic;'>You hear the ring of steel on steel somewhere nearby — a Weapon Master trains in a courtyard.</span>");
         }
@@ -971,16 +957,7 @@
       // E.GENIE / KQ5: Big Genie boss guards the dungeon exit on Floor 10.
       // Requires Brass Bottle quest item to pass. Appears at 4x size.
       if(currentScene === 'dungeon' && currentLevel === 10 && MONSTER_DEF && MONSTER_DEF['genie']) {
-        enemies.push({
-          x: Math.max(1, Math.min(mapW - 2, downStairPos.x + 2)),
-          y: Math.max(1, Math.min(mapH - 2, downStairPos.y + 1)),
-          type: 'genie',
-          stats: {...MONSTER_DEF['genie'], renderScale: 4.0},
-          actionTimer: 0,
-          isBoss: true,
-          isQuestNPC: true,
-          isGenieGuardian: true
-        });
+        spawnNpc(enemies, Math.max(1, Math.min(mapW - 2, downStairPos.x + 2)), Math.max(1, Math.min(mapH - 2, downStairPos.y + 1)), 'genie', { stats: {...MONSTER_DEF['genie'], renderScale: 4.0}, isBoss: true, isQuestNPC: true, isGenieGuardian: true });
         logMsg("<span style='color:var(--warning)'>🧞 A colossal Genie blocks the exit stairs! It demands the Brass Bottle before it will let you pass.</span>");
       }
 
@@ -1017,12 +994,7 @@
           // The darkness itself is the threat. Players need light to survive.
           // Level 6: pacifist orc NPC in the first dark room
           if(currentLevel === 6 && darkRoomCount === 1) {
-            enemies.push({
-              x: rm.cx + 1, y: rm.cy,
-              type: 'pacifist_orc',
-              stats: {...MONSTER_DEF['orc'], icon: '🧌', hp: 999, dmg: 0, quest: true},
-              actionTimer: 0, isQuestNPC: true
-            });
+            spawnNpc(enemies, rm.cx + 1, rm.cy, 'pacifist_orc', { stats: {...MONSTER_DEF['orc'], icon: '🧌', hp: 999, dmg: 0, quest: true}, isQuestNPC: true });
             logMsg("<span style='color:#666; font-style:italic;'>You sense something watching from the darkness...</span>");
             // E.753.CUPCAKE: Two cupcakes on the floor near Grok
             itemsOnGround.push({ x: rm.cx - 1, y: rm.cy,     icon: '🧁', _cupcakeIdx: 0 });
@@ -1077,23 +1049,12 @@
         // Spawn 3-4 lowly pirates that roam
         for(let i = 0; i < 3 + Math.floor(Math.random() * 2); i++) {
           let rm = rooms[Math.floor(Math.random() * rooms.length)];
-          enemies.push({
-            x: rm.cx + Math.floor(Math.random() * 3) - 1,
-            y: rm.cy + Math.floor(Math.random() * 3) - 1,
-            type: 'pirate',
-            stats: {...MONSTER_DEF['pirate']},
-            actionTimer: 0
-          });
+          spawnNpc(enemies, rm.cx + Math.floor(Math.random() * 3) - 1, rm.cy + Math.floor(Math.random() * 3) - 1, 'pirate', { stats: {...MONSTER_DEF['pirate']} });
         }
         // Pirate Chaplain on floor 4 — wanders randomly
         let chapRoom = rooms[rooms.length - 2] || rooms[0];
         carveFloorPad(chapRoom.cx, chapRoom.cy, 1);
-        enemies.push({
-          x: chapRoom.cx, y: chapRoom.cy,
-          type: 'chaplain',
-          stats: { icon: '⛪🏴‍☠️', hp: 30, dmg: 0, hit: 0, crit: 0, dodge: 0, speed: 0, quest: true, wandering: true, wanderTimer: 0 },
-          actionTimer: 0, isQuestNPC: true
-        });
+        spawnNpc(enemies, chapRoom.cx, chapRoom.cy, 'chaplain', { stats: { icon: '⛪🏴‍☠️', hp: 30, dmg: 0, hit: 0, crit: 0, dodge: 0, speed: 0, quest: true, wandering: true, wanderTimer: 0 }, isQuestNPC: true });
       }
       if(currentLevel === 5 && rooms.length >= 3) {
         // ── SWORDMASTER MAZE: last 3-4 rooms become a dark, confusing maze ──
@@ -1141,22 +1102,12 @@
         let guardCount = 1 + Math.floor(Math.random() * 2);
         for(let i = 0; i < guardCount && i < mazeRooms.length - 1; i++) {
           let guardRoom = mazeRooms[i];
-          enemies.push({
-            x: guardRoom.cx, y: guardRoom.cy,
-            type: 'pirate',
-            stats: {...MONSTER_DEF['pirate']},
-            actionTimer: 0
-          });
+          spawnNpc(enemies, guardRoom.cx, guardRoom.cy, 'pirate', { stats: {...MONSTER_DEF['pirate']} });
         }
         
         // Swordmaster at the deepest (last) maze room
         let masterRoom = mazeRooms[mazeRooms.length - 1];
-        enemies.push({
-          x: masterRoom.cx, y: masterRoom.cy,
-          type: 'master',
-          stats: {...MONSTER_DEF['master']},
-          actionTimer: 0
-        });
+        spawnNpc(enemies, masterRoom.cx, masterRoom.cy, 'master', { stats: {...MONSTER_DEF['master']} });
       }
 
       // Floor 1: Hidden passage → Ifrit boss chamber (remote + concealed)
@@ -1203,16 +1154,7 @@
         const ifritX = chamberX + Math.floor(chamberW / 2);
         const ifritY = chamberY + Math.floor(chamberH / 2);
         // Place Ifrit — loot (Tome of Fireball) comes from his corpse via combat
-        enemies.push({
-          x: ifritX, y: ifritY,
-          type: 'ifrit',
-          stats: {...MONSTER_DEF['ifrit'], renderScale: 2.8, speed: 0.9},
-          actionTimer: 0,
-          isIfrit: true,
-          taunted: false,
-          patrolCenter: { x: ifritX, y: ifritY },
-          patrolRadius: 3
-        });
+        spawnNpc(enemies, ifritX, ifritY, 'ifrit', { stats: {...MONSTER_DEF['ifrit'], renderScale: 2.8, speed: 0.9}, isIfrit: true, taunted: false, patrolCenter: { x: ifritX, y: ifritY }, patrolRadius: 3 });
         // Fireproof decor: scatter rocks, mechanical parts, and fire pit markers
         const ifritDecor = [
           { dx: -1, dy: -1, icon: '🪨' },
@@ -1257,7 +1199,7 @@
           let oy = sp.y + Math.floor(Math.random() * 7) - 3;
           if(ox >= 0 && ox < mapW && oy >= 0 && oy < mapH && isTileFloor(theMap[oy][ox])) {
             let type = Math.random() < 0.5 ? 'mouse' : 'cockroach';
-            enemies.push({ x: ox, y: oy, type, stats: {...MONSTER_DEF[type]}, actionTimer: 0, isVermin: true });
+            spawnNpc(enemies, ox, oy, type, { stats: {...MONSTER_DEF[type]}, isVermin: true });
           }
         }
       }
@@ -1267,11 +1209,10 @@
       for(let i=5; i<15; i++) theMap[10][i] = TILES.LETTER; // IEHOVA name-of-god trial
       theMap[12][10] = TILES.BLADE;                         // Breath-of-god trial (kneel)
       
-      enemies.push({ x: 15, y: 10, type: "bridge_keeper", stats: {...MONSTER_DEF["bridge_keeper"]} });
-      enemies.push({ x: 20, y: 20, type: "black_knight",  stats: {...MONSTER_DEF["black_knight"]}, actionTimer: 0 });
-      enemies.push({ x: 5,  y: 5,  type: "killer_rabbit", stats: {...MONSTER_DEF["killer_rabbit"]}, actionTimer: 0 });
-      enemies.push({ x: 2,  y: 15, type: "french_taunter",stats: {...MONSTER_DEF["french_taunter"]} });
-      
+      spawnNpc(enemies, 15, 10, "bridge_keeper", { stats: {...MONSTER_DEF["bridge_keeper"]} });
+      spawnNpc(enemies, 20, 20, "black_knight", { stats: {...MONSTER_DEF["black_knight"]} });
+      spawnNpc(enemies, 5, 5, "killer_rabbit", { stats: {...MONSTER_DEF["killer_rabbit"]} });
+      spawnNpc(enemies, 2, 15, "french_taunter", { stats: {...MONSTER_DEF["french_taunter"]} });
       itemsOnGround.push({ x: 6, y: 5, icon: '💣🌟' }); // Holy Hand Grenade
       
       // ── FATE OF ATLANTIS: Orichalcum Beads scattered in the desert ──
@@ -1444,12 +1385,7 @@
       // Beach: add Pirate Chaplain and beach village (Monkey Island theme)
       if(currentScene === 'beach' && rooms.length >= 3) {
         let chRoom = rooms[Math.floor(rooms.length / 2)];
-        enemies.push({
-          x: chRoom.cx, y: chRoom.cy,
-          type: 'chaplain',
-          stats: {...MONSTER_DEF['chaplain']},
-          actionTimer: 0
-        });
+        spawnNpc(enemies, chRoom.cx, chRoom.cy, 'chaplain', { stats: {...MONSTER_DEF['chaplain']} });
         
         // Beach village with Monkey Island references
         if(rooms.length >= 5) {
@@ -1460,18 +1396,8 @@
           if(villageRoom.w >= 6 && villageRoom.h >= 6) {
             theMap[villageRoom.cy][villageRoom.cx] = TILES.SCUMM_BAR;
             // Add some pirate NPCs around the bar
-            enemies.push({
-              x: villageRoom.cx + 1, y: villageRoom.cy,
-              type: 'pirate',
-              stats: {...MONSTER_DEF['pirate']},
-              actionTimer: 0
-            });
-            enemies.push({
-              x: villageRoom.cx - 1, y: villageRoom.cy,
-              type: 'pirate',
-              stats: {...MONSTER_DEF['pirate']},
-              actionTimer: 0
-            });
+            spawnNpc(enemies, villageRoom.cx + 1, villageRoom.cy, 'pirate', { stats: {...MONSTER_DEF['pirate']} });
+            spawnNpc(enemies, villageRoom.cx - 1, villageRoom.cy, 'pirate', { stats: {...MONSTER_DEF['pirate']} });
           }
           
           // Antique shop (with safe cracking quest)
@@ -1480,14 +1406,7 @@
             if(shopRoom.w >= 5 && shopRoom.h >= 5) {
               theMap[shopRoom.cy][shopRoom.cx] = TILES.ANTIQUE_SHOP;
               // Add a hard-of-hearing shopkeeper
-              enemies.push({
-                x: shopRoom.cx, y: shopRoom.cy,
-                type: 'fence', // Reuse fence as shopkeeper
-                stats: {...MONSTER_DEF['fence']},
-                actionTimer: 0,
-                isShopkeeper: true,
-                shopType: 'antique'
-              });
+              spawnNpc(enemies, shopRoom.cx, shopRoom.cy, 'fence', { stats: {...MONSTER_DEF['fence']}, isShopkeeper: true, shopType: 'antique' });
             }
           }
           
@@ -1497,12 +1416,7 @@
             if(masterRoom.w >= 5 && masterRoom.h >= 5) {
               theMap[masterRoom.cy][masterRoom.cx] = TILES.HUT;
               // Add swordmaster
-              enemies.push({
-                x: masterRoom.cx, y: masterRoom.cy,
-                type: 'master',
-                stats: {...MONSTER_DEF['master']},
-                actionTimer: 0
-              });
+              spawnNpc(enemies, masterRoom.cx, masterRoom.cy, 'master', { stats: {...MONSTER_DEF['master']} });
             }
           }
           
@@ -1521,12 +1435,7 @@
             if(dockRoom.w >= 4 && dockRoom.h >= 4) {
               theMap[dockRoom.cy][dockRoom.cx] = TILES.BOAT;
               // Add a pirate near the boat
-              enemies.push({
-                x: dockRoom.cx + 1, y: dockRoom.cy,
-                type: 'pirate',
-                stats: {...MONSTER_DEF['pirate']},
-                actionTimer: 0
-              });
+              spawnNpc(enemies, dockRoom.cx + 1, dockRoom.cy, 'pirate', { stats: {...MONSTER_DEF['pirate']} });
             }
           }
           
@@ -1597,14 +1506,10 @@
 
         // Ensure required shopkeepers/NPC anchors exist near the landmarks.
         if(!enemies.some(e => e.type === 'chaplain')) {
-          enemies.push({ x: coastX - 5, y: vy - 1, type: 'chaplain', stats: {...MONSTER_DEF['chaplain']}, actionTimer: 0 });
+          spawnNpc(enemies, coastX - 5, vy - 1, 'chaplain', { stats: {...MONSTER_DEF['chaplain']} });
         }
         if(!enemies.some(e => e.shopType === 'antique')) {
-          enemies.push({
-            x: coastX - 2, y: vy + 3,
-            type: 'fence', stats: {...MONSTER_DEF['fence']}, actionTimer: 0,
-            isShopkeeper: true, shopType: 'antique'
-          });
+          spawnNpc(enemies, coastX - 2, vy + 3, 'fence', { stats: {...MONSTER_DEF['fence']}, isShopkeeper: true, shopType: 'antique' });
         }
       }
     }
@@ -1634,7 +1539,7 @@
       player.x = 4; player.y = 4; theMap[4][4] = TILES.STAIR_UP;
       theMap[mapH-4][mapW-4] = TILES.STAIR_DOWN;
       // Boss area
-      enemies.push({ x: mapW-6, y: mapH-6, type: "black_knight", stats: {...MONSTER_DEF["black_knight"]}, actionTimer: 0 });
+      spawnNpc(enemies, mapW-6, mapH-6, "black_knight", { stats: {...MONSTER_DEF["black_knight"]} });
       spawnMonsters(5 + currentLevel);
     }
     else if (window.BOUNDARY_DATA && window.BOUNDARY_DATA[currentScene]) {
@@ -1656,29 +1561,7 @@
 
       (sceneData.npcs || []).forEach(npc => {
         const def = MONSTER_DEF[npc.type] || {};
-        enemies.push({
-          x: npc.x,
-          y: npc.y,
-          type: npc.type,
-          stats: {
-            icon: npc.icon || def.icon || '🙂',
-            hp: def.hp ?? 999,
-            maxHp: def.hp ?? 999,
-            dmg: def.dmg ?? 0,
-            hit: def.hit ?? 0,
-            crit: def.crit ?? 0,
-            dodge: def.dodge != null ? def.dodge : 1,
-            speed: 0,
-            throughWalls: false,
-            passive: true,
-            quest: true
-          },
-          actionTimer: 0,
-          isQuestNPC: true,
-          patrolPath: npc.patrolPath ? npc.patrolPath.map(p => ({ x: p.x, y: p.y })) : [],
-          patrolIndex: 0,
-          isSceneNPC: true
-        });
+        spawnNpc(enemies, npc.x, npc.y, npc.type, { stats: {             icon: npc.icon || def.icon || '🙂',             hp: def.hp ?? 999,             maxHp: def.hp ?? 999,             dmg: def.dmg ?? 0,             hit: def.hit ?? 0,             crit: def.crit ?? 0,             dodge: def.dodge != null ? def.dodge : 1,             speed: 0,             throughWalls: false,             passive: true,             quest: true           }, isQuestNPC: true, patrolPath: npc.patrolPath ? npc.patrolPath.map(p => ({ x: p.x, y: p.y })) : [], patrolIndex: 0, isSceneNPC: true });
       });
     }
     // Regenerate grass height map whenever a new map loads
@@ -1741,7 +1624,7 @@
       }
       let type = availableTypes[Math.floor(Math.random() * availableTypes.length)];
       if(MONSTER_DEF[type]) {
-        enemies.push({ x: pos.x, y: pos.y, type, stats: {...MONSTER_DEF[type]}, actionTimer: 0 });
+        spawnNpc(enemies, pos.x, pos.y, type, { stats: {...MONSTER_DEF[type]} });
       }
     }
     
@@ -1772,7 +1655,7 @@
                 stats.hp *= 2; stats.maxHp = stats.hp;
                 stats.dmg = Math.floor(stats.dmg * 1.5);
               }
-              enemies.push({ x, y, type: aquaticType, stats, actionTimer: 0 });
+              spawnNpc(enemies, x, y, aquaticType, { stats: stats });
               waterCount++;
             }
           }
@@ -1791,12 +1674,7 @@
         }
         let trexStats = {...MONSTER_DEF['trex']};
         trexStats.maxHp = trexStats.hp;
-        enemies.push({
-          x: pos.x, y: pos.y,
-          type: 'trex',
-          stats: trexStats,
-          actionTimer: 0
-        });
+        spawnNpc(enemies, pos.x, pos.y, 'trex', { stats: trexStats });
         logMsg("<span style='color:#f44; font-weight:bold;'>🦖 The ground trembles beneath your feet...</span>");
       }
     }
@@ -1829,7 +1707,7 @@
         let ambushTypes = ['slime', 'skeleton', 'snake', 'bat'];
         let type = ambushTypes[Math.floor(Math.random() * ambushTypes.length)];
         if (MONSTER_DEF[type]) {
-          enemies.push({ x, y, type, stats: {...MONSTER_DEF[type]}, actionTimer: 0 });
+          spawnNpc(enemies, x, y, type, { stats: {...MONSTER_DEF[type]} });
         }
         return;
       }
@@ -1932,22 +1810,6 @@
       // Check not on player or other enemy
       if(enemies.some(e => e && e.x === ax && e.y === ay)) continue;
 
-      enemies.push({
-        x: ax, y: ay,
-        type: animalType,
-        icon: def.icon,
-        friendly: def.friendly || false,
-        farmAnimal: def.farmAnimal || false,
-        noGold: def.noGold || false,
-        stats: { hp: def.hp, maxHp: def.maxHp, atk: def.dmg, def: 0,
-                  hit: def.hit, dodge: def.dodge, xp: 1,
-                  speed: def.speed, throughWalls: def.throughWalls || false },
-        renderScale: def.renderScale ?? 1.0,
-        loot: def.loot || [],
-        actionTimer: 0,
-        // AI flags
-        fleePlayer: def.friendly || false,
-        preferPlants: true
-      });
+      spawnNpc(enemies, ax, ay, animalType, { icon: def.icon, friendly: def.friendly || false, farmAnimal: def.farmAnimal || false, noGold: def.noGold || false, stats: { hp: def.hp, maxHp: def.maxHp, atk: def.dmg, def: 0,                   hit: def.hit, dodge: def.dodge, xp: 1,                   speed: def.speed, throughWalls: def.throughWalls || false }, renderScale: def.renderScale ?? 1.0, loot: def.loot || [], fleePlayer: def.friendly || false, preferPlants: true });
     }
   }

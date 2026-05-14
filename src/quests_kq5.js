@@ -238,19 +238,11 @@
           if(currentLevel === 2) {
             let catPos = findSpawnPosition();
             if(catPos) {
-              enemies.push({
-                type: 'cat',
-                x: catPos.x, y: catPos.y,
-                stats: { icon: '🐱', hp: 5, maxHp: 5, damage: 2, isBig: false }
-              });
+              spawnNpc(enemies, catPos.x, catPos.y, 'cat', { stats: { icon: '🐱', hp: 5, maxHp: 5, damage: 2, isBig: false } });
             }
             let ratPos = findSpawnPosition();
             if(ratPos) {
-              enemies.push({
-                type: 'rat',
-                x: ratPos.x, y: ratPos.y,
-                stats: { icon: '🐀', hp: 3, maxHp: 3, damage: 0, isBig: false, friendly: true }
-              });
+              spawnNpc(enemies, ratPos.x, ratPos.y, 'rat', { stats: { icon: '🐀', hp: 3, maxHp: 3, damage: 0, isBig: false, friendly: true } });
             }
             logMsg('<span style="color:var(--warning)">🐱 A cat is chasing a helpless rat!</span>');
           }
@@ -280,11 +272,7 @@
             if(typeof emitQuestEvent === 'function') emitQuestEvent('rat_helped', {});
             let ratPos = findSpawnPosition();
             if(ratPos) {
-              enemies.push({
-                type: 'rat',
-                x: ratPos.x, y: ratPos.y,
-                stats: { icon: '🐀💖', hp: 10, maxHp: 10, damage: 3, friendly: true }
-              });
+              spawnNpc(enemies, ratPos.x, ratPos.y, 'rat', { stats: { icon: '🐀💖', hp: 10, maxHp: 10, damage: 3, friendly: true } });
             }
           }
         },
@@ -322,11 +310,7 @@
             logMsg('<span style="color:#888">🧞 "You have disturbed my slumber! Prepare to face my wrath!"</span>');
             let geniePos = findSpawnPosition();
             if(geniePos) {
-              enemies.push({
-                type: 'genie',
-                x: geniePos.x, y: geniePos.y,
-                stats: { icon: '🧞', hp: 100, maxHp: 100, damage: 15, isBig: true, name: 'Genie' }
-              });
+              spawnNpc(enemies, geniePos.x, geniePos.y, 'genie', { stats: { icon: '🧞', hp: 100, maxHp: 100, damage: 15, isBig: true, name: 'Genie' } });
             }
           }
         }

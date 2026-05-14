@@ -807,7 +807,7 @@ const hBtn = document.getElementById('hamburgerBtn');
               break;
             }
             if(!pos) continue;
-            enemies.push({ x: pos.x, y: pos.y, type: mob, stats: {...MONSTER_DEF[mob]}, actionTimer: 0 });
+            spawnNpc(enemies, pos.x, pos.y, mob, { stats: {...MONSTER_DEF[mob]} });
             spawned++;
           }
           if(typeof drawMap === 'function') drawMap();
@@ -1817,13 +1817,7 @@ const hBtn = document.getElementById('hamburgerBtn');
             // Mimic! Transform into monster
             chestStates[chestKey] = 0; // reset state
             theMap[tileY][tileX] = TILES.FLOOR;
-            enemies.push({
-              x: tileX, y: tileY,
-              type: 'mimic',
-              stats: {...MONSTER_DEF['mimic']},
-              actionTimer: 0,
-              isMimic: true
-            });
+            spawnNpc(enemies, tileX, tileY, 'mimic', { stats: {...MONSTER_DEF['mimic']}, isMimic: true });
             logMsg("<span style='color:var(--error)'>📦 The chest SNAPS its lid open and reveals jagged teeth! It's a MIMIC!</span>");
             Sound.playSample('mimic_reveal', 0.8);
             Sound.playSample('mimic_laugh', 0.6);

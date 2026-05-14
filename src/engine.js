@@ -641,7 +641,7 @@
          itemsOnGround.push({x: 30, y: 24, icon: '🏅'});
          // Eagle is here if player fed it
          if(player.fedEagle) {
-           enemies.push({ x: 30, y: 23, type: "eagle", stats: {...MONSTER_DEF["eagle"]} });
+           spawnNpc(enemies, 30, 23, "eagle", { stats: {...MONSTER_DEF["eagle"]} });
            logMsg("<span style='color:var(--success)'>The Eagle you fed is here! Talk to it to escape.</span>");
          }
         startQuestTimer(30, "Roc Nest Escape", () => {
@@ -829,7 +829,7 @@
     if (currentScene === 'dungeon' && Math.random() < CONSTANTS.SPAWN_RATE * steps) {
         let pos = getRandomFloor();
         if (pos && !(darkMap[pos.y] && darkMap[pos.y][pos.x]) && !enemies.some(e => e.x === pos.x && e.y === pos.y) && (pos.x !== player.x || pos.y !== player.y)) {
-            enemies.push({ x: pos.x, y: pos.y, type: "slime", stats: {...MONSTER_DEF["slime"]}, actionTimer: 0 });
+            spawnNpc(enemies, pos.x, pos.y, "slime", { stats: {...MONSTER_DEF["slime"]} });
         }
     }
 
@@ -866,20 +866,10 @@
       }
       if(spawnTile) {
         // Spawn the rat — passive, runs away
-        enemies.push({
-          x: spawnTile.x, y: spawnTile.y,
-          type: 'wet_rat',
-          stats: {...MONSTER_DEF['wet_rat'], hp: 6, maxHp: 6, dmg: 0, hit: 0.0, crit: 0.0, passive: true, speed: 1.2},
-          actionTimer: 0
-        });
+        spawnNpc(enemies, spawnTile.x, spawnTile.y, 'wet_rat', { stats: {...MONSTER_DEF['wet_rat'], hp: 6, maxHp: 6, dmg: 0, hit: 0.0, crit: 0.0, passive: true, speed: 1.2} });
         logMsg("<span style='color:var(--warning)'>🐀 You notice a rat scurrying across the floor, followed by a cat in hot pursuit!</span>");
         // Cat spawns a bit further away, chases the rat
-        enemies.push({
-          x: spawnTile.x + 1, y: spawnTile.y,
-          type: 'cat',
-          stats: {...MONSTER_DEF['cat']},
-          actionTimer: 0
-        });
+        spawnNpc(enemies, spawnTile.x + 1, spawnTile.y, 'cat', { stats: {...MONSTER_DEF['cat']} });
         // Old boot appears at feet (harmless flavor item)
         itemsOnGround.push({ x: player.x + 1, y: player.y, icon: '👢' });
         addFloatingText(spawnTile.x, spawnTile.y, '🐀', '#aaa', 14);
@@ -1065,7 +1055,7 @@
          // Bug 13: Show ambush visual feedback before waking
          damageTint = 30;
          addFloatingText(player.x, player.y, '⚔️ AMBUSH!', '#f00', 20);
-         enemies.push({ x: player.x+1, y: player.y, type: "assassin", stats: {...MONSTER_DEF["assassin"]}, actionTimer: 0 });
+         spawnNpc(enemies, player.x+1, player.y, "assassin", { stats: {...MONSTER_DEF["assassin"]} });
          // Bug 13: Short delay then wake so player sees the ambush notification
          setTimeout(() => { wakeUp(); }, 300);
        }, 1500);
