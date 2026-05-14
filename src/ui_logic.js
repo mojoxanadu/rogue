@@ -264,10 +264,13 @@ function _performStickyMove(src, targetSource, target) {
         statusUI.innerText = player.statusType.toUpperCase();
         statusUI.className = "chip danger";
         player._exhaustedWarnFired = false;
-      } else if(player.statusEffects && player.statusEffects.diarrhea) {
+      } else if(player.hasCondition && player.hasCondition('diarrhea')) {
         statusUI.style.display = 'block';
-        const d = player.statusEffects.diarrhea;
-        const turns = Math.max(0, Math.floor(d.turnsRemaining ?? 0));
+        // Condition.pointsRemaining is the new authoritative turn counter.
+        let turns = 0;
+        for (const c of player.conditions) {
+          if (c.name === 'diarrhea') { turns = Math.max(0, Math.floor(c.pointsRemaining)); break; }
+        }
         statusUI.innerText = `DIARRHEA${turns ? ` (${turns})` : ''}`;
         statusUI.className = "chip danger";
         player._exhaustedWarnFired = false;

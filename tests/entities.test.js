@@ -309,6 +309,40 @@ test('fireDueConditions: stacked same-name conditions tick independently', () =>
   assert.equal(s.conditions.length, 0);
 });
 
+test('fireDueConditions: onRemove fires once when condition exhausts', () => {
+  const { Sentient, Condition } = setup();
+  const log = [];
+  const s = new Sentient({ hp: 10 });
+  s.conditions.push(new Condition({
+    name: 'poison', interval: 1.0, pointsRemaining: 2,
+    onTick:   (e) => { e.hp -= 1; log.push('tick'); },
+    onRemove: (e) => { log.push('remove'); },
+  }));
+  s.tick(1.0); s.fireDueConditions();
+  // First tick: condition still has 1 point — not removed yet.
+  assert.equal(log.length, 1);
+  assert.equal(log[0], 'tick');
+  s.tick(1.0); s.fireDueConditions();
+  // Second tick: exhausts → removed → onRemove fires.
+  assert.equal(log.length, 3);
+  assert.equal(log[1], 'tick');
+  assert.equal(log[2], 'remove');
+  assert.equal(s.conditions.length, 0);
+});
+
+test('Sentient.hasCondition: true while present, false after removal', () => {
+  const { Sentient, Condition } = setup();
+  const s = new Sentient({ hp: 10 });
+  assert.equal(s.hasCondition('poison'), false);
+  s.conditions.push(new Condition({
+    name: 'poison', interval: 1.0, pointsRemaining: 1,
+    onTick: (e) => { e.hp -= 1; },
+  }));
+  assert.equal(s.hasCondition('poison'), true);
+  s.tick(1.0); s.fireDueConditions();
+  assert.equal(s.hasCondition('poison'), false);
+});
+
 test('fireDueConditions: not-yet-due conditions stay untouched', () => {
   const { Sentient, Condition } = setup();
   const s = new Sentient({ hp: 10 });

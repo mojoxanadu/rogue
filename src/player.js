@@ -113,6 +113,11 @@ function setPlayerDefaults() {
   player.statusTurns = 0; player.statusType = null;
   player.speedMod = 1.0;
   player.statusEffects = {};
+  // Reset Sentient condition list and any wall-clock trackers the
+  // legacy effects piggy-back on the player object.
+  if (Array.isArray(player.conditions)) player.conditions.length = 0;
+  player._diarrheaUntilMs    = 0;
+  player._diarrheaNextFartMs = 0;
   player.spells = {};
   // Equipped item slots. VALUES are camelCase item names (matching keys in
   // the ItemDefs registry), NOT emoji icons. Each slot holds at most one

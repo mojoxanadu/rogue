@@ -156,11 +156,13 @@ const hBtn = document.getElementById('hamburgerBtn');
     const fowOn = typeof debugFlags !== 'undefined' && !debugFlags.revealMap;
     chips.push(chip(fowOn ? '#202' : '#420', `🗺 FoW ${fowOn ? 'ON' : 'OFF'}`));
 
-    // Active status effects
-    if(p && p.statusEffects && Object.keys(p.statusEffects).length > 0) {
-      const fx = Object.keys(p.statusEffects).join(' ');
-      chips.push(chip('#303', `⚗️ ${fx}`));
+    // Active status effects (legacy statusEffects hash + new Condition list)
+    const fxNames = [];
+    if(p && p.statusEffects) fxNames.push(...Object.keys(p.statusEffects));
+    if(p && Array.isArray(p.conditions)) {
+      for(const c of p.conditions) fxNames.push(c.name);
     }
+    if(fxNames.length > 0) chips.push(chip('#303', `⚗️ ${fxNames.join(' ')}`));
 
     // Speed modifier
     if(p && p.speedMod && p.speedMod !== 1) {

@@ -98,6 +98,11 @@ class Condition {
     this.pointsRemaining = spec.pointsRemaining ?? 1;
     this.cooldown        = spec.cooldown        ?? this.interval;
     this.onTick          = spec.onTick          ?? (() => {});
+    // onRemove fires once when fireDueConditions auto-removes an
+    // exhausted Condition (pointsRemaining ≤ 0). Symmetric to onTick;
+    // intended for cleanup side-effects (restoring speedMod, logging
+    // an "effect ended" message, etc).
+    this.onRemove        = spec.onRemove        ?? (() => {});
   }
   isDue()       { return this.cooldown        <= 0; }
   isExhausted() { return this.pointsRemaining <= 0; }
@@ -186,9 +191,24 @@ class Sentient extends Entity {
       }
     }
     for (let i = this.conditions.length - 1; i >= 0; i--) {
-      if (this.conditions[i].isExhausted()) this.conditions.splice(i, 1);
+      if (this.conditions[i].isExhausted()) {
+        const removed = this.conditions[i];
+        this.conditions.splice(i, 1);
+        removed.onRemove(this);
+      }
     }
     return fired;
+  }
+
+  /**
+   * True if this Sentient has at least one active Condition with the
+   * given name. Cheap O(n) scan — conditions[] is short in practice.
+   * Useful for guards in legacy/wall-clock code that needs to ask
+   * "is the effect still on?" without iterating the array itself.
+   */
+  hasCondition(name) {
+    for (const c of this.conditions) if (c.name === name) return true;
+    return false;
   }
 
   // ── Combat helpers ──────────────────────────────────────────
