@@ -745,6 +745,7 @@
     explored = Array(mapH).fill().map(()=>Array(mapW).fill(false));
     visible = Array(mapH).fill().map(()=>Array(mapW).fill(false));
     enemies = []; itemsOnGround = []; lightTurns = 0; if(typeof corpses !== 'undefined') corpses.length = 0;
+    syncActiveZone();
     window._swordmasterMazeActive = false;
     window._swordmasterMazeBounds = null;
     window._eagleDoor = null;
@@ -764,6 +765,7 @@
       explored = Array(mapH).fill().map(()=>Array(mapW).fill(false));
       visible = Array(mapH).fill().map(()=>Array(mapW).fill(false));
       for (let i = 0; i < town.enemies.length; i++) enemies.push(town.enemies[i]);
+      syncActiveZone();
       window._townPortalTile = null;
       for(let y = 0; y < mapH && !window._townPortalTile; y++) {
         for(let x = 0; x < mapW; x++) {
@@ -1645,6 +1647,7 @@
       visible = Array(mapH).fill().map(() => Array(mapW).fill(false));
       enemies = [];
       itemsOnGround = [];
+      syncActiveZone();
 
       const walkable = sceneData.walkable || [];
       const entry = walkable[Math.floor(walkable.length / 2)] || { x: Math.floor(mapW / 2), y: Math.floor(mapH / 2) };
