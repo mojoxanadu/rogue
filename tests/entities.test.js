@@ -142,6 +142,178 @@ test('Sentient: maxHp defaults to hp when not specified', () => {
   assert.equal(s.maxHp, 25);
 });
 
+// ─── Sentient combat surface ──────────────────────────────────
+// Sentient owns the combat-roll fields and the four primitives every
+// fighter uses: effectiveHitRate, effectiveCritRate, effectiveDodgeRate,
+// hits(target), rollDmg().
+
+test('Sentient combat fields default to 0', () => {
+  const { Sentient } = setup();
+  const s = new Sentient();
+  assert.equal(s.hitRate, 0);
+  assert.equal(s.critRate, 0);
+  assert.equal(s.dodgeRate, 0);
+  assert.equal(s.baseDmg, 0);
+  assert.equal(s.meleeDmgBonus, 0);
+  assert.equal(s.rangedDmgBonus, 0);
+  assert.equal(s.spellDmgBonus, 0);
+});
+
+test('Sentient combat fields read from spec', () => {
+  const { Sentient } = setup();
+  const s = new Sentient({
+    hitRate: 0.7, critRate: 0.1, dodgeRate: 0.2,
+    baseDmg: 5, meleeDmgBonus: 2, rangedDmgBonus: 3, spellDmgBonus: 4,
+  });
+  assert.equal(s.effectiveHitRate(),   0.7);
+  assert.equal(s.effectiveCritRate(),  0.1);
+  assert.equal(s.effectiveDodgeRate(), 0.2);
+  assert.equal(s.baseDmg,        5);
+  assert.equal(s.meleeDmgBonus,  2);
+  assert.equal(s.rangedDmgBonus, 3);
+  assert.equal(s.spellDmgBonus,  4);
+});
+
+test('Sentient.effectiveDodgeRate falls back to legacy stats.dodge', () => {
+  const { Sentient } = setup();
+  // Sentient with no dodgeRate but legacy stats.dodge — supports treating
+  // pre-class enemies as targets during the migration window.
+  const s = new Sentient({ stats: { dodge: 0.25 } });
+  assert.equal(s.effectiveDodgeRate(), 0.25);
+});
+
+test('Sentient.hits: 100% hit on undodgeable target', () => {
+  const { Sentient } = setup();
+  const s = new Sentient({ hitRate: 1.0 });
+  // No target → no dodge → guaranteed hit
+  for (let i = 0; i < 20; i++) assert.equal(s.hits(null), true);
+});
+
+test('Sentient.hits: 0% hit on fully-dodging target', () => {
+  const { Sentient } = setup();
+  const s = new Sentient({ hitRate: 1.0 });
+  const target = new Sentient({ dodgeRate: 1.0 });
+  for (let i = 0; i < 20; i++) assert.equal(s.hits(target), false);
+});
+
+test('Sentient.hits: works against a legacy enemy plain object', () => {
+  const { Sentient } = setup();
+  const s = new Sentient({ hitRate: 1.0 });
+  const legacyEnemy = { stats: { dodge: 1.0 } };  // not a Sentient
+  for (let i = 0; i < 20; i++) assert.equal(s.hits(legacyEnemy), false);
+});
+
+test('Sentient.rollDmg: bounded by baseDmg + meleeDmgBonus', () => {
+  const { Sentient } = setup();
+  const s = new Sentient({ baseDmg: 4, meleeDmgBonus: 2 });
+  // Roll: floor(rand * 4 + 1) + 2  → integer in [1+2, 4+2] = [3, 6]
+  for (let i = 0; i < 200; i++) {
+    const d = s.rollDmg();
+    assert.ok(Number.isInteger(d), `rollDmg ${d} not integer`);
+    assert.ok(d >= 3 && d <= 6,    `rollDmg ${d} outside [3,6]`);
+  }
+});
+
+
+// ─── Player equipment-aware overrides ────────────────────────
+// Player.rollDmg + effectiveHitRate read from the global ItemDefs registry
+// to layer equipment in. The harness lets us inject a stub registry.
+
+function setupWithItemDefs(stubItemDefs) {
+  const ctx = setup();
+  // entities.js was already evaluated — Player methods reference ItemDefs
+  // via dynamic global lookup, so installing it on the context now works.
+  ctx.ItemDefs = stubItemDefs;
+  return ctx;
+}
+
+test('Player.primaryHand returns equipped.leftHand', () => {
+  const { Player } = setup();
+  const p = new Player();
+  assert.equal(p.primaryHand(), null);
+  p.equipped.leftHand = 'rustySword';
+  assert.equal(p.primaryHand(), 'rustySword');
+});
+
+test('Player.effectiveHitRate adds hitRateBonus across equipped items', () => {
+  const { Player } = setupWithItemDefs({
+    accurateRing:  { hitRateBonus: 0.10 },
+    luckyAmulet:   { hitRateBonus: 0.05 },
+    plainBoots:    {},  // no bonus → contributes 0
+  });
+  const p = new Player({ hitRate: 0.6 });
+  p.equipped.leftHand  = 'accurateRing';
+  p.equipped.rightHand = 'luckyAmulet';
+  p.equipped.feet      = 'plainBoots';
+  // 0.6 + 0.10 + 0.05 (within float tolerance)
+  const h = p.effectiveHitRate();
+  assert.ok(Math.abs(h - 0.75) < 1e-9, `effectiveHitRate=${h}, expected ~0.75`);
+});
+
+test('Player.effectiveHitRate with no ItemDefs equals base hitRate', () => {
+  const { Player } = setup();  // ItemDefs is undefined in this ctx
+  const p = new Player({ hitRate: 0.6 });
+  p.equipped.leftHand = 'whatever';
+  assert.equal(p.effectiveHitRate(), 0.6);
+});
+
+test('Player.rollDmg: weapon overrides baseDmg, gear adds meleeDmgBonus', () => {
+  const { Player } = setupWithItemDefs({
+    bigSword:    { type: 'weapon', baseDmg: 10 },
+    powerRing:   { meleeDmgBonus: 3 },
+  });
+  const p = new Player({ baseDmg: 3, meleeDmgBonus: 1 });
+  p.equipped.leftHand  = 'bigSword';
+  p.equipped.rightHand = 'powerRing';
+  // base=10 (weapon overrides), bonus=1+3=4 → roll ∈ [1+4, 10+4] = [5, 14]
+  for (let i = 0; i < 200; i++) {
+    const d = p.rollDmg();
+    assert.ok(d >= 5 && d <= 14, `rollDmg ${d} outside [5,14]`);
+  }
+});
+
+test('Player.rollDmg consumes trainingBonus exactly once', () => {
+  const { Player } = setup();
+  const p = new Player({ baseDmg: 1, trainingBonus: 100 });
+  // First roll: 1..1 + 100 → exactly 101
+  const d1 = p.rollDmg();
+  assert.equal(d1, 101);
+  assert.equal(p.trainingBonus, 0);
+  // Subsequent rolls: bonus is gone
+  for (let i = 0; i < 20; i++) {
+    const d = p.rollDmg();
+    assert.equal(d, 1);
+  }
+});
+
+test('Player.rollDmgVersus: Ifrit at low level → 30% damage, min 1', () => {
+  const { Player } = setup();
+  const p = new Player({ baseDmg: 100, meleeDmgBonus: 0, level: 5 });
+  for (let i = 0; i < 50; i++) {
+    const d = p.rollDmgVersus({ isIfrit: true });
+    // raw 1..100, scaled by 0.3, min 1 → integer in [1, 30]
+    assert.ok(d >= 1 && d <= 30, `dmgVersus ${d} outside [1,30] at low lvl`);
+  }
+});
+
+test('Player.rollDmgVersus: Ifrit at level 10 → full damage', () => {
+  const { Player } = setup();
+  const p = new Player({ baseDmg: 100, meleeDmgBonus: 0, level: 10 });
+  for (let i = 0; i < 50; i++) {
+    const d = p.rollDmgVersus({ isIfrit: true });
+    assert.ok(d >= 1 && d <= 100, `dmgVersus ${d} outside [1,100] at lvl 10`);
+  }
+});
+
+test('Player.rollDmgVersus: non-Ifrit target = rollDmg passthrough', () => {
+  const { Player } = setup();
+  const p = new Player({ baseDmg: 5, meleeDmgBonus: 0, level: 1 });
+  for (let i = 0; i < 50; i++) {
+    const d = p.rollDmgVersus({ type: 'rat' });
+    assert.ok(d >= 1 && d <= 5);
+  }
+});
+
 
 // ─── Player ───────────────────────────────────────────────────
 

@@ -85,12 +85,67 @@ class Sentient extends Entity {
     this.maxHp = spec.maxHp ?? this.hp;
     this.mp    = spec.mp    ?? 0;
     this.maxMp = spec.maxMp ?? this.mp;
+    // Combat-roll fields. Apply to every Sentient (player AND monster).
+    // Subclasses (Player) layer equipment bonuses on top by overriding the
+    // effective*() / rollDmg() methods; the raw fields below are the BASE
+    // value before any modifiers.
+    this.hitRate        = spec.hitRate        ?? 0;
+    this.critRate       = spec.critRate       ?? 0;
+    this.dodgeRate      = spec.dodgeRate      ?? 0;
+    this.baseDmg        = spec.baseDmg        ?? 0;
+    this.meleeDmgBonus  = spec.meleeDmgBonus  ?? 0;
+    this.rangedDmgBonus = spec.rangedDmgBonus ?? 0;
+    this.spellDmgBonus  = spec.spellDmgBonus  ?? 0;
     this.stats         = spec.stats         ?? {};
     this.statusEffects = spec.statusEffects ?? {};
   }
 
   isAlive()    { return this.hp > 0; }
   isHostile()  { return false; }       // default; subclasses override
+
+  // ── Combat helpers ──────────────────────────────────────────
+  // The effective*() methods exist as override points for subclasses
+  // that need to fold equipment / buffs into the raw stat. Default
+  // implementation is a passthrough — fine for monsters that don't
+  // wear gear.
+
+  effectiveHitRate()  { return this.hitRate  ?? 0; }
+  effectiveCritRate() { return this.critRate ?? 0; }
+
+  /**
+   * Dodge rate this Sentient presents to an attacker. Reads `dodgeRate`
+   * first; falls back to legacy `stats.dodge` so a pre-class enemy plain
+   * object passed as a `target` to `hits()` still resolves correctly
+   * during the migration window.
+   */
+  effectiveDodgeRate() {
+    if (this.dodgeRate)            return this.dodgeRate;
+    if (this.stats?.dodge != null) return this.stats.dodge;
+    return 0;
+  }
+
+  /**
+   * Did this Sentient land a hit on `target`? `target` may be a Sentient
+   * instance or a legacy enemy plain object (with .stats.dodge or none).
+   * Mirrors the long-standing formula: hit_rate * (1 - target_dodge).
+   */
+  hits(target) {
+    const dodge = (target && typeof target.effectiveDodgeRate === 'function')
+      ? target.effectiveDodgeRate()
+      : ((target?.dodgeRate ?? target?.stats?.dodge) ?? 0);
+    return Math.random() < this.effectiveHitRate() * (1 - dodge);
+  }
+
+  /**
+   * Roll a melee damage value: uniform 1..baseDmg, then meleeDmgBonus added.
+   * Subclasses that have equipment (Player) override to fold weapon damage
+   * + bonus gear into the calculation.
+   */
+  rollDmg() {
+    const base  = this.baseDmg ?? 0;
+    const bonus = this.meleeDmgBonus ?? 0;
+    return Math.floor(Math.random() * base + 1 + bonus);
+  }
 }
 
 
@@ -118,6 +173,70 @@ class Player extends Sentient {
     this.xp    = spec.xp    ?? 0;
     this.level = spec.level ?? 1;
     this.gp    = spec.gp    ?? 0;
+    // E8 Weapon-Master training bonus: consumed (zeroed) on next attack.
+    this.trainingBonus = spec.trainingBonus ?? 0;
+  }
+
+  // ── Equipment helpers ──────────────────────────────────────
+  /** camelCase item name in the primary (left) hand, or null. */
+  primaryHand() {
+    return this.equipped ? this.equipped.leftHand : null;
+  }
+
+  /**
+   * Sum a numeric per-equip-slot bonus across every equipped item via
+   * the global ItemDefs registry. Falls back to 0 if ItemDefs hasn't
+   * been built yet (early init, isolated tests).
+   */
+  _sumEquipBonus(field) {
+    if (typeof ItemDefs === 'undefined' || !this.equipped) return 0;
+    let total = 0;
+    for (const name of Object.values(this.equipped)) {
+      if (!name) continue;
+      const def = ItemDefs[name];
+      if (def && def[field]) total += def[field];
+    }
+    return total;
+  }
+
+  // ── Combat overrides ───────────────────────────────────────
+  effectiveHitRate() {
+    return (this.hitRate ?? 0) + this._sumEquipBonus('hitRateBonus');
+  }
+
+  /**
+   * Player melee damage: equipment first sets the base (weapon overrides
+   * unarmed baseDmg), then per-slot meleeDmgBonus accumulates, then the
+   * one-shot trainingBonus is consumed.
+   */
+  rollDmg() {
+    let base  = this.baseDmg  ?? 0;
+    let bonus = this.meleeDmgBonus ?? 0;
+    if (typeof ItemDefs !== 'undefined' && this.equipped) {
+      for (const name of Object.values(this.equipped)) {
+        if (!name) continue;
+        const def = ItemDefs[name];
+        if (!def) continue;
+        if (def.type === 'weapon') base = def.baseDmg ?? 0;
+        if (def.meleeDmgBonus)     bonus += def.meleeDmgBonus;
+      }
+    }
+    if (this.trainingBonus && this.trainingBonus > 0) {
+      bonus += this.trainingBonus;
+      this.trainingBonus = 0;
+    }
+    return Math.floor(Math.random() * base + 1 + bonus);
+  }
+
+  /**
+   * Damage roll versus a specific target. Boss scaling: under level 10,
+   * a player deals 30% damage to Ifrit. Otherwise just rollDmg().
+   */
+  rollDmgVersus(target) {
+    if (target && target.isIfrit) {
+      return Math.max(1, Math.floor(this.rollDmg() * (this.level >= 10 ? 1.0 : 0.3)));
+    }
+    return this.rollDmg();
   }
 }
 Player.DEFAULT_INVENTORY_SIZE = 30;
