@@ -1353,9 +1353,7 @@ const hBtn = document.getElementById('hamburgerBtn');
         } else {
           player.inventory.push(new ItemStack('lockpickingTools', 1));
         }
-        if (!player.talents) player.talents = {};
-        player.talents.lockpicking = true;
-        logMsg && logMsg("You are a Rogue! Lockpicking Tools in inventory, Lockpicking Talent gained.");
+        logMsg && logMsg("You are a Rogue! Lockpicking Tools in inventory.");
       }
       
       debugLog("Calculating FOV...");
@@ -1870,15 +1868,7 @@ const hBtn = document.getElementById('hamburgerBtn');
             Sound.chestOpen();
             let loot = generateLoot('chest', null);
             if(loot.length > 0) {
-              if(window.autoLootEnabled && player.talents && player.talents['autoLoot']) {
-                loot.forEach(item => {
-                  if(item.def?.pickupTo === 'gp') { changeGold(item.qty); }
-                  else { let s = inventory.findIndex(s => s === null); if(s !== -1) inventory[s] = new ItemStack(item.itemName, item.qty); else tryPlaceInInventory(item); }
-                });
-                if(!loot.some(item => item.itemName === 'gold')) Sound.clink();
-              } else {
-                createCorpse(tileX, tileY, 'chest', {icon:'📦'}, loot);
-              }
+              createCorpse(tileX, tileY, 'chest', {icon:'📦'}, loot);
             } else {
               logMsg("<span style='color:#888'>The chest is empty.</span>");
             }

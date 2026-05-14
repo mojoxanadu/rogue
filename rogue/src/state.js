@@ -36,7 +36,7 @@
     It is divided into sections:
     1. CONSTANTS – tunable numeric parameters (hunger, speed, XP, etc.)
     2. Canvas & Tile definitions
-    3. TALENT_TREES – progression trees for character development
+    3. (TALENT_TREES removed — talents are being redesigned; new system arrives later)
     4. Game‑state variables (currentLevel, theMap, inventory, etc.)
     5. Player object – the player's persistent stats and flags
     6. MONSTER_DEF – definitions of all enemy types
@@ -114,35 +114,11 @@
            tile === TILES.BRIDGE || tile === TILES.BUSH || tile === TILES.OPEN_GATE;
   }
 
-  // Talent trees for character specialization. Each tree contains 3 talents.
-  const TALENT_TREES = {
-    assassination: {
-      name: "Assassination",
-      talents: [
-        { id: "crit1", name: "Malice", desc: "+5% Crit Chance", max: 5, bonus: { critRate: 0.01 } },
-        { id: "dmg1", name: "Murder", desc: "+2 Base Damage", max: 3, bonus: { baseDmg: 2 } },
-        { id: "pois1", name: "Vile Poisons", desc: "Melee hits deal poison", max: 1, req: 5 }
-      ]
-    },
-    combat: {
-      name: "Combat",
-      talents: [
-        { id: "hp1", name: "Toughness", desc: "+10 Max HP", max: 5, bonus: { maxHp: 10 } },
-        { id: "evade1", name: "Lightning Reflexes", desc: "+5% Evade", max: 5, bonus: { dodgeRate: 0.01 } },
-        { id: "haste1", name: "Adrenaline Rush", desc: "Reduce run exhaustion", max: 3, req: 10 }
-      ]
-    },
-    subtlety: {
-      name: "Subtlety",
-      talents: [
-        { id: "stealth1", name: "Camouflage", desc: "-1 Monster Aggro Range", max: 3 },
-        { id: "mana1", name: "Master of Deception", desc: "+10 Max MP", max: 5, bonus: { maxMp: 10 } },
-        { id: "smooth1", name: "Smooth Talker", desc: "5% store discount per rank", max: 3 },
-        { id: "blink1", name: "Shadowstep", desc: "Magical 3-tile dash", max: 1, req: 10 },
-        { id: "autoLoot", name: "Scavenger", desc: "Auto-loot corpses (toggle in menu)", max: 1 },
-      ]
-    }
-  };
+  // (TALENT_TREES removed — the previous placeholder list is gone in
+  //  preparation for a new talents model. Code that read player.talents
+  //  has been stripped across engine.js / shop.js / map.js / input.js /
+  //  ui_logic.js. The Talents tab in the Stats modal exists as an empty
+  //  placeholder until the new model lands.)
 
   // Global game‑state variables. These are updated as the game progresses.
   let currentLevel = 1, mapW = 0, mapH = 0;

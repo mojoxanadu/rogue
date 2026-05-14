@@ -25,7 +25,7 @@
 //  fields onto the instance. The LocalPlayer constructor already sets
 //  hp/maxHp/gp/combat stats from Player.DEFAULTS; setPlayerDefaults
 //  rewrites those (idempotently — same source numbers) and then layers
-//  on the remaining quest-flag/talent/hunger/etc fields. A future
+//  on the remaining quest-flag/hunger/etc fields. A future
 //  commit lifts those into Player.prototype.reset() once the questFlags
 //  map collapses.
 const localPlayer = new LocalPlayer();
@@ -93,9 +93,8 @@ function setPlayerDefaults() {
   player.critRate = CONSTANTS.PLAYER_INITIAL_CRIT_RATE;
   player.dodgeRate = CONSTANTS.PLAYER_INITIAL_DODGE_RATE;
   player.xp = 0; player.level = 1;
-  player.statPoints = 0; player.talentPoints = 0; player.respecs = 0;
+  player.statPoints = 0;
   player.stats = { str: 10, dex: 10, int: 10, con: 10, wis: 10 };
-  player.talents = {};
   player.hunger = 0; player.darkSteps = 0;
   player.exhaustion = 0; player.isRunning = false; player.isKneeling = false;
   player.healOverTime = 0; player.totalHealPending = 0;
@@ -133,7 +132,7 @@ function setPlayerDefaults() {
 }
 
 // Apply legacy default fields to the LocalPlayer instance (quest flags,
-// talents, hunger/exhaustion, equipped outfit, etc). The combat fields
+// hunger/exhaustion, equipped outfit, etc). The combat fields
 // it touches duplicate the LocalPlayer constructor's writes — same
 // values, so idempotent.
 setPlayerDefaults();

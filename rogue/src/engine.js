@@ -24,7 +24,6 @@
   let snoreLoop = null;
   let sleepHealLoop = null;
   window.corpses = [];
-  window.autoLootEnabled = false;
   window.floorInteractItems = [];
 
   // === Corpse & Loot System ===
@@ -148,45 +147,9 @@
     }
   }
 
-  // Auto-loot: immediately dump corpse loot into inventory
-  function autoLootCorpse(corpseIdx) {
-    let c = corpses[corpseIdx];
-    if(!c || !c.loot || c.loot.length === 0) return;
-    let remaining = [];
-    c.loot.forEach(item => {
-      if(item.def?.pickupTo === 'gp') {
-        changeGold(item.qty, { x: c.x, y: c.y, floatText: true });
-      } else {
-        let placed = false;
-        let def = item.def;
-        if(def && def.stackable) {
-          let maxStack = def.maxStack ?? 10;
-          let stackSlot = inventory.find(s => s && s.itemName === item.itemName && (s.qty ?? 1) < maxStack);
-          if(stackSlot) {
-            let can = maxStack - (stackSlot.qty ?? 1);
-            let add = Math.min(can, item.qty ?? 1);
-            stackSlot.qty = (stackSlot.qty ?? 1) + add;
-            item.qty = (item.qty ?? 1) - add;
-            placed = (item.qty ?? 0) <= 0;
-          }
-        }
-        // Try inventory
-        let slot = inventory.findIndex(s => s === null);
-        if(!placed && slot !== -1) {
-          inventory[slot] = new ItemStack(item.itemName, item.qty ?? 1);
-          placed = true;
-        }
-        // Try inventory and bags
-        if(!placed) placed = tryPlaceInInventory(item);
-        if(!placed) remaining.push(item);
-      }
-    });
-    c.loot = remaining;
-    if(remaining.length > 0) {
-      logMsg(`Auto-loot: some items couldn't fit, left on corpse.`);
-    }
-    renderQuickslots(); renderInventory(); updateUI();
-  }
+  // (autoLootCorpse removed — used to be triggered by the Scavenger
+  // talent, which is gone. A future loot redesign will reintroduce
+  // a similar dump-to-inventory helper if needed.)
 
   // Try to place an item in inventory or inside a bag
   function tryPlaceInInventory(item) {
@@ -1181,7 +1144,7 @@
   function checkLevelUp() {
     let req = CONSTANTS.XP_BASE * Math.pow(CONSTANTS.XP_MULT, player.level - 1);
     if (player.xp >= req) {
-      player.xp -= req; player.level++; player.statPoints += 1; player.talentPoints += 1;
+      player.xp -= req; player.level++; player.statPoints += 1;
       player.hp = player.maxHp; player.mp = player.maxMp; logMsg("LEVEL UP!"); triggerLevelUpVisuals();
       // ── QUEST ENGINE EVENT: level_up ──
       if (typeof QuestEngine !== 'undefined') QuestEngine.emit('level_up', { level: player.level });
@@ -1215,18 +1178,7 @@
         ifritLoot.push(new ItemStack('enchantedValise', 1));
         logMsg("<span style='color:#FFD700'>An Enchanted Valise falls from the ashes!</span>");
       }
-      // B37: Scavenger talent auto-loots on kill (no manual toggle required)
-      if(player.talents && player.talents['autoLoot']) {
-        logMsg(`<span style='color:var(--success)'>Your Scavenger instincts kick in! You automatically loot the Ifrit.</span>`);
-        ifritLoot.forEach(item => {
-          let slot = inventory.findIndex(s => s === null);
-          if(slot !== -1) inventory[slot] = new ItemStack(item.itemName, item.qty);
-          else tryPlaceInInventory(item);
-        });
-        renderQuickslots(); renderInventory(); updateUI();
-      } else {
-        createCorpse(e.x, e.y, e.type, e.stats, ifritLoot);
-      }
+      createCorpse(e.x, e.y, e.type, e.stats, ifritLoot);
       player.xp += 500;
       checkLevelUp();
       enemies.splice(enemyIndex, 1);
@@ -1425,23 +1377,7 @@
     }
 
     if(corpseLoot.length > 0) {
-      // B37: Scavenger talent — auto-loot immediately on kill (no manual toggle required)
-      if(player.talents && player.talents['autoLoot']) {
-        let enemyName = (MONSTER_DEF[e.type] && MONSTER_DEF[e.type].name) || e.type;
-        logMsg(`<span style='color:var(--success)'>Your Scavenger instincts kick in! You automatically loot the ${enemyName}.</span>`);
-        corpseLoot.forEach(item => {
-          if(item.def?.pickupTo === 'gp') {
-            changeGold(item.qty, { x: e.x, y: e.y, floatText: true });
-          } else {
-            let slot = inventory.findIndex(s => s === null);
-            if(slot !== -1) { inventory[slot] = new ItemStack(item.itemName, item.qty ?? 1); }
-            else tryPlaceInInventory(item);
-          }
-        });
-        renderQuickslots(); renderInventory(); updateUI();
-      } else {
-        createCorpse(e.x, e.y, e.type, e.stats, corpseLoot);
-      }
+      createCorpse(e.x, e.y, e.type, e.stats, corpseLoot);
     }
 
     checkLevelUp();
@@ -1506,18 +1442,7 @@
           ifritLoot.push(new ItemStack('enchantedValise', 1));
           logMsg("<span style='color:#FFD700'>An Enchanted Valise falls from the ashes!</span>");
         }
-        // B37: Scavenger talent auto-loots on kill (no manual toggle required)
-        if(player.talents && player.talents['autoLoot']) {
-          logMsg(`<span style='color:var(--success)'>Your Scavenger instincts kick in! You automatically loot the Ifrit.</span>`);
-          ifritLoot.forEach(item => {
-            let slot = inventory.findIndex(s => s === null);
-            if(slot !== -1) inventory[slot] = new ItemStack(item.itemName, item.qty);
-            else tryPlaceInInventory(item);
-          });
-          renderQuickslots(); renderInventory(); updateUI();
-        } else {
-          createCorpse(e.x, e.y, e.type, e.stats, ifritLoot);
-        }
+        createCorpse(e.x, e.y, e.type, e.stats, ifritLoot);
         player.xp += 500;
         checkLevelUp();
         enemies.splice(enemyIndex, 1);

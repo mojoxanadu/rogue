@@ -302,7 +302,7 @@ function _performStickyMove(src, targetSource, target) {
       }
     }
 
-    const totalPts = (player.statPoints ?? 0) + (player.talentPoints ?? 0);
+    const totalPts = (player.statPoints ?? 0);
     const badge = document.getElementById('stat-badge');
     if(badge) {
        badge.innerText = totalPts;
@@ -361,10 +361,9 @@ function _performStickyMove(src, targetSource, target) {
 
     const statsModal = document.getElementById('stats-modal');
     if(statsModal && statsModal.style.display === 'flex') {
-      // Refresh whichever tab is active
-      const talentsPanel = document.getElementById('talents-tab-panel');
-      if(talentsPanel && talentsPanel.style.display !== 'none') { showTalents(); }
-      else { showStats(); }
+      // Talents tab is currently a placeholder (new model TBD); only
+      // the Stats tab has content to refresh.
+      showStats();
     }
     
     const magicModal = document.getElementById('magic-modal');
@@ -544,7 +543,6 @@ function _performStickyMove(src, targetSource, target) {
       corpses: (typeof corpses !== 'undefined') ? corpses : [],
       _comment_progress: "Persistent progression data.",
       levelCache, stolenItems, questState,
-      autoLootEnabled: window.autoLootEnabled || false,
       _comment_settings: "Player settings and macros.",
       gameSettings: window.gameSettings || {},
       keybindings: window._keybindings || {},
@@ -590,10 +588,6 @@ function _performStickyMove(src, targetSource, target) {
     if(typeof corpses !== 'undefined') {
       corpses.length = 0;
       (data.corpses || []).forEach(c => corpses.push(c));
-    }
-    if(data.autoLootEnabled !== undefined) {
-      window.autoLootEnabled = data.autoLootEnabled;
-      updateAutoLootBtn();
     }
     if(data.gameSettings) Object.assign(window.gameSettings, data.gameSettings);
     if(data.keybindings) Object.assign(window._keybindings || {}, data.keybindings);
@@ -1553,7 +1547,10 @@ function _performStickyMove(src, targetSource, target) {
     if(el && el.style.display !== 'none') bringToFront(el);
   };
 
-  // Bug 36: Tab switching for Stats/Talents modal
+  // Tab switching for the Stats/Talents modal. The Talents tab is
+  // currently a placeholder (its body says so) — selecting it just
+  // toggles which panel is visible; there is no showTalents() to
+  // call until the new talent system lands.
   window.showStatsTab = (tab) => {
     const statsPanel = document.getElementById('stats-tab-panel');
     const talentsPanel = document.getElementById('talents-tab-panel');
@@ -1571,7 +1568,6 @@ function _performStickyMove(src, targetSource, target) {
       talentsPanel.style.display = 'block';
       if(btnStats) { btnStats.style.background = 'var(--surface-container)'; btnStats.style.color = '#aaa'; }
       if(btnTalents) { btnTalents.style.background = 'var(--secondary)'; btnTalents.style.color = '#fff'; }
-      showTalents();
     }
   };
 
@@ -1718,101 +1714,10 @@ function _performStickyMove(src, targetSource, target) {
     statsBody.innerHTML = html;
   };
 
-  window.buyTalent = (tree, idx) => {
-    const t = TALENT_TREES[tree].talents[idx];
-    const current = player.talents[t.id] ?? 0;
-    if(player.talentPoints > 0 && current < t.max) {
-      player.talents[t.id] = current + 1;
-      player.talentPoints--;
-      if(t.bonus) Object.keys(t.bonus).forEach(k => player[k] += t.bonus[k]);
-      showTalents(); updateUI();
-    }
-  };
-
-  window.showTalents = () => {
-    const talentsBody = document.getElementById('talents-body');
-    if(!talentsBody) return;
-
-    // Bug 38: SVG flowchart talent tree — 3 trees side by side
-    const treeKeys = Object.keys(TALENT_TREES);
-    const BOX_W = 130, BOX_H = 48, COL_GAP = 20, ROW_GAP = 30;
-    const COLS = treeKeys.length;
-    const maxTalents = Math.max(...treeKeys.map(k => TALENT_TREES[k].talents.length));
-    const svgW = COLS * BOX_W + (COLS - 1) * COL_GAP + 20;
-    const HEADER_H = 24;
-    const svgH = HEADER_H + maxTalents * (BOX_H + ROW_GAP) + 20;
-
-    let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${svgW}" height="${svgH}" style="display:block;margin:0 auto;overflow:visible;">`;
-    // Defs for arrow marker
-    svg += `<defs><marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#555"/></marker></defs>`;
-
-    treeKeys.forEach((key, colIdx) => {
-      const tree = TALENT_TREES[key];
-      const cx = 10 + colIdx * (BOX_W + COL_GAP);
-
-      // Tree header
-      svg += `<text x="${cx + BOX_W/2}" y="${HEADER_H - 6}" text-anchor="middle" font-size="11" font-weight="bold" fill="#D0BCFF" font-family="monospace">${tree.name}</text>`;
-
-      tree.talents.forEach((t, rowIdx) => {
-        const pts = player.talents[t.id] ?? 0;
-        const isMaxed = pts >= t.max;
-        let meetsReq = true;
-        if(t.req) {
-          let treeTotal = tree.talents.reduce((sum, tt) => sum + (player.talents[tt.id] ?? 0), 0);
-          if(treeTotal < t.req) meetsReq = false;
-        }
-        const canBuy = player.talentPoints > 0 && !isMaxed && meetsReq;
-        const isLocked = !meetsReq && !isMaxed;
-
-        const bx = cx;
-        const by = HEADER_H + rowIdx * (BOX_H + ROW_GAP) + 10;
-
-        // Box color: gray=locked, green=maxed, purple=available, dim=unaffordable
-        let fillColor = '#2D2B32';
-        let strokeColor = '#555';
-        let opacity = '1';
-        if(isLocked) { fillColor = '#1A1A1A'; strokeColor = '#333'; opacity = '0.5'; }
-        else if(isMaxed) { fillColor = 'rgba(129,199,132,0.15)'; strokeColor = '#81c784'; }
-        else if(canBuy) { fillColor = 'rgba(208,188,255,0.12)'; strokeColor = '#D0BCFF'; }
-        else { fillColor = '#222'; strokeColor = '#444'; opacity = '0.7'; }
-
-        // Arrow from previous talent
-        if(rowIdx > 0) {
-          const prevBy = HEADER_H + (rowIdx - 1) * (BOX_H + ROW_GAP) + 10;
-          svg += `<line x1="${cx + BOX_W/2}" y1="${prevBy + BOX_H}" x2="${cx + BOX_W/2}" y2="${by - 2}" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>`;
-        }
-
-        // Clickable rect
-        svg += `<rect x="${bx}" y="${by}" width="${BOX_W}" height="${BOX_H}" rx="5" ry="5" fill="${fillColor}" stroke="${strokeColor}" stroke-width="1.5" opacity="${opacity}" style="cursor:${canBuy?'pointer':'default'};" onclick="${canBuy ? `buyTalent('${key}',${rowIdx})` : ''}"/>`;
-
-        // Talent name
-        const nameColor = isMaxed ? '#81c784' : isLocked ? '#555' : '#CCC2DC';
-        svg += `<text x="${bx + BOX_W/2}" y="${by + 14}" text-anchor="middle" font-size="10" font-weight="bold" fill="${nameColor}" font-family="monospace" style="pointer-events:none;">${t.name}</text>`;
-
-        // Points counter
-        const ptsColor = isMaxed ? '#81c784' : '#aaa';
-        svg += `<text x="${bx + BOX_W/2}" y="${by + 26}" text-anchor="middle" font-size="9" fill="${ptsColor}" font-family="monospace" style="pointer-events:none;">${pts}/${t.max} pts</text>`;
-
-        // Desc (truncated)
-        const descTxt = t.desc ? (t.desc.length > 20 ? t.desc.substring(0, 20) + '…' : t.desc) : '';
-        svg += `<text x="${bx + BOX_W/2}" y="${by + 38}" text-anchor="middle" font-size="8" fill="#888" font-family="monospace" style="pointer-events:none;">${descTxt}</text>`;
-
-        // Locked icon
-        if(isLocked) {
-          svg += `<text x="${bx + BOX_W - 10}" y="${by + 14}" text-anchor="middle" font-size="10" fill="#555" style="pointer-events:none;">🔒</text>`;
-        } else if(isMaxed) {
-          svg += `<text x="${bx + BOX_W - 10}" y="${by + 14}" text-anchor="middle" font-size="10" fill="#81c784" style="pointer-events:none;">✓</text>`;
-        }
-      });
-    });
-
-    svg += `</svg>`;
-
-    const html = `<div style="margin-bottom:8px; font-size:12px;">Talent Points: <span style="color:var(--primary); font-weight:bold;">${player.talentPoints}</span></div>
-      <div style="overflow-x:auto; overflow-y:auto;">${svg}</div>
-      <div style="font-size:10px; color:#888; margin-top:6px;">Purple border = available · Green = maxed · Gray = locked</div>`;
-    talentsBody.innerHTML = html;
-  };
+  // (buyTalent + showTalents removed — the old TALENT_TREES data is
+  // gone in preparation for a redesigned talent system. The Talents
+  // tab body is now a static placeholder set in HTML; once the new
+  // model lands, a fresh renderer will replace this stub.)
 
   // Bug 32: Spell cooldown helper — returns remaining seconds (float) or 0
   window._spellCooldownRemaining = (spellName) => {
@@ -2196,57 +2101,13 @@ function _performStickyMove(src, targetSource, target) {
   window.castEquippedSpell = () => { if(player.equippedSpell) castSpell(player.equippedSpell); else logMsg("No spell equipped!"); };
   window.castSecondarySpell = () => { if(player.secondarySpell) castSpell(player.secondarySpell); else logMsg("No secondary spell equipped!"); };
 
-  // ── SHADOWSTEP / BLINK (B key, requires blink1 talent) ──
-  // Dashes 3 tiles in the facing direction, passing through enemies.
-  // 8-turn cooldown. Leaves a shadow afterimage floating text.
-  let _blinkLastTurn = -999;
-  window.shadowstep = () => {
-    if(!player.talents || !player.talents['blink1']) {
-      logMsg("You don't know Shadowstep. Learn it in the Subtlety talent tree.");
-      return;
-    }
-    let turnsSinceBlink = (window._turnCount ?? 0) - _blinkLastTurn;
-    if(turnsSinceBlink < 8) {
-      logMsg(`Shadowstep on cooldown! (${8 - turnsSinceBlink} turns remaining)`);
-      return;
-    }
-    if(player.mp < 3) { logMsg("Not enough mana! (3 MP)"); return; }
-    let dx = player.facing.dx ?? 0, dy = player.facing.dy ?? 0;
-    if(dx === 0 && dy === 0) dy = 1; // default: forward
-    // Find landing tile — 3 tiles ahead, stop at wall
-    let lx = player.x, ly = player.y;
-    let stepped = 0;
-    for(let i = 1; i <= 3; i++) {
-      let nx = player.x + dx * i, ny = player.y + dy * i;
-      if(nx < 0 || nx >= mapW || ny < 0 || ny >= mapH) break;
-      if(theMap[ny][nx] === TILES.WALL) break;
-      lx = nx; ly = ny; stepped++;
-    }
-    if(stepped === 0) { logMsg("Can't blink — wall immediately ahead!"); return; }
-    // Shadow afterimage at origin
-    addFloatingText(player.x, player.y, '💨', '#888', 20);
-    player.x = lx; player.y = ly;
-    player.mp -= 3;
-    _blinkLastTurn = (window._turnCount ?? 0);
-    logMsg("<span style='color:var(--primary)'>💨 Shadowstep!</span>");
-    Sound.playTone(600, 'sine', 0.2, 0.05, 300);
-    calculateFOV(); drawMap(); updateUI(); advanceTurn(1);
-  };
-  window.toggleMenu = () => { toggleModal('menu-modal'); updateAutoLootBtn(); };
-  window.toggleAutoLoot = () => {
-    if(!player.talents || !player.talents['autoLoot']) { logMsg("Learn the Scavenger talent first."); return; }
-    window.autoLootEnabled = !window.autoLootEnabled;
-    updateAutoLootBtn();
-    logMsg(`Auto-Loot ${window.autoLootEnabled ? '<span style="color:var(--success)">ON</span>' : 'OFF'}.`);
-  };
-  window.updateAutoLootBtn = () => {
-    let btn = document.getElementById('autoLootBtn');
-    if(btn && player.talents && player.talents['autoLoot']) {
-      btn.style.display = 'block';
-      btn.textContent = `🔄 Auto-Loot: ${window.autoLootEnabled ? 'ON' : 'OFF'}`;
-      btn.style.background = window.autoLootEnabled ? 'var(--success)' : '';
-    }
-  };
+  // (Shadowstep / blink, toggleAutoLoot, updateAutoLootBtn removed —
+  // all gated on talents that no longer exist. The keybind for
+  // shadowstep is still in input.js handlers; calls now hit a stub.
+  // Future talent system will reintroduce active abilities through
+  // a cleaner registration pattern.)
+  window.shadowstep = () => { logMsg("Shadowstep is currently disabled."); };
+  window.toggleMenu = () => { toggleModal('menu-modal'); };
   window.toggleFog = () => { debugFlags.revealMap = !debugFlags.revealMap; drawMap(); };
   window.toggleLight = () => { debugFlags.fullLight = !debugFlags.fullLight; calculateFOV(); drawMap(); };
   // Debug Abilities
@@ -2254,7 +2115,6 @@ function _performStickyMove(src, targetSource, target) {
   window.debugToggleNoRegen = () => { debugFlags.noRegen = !debugFlags.noRegen; logMsg(`No Regen ${debugFlags.noRegen ? 'ON' : 'OFF'}`); };
   window.debugAddGold = (amt) => { changeGold(amt); logMsg(`Added ${amt} gold.`); };
   window.debugAddStatPoints = (amt) => { player.statPoints += amt; logMsg(`Added ${amt} stat points.`); updateUI(); };
-  window.debugAddTalentPoints = (amt) => { player.talentPoints += amt; logMsg(`Added ${amt} talent points.`); updateUI(); };
   // Floor navigation (floor = the current dungeon depth; level = player character level)
   window.debugWarpNextFloor = () => { currentLevel++; levelCache[currentLevel] = null; initMap(50); calculateFOV(); drawMap(); updateUI(); logMsg(`Warped to Floor ${currentLevel}.`); };
   window.debugWarpPrevFloor = () => { if(currentLevel > 0) { currentLevel--; levelCache[currentLevel] = null; initMap(50); calculateFOV(); drawMap(); updateUI(); logMsg(`Warped to Floor ${currentLevel}.`); } };
