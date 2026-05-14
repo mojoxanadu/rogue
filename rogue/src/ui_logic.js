@@ -719,6 +719,19 @@ function _performStickyMove(src, targetSource, target) {
   
   // Initialize checkbox states from gameSettings on page load
   window.addEventListener('DOMContentLoaded', () => {
+    // Apply the touch-mode body class as the FIRST act of boot. CSS
+    // rules keyed off body.touch (smaller default log, larger hit
+    // areas, narrower modals, etc) take effect immediately. Any
+    // future view-side adaptation gates on this class — no UA
+    // sniffing scattered through the code. Update IS_TOUCH state at
+    // boot time only; live device-rotation / hot-plug isn't worth
+    // chasing for a roguelike.
+    if (window.IS_TOUCH) document.body.classList.add('touch');
+    // (Log collapse glyph: stays ▾ at boot for both desktop (120px,
+    // next tap shrinks to 90) and touch (60px, next tap shrinks to
+    // 30). Only the wraparound state at 30 → 150 flips the glyph
+    // to ▴, handled inside toggleLogCollapse.)
+
     const sfxToggle = document.getElementById('sfx-toggle');
     const musicToggle = document.getElementById('music-toggle');
     if(sfxToggle) sfxToggle.checked = window.gameSettings.sfx;

@@ -1,6 +1,31 @@
   // K3: Game name — set via build process template substitution
   window.GAME_NAME = '{{GAME_NAME}}';
 
+  // ── Touch-device detection (single source of truth) ────────────
+  // Sets at module-load so any consumer (input handlers, render
+  // adaptations, layout defaults) can branch on a stable boolean.
+  // Detection layers, in order of precedence:
+  //   1. URL override (?mobile=1 forces ON, ?mobile=0 forces OFF) —
+  //      lets you exercise the touch UI in a desktop browser without
+  //      DevTools device emulation.
+  //   2. Capability probe: 'ontouchstart' in window OR maxTouchPoints
+  //      > 0. Both cover modern browsers; the union handles edge
+  //      cases (older Safari needs ontouchstart, hybrid Surface
+  //      laptops report maxTouchPoints).
+  // Hybrid devices (touchscreen laptop) report touch=true even
+  // though they have a mouse — that's correct; keyboard and mouse
+  // input handlers stay live alongside touch handlers, so nothing
+  // is taken away.
+  window.IS_TOUCH = (() => {
+    try {
+      const q = (typeof window !== 'undefined' && window.location && window.location.search) || '';
+      if (/[?&]mobile=1\b/.test(q)) return true;
+      if (/[?&]mobile=0\b/.test(q)) return false;
+    } catch (_) { /* ignore */ }
+    if (typeof window === 'undefined') return false;
+    return ('ontouchstart' in window) || (navigator && navigator.maxTouchPoints > 0);
+  })();
+
   // === Game Constants & State ===
   /*
     GAME STATE & CONFIGURATION
