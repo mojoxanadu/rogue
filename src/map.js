@@ -1741,23 +1741,8 @@
         chestLoot.push(new ItemStack('gold', 10 + Math.floor(Math.random() * 30 * currentLevel)));
       }
       // Create as a "chest" corpse for right-click looting
-      if(typeof createCorpse === 'function' && typeof window.autoLootEnabled !== 'undefined') {
-        if(window.autoLootEnabled && player.talents && player.talents['autoLoot']) {
-          chestLoot.forEach(item => {
-            // Gold loot: plain object with no itemName. Real items are
-            // ItemStack instances (have .itemName).
-            if(item.def?.pickupTo === 'gp') {
-              changeGold(item.qty);
-            } else {
-              let s = inventory.findIndex(s => s === null);
-              if(s !== -1) inventory[s] = new ItemStack(item.itemName, item.qty);
-              else if(typeof tryPlaceInInventory === 'function') tryPlaceInInventory(item);
-            }
-          });
-          if(!chestLoot.some(item => item.itemName === 'gold')) Sound.clink();
-        } else {
-          createCorpse(x, y, 'chest', {icon:'📦', name:'Chest'}, chestLoot);
-        }
+      if(typeof createCorpse === 'function') {
+        createCorpse(x, y, 'chest', {icon:'📦', name:'Chest'}, chestLoot);
       } else {
         // Fallback if engine not loaded yet
         chestLoot.forEach(item => placeItem(item.icon));

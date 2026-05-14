@@ -1271,13 +1271,7 @@
   // === Transaction Handlers ===
   window.buy = function(icon, cost, type, qty = 1) {
     let shopType = type === 'bookstore' ? 'wizard' : type;
-    // Smooth Talker talent discount: 5% per rank
-    let smoothRank = player.talents && player.talents['smooth1'] ? player.talents['smooth1'] : 0;
-    let discount = Math.floor(cost * 0.05 * smoothRank);
-    let finalCost = Math.max(1, cost - discount);
-    if(discount > 0) {
-      logMsg(`<span style='color:var(--success)'>Smooth Talker discount: -${discount}g (${smoothRank * 5}% off)</span>`);
-    }
+    let finalCost = cost;
     if((icon === '🪄' || icon === '🦯✨') && (type === 'wizard' || type === 'bookstore')) {
       openDiscworldArcanaBanter(icon, finalCost, type, qty);
       return;

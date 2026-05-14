@@ -371,9 +371,14 @@
     <div id="stats-tab-panel" style="display:block;">
       <div id="stats-body"></div>
     </div>
-    <!-- Talents tab content -->
+    <!-- Talents tab content. Placeholder while the new talent system
+         is being designed; the old TALENT_TREES rendering was removed
+         along with the data it consumed. -->
     <div id="talents-tab-panel" style="display:none; height:380px; overflow-y:auto;">
-      <div id="talents-body"></div>
+      <div id="talents-body" style="padding: 24px; text-align: center; color: #888; font-size: 13px;">
+        <p style="margin: 0 0 8px;"><em>Talents are being redesigned.</em></p>
+        <p style="margin: 0; font-size: 11px; opacity: 0.7;">A new system is coming. This tab will fill in once it lands.</p>
+      </div>
     </div>
   </div>
 </div>
@@ -405,7 +410,6 @@
     <button onclick="loadGame()">📂 Load Game <span style="font-size:10px; color:#aaa;">(Chord: ^X L)</span></button>
     <button onclick="toggleModal('settings-modal'); initSettingsUI()">⚙️ Settings (Chord: ^X S)</button>
     <button onclick="toggleModal('debug-modal')">🐛 Debug Menu (Chord: ^X M)</button>
-    <button id="autoLootBtn" onclick="toggleAutoLoot()" style="display:none;">🔄 Auto-Loot: OFF</button>
   </div>
 </div>
 
@@ -430,7 +434,6 @@
       <button onclick="debugResurrect()">🔄 Resurrect</button>
       <button onclick="debugRestoreMana()">🔵 Restore Mana</button>
       <button onclick="debugAddStatPoints(10)">📊 +10 Stat Points</button>
-      <button onclick="debugAddTalentPoints(10)">⭐ +10 Talent Points</button>
       <button onclick="debugEditStats()">✏️ Edit Stats</button>
       <button onclick="debugAddGold(1000)">💰 +1000 Gold</button>
 
