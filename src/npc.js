@@ -13,9 +13,14 @@
 //  for an event stream without touching NPC classes.
 //
 //  Grue is environmental, not an NPC — it stays in engine.js.
-//  applyDamageToEnemy (player → NPC damage) still lives in engine
-//  because it owns XP awards, corpse generation, and level-up
-//  triggers. NPC → player attacks live here as NPC.attack(target, ctx).
+//  Combat is split across two NPC methods:
+//    - NPC.attack(target, ctx)     — NPC attacks player (with miss
+//      roll, type-specific flavor, thorns reflection).
+//    - NPC.takeDamage(dmg, attacker) — NPC receives damage with the
+//      attacker's crit chance folded in.
+//  Corpse generation / XP awards / level-up triggers stay in engine's
+//  doCombat — they cross into game-state territory the NPC shouldn't
+//  own.
 // ============================================================
 
 const NPC_ATTITUDE = {
@@ -117,6 +122,34 @@ class NPC extends Sentient {
   }
 
   // ─── Combat ─────────────────────────────────────────────────
+  /**
+   * Receive incoming damage from `attacker`. Rolls the attacker's
+   * crit chance, applies damage to `this.stats.hp`, returns the
+   * final damage dealt (≥ the input dmg when a crit fires).
+   *
+   * Does NOT handle death — callers own corpse generation, XP
+   * awards, level-up triggers, splice-from-enemies. takeDamage just
+   * mutates HP and reports back.
+   *
+   * `attacker` is typically the Player (uses Player.effectiveCritRate
+   * to fold in equipment bonuses). Any Sentient with effectiveCritRate
+   * works. Pass null/undefined if no attacker context (e.g. environmental
+   * damage) — then no crit roll fires.
+   */
+  takeDamage(dmg, attacker) {
+    if (dmg > 0 && attacker &&
+        typeof attacker.effectiveCritRate === 'function' &&
+        Math.random() < attacker.effectiveCritRate()) {
+      const bonus = Math.max(1, Math.round(dmg * 0.5));
+      dmg += bonus;
+      if (typeof logMsg === 'function') {
+        logMsg(`<span style='color:#6fd'>Extra ${bonus} damage to enemy from crit!</span>`);
+      }
+    }
+    this.stats.hp -= dmg;
+    return dmg;
+  }
+
   /**
    * Resolve this NPC's melee attack against `target` (typically
    * ctx.player). One call = one attack attempt: roll to hit, then

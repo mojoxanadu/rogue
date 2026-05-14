@@ -1456,17 +1456,10 @@
     window.getPlayerCritRate = function() { return player.critRate ?? 0; };
   }
 
-  // Damages enemy (if dmg passed is > 0).
-  // Gives player a chance for a critical hit, and logs a message if that happens.
-  function applyDamageToEnemy(dmg, enemy) {
-    if(dmg > 0 && Math.random() < getPlayerCritRate()) {
-      const dmgPlus = Math.max(1, Math.round(dmg * 0.5));
-      dmg += dmgPlus;
-      logMsg(`<span style='color:#6fd'>Extra ${dmgPlus} damage to enemy from crit!</span>`);
-    }
-    enemy.stats.hp -= dmg;
-    return dmg;
-  }
+  // (function applyDamageToEnemy retired Iter 5 — damage application
+  // now lives on NPC.takeDamage(dmg, attacker) in src/npc.js. Crit
+  // rolls use attacker.effectiveCritRate(), generalizing past the
+  // player-only assumption baked into the legacy global helper.)
 
   function doCombat(enemyIndex) {
     let e = enemies[enemyIndex]; if(!e) return;
@@ -1498,7 +1491,7 @@
         return;
       }
       let ifritDmg = dmg;
-      ifritDmg = applyDamageToEnemy(ifritDmg, e);
+      ifritDmg = e.takeDamage(ifritDmg, player);
       Sound.sword();
       Sound.playTone(200, 'sawtooth', 0.3, 0.1, 400);
       addFloatingText(e.x, e.y, `-${ifritDmg}`, "#f00", 16 + ifritDmg);
@@ -1543,7 +1536,7 @@
         logMsg(`You miss the ${e.type}.`);
       }
       else {
-        dmg = applyDamageToEnemy(dmg, e);
+        dmg = e.takeDamage(dmg, player);
         addFloatingText(e.x, e.y, `-${dmg}`, "#f00", 16 + dmg);
         let pct = e.stats.hp / 200;
         if (pct <= 0.75 && player.knightLimb === 0) { player.knightLimb = 1; logMsg("'Tis but a scratch!' (Damage Reduced)"); e.stats.dmg -= 5; }
@@ -1570,7 +1563,7 @@
 
       // Check to see if player misses.
       if (getPlayerHits(e)) {
-        dmg = applyDamageToEnemy(dmg, e);
+        dmg = e.takeDamage(dmg, player);
         logMsg(`You hit the ${e.type} for ${dmg} damage.`);
         // Provoke passive/friendly animals when attacked
         if(e.stats.passive || e.friendly || e.farmAnimal) {
