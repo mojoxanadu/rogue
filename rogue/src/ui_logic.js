@@ -1199,7 +1199,11 @@ function _performStickyMove(src, targetSource, target) {
         // Sticky-tap: drop pending move here; or, if no pending move and
         // this slot has an item, start a sticky-drag. Empty slots without
         // a pending move do nothing (consistent with desktop drag UX).
-        if (handleStickyTap('inventory', i)) return;
+        // Source key MUST be 'inv' (not 'inventory') to match
+        // _performStickyMove's switch and the bag-panel/quickslot
+        // selection-display checks. Was 'inventory' previously and
+        // every sticky-move from the modal silently noop'd.
+        if (handleStickyTap('inv', i)) return;
         if (item) {
           // Bag items still need single-click for handleInventoryClick
           // (which opens or interacts with the bag in the existing flow).
