@@ -395,7 +395,17 @@
     darkMap = cached.darkMap.map(row => row.slice());
     visible = Array(mapH).fill().map(() => Array(mapW).fill(false));
     enemies.length = 0;
-    cached.enemies.forEach(e => enemies.push(e));
+    // The cache stores JSON-cloned spawn specs (class identity is
+    // stripped by JSON.parse(JSON.stringify(...)) in _saveLevelToCache).
+    // Re-hydrate each one through NPC.fromSpec so the live array
+    // contains real NPC instances with takeTurn / cooldowns / etc.
+    // KNOWN LIMITATION: Condition.onTick/onRemove callbacks don't
+    // survive JSON round-trip. No NPCs carry Conditions today; if
+    // that changes, add a NPC.toSpec() / fromSpec() pair that
+    // re-attaches the right onTick when reading a serialized name.
+    cached.enemies.forEach(spec => {
+      enemies.push(typeof NPC !== 'undefined' && NPC.fromSpec ? NPC.fromSpec(spec) : spec);
+    });
     syncActiveZone();
     itemsOnGround.length = 0;
     cached.itemsOnGround.forEach(i => itemsOnGround.push(i));
@@ -513,19 +523,12 @@
     logMsg("<span style='color:var(--success)'>Welcome back, adventurer. A new journey begins...</span>");
   };
 
-  // Lazy hydration: any plain-object enemy in enemies[] gets promoted
-  // to an NPC subclass instance on first dispatch. Lets spawn sites
-  // keep using `enemies.push({...})` during the migration — the
-  // dispatcher promotes them on demand. Once all spawn sites are
-  // converted to NPC.fromSpec() we can retire this.
-  function hydrateEnemiesToNPCs() {
-    if (typeof NPC === 'undefined' || typeof NPC.fromSpec !== 'function') return;
-    for (let i = 0; i < enemies.length; i++) {
-      const e = enemies[i];
-      if (e && !(e instanceof NPC)) enemies[i] = NPC.fromSpec(e);
-    }
-  }
-  window.hydrateEnemiesToNPCs = hydrateEnemiesToNPCs;
+  // (hydrateEnemiesToNPCs retired Iter 3.5 — all entry points into
+  // the live enemies[] now produce NPC instances:
+  //   - spawnNpc() helpers wrap NPC.fromSpec
+  //   - _restoreLevelFromCache re-hydrates JSON-cloned specs via NPC.fromSpec
+  //   - town.enemies[] entries are already instances (built by spawnNpc)
+  // No lazy promotion needed at dispatch entry anymore.)
 
   // Build the ctx object passed to NPC.takeTurn(). Wires view-layer
   // hooks (Sound, logMsg, addFloatingText, WebGLFX) as callbacks so
@@ -595,7 +598,6 @@
   window.makeNpcCtx = makeNpcCtx;
 
   function advanceSceneNPCs(nowMs = Date.now()) {
-    hydrateEnemiesToNPCs();
     const ctx = makeNpcCtx({ isScene: true, nowMs });
     for (const e of enemies) {
       if (e && typeof e.takeTurn === 'function') e.takeTurn(ctx);
@@ -790,13 +792,11 @@
     // AI and NPC Logic
     // ── Per-NPC AI dispatch (moved out of engine into src/npc.js) ──
     //
-    // Step 5d: the old 440-line enemies.forEach switch was lifted into
-    // class methods on NPC + 8 typed subclasses (Ifrit, FrenchTaunter,
-    // Thief, Fence, Mimic, Shark, Zombie, Pixie). The engine now just
-    // builds a ctx and dispatches. Tristram boundary push-back is
-    // ENVIRONMENTAL (lives in engine, runs as a pre-pass before AI).
-
-    hydrateEnemiesToNPCs();
+    // The old 440-line enemies.forEach switch lives in class methods
+    // on NPC + 8 typed subclasses (Ifrit, FrenchTaunter, Thief, Fence,
+    // Mimic, Shark, Zombie, Pixie). The engine now just builds a ctx
+    // and dispatches via runScheduler. Tristram boundary push-back
+    // stays here as ENVIRONMENTAL pre-pass (not per-NPC AI).
 
     // Tristram boundary pre-pass — keep wandering NPCs outside town walls.
     if(currentScene === 'town' && window._tristramBounds) {
