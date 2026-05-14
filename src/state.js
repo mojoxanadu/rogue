@@ -15,7 +15,7 @@
     4. Game‑state variables (currentLevel, theMap, inventory, etc.)
     5. Player object – the player's persistent stats and flags
     6. MONSTER_DEF – definitions of all enemy types
-    7. ITEM_DEF – definitions of all item types
+    7. LEGACY_ITEM_DATA – raw item definitions (consumed by items_registry.js)
     8. Utility functions (e.g., addFloatingText)
 
     This file is loaded early and referenced by virtually every other module.
@@ -524,19 +524,21 @@
 
 // ─── ITEM DEFINITIONS ─────────────────────────────────────────
   /**
-   * ITEM_DEF — Master item registry.
+   * LEGACY_ITEM_DATA — Raw item-definition table.
    *
-   * Design principle (O'Reilly "Catalog" pattern):
-   *   One flat object keyed by emoji icon.  All game systems look up
-   *   items here; never hard-code item properties elsewhere.
+   * Read ONCE at startup by items_registry.js, which constructs the
+   * authoritative `ItemDefs` (camelCase-keyed) registry from these
+   * entries. All game code reads ItemDefs / ItemDef.byIcon — never
+   * touches this table directly. The "LEGACY_" prefix is the visible
+   * marker that this is source-data only; entries should eventually
+   * migrate into items_registry.js as `new ItemDef({...})` literals,
+   * after which this table can be deleted.
    *
    * Entries are grouped alphabetically by `type`, then sorted by `name`
-   * within each group.  Add new items to the correct type group.
-   *
-   * Required fields: name, type, stackable, maxGP
+   * within each group. Required fields: name, type, stackable, maxGP.
    * Optional fields vary by type — see examples in each group.
    */
-  const ITEM_DEF = {
+  const LEGACY_ITEM_DATA = {
     // ── AMMO ─────────────────────────────────────────
     "➶": { name: "Arrows", type: "ammo", stackable: true, maxStack: 99, maxGP: 1 },
 

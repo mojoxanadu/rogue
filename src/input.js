@@ -1305,7 +1305,7 @@ const hBtn = document.getElementById('hamburgerBtn');
         player.maxHp += 5;
         player.hp += 5;
         player.equipped.leftHand = 'sword';
-        player.equipped.feet     = 'oldBoot';   // gives +2 defenseBonus per ITEM_DEF
+        player.equipped.feet     = 'oldBoot';   // gives +2 defenseBonus per LEGACY_ITEM_DATA
         if (!player.inventory) player.inventory = [];
         player.inventory.push(new ItemStack('oldBoot', 1));
         logMsg && logMsg("You are a Fighter! +5 HP, Sword equipped, Fighter Boots worn.");
