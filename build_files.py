@@ -13,6 +13,10 @@ FILES = [
     # state.js's legacy emoji-keyed ITEM_DEF, so it must follow both.
     'items.js',
     'items_registry.js',
+    # Entity hierarchy + World/Zone. UX-agnostic model classes; skeleton
+    # only at this commit (no instantiation, no global wire-up yet).
+    'entities.js',
+    'world.js',
     'player.js',
     'limerick_api.js',
     'ui_logic.js',
