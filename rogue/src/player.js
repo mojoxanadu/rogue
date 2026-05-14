@@ -9,31 +9,28 @@
 //  multiplayer trivially achievable.
 // ============================================================
 
-// ─── Inventory ──────────────────────────────────────────────
-//  Single 30-slot array holding item stacks or null for empty slots.
-//  The first `player.quickslotCount` slots are mirrored in the HUD
-//  quickslot row; the bag panel shows all 30. Drags between the two
-//  views are slot moves within this same array.
+// ─── LocalPlayer instance + back-compat aliases ─────────────
 //
-//  (NOTE: identifier still named `inventory` mid-refactor; phase 3
-//  renames to `inventory` after all callers are updated.)
-const inventory = new Array(30).fill(null);
-
-// ─── Player Object ──────────────────────────────────────────
-//  Single source of truth for all runtime player properties.
-//  Populated immediately by setPlayerDefaults() below.
-//  Never access player state from anywhere except through this
-//  object — never create a parallel "playerState" or "pData".
+//  `localPlayer` is the canonical LocalPlayer instance (entities.js).
+//  The historical top-level identifiers `player` and `inventory` are
+//  preserved as aliases — the rest of the codebase still reads them
+//  as bare globals, and both point at the same object/array as
+//  `localPlayer` and `localPlayer.inventory`.
 //
-//  K9 — "Initialize Once" pattern (O'Reilly):
-//  The object is intentionally declared empty here.
-//  setPlayerDefaults() is the ONLY place defaults are written,
-//  preventing the "parallel initialization" antipattern where
-//  initial values are duplicated in both the declaration and the
-//  reset function.  Calling setPlayerDefaults() right after its
-//  definition seeds `player` on first load AND resets it cleanly
-//  on new-game / death — with zero duplication.
-const player = {};
+//  Reassignment risk: nothing in the codebase reassigns `player` or
+//  `inventory`; all mutation is property/index writes which propagate
+//  through the alias. Verified by grep before this commit.
+//
+//  setPlayerDefaults() (below) continues to populate the 50+ legacy
+//  fields onto the instance. The LocalPlayer constructor already sets
+//  hp/maxHp/gp/combat stats from Player.DEFAULTS; setPlayerDefaults
+//  rewrites those (idempotently — same source numbers) and then layers
+//  on the remaining quest-flag/talent/hunger/etc fields. A future
+//  commit lifts those into Player.prototype.reset() once the questFlags
+//  map collapses.
+const localPlayer = new LocalPlayer();
+const player    = localPlayer;
+const inventory = localPlayer.inventory;
 
 // ─── setPlayerDefaults ──────────────────────────────────────
 /**
@@ -91,10 +88,12 @@ function setPlayerDefaults() {
   player.quickslotCount = 10;
 }
 
-// ─── K9: Initialize player at declaration time ───────────────
-//  Calling setPlayerDefaults() here means `const player` above
-//  only needs its property names declared once.
+// Apply legacy default fields to the LocalPlayer instance (quest flags,
+// talents, hunger/exhaustion, equipped outfit, etc). The combat fields
+// it touches duplicate the LocalPlayer constructor's writes — same
+// values, so idempotent.
 setPlayerDefaults();
+window.localPlayer = localPlayer;
 
 // ─── changeGold ─────────────────────────────────────────────
 window.changeGold = (amount, opts = {}) => {
@@ -286,95 +285,21 @@ window.PlayerSprites = PlayerSprites;
 //
 // ─── Combat Helper Functions ─────────────────────────────────
 //
-//  O'Reilly best practice – "Tell, Don't Ask":
-//  These functions encapsulate all knowledge of how the player
-//  interacts with enemies.  Call them from doCombat() and
-//  anywhere else that needs combat math — never inline the
-//  formulas in multiple places.
+//  Thin delegates to methods on the LocalPlayer instance. The actual
+//  math lives on Sentient/Player in entities.js; these wrappers exist
+//  only so the historical bare-global names (`getPlayerHits(e)` etc.)
+//  keep resolving while engine.js / mechanics.js / ui_logic.js still
+//  call them. A future commit (4c) sweeps callers to call
+//  `player.hits(e)` directly and deletes these.
 
-/** Returns the item icon in the player's primary (left) hand, or null. */
-function getPlayerPrimaryHand() {
-  return player.equipped ? player.equipped.leftHand : null;
-}
+const getPlayerPrimaryHand = ()  => player.primaryHand();
+const getPlayerHitRate     = ()  => player.effectiveHitRate();
+const getPlayerCritRate    = ()  => player.effectiveCritRate();
+const getPlayerHits        = (e) => player.hits(e);
+const getPlayerDmg         = ()  => player.rollDmg();
+const getPlayerDmgVersus   = (e) => player.rollDmgVersus(e);
 
-/**
- * Calculate effective hit rate including equipment bonuses.
- * Weapons with a hitRateBonus property (e.g. enchanted items)
- * add to the base player.hitRate.
- */
-function getPlayerHitRate() {
-  let hitRate = player.hitRate;
-  Object.values(player.equipped).forEach(name => {
-    if(name) {
-      let def = (typeof ItemDefs !== 'undefined') ? ItemDefs[name] : null;
-      if(def) hitRate += (def.hitRateBonus ?? 0);
-    }
-  });
-  return hitRate;
-}
-
-/**
- * Determine whether the player successfully hits `enemy`.
- * Enemy dodge chance is subtracted from the player's hit rate.
- * @param {object|null} enemy
- * @returns {boolean}
- */
-function getPlayerHits(enemy) {
-  return Math.random() < getPlayerHitRate() * (1 - (enemy && enemy.stats ? (enemy.stats.dodge ?? 0) : 0));
-}
-
-/**
- * Roll random melee damage based on player stats + equipment.
- * Damage is uniformly distributed between 1 and baseDmg,
- * then meleeDmgBonus is added.
- * @returns {number}
- */
-function getPlayerDmg() {
-  let baseDmg  = player.baseDmg  || CONSTANTS.PLAYER_UNARMED_BASE_DMG;
-  let dmgBonus = player.meleeDmgBonus ?? 0;
-  Object.values(player.equipped).forEach(name => {
-    if(name) {
-      let def = (typeof ItemDefs !== 'undefined') ? ItemDefs[name] : null;
-      if(!def) return;
-      if(def.type === "weapon") baseDmg  = (def.baseDmg ?? 0);
-      if(def.meleeDmgBonus)    dmgBonus += def.meleeDmgBonus;
-    }
-  });
-  // E8: Weapon Master training bonus — consumed on next attack
-  if(player.trainingBonus && player.trainingBonus > 0) {
-    dmgBonus += player.trainingBonus;
-    player.trainingBonus = 0;
-  }
-  return Math.floor(Math.random() * baseDmg + 1 + dmgBonus);
-}
-
-/**
- * Roll damage versus a specific enemy, applying boss scaling.
- * Ifrit is scaled to be a level-10+ challenge — players below
- * that level deal only 30% of normal damage.
- * @param {object|null} enemy
- * @returns {number}
- */
-function getPlayerDmgVersus(enemy) {
-  if (enemy && enemy.isIfrit)
-    return Math.max(1, Math.floor(getPlayerDmg() * (player.level >= 10 ? 1.0 : 0.3)));
-  return getPlayerDmg();
-}
-
-/**
- * Calculate player critical hit rate from their base crit
- * rate adjusted for any equipment that might change it.
- *
- * O'Reilly best practice – "Open/Closed":
- *   Add equipment bonuses here; callers never need to change.
- */
-function getPlayerCritRate() {
-  // TODO: Add equipment that changes crit rate.
-  return player.critRate;
-}
-
-// Expose to global scope so engine.js and mechanics.js can call them
-window.getPlayerPrimaryHand = getPlayerPrimaryHand;
+window.getPlayerPrimaryHand  = getPlayerPrimaryHand;
 window.getPlayerHitRate      = getPlayerHitRate;
 window.getPlayerHits         = getPlayerHits;
 window.getPlayerDmg          = getPlayerDmg;
