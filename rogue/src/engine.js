@@ -396,6 +396,7 @@
     visible = Array(mapH).fill().map(() => Array(mapW).fill(false));
     enemies.length = 0;
     cached.enemies.forEach(e => enemies.push(e));
+    syncActiveZone();
     itemsOnGround.length = 0;
     cached.itemsOnGround.forEach(i => itemsOnGround.push(i));
     corpses.length = 0;
@@ -582,6 +583,7 @@
         explored = Array(mapH).fill().map(() => Array(mapW).fill(false));
         visible = Array(mapH).fill().map(() => Array(mapW).fill(false));
          enemies = []; itemsOnGround = [];
+         syncActiveZone();
          currentScene = 'nest';
          // #13: Wire background art scene
          player.x = 30; player.y = 17;

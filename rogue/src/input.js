@@ -255,6 +255,7 @@ const hBtn = document.getElementById('hamburgerBtn');
     visible = _debugDeepClone(snap.visible || []);
     enemies = _debugDeepClone(snap.enemies || []);
     itemsOnGround = _debugDeepClone(snap.itemsOnGround || []);
+    syncActiveZone();
     if(typeof corpses !== 'undefined') {
       corpses.length = 0;
       (snap.corpses || []).forEach(c => corpses.push(c));
@@ -816,6 +817,7 @@ const hBtn = document.getElementById('hamburgerBtn');
           if(args.length === 0 || args[0].toLowerCase() === 'all') {
             const before = enemies.length;
             enemies = enemies.filter(en => en.isQuestNPC || (en.stats && en.stats.quest));
+            syncActiveZone();
             debugLog(`Despawned ${before - enemies.length} non-quest enemies.`);
           } else if(args[0].toLowerCase() === 'radius') {
             const r = Math.max(1, Math.min(99, parseInt(args[1] || '6', 10) || 6));
@@ -825,11 +827,13 @@ const hBtn = document.getElementById('hamburgerBtn');
               const d = Math.abs(en.x - player.x) + Math.abs(en.y - player.y);
               return d > r;
             });
+            syncActiveZone();
             debugLog(`Despawned ${before - enemies.length} enemies within radius ${r}.`);
           } else {
             const mob = args[0].toLowerCase();
             const before = enemies.length;
             enemies = enemies.filter(en => en.type !== mob || en.isQuestNPC || (en.stats && en.stats.quest));
+            syncActiveZone();
             debugLog(`Despawned ${before - enemies.length} '${mob}' enemies.`);
           }
           if(typeof drawMap === 'function') drawMap();

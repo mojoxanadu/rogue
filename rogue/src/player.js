@@ -32,6 +32,45 @@ const localPlayer = new LocalPlayer();
 const player    = localPlayer;
 const inventory = localPlayer.inventory;
 
+// ─── World + active Zone (Option B1) ────────────────────────
+//
+//  The model layer holds ONE Zone (id 'active') whose tile-grid /
+//  visibility-layer / entity-list fields mirror the legacy bare
+//  globals (theMap, darkMap, explored, visible, enemies + mapW/H).
+//  Nothing currently reads zone.* — game code still reads the bare
+//  globals — but the alias is kept in sync so future commits can
+//  start migrating call sites without staleness bugs.
+//
+//  syncActiveZone() must be called after every reassignment of the
+//  bare globals (level transitions, debug snapshot restore). The
+//  in-place mutations (enemies.length = 0; enemies.push(...)) preserve
+//  the alias without a sync call, but calling sync there is harmless
+//  and keeps the invariant "after any level-state change, call sync."
+//
+//  Minimal least-destructive shape: one Zone reused across levels,
+//  width/height/tiles/etc rebinding per transition. The real "one
+//  Zone per level, retire bare globals" design awaits a future
+//  direction discussion.
+const world = new World({ localPlayer });
+const zone  = new Zone({ id: 'active', width: 1, height: 1 });
+world.addZone(zone);
+world.setActiveZone('active');
+localPlayer.zone = zone;
+
+function syncActiveZone() {
+  if (typeof mapW !== 'undefined' && mapW) zone.width  = mapW;
+  if (typeof mapH !== 'undefined' && mapH) zone.height = mapH;
+  zone.tiles    = theMap;
+  zone.darkMap  = darkMap;
+  zone.explored = explored;
+  zone.visible  = visible;
+  zone.entities = enemies;
+}
+syncActiveZone();
+window.world           = world;
+window.zone            = zone;
+window.syncActiveZone  = syncActiveZone;
+
 // ─── setPlayerDefaults ──────────────────────────────────────
 /**
  * Reset all player properties to their initial values.
