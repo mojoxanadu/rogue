@@ -13,9 +13,9 @@
 //  for an event stream without touching NPC classes.
 //
 //  Grue is environmental, not an NPC — it stays in engine.js.
-//  monsterAttack / applyDamageToEnemy also stay in engine for now;
-//  NPCs invoke them via ctx.monsterAttack(npc). Full combat migration
-//  to NPC methods is a later iteration.
+//  applyDamageToEnemy (player → NPC damage) still lives in engine
+//  because it owns XP awards, corpse generation, and level-up
+//  triggers. NPC → player attacks live here as NPC.attack(target, ctx).
 // ============================================================
 
 const NPC_ATTITUDE = {
@@ -116,6 +116,94 @@ class NPC extends Sentient {
     return this._takeChaseTurn(ctx);
   }
 
+  // ─── Combat ─────────────────────────────────────────────────
+  /**
+   * Resolve this NPC's melee attack against `target` (typically
+   * ctx.player). One call = one attack attempt: roll to hit, then
+   * roll damage, apply, fire view-layer hooks, run reflection
+   * (Crown of Thorns), and check for the target's death. Type-
+   * specific flavor (T-Rex stomp, shark bite SFX, mimic coin spit,
+   * duck quack) lives in the flat switch below — small, self-
+   * contained, and matches the legacy structure 1:1.
+   *
+   * Returns true if the attack connected (hit), false on a miss.
+   * Caller doesn't usually care about the return — the cost is
+   * 'attack' in either case.
+   */
+  attack(target, ctx) {
+    const e = this;
+    // Hit roll. target.dodgeRate is the player's effectiveDodgeRate
+    // when it's a Player instance; falls back to 0 otherwise.
+    const hitChance = (e.stats.hit ?? 0) * (1 - (target.dodgeRate ?? 0));
+    if (Math.random() >= hitChance) {
+      ctx.log(`The ${e.type} misses you.`);
+      return false;
+    }
+    // Damage roll: 1..stats.dmg inclusive. Floored at 1.
+    const dmg = Math.floor(Math.random() * (e.stats.dmg ?? 1)) + 1;
+    ctx.log(`The ${e.type} hits you for ${dmg} damage.`);
+    ctx.soundEvent('grunt');
+    // Apply HP/tint/float/webgl + die check. Returns true if died.
+    const died = ctx.damagePlayer(dmg, e.type, 16 + dmg);
+    // ── Type-specific flavor ──────────────────────────────────
+    // These were a flat type-switch in legacy engine.monsterAttack.
+    // Kept here as a switch (not subclass overrides) because they're
+    // small and the legacy author chose a flat shape; subclassing
+    // adds 5 declarations for ~3 lines of payload each. Revisit if
+    // any one of them grows past a few lines.
+    if (e.type === 'duck') {
+      ctx.soundEvent('quack');
+      ctx.log(`<span style='color:#FFD700'>The duck quacks aggressively!</span>`);
+    }
+    if (e.type === 'trex') {
+      ctx.soundEvent('trexRoar');
+      ctx.soundEvent('trexStomp');
+      if (Math.random() < 0.3) {
+        target._stunned = 1;
+        ctx.log("<span style='color:#f44'>🦖 The T-Rex STOMPS! You're stunned!</span>");
+      }
+      ctx.floatText(target.x, target.y, '💥', '#f00', 22);
+    }
+    if (e.type === 'shark') {
+      ctx.soundEvent('sharkBite');
+      ctx.floatText(e.x,      e.y,      '🩸', '#cc0000', 24);
+      ctx.floatText(target.x, target.y, '🩸', '#cc0000', 24);
+    }
+    if (e.isMimic && e.type === 'mimic') {
+      ctx.sound('mimic_attack', 0.7);
+      ctx.sound('ka_ching',     0.5);
+      ctx.spawnFx({
+        kind: 'goldCoins', x1: e.x, y1: e.y, x2: target.x, y2: target.y,
+        color: '#FFD700', life: 1.0, power: 0.8,
+      });
+      ctx.floatText(target.x, target.y, '🪙', '#FFD700', 18);
+    }
+    // ── Quest event ───────────────────────────────────────────
+    if (typeof QuestEngine !== 'undefined' && QuestEngine.emit) {
+      QuestEngine.emit('combat_hurt', { attacker: e.type, damage: dmg });
+    }
+    // ── Crown of Thorns reflection ────────────────────────────
+    // Target gear can damage the attacker (this NPC) on a hit.
+    // If the reflection kills this NPC, remove it from the live list.
+    const headSlot = target.equipped && target.equipped.head;
+    if (headSlot && typeof ItemDef !== 'undefined' && ItemDef.byIcon) {
+      const def = ItemDef.byIcon(headSlot);
+      if (def && def.thornsDmg) {
+        const thorns = def.thornsDmg;
+        e.stats.hp -= thorns;
+        ctx.floatText(e.x, e.y, `-${thorns}🌿`, '#8f8', 14);
+        ctx.log(`Crown of Thorns reflects ${thorns} damage!`);
+        if (e.stats.hp <= 0) {
+          ctx.log(`The ${e.type} is destroyed by thorns!`);
+          if (typeof target.xp === 'number') target.xp += 50;
+          if (typeof checkLevelUp === 'function') checkLevelUp();
+          ctx.removeEnemy(e);
+        }
+      }
+    }
+    return !died;  // unused by callers today; future-proofs the contract
+  }
+
   // ─── Default behavior implementations ───────────────────────
   // These were inlined into the 440-line enemies.forEach block in
   // engine.js. Ported here ~1:1; renames are e → this, player →
@@ -127,7 +215,7 @@ class NPC extends Sentient {
     const { player, theMap, enemies, isTileFloor } = ctx;
     if (!e.stats) return 'move';
     const isAdj = Math.abs(e.x - player.x) <= 1 && Math.abs(e.y - player.y) <= 1;
-    if (isAdj) { ctx.monsterAttack(e); return 'attack'; }
+    if (isAdj) { e.attack(player, ctx); return 'attack'; }
     let dx = Math.sign(player.x - e.x), dy = Math.sign(player.y - e.y);
     if (dx !== 0 && dy !== 0) {
       switch (Math.floor(Math.random() * 3)) {
@@ -505,7 +593,7 @@ class Mimic extends NPC {
       if (ctx.damagePlayer(pdmg, 'mimic_coin', 16, '🪙', '#FFD700')) return 'attack';
       return 'attack';
     }
-    if (dist <= 1) { ctx.monsterAttack(e); return 'attack'; }
+    if (dist <= 1) { e.attack(player, ctx); return 'attack'; }
     const dx = Math.sign(player.x - e.x), dy = Math.sign(player.y - e.y);
     const nx = e.x + dx, ny = e.y + dy;
     if (theMap[ny] && isTileFloor(theMap[ny][nx]) &&
@@ -530,7 +618,7 @@ class Shark extends NPC {
     if (playerOnWater && dist <= aggroRange) e.provoked = true;
     if (e.provoked || dist <= aggroRange) {
       const isAdj = Math.abs(e.x - player.x) <= 1 && Math.abs(e.y - player.y) <= 1;
-      if (isAdj) { ctx.monsterAttack(e); return 'attack'; }
+      if (isAdj) { e.attack(player, ctx); return 'attack'; }
       const dx = Math.sign(player.x - e.x), dy = Math.sign(player.y - e.y);
       const targetTile = theMap[e.y+dy] && theMap[e.y+dy][e.x+dx];
       if (targetTile === TILES.WATER || targetTile === TILES.DEEP_WATER) {
@@ -551,7 +639,7 @@ class Zombie extends NPC {
     const dist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
     const isAdj = dist <= 1;
     if (dist <= aggroRange) e.provoked = true;
-    if (isAdj && e.provoked) { ctx.monsterAttack(e); return 'attack'; }
+    if (isAdj && e.provoked) { e.attack(player, ctx); return 'attack'; }
     if (e.provoked) {
       let dx = Math.sign(player.x - e.x), dy = Math.sign(player.y - e.y);
       if (dx !== 0 && dy !== 0) {
