@@ -41,6 +41,15 @@ const NPC_BEHAVIOR = {
 class NPC extends Sentient {
   constructor(spec = {}) {
     super(spec);
+    // Legacy spawn specs carry the visible glyph at spec.stats.icon
+    // (it came from MONSTER_DEF[type].icon). Entity's default ?? '?'
+    // wins otherwise, which is why every fresh NPC renders as '?'.
+    // Lift stats.icon onto the instance when no explicit spec.icon
+    // was given. Per-spawn overrides (e.g., cain's '🧙🏽‍♂️') ride in
+    // spec.stats.icon too, so this also handles them.
+    if (spec.icon == null && spec.stats && spec.stats.icon != null) {
+      this.icon = spec.stats.icon;
+    }
     this.type     = spec.type     ?? 'unknown';
     this.attitude = spec.attitude ?? NPC_ATTITUDE.HOSTILE;
     this.behavior = spec.behavior ?? NPC_BEHAVIOR.CHASE;
@@ -624,8 +633,49 @@ NPC.fromSpec = function (spec = {}) {
 };
 
 
+// ──────────────────────────────────────────────────────────────
+//  spawnNpc — single construction helper for ALL spawn sites.
+//
+//  Replaces the copy-pasted idiom
+//      list.push({ x, y, type, stats: {...MONSTER_DEF[type]},
+//                  actionTimer: 0, ...flags })
+//  that appeared ~70 times across map.js / engine.js / input.js /
+//  player.js / quests_*.js. Centralises the construction protocol
+//  (MONSTER_DEF lookup, actionTimer default, NPC.fromSpec) in one
+//  place so spawn-call surface area shrinks dramatically.
+//
+//  Usage:
+//      spawnNpc(enemies, x, y, 'slime');
+//      spawnNpc(enemies, x, y, 'blacksmith', { isQuestNPC: true });
+//      spawnNpc(enemies, x, y, 'chicken', { stats: farmStats(...) });
+//      const peasant = spawnNpc(town.enemies, x, y, 'muck_peasant', {
+//        patrolPath: [...], isQuestNPC: true, isSceneNPC: true,
+//      });
+//
+//  opts.stats — if present, fully REPLACES MONSTER_DEF[type] (used
+//  by farm animals with custom farmStats(), or any caller that
+//  wants a bespoke stat block). Without opts.stats, MONSTER_DEF[type]
+//  is shallow-cloned. To extend MONSTER_DEF[type] with a couple of
+//  field overrides, callers can still write
+//  `{ stats: { ...MONSTER_DEF[t], icon: '🧙‍♂️' } }`.
+//
+//  Returns the constructed NPC instance so callers can post-mutate
+//  (e.g., assign patrolPath after computing positions).
+// ──────────────────────────────────────────────────────────────
+function spawnNpc(list, x, y, type, opts = {}) {
+  const { stats: explicitStats, ...rest } = opts;
+  const def = (typeof MONSTER_DEF !== 'undefined' && MONSTER_DEF[type]) || {};
+  const stats = explicitStats ? explicitStats : { ...def };
+  const spec = { x, y, type, stats, actionTimer: 0, ...rest };
+  const npc = NPC.fromSpec(spec);
+  list.push(npc);
+  return npc;
+}
+
+
 if (typeof window !== 'undefined') {
   window.NPC           = NPC;
+  window.spawnNpc      = spawnNpc;
   window.NPC_ATTITUDE  = NPC_ATTITUDE;
   window.NPC_BEHAVIOR  = NPC_BEHAVIOR;
   window.Ifrit         = Ifrit;
