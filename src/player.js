@@ -126,10 +126,10 @@ function setPlayerDefaults() {
   player.equipped = { head: null, chest: 'runningShirt', legs: 'briefs', feet: 'sandals', leftHand: null, rightHand: null };
   player.learnedInsults = []; player.learnedRetorts = []; player.startingClass = null;
   // Number of inventory slots mirrored in the HUD quickslot row. Future
-  // boons will raise this from a starting value (planned: 5) up to the
-  // full inventory size. All quickslot rendering and key bindings must
-  // read this — never hardcode 10.
-  player.quickslotCount = 10;
+  // boons will raise this from a starting value up to the full inventory
+  // size. All quickslot rendering and key bindings must read this —
+  // never hardcode the count.
+  player.quickslotCount = 6;
 }
 
 // Apply legacy default fields to the LocalPlayer instance (quest flags,

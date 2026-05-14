@@ -48,6 +48,19 @@ const hBtn = document.getElementById('hamburgerBtn');
       <button onclick="toggleMacroBuilder()" style="background:#1a2a3a;border:1px solid #3a4a6a;color:#4af;border-radius:3px;padding:2px 8px;font-family:monospace;cursor:pointer;margin:0 4px 0 2px;font-size:11px;" title="Macro Builder">&#9881; Builder</button>
     </div>`;
   document.body.appendChild(debugOverlay);
+
+  // Mobile: hide the dev console entirely. The pull-tab + console
+  // overlay push the canvas around and aren't useful via touch input.
+  // Elements stay in the DOM because macros, the debug log helper
+  // (_debugLog), and a couple of view-side features reference them
+  // directly — they just stay invisible and non-interactive. Re-
+  // enable by removing the display:none assignment (or by editing
+  // the URL to ?mobile=0 in a desktop browser session).
+  if (window.IS_TOUCH) {
+    consolePullTab.style.display = 'none';
+    debugOverlay.style.display = 'none';
+  }
+
   const consoleInput = document.getElementById('console-input');
 
   // Copy log button — copies all debug log entries to clipboard

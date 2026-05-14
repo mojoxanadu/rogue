@@ -394,7 +394,7 @@ class LocalPlayer extends Player {
     this.isLocal = true;
   }
 }
-LocalPlayer.DEFAULT_QUICKSLOT_COUNT = 10;
+LocalPlayer.DEFAULT_QUICKSLOT_COUNT = 6;
 
 
 Sentient.DEFAULT_COOLDOWNS = { move: 1.0, attack: 1.0 };
