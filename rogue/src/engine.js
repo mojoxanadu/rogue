@@ -582,13 +582,24 @@
         if (player.hp <= 0) { die(); return true; }
         return false;
       },
-      // Bridge to legacy monsterAttack / thiefSteal which still
-      // operate on enemies[] indices. NPC.takeTurn passes the
-      // instance; we resolve the index by reference here.
-      monsterAttack(npc) {
-        const idx = enemies.indexOf(npc);
-        if (idx >= 0) monsterAttack(idx);
+      // Generic named-event SFX dispatcher. Lets NPC.attack say
+      // "play the grunt event" without naming Sound.grunt directly.
+      // Unknown method names are silently dropped — keeps model code
+      // resilient if the audio layer is unloaded.
+      soundEvent(method) {
+        if (typeof Sound !== 'undefined' && typeof Sound[method] === 'function') {
+          Sound[method]();
+        }
       },
+      // Remove a dead NPC from the live enemies array. Used by NPC.attack
+      // when the attacker dies to a thorns-reflection (Crown of Thorns).
+      removeEnemy(npc) {
+        const idx = enemies.indexOf(npc);
+        if (idx >= 0) enemies.splice(idx, 1);
+      },
+      // Bridge to legacy thiefSteal which still operates on enemies[]
+      // indices. (monsterAttack passthrough retired Iter 4 — NPCs
+      // call this.attack(target, ctx) directly.)
       thiefSteal(npc) {
         const idx = enemies.indexOf(npc);
         if (idx >= 0) thiefSteal(idx);
@@ -1892,88 +1903,12 @@
     advanceTurn(1);
   };
 
-   function monsterAttack(enemyIndex) {
-    let e = enemies[enemyIndex];
-
-    // Monsters can miss.
-    let hitChance = e.stats.hit * (1 - player.dodgeRate);
-    if (Math.random() >= hitChance) {
-      logMsg(`The ${e.type} misses you.`);
-      return;
-    }
-
-    // Monster damage is from 1 to their max, not always their max.
-    let dmg = Math.floor(Math.random() * (e.stats.dmg ?? 1)) + 1;
-    player.hp -= dmg;
-
-    // Bug 13: Always show damage tint and floating text regardless of sleep state
-    damageTint = 30;
-    logMsg(`The ${e.type} hits you for ${dmg} damage.`);
-    Sound.grunt();
-    // Quack sound when duck attacks
-    if(e.type === 'duck') {
-      Sound.quack();
-      logMsg(`<span style='color:#FFD700'>The duck quacks aggressively!</span>`);
-    }
-    addFloatingText(player.x, player.y, `-${dmg}`, "#f00", 16 + dmg);
-    if(window.WebGLFX && WebGLFX.onPlayerDamage) WebGLFX.onPlayerDamage(dmg, e.type);
-
-    // E15: T-Rex special attack — roar + stomp + stun chance
-    if(e.type === 'trex') {
-      Sound.trexRoar();
-      Sound.trexStomp();
-      if(Math.random() < 0.3) {
-        player._stunned = 1;
-        logMsg("<span style='color:#f44'>🦖 The T-Rex STOMPS! You're stunned!</span>");
-      }
-      addFloatingText(player.x, player.y, '💥', '#f00', 22);
-    }
-
-    // ── QUEST ENGINE EVENT: combat_hurt ──
-    // LESSON: By emitting a generic event here, any quest can react to
-    // the player taking damage from any monster type. The old shark-
-    // specific code is now handled by the auto-trigger in quests_base.js.
-    if (typeof QuestEngine !== 'undefined') {
-      QuestEngine.emit('combat_hurt', { attacker: e.type, damage: dmg });
-    }
-    // Shark has a distinctive bite sound and blood spray
-    if(e.type === 'shark') {
-      Sound.sharkBite();
-      addFloatingText(e.x, e.y, '🩸', '#cc0000', 24);
-      addFloatingText(player.x, player.y, '🩸', '#cc0000', 24);
-    }
-    
-    // #14: Mimic attacks with tumbling gold coins (ranged)
-    if(e.isMimic && e.type === 'mimic') {
-      Sound.playSample('mimic_attack', 0.7);
-      Sound.playSample('ka_ching', 0.5);
-      // Add tumbling gold coin visual effect
-      activeEffects.push({
-        kind: 'goldCoins',
-        x1: e.x, y1: e.y,
-        x2: player.x, y2: player.y,
-        color: '#FFD700',
-        life: 1.0,
-        power: 0.8
-      });
-      addFloatingText(player.x, player.y, '🪙', '#FFD700', 18);
-    }
-    
-    // Crown of Thorns — thorns damage to attacker
-    let headSlot = player.equipped.head;
-    if(headSlot && ItemDef.byIcon(headSlot) && ItemDef.byIcon(headSlot).thornsDmg) {
-      let thorns = ItemDef.byIcon(headSlot).thornsDmg;
-      e.stats.hp -= thorns;
-      addFloatingText(e.x, e.y, `-${thorns}🌿`, "#8f8", 14);
-      logMsg(`Crown of Thorns reflects ${thorns} damage!`);
-      if(e.stats.hp <= 0) {
-        logMsg(`The ${e.type} is destroyed by thorns!`);
-        player.xp += 50; checkLevelUp();
-        enemies.splice(enemyIndex, 1);
-      }
-    }
-    if(player.hp <= 0) die();
-  }
+  // (function monsterAttack(enemyIndex) retired Iter 4 — combat
+  // resolution now lives on NPC.attack(target, ctx) in src/npc.js.
+  // Callers used to be all in the legacy enemies.forEach block, now
+  // gone. The remaining call site was the ctx.monsterAttack bridge
+  // in makeNpcCtx — also retired; NPC.takeTurn calls this.attack
+  // directly.)
 
   function movePlayer(dx, dy) {
     if(isDead || player.isSleeping) return;
