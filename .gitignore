@@ -9,3 +9,7 @@ dev_build.html
 assets.json
 err
 log
+
+# Local-only credentials + ops scripts (intentionally not secured — throwaway PAT for GitHub mirror).
+GITHUB_TOKEN
+snapshot
