@@ -898,8 +898,8 @@
       if(window.WebGLFX && WebGLFX.onManaUse) WebGLFX.onManaUse(4);
       logMsg("<span style='color:#a87;'>⛏️ The tunnel spell tears through rock!</span>");
       Sound.playTone(80, 'sawtooth', 0.4, 0.1, 600);
-      document.getElementById('game').style.animation = 'rockViewport 0.8s ease-in-out';
-      setTimeout(() => document.getElementById('game').style.animation = '', 800);
+      document.getElementById('gameCanvas').style.animation = 'rockViewport 0.8s ease-in-out';
+      setTimeout(() => document.getElementById('gameCanvas').style.animation = '', 800);
       let cx = player.x, cy = player.y;
       let stepCount = 0;
       let digInt = setInterval(() => {

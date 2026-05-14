@@ -1594,7 +1594,7 @@ const hBtn = document.getElementById('hamburgerBtn');
   };
 
   // Fireball targeting click handler
-  const gameCanvas = document.getElementById('game');
+  const gameCanvas = document.getElementById('gameCanvas');
   if(gameCanvas) {
     function withinInteractionReach(targetX, targetY) {
       return Math.abs(targetX - player.x) <= 2 && Math.abs(targetY - player.y) <= 2;

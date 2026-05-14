@@ -1369,7 +1369,7 @@ function drawMinimap() {
 // Direction: 'east' (sweep right), 'west' (sweep left), 'north' (sweep up), 'south' (sweep down)
 // callback: function to call after sweep completes (generate new map, position player)
 window.mapSweepTransition = function(direction, callback) {
-  const gameCanvas = document.getElementById('game');
+  const gameCanvas = document.getElementById('gameCanvas');
   if(!gameCanvas) { callback(); return; }
 
   // Capture current frame

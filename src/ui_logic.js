@@ -425,11 +425,18 @@ function _performStickyMove(src, targetSource, target) {
       }
     });
 
-    // K1: Sync melee button icon with left-hand equipped item
+    // K1: Sync melee button icon with left-hand equipped item.
+    // player.equipped.leftHand holds a camelCase item NAME ('sword',
+    // 'longsword', etc) — resolve to its display icon via ItemDef.
+    // Legacy emoji values would short-circuit through iconOf's
+    // unknown-name fallback ('?'); guard with a presence check so
+    // an unequipped slot stays as fists 👊.
     const meleeIcon = document.getElementById('melee-icon');
     if (meleeIcon) {
       const lh = player.equipped && player.equipped.leftHand;
-      meleeIcon.textContent = lh || '👊';
+      meleeIcon.textContent = lh
+        ? (typeof ItemDef !== 'undefined' && ItemDef.iconOf ? ItemDef.iconOf(lh) : lh)
+        : '👊';
     }
   }
 
@@ -731,6 +738,29 @@ function _performStickyMove(src, targetSource, target) {
     // next tap shrinks to 90) and touch (60px, next tap shrinks to
     // 30). Only the wraparound state at 30 → 150 flips the glyph
     // to ▴, handled inside toggleLogCollapse.)
+
+    // ── DEV: size telemetry ───────────────────────────────────
+    // Log usable window/canvas/devicePixelRatio dimensions to the
+    // game log on boot and whenever the window resizes (handy for
+    // mobile UX tuning — knowing "what am I actually working with?"
+    // is step one for any layout call). Stripped from release by
+    // build_release.py if needed; for now it stays in dev builds.
+    const _logSize = (label) => {
+      try {
+        const can = document.getElementById('gameCanvas');
+        const vw  = window.innerWidth;
+        const vh  = window.innerHeight;
+        const cw  = can ? can.clientWidth  : '?';
+        const ch  = can ? can.clientHeight : '?';
+        const dpr = window.devicePixelRatio || 1;
+        const mode = window.IS_TOUCH ? 'touch' : 'desktop';
+        if (typeof logMsg === 'function') {
+          logMsg(`<span style='color:#8af'>[size ${label}] viewport=${vw}×${vh} canvas=${cw}×${ch} dpr=${dpr} mode=${mode}</span>`);
+        }
+      } catch (_) { /* ignore */ }
+    };
+    setTimeout(() => _logSize('init'), 50);
+    window.addEventListener('resize', () => _logSize('resize'));
 
     const sfxToggle = document.getElementById('sfx-toggle');
     const musicToggle = document.getElementById('music-toggle');

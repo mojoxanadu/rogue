@@ -59,6 +59,13 @@
 
   function _reportError(text) {
     window._lastError = text;
+    // Reveal the dev action bar (Test / Log / Err / 🗑) on first
+    // error. Hidden by default since it eats top-of-screen real
+    // estate; the user only needs it when something's actually
+    // wrong. Stays visible once shown — subsequent errors don't
+    // re-hide it.
+    var bar = document.getElementById('log-actions');
+    if (bar) bar.style.display = 'flex';
     if (typeof logMsg === 'function') {
       logMsg('<span class="log-error"><strong>JS Error</strong><pre>' + _escHtml(text) + '</pre></span>');
     } else {
@@ -179,7 +186,7 @@
 -->
 
 <!-- The primary game canvas. All dungeon rendering happens here via JavaScript. -->
-<canvas id="game"></canvas>
+<canvas id="gameCanvas"></canvas>
 
 <!--
   HUD (Heads‑Up Display) – Contains all overlay UI elements.
@@ -936,7 +943,11 @@
      they stack above any other fixed UI no matter what. Full viewport
      width to avoid any sizing surprises on narrow mobile screens. -->
 <!-- DEV-ONLY BEGIN: action bar (stripped by build_release.py) -->
-<div id="log-actions" class="interactive" style="position:fixed;top:0;left:0;width:100vw;display:flex;gap:2px;background:rgba(0,0,0,0.95);padding:4px;box-sizing:border-box;border-bottom:2px solid #888;z-index:2147483647;">
+<!-- Hidden by default — _reportError in <script> above unhides on first
+     exception. Saves top-of-screen real estate when nothing's wrong.
+     The 🧪 Test button is for verifying the capture pipeline; trigger
+     it once and the bar stays visible for the rest of the session. -->
+<div id="log-actions" class="interactive" style="position:fixed;top:0;left:0;width:100vw;display:none;gap:2px;background:rgba(0,0,0,0.95);padding:4px;box-sizing:border-box;border-bottom:2px solid #888;z-index:2147483647;">
   <button onclick="testErrorCapture()" title="Trigger a test exception (verify capture works)" style="flex:1 1 0;font-size:13px;padding:8px 0;cursor:pointer;background:#3a2a4a;color:#dcf;border:1px solid #75a;border-radius:3px;">🧪 Test</button>
   <button onclick="copyLog()" title="Copy entire game log to clipboard" style="flex:1 1 0;font-size:13px;padding:8px 0;cursor:pointer;background:#2a2a2a;color:#ddd;border:1px solid #555;border-radius:3px;">📋 Log</button>
   <button onclick="copyLastError()" title="Copy most recent exception + stack to clipboard" style="flex:1 1 0;font-size:13px;padding:8px 0;cursor:pointer;background:#5a1a1a;color:#fdd;border:1px solid #a55;border-radius:3px;">⚠ Err</button>
