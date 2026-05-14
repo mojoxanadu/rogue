@@ -240,8 +240,11 @@
     <div class="icon-btn" onclick="meleeAttack()" title="Melee Attack (Space)"><div class="keybind-hint">SPC</div><span id="melee-icon">🗡️</span></div>
   </div>
 
-  <!-- Game message log. Entries are added via logMsg() in ui_logic.js. Draggable but not closable. -->
+  <!-- Game message log. Entries added via logMsg() in ui_logic.js.
+       Draggable; collapse button in top-right toggles body visibility
+       (handy on mobile where the log eats a lot of vertical space). -->
   <div id="log-overlay" class="interactive">
+    <button id="log-collapse" onclick="toggleLogCollapse()" title="Collapse log">▾</button>
     <div id="log-body" style="cursor:move;">
       <div id="log"></div>
     </div>

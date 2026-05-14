@@ -134,6 +134,23 @@ function _performStickyMove(src, targetSource, target) {
   }
 
 // === Core UI & Layout Control ===
+  // Cycle the game log height through 5 steps: 150 → 120 → 90 → 60 →
+  // 30, then wrap back to 150. Useful on mobile where the log eats
+  // vertical space. Button glyph is ▾ while there's room to shrink
+  // (next tap will reduce by 30) and ▴ at the minimum (next tap
+  // jumps back to 150 — the "expand" direction).
+  window.toggleLogCollapse = function() {
+    const body = document.getElementById('log-body');
+    const btn  = document.getElementById('log-collapse');
+    if (!body) return;
+    const current = parseInt(body.style.height, 10)
+                 || parseInt(getComputedStyle(body).height, 10)
+                 || 60;
+    const next = current <= 30 ? 150 : current - 30;
+    body.style.height = next + 'px';
+    if (btn) btn.textContent = next <= 30 ? '▴' : '▾';
+  };
+
   function logMsg(msg) {
     const logDiv = document.getElementById('log');
     const logOverlay = document.getElementById('log-overlay');

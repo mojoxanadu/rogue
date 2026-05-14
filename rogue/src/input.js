@@ -1633,58 +1633,46 @@ const hBtn = document.getElementById('hamburgerBtn');
 
     // Compute the dx/dy for the first step of the shortest 8-way
     // path from (sx,sy) to (tx,ty). Returns {dx,dy} or null.
-    function _firstStepToward(sx, sy, tx, ty) {
-      if(tx === sx && ty === sy) return null;
-      if(tx < 0 || tx >= mapW || ty < 0 || ty >= mapH) return null;
-      // Enemy index for O(1) blocking-tile lookup during BFS.
-      const enemyAt = new Set();
-      for(const en of enemies) enemyAt.add(`${en.x},${en.y}`);
-      // visited[y][x] stores the {dx,dy} of the FIRST step taken from
-      // (sx,sy) to reach that cell — propagated as BFS expands.
-      const firstStep = new Array(mapH).fill(null).map(() => new Array(mapW).fill(null));
-      const visited   = new Array(mapH).fill(null).map(() => new Array(mapW).fill(false));
-      const queue = [[sx, sy]];
-      visited[sy][sx] = true;
-      while(queue.length) {
-        const [x, y] = queue.shift();
-        for(let ddy = -1; ddy <= 1; ddy++) {
-          for(let ddx = -1; ddx <= 1; ddx++) {
-            if(ddx === 0 && ddy === 0) continue;
-            const nx = x + ddx, ny = y + ddy;
-            if(nx < 0 || nx >= mapW || ny < 0 || ny >= mapH) continue;
-            if(visited[ny][nx]) continue;
-            const isGoal = (nx === tx && ny === ty);
-            // Non-goal intermediates must be walkable & enemy-free.
-            // The goal is always reachable as a final step so bump
-            // logic (combat / NPC dialog) can fire.
-            if(!isGoal) {
-              if(!theMap[ny] || !isTileFloor(theMap[ny][nx])) continue;
-              if(enemyAt.has(`${nx},${ny}`)) continue;
-            }
-            visited[ny][nx] = true;
-            // First step is captured from start cell; deeper cells
-            // inherit their parent's first-step direction.
-            firstStep[ny][nx] = (x === sx && y === sy)
-              ? { dx: ddx, dy: ddy }
-              : firstStep[y][x];
-            if(isGoal) return firstStep[ny][nx];
-            queue.push([nx, ny]);
-          }
-        }
-      }
-      return null;
-    }
+    // Tap-to-move: invisible 8-way dpad centered on the player. The
+    // canvas is divided into eight 45° wedges around player center;
+    // a tap in any wedge moves one step in that direction. Bump logic
+    // (NPC dialog, combat, locked doors) is handled by movePlayer().
+    // A tap that lands on the player tile itself is treated as no-op.
+    //
+    // The 8 wedge indices follow atan2 quadrants — 0=E, increases
+    // clockwise (because canvas y goes down) through SE, S, SW, W,
+    // NW, N, NE.
+    const DPAD_DIRS = [
+      { dx:  1, dy:  0 },  // 0  E
+      { dx:  1, dy:  1 },  // 1  SE
+      { dx:  0, dy:  1 },  // 2  S
+      { dx: -1, dy:  1 },  // 3  SW
+      { dx: -1, dy:  0 },  // 4  W
+      { dx: -1, dy: -1 },  // 5  NW
+      { dx:  0, dy: -1 },  // 6  N
+      { dx:  1, dy: -1 },  // 7  NE
+    ];
 
     gameCanvas.addEventListener('click', (e) => {
       if(isDead) return;
-      // Yield to the targeting handlers above — they consume the click.
+      // Yield to targeting handlers above — they consume the click.
       if(window._fireballTargeting || window._rangedTargeting) return;
       const rect = gameCanvas.getBoundingClientRect();
       const cx = Math.floor(VIEW_COLS / 2), cy = Math.floor(VIEW_ROWS / 2);
-      const tx = player.x + Math.floor((e.clientX - rect.left) / TILE_SIZE) - cx;
-      const ty = player.y + Math.floor((e.clientY - rect.top)  / TILE_SIZE) - cy;
-      const step = _firstStepToward(player.x, player.y, tx, ty);
-      if(step) movePlayer(step.dx, step.dy);
+      // Player is rendered at the center tile; compute pixel offset
+      // from the player's center pixel to the tap point.
+      const px = (cx + 0.5) * TILE_SIZE;
+      const py = (cy + 0.5) * TILE_SIZE;
+      const dxPx = (e.clientX - rect.left) - px;
+      const dyPx = (e.clientY - rect.top)  - py;
+      // Dead-zone radius — taps within ~40% of a tile are treated as
+      // "on the player" and ignored. Prevents accidental moves when
+      // tapping the player to inspect / open context UI later.
+      if (Math.hypot(dxPx, dyPx) < TILE_SIZE * 0.4) return;
+      const angle = Math.atan2(dyPx, dxPx);     // 0 = east, +PI/2 = south
+      const wedge = ((Math.round(angle * 4 / Math.PI) + 8) % 8);
+      const d = DPAD_DIRS[wedge];
+      movePlayer(d.dx, d.dy);
     });
     // Bug 26: Handle drag-drop of inventory items onto the map
     gameCanvas.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });

@@ -816,12 +816,30 @@
       });
     }
 
-    // The real per-NPC AI dispatch.
+    // Per-NPC AI dispatch via runScheduler (step 5d/Iter 3).
+    //
+    // The scheduler drives cooldown-paced calls: fast NPCs (high
+    // stats.speed → small cooldowns.move) take multiple turns per
+    // player turn; slow NPCs take fewer; immobile NPCs (STATIONARY
+    // behavior) no-op their takeTurn but still tick through the
+    // scheduler so any attached Conditions fire.
+    //
+    // localPlayer.actionCooldown gets bumped by `steps` so the
+    // scheduler drains time until the player is ready again,
+    // letting NPCs act in the meantime. Returns 'player-turn' (or
+    // 'brake'/'idle'/'timeout') and we hand control back.
     {
       const ctx = makeNpcCtx({ isScene: false, steps });
-      for (const e of enemies) {
-        if (!e || !e.stats) continue;
-        if (typeof e.takeTurn === 'function') e.takeTurn(ctx);
+      const live = enemies.filter(e =>
+        e && e.stats && typeof e.takeTurn === 'function'
+      );
+      if (typeof runScheduler === 'function' && typeof localPlayer !== 'undefined') {
+        localPlayer.actionCooldown = Math.max(0, localPlayer.actionCooldown) + steps;
+        runScheduler([localPlayer, ...live], localPlayer, (e) => e.takeTurn(ctx));
+      } else {
+        // Fallback: scheduler not loaded (shouldn't happen in normal
+        // builds — defensive). Single dispatch pass, no cooldowns.
+        for (const e of live) e.takeTurn(ctx);
       }
     }
 
@@ -889,21 +907,8 @@
     }
 
     calculateFOV(); drawMap(); updateUI();
-
-    // ─── Step 5c: scheduler wired for LocalPlayer only ─────────
-    // Bump the player's actionCooldown by the advanceTurn step count,
-    // then drain it through runScheduler so any Conditions attached
-    // to localPlayer tick + fire via the new path. Enemies stay on
-    // the legacy actionTimer/forEach above — they Sentient-migrate
-    // (and join this scheduler list) in step 5d.
-    //
-    // No-op for the player today (no Conditions attached yet) but
-    // the seam is now live: future commits attach poison/regen/etc
-    // as Conditions and they tick automatically here.
-    if (typeof runScheduler === 'function' && typeof localPlayer !== 'undefined') {
-      localPlayer.actionCooldown = Math.max(0, localPlayer.actionCooldown) + steps;
-      runScheduler([localPlayer], localPlayer, () => 'move');
-    }
+    // (Iter 3: runScheduler dispatch moved up to where the per-NPC
+    // AI block lives — single call handles player + all enemies.)
   }
 
   // E16: Bomb explosion
