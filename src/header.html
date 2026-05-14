@@ -250,8 +250,13 @@
   }
   #log-body {
     padding: 8px; overflow-y: auto; font-family: monospace; font-size: 12px;
-    height: 60px; cursor: move;
+    height: 120px; cursor: move;
   }
+  /* Touch-device default: log starts at 60px (half-height). The
+     toggle button continues the cycle from there (next tap → 30,
+     then wraps to 150). Inline style.height set via toggleLogCollapse
+     overrides this rule once the user interacts. */
+  body.touch #log-body { height: 60px; }
   #log-collapse {
     position: absolute; top: 2px; right: 4px;
     background: transparent; color: #ccc; border: none;

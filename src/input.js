@@ -1662,6 +1662,12 @@ const hBtn = document.getElementById('hamburgerBtn');
       if(isDead) return;
       // Yield to targeting handlers above — they consume the click.
       if(window._fireballTargeting || window._rangedTargeting) return;
+      // Tap-to-move is a TOUCH-ONLY input affordance. On desktop,
+      // clicks on the map are usually misfires while reading; the
+      // keyboard owns movement. Gate the dpad behind IS_TOUCH so
+      // desktop clicks do nothing here. URL ?mobile=1 enables it
+      // in a desktop browser for testing.
+      if(!window.IS_TOUCH) return;
       const rect = gameCanvas.getBoundingClientRect();
       const cx = Math.floor(VIEW_COLS / 2), cy = Math.floor(VIEW_ROWS / 2);
       // Player is rendered at the center tile; compute pixel offset
