@@ -16,6 +16,11 @@ FILES = [
     # Entity hierarchy + World/Zone. UX-agnostic model classes; skeleton
     # only at this commit (no instantiation, no global wire-up yet).
     'entities.js',
+    # NPC (Non-Player Creature) hierarchy. Subclass of Sentient.
+    # Holds attitude + behavior + per-monster bookkeeping. Must load
+    # after entities.js (extends Sentient) and before any file that
+    # constructs NPCs (engine.js spawn sites, map.js town setup).
+    'npc.js',
     'world.js',
     # Cooldown-based turn-loop driver. UX-agnostic; uses the Sentient
     # interface defined in entities.js. Wired into the game loop in

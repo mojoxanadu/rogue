@@ -513,47 +513,94 @@
     logMsg("<span style='color:var(--success)'>Welcome back, adventurer. A new journey begins...</span>");
   };
 
-  function advanceSceneNPCs(nowMs = Date.now()) {
-    let moved = false;
-    // Sheep following logic — move toward _followTarget
-    enemies.forEach(e => {
-      if(!e || !e._followTarget) return;
-      const target = enemies.find(t => t && t.type === e._followTarget);
-      if(!target) return;
-      const dist = Math.hypot(e.x - target.x, e.y - target.y);
-      if(dist < 1.5) return; // close enough
-      const dx = Math.sign(target.x - e.x);
-      const dy = Math.sign(target.y - e.y);
-      // Try to move toward target
-      const dirs = [{dx,dy},{dx,dy:0},{dx:0,dy}].sort(() => Math.random() - 0.5);
-      for(const d of dirs) {
-        const nx = e.x + d.dx, ny = e.y + d.dy;
-        if(theMap[ny] && theMap[ny][nx] !== TILES.WALL &&
-           !enemies.some(o => o !== e && o !== target && o.x === nx && o.y === ny) &&
-           !(player.x === nx && player.y === ny)) {
-          e.x = nx; e.y = ny; moved = true; break;
+  // Lazy hydration: any plain-object enemy in enemies[] gets promoted
+  // to an NPC subclass instance on first dispatch. Lets spawn sites
+  // keep using `enemies.push({...})` during the migration — the
+  // dispatcher promotes them on demand. Once all spawn sites are
+  // converted to NPC.fromSpec() we can retire this.
+  function hydrateEnemiesToNPCs() {
+    if (typeof NPC === 'undefined' || typeof NPC.fromSpec !== 'function') return;
+    for (let i = 0; i < enemies.length; i++) {
+      const e = enemies[i];
+      if (e && !(e instanceof NPC)) enemies[i] = NPC.fromSpec(e);
+    }
+  }
+  window.hydrateEnemiesToNPCs = hydrateEnemiesToNPCs;
+
+  // Build the ctx object passed to NPC.takeTurn(). Wires view-layer
+  // hooks (Sound, logMsg, addFloatingText, WebGLFX) as callbacks so
+  // the model never names them directly. A future commit can swap
+  // these for an event stream without touching NPC classes.
+  function makeNpcCtx(opts = {}) {
+    return {
+      isScene:      !!opts.isScene,
+      nowMs:        opts.nowMs ?? Date.now(),
+      steps:        opts.steps ?? 1,
+      player, theMap, mapW, mapH, enemies, itemsOnGround,
+      TILES, CONSTANTS, currentScene,
+      isTileFloor,
+      _movedFlag:   false,
+      markMoved()  { this._movedFlag = true; },
+      sound(name, vol, fallback) {
+        if (typeof Sound === 'undefined') return;
+        if (Sound.playSample && Sound.playSample(name, vol ?? 0.5)) return;
+        if (fallback) {
+          Sound.playTone(
+            (fallback.freq ?? 200) + (fallback.freqJitter ? Math.random() * fallback.freqJitter : 0),
+            fallback.kind ?? 'sine',
+            fallback.vol  ?? 0.1,
+            fallback.dur  ?? 0.1,
+            fallback.decay ?? 50,
+          );
         }
-      }
-    });
-    // Patrol NPCs
-    enemies.forEach(e => {
-      if(!e || !e.isSceneNPC || !e.patrolPath || e.patrolPath.length === 0) return;
-      const moveInterval = Math.max(250, e.sceneMoveIntervalMs ?? 800);
-      if(typeof e._sceneNextMoveAt !== 'number') e._sceneNextMoveAt = nowMs;
-      if(nowMs < e._sceneNextMoveAt) return;
-      e._sceneNextMoveAt = nowMs + moveInterval;
-      let nextIndex = ((e.patrolIndex ?? 0) + 1) % e.patrolPath.length;
-      let nextStep = e.patrolPath[nextIndex];
-      if(!nextStep) return;
-      if(player.x === nextStep.x && player.y === nextStep.y) return;
-      const pdx = nextStep.x - e.x;
-      if(pdx !== 0) e._lastDx = pdx;
-      e.x = nextStep.x;
-      e.y = nextStep.y;
-      e.patrolIndex = nextIndex;
-      moved = true;
-    });
-    return moved;
+      },
+      voice(key) {
+        if (typeof Sound !== 'undefined' && Sound.playVoice) Sound.playVoice(key);
+      },
+      tone(freq, kind, vol, dur, decay) {
+        if (typeof Sound !== 'undefined' && Sound.playTone) Sound.playTone(freq, kind, vol, dur, decay);
+      },
+      log(html) { logMsg(html); },
+      floatText(x, y, text, color, size) { addFloatingText(x, y, text, color, size); },
+      spawnFx(specObj) {
+        if (Array.isArray(activeEffects)) activeEffects.push(specObj);
+      },
+      webglImpact(dmg, x, y) {
+        if (window.WebGLFX && WebGLFX.onCombatImpact) WebGLFX.onCombatImpact(dmg, x, y);
+      },
+      // Apply HP loss to player + tint + floating text + die() check.
+      // Returns true if die() fired so callers can early-return.
+      damagePlayer(dmg, kind, size, suffix, color) {
+        player.hp -= dmg;
+        damageTint = 30;
+        const label = suffix ? `-${dmg}${suffix}` : `-${dmg}`;
+        addFloatingText(player.x, player.y, label, color || '#f00', size ?? 22);
+        if (window.WebGLFX && WebGLFX.onPlayerDamage) WebGLFX.onPlayerDamage(dmg, kind);
+        if (player.hp <= 0) { die(); return true; }
+        return false;
+      },
+      // Bridge to legacy monsterAttack / thiefSteal which still
+      // operate on enemies[] indices. NPC.takeTurn passes the
+      // instance; we resolve the index by reference here.
+      monsterAttack(npc) {
+        const idx = enemies.indexOf(npc);
+        if (idx >= 0) monsterAttack(idx);
+      },
+      thiefSteal(npc) {
+        const idx = enemies.indexOf(npc);
+        if (idx >= 0) thiefSteal(idx);
+      },
+    };
+  }
+  window.makeNpcCtx = makeNpcCtx;
+
+  function advanceSceneNPCs(nowMs = Date.now()) {
+    hydrateEnemiesToNPCs();
+    const ctx = makeNpcCtx({ isScene: true, nowMs });
+    for (const e of enemies) {
+      if (e && typeof e.takeTurn === 'function') e.takeTurn(ctx);
+    }
+    return ctx._movedFlag;
   }
   window.advanceSceneNPCs = advanceSceneNPCs;
 
@@ -741,11 +788,21 @@
     });
 
     // AI and NPC Logic
-    enemies.forEach((e, eIdx) => {
-      if(!e.stats) return;
+    // ── Per-NPC AI dispatch (moved out of engine into src/npc.js) ──
+    //
+    // Step 5d: the old 440-line enemies.forEach switch was lifted into
+    // class methods on NPC + 8 typed subclasses (Ifrit, FrenchTaunter,
+    // Thief, Fence, Mimic, Shark, Zombie, Pixie). The engine now just
+    // builds a ctx and dispatches. Tristram boundary push-back is
+    // ENVIRONMENTAL (lives in engine, runs as a pre-pass before AI).
 
-      // B.759: ensure pixies/peasants stay outside Tristram walls.
-      if(currentScene === 'town' && window._tristramBounds && (e.type === 'pixie' || e.type === 'muck_peasant')) {
+    hydrateEnemiesToNPCs();
+
+    // Tristram boundary pre-pass — keep wandering NPCs outside town walls.
+    if(currentScene === 'town' && window._tristramBounds) {
+      enemies.forEach(e => {
+        if(!e || !e.stats) return;
+        if(e.type !== 'pixie' && e.type !== 'muck_peasant') return;
         const b = window._tristramBounds;
         const wallDx = e.x < b.x1 ? (b.x1 - e.x) : (e.x > b.x2 ? e.x - b.x2 : 0);
         const wallDy = e.y < b.y1 ? (b.y1 - e.y) : (e.y > b.y2 ? e.y - b.y2 : 0);
@@ -756,10 +813,18 @@
           e.x = Math.max(2, Math.min(mapW - 3, gx + (e.type === 'pixie' ? 34 : -9)));
           e.y = Math.max(2, Math.min(mapH - 3, gy + 8));
         }
-      }
+      });
+    }
 
-      // B.757: keep Mended Drum regulars in the chat UI, not roaming outdoors.
-      if(e._stayInShop || ['cohen','librarian','vimes','bearded_dwarf'].includes(e.type)) return;
+    // The real per-NPC AI dispatch.
+    {
+      const ctx = makeNpcCtx({ isScene: false, steps });
+      for (const e of enemies) {
+        if (!e || !e.stats) continue;
+        if (typeof e.takeTurn === 'function') e.takeTurn(ctx);
+      }
+    }
+    /* legacy block removed — see src/npc.js for ported behavior:
 
       // Bug 25: Wandering NPC AI — random walk every 5 turns, no player chasing
       if(e.stats.wandering) {
@@ -1185,6 +1250,7 @@
         }
       }
     });
+    */
 
     // Spawn new monsters over time
     if (currentScene === 'dungeon' && Math.random() < CONSTANTS.SPAWN_RATE * steps) {
