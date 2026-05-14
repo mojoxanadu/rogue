@@ -142,6 +142,206 @@ test('Sentient: maxHp defaults to hp when not specified', () => {
   assert.equal(s.maxHp, 25);
 });
 
+
+// ─── Sentient cooldown turn-loop fields ──────────────────────
+// actionCooldown gates acting. cooldowns hash gives per-action cost.
+// conditions are an ARRAY (stackable — two poisons are two entries)
+// of Condition instances that tick independently.
+
+test('Sentient cooldown fields: defaults', () => {
+  const { Sentient } = setup();
+  const s = new Sentient();
+  assert.equal(s.actionCooldown, 0);
+  assert.equal(s.canAct(), true);
+  assert.deepEqual(s.cooldowns, Sentient.DEFAULT_COOLDOWNS);
+  assert.equal(Array.isArray(s.conditions), true);
+  assert.equal(s.conditions.length, 0);
+});
+
+test('Sentient.DEFAULT_COOLDOWNS: { move: 1.0, attack: 1.0 }', () => {
+  const { Sentient } = setup();
+  assert.equal(Sentient.DEFAULT_COOLDOWNS.move,   1.0);
+  assert.equal(Sentient.DEFAULT_COOLDOWNS.attack, 1.0);
+});
+
+test('Sentient.actionCost reads from cooldowns; missing → 1.0', () => {
+  const { Sentient } = setup();
+  const s = new Sentient({ cooldowns: { move: 0.5, attack: 1.5, cast: 2.0 } });
+  assert.equal(s.actionCost('move'),    0.5);
+  assert.equal(s.actionCost('attack'),  1.5);
+  assert.equal(s.actionCost('cast'),    2.0);
+  assert.equal(s.actionCost('unknown'), 1.0);
+});
+
+test('Sentient.canAct() reflects actionCooldown', () => {
+  const { Sentient } = setup();
+  const s = new Sentient({ actionCooldown: 0.5 });
+  assert.equal(s.canAct(), false);
+  s.actionCooldown = 0;
+  assert.equal(s.canAct(), true);
+  s.actionCooldown = -0.1;  // never expected but defensive
+  assert.equal(s.canAct(), true);
+});
+
+test('Sentient.tick: decrements actionCooldown, floors at 0', () => {
+  const { Sentient } = setup();
+  const s = new Sentient({ actionCooldown: 1.0 });
+  s.tick(0.3);
+  assert.ok(Math.abs(s.actionCooldown - 0.7) < 1e-9);
+  s.tick(0.5);
+  assert.ok(Math.abs(s.actionCooldown - 0.2) < 1e-9);
+  s.tick(0.5);  // overshoots — should clamp at 0
+  assert.equal(s.actionCooldown, 0);
+});
+
+test('Sentient.tick: decrements every condition cooldown', () => {
+  const { Sentient, Condition } = setup();
+  const s = new Sentient();
+  s.conditions.push(new Condition({ name: 'a', interval: 1.0 }));
+  s.conditions.push(new Condition({ name: 'b', interval: 2.0 }));
+  s.tick(0.4);
+  assert.ok(Math.abs(s.conditions[0].cooldown - 0.6) < 1e-9);
+  assert.ok(Math.abs(s.conditions[1].cooldown - 1.6) < 1e-9);
+});
+
+
+// ─── Condition class ─────────────────────────────────────────
+
+test('Condition defaults', () => {
+  const { Condition } = setup();
+  const c = new Condition();
+  assert.equal(c.name, 'unnamed');
+  assert.equal(c.interval, 1.0);
+  assert.equal(c.pointsRemaining, 1);
+  assert.equal(c.cooldown, 1.0);
+  assert.equal(typeof c.onTick, 'function');
+  assert.equal(c.isDue(), false);
+  assert.equal(c.isExhausted(), false);
+});
+
+test('Condition.cooldown defaults to interval', () => {
+  const { Condition } = setup();
+  const c = new Condition({ interval: 2.5 });
+  assert.equal(c.cooldown, 2.5);
+});
+
+test('Condition.cooldown spec override', () => {
+  const { Condition } = setup();
+  const c = new Condition({ interval: 1.0, cooldown: 0.3 });
+  assert.equal(c.cooldown, 0.3);
+});
+
+
+// ─── Sentient.fireDueConditions ──────────────────────────────
+
+test('fireDueConditions: fires when due, decrements points, resets cooldown', () => {
+  const { Sentient, Condition } = setup();
+  const log = [];
+  const s = new Sentient({ hp: 10, maxHp: 10 });
+  s.conditions.push(new Condition({
+    name: 'poison', interval: 1.0, pointsRemaining: 3,
+    onTick: (sentient) => { sentient.hp -= 1; log.push('poison'); },
+  }));
+  // Cooldown is 1.0 at start. Tick by 1.0 → due.
+  s.tick(1.0);
+  assert.equal(s.conditions[0].isDue(), true);
+  const fired = s.fireDueConditions();
+  assert.equal(fired.length, 1);
+  assert.equal(fired[0], 'poison');
+  assert.equal(s.hp, 9);
+  assert.equal(s.conditions[0].pointsRemaining, 2);
+  assert.ok(Math.abs(s.conditions[0].cooldown - 1.0) < 1e-9);
+});
+
+test('fireDueConditions: large delta fires multiple times', () => {
+  const { Sentient, Condition } = setup();
+  const s = new Sentient({ hp: 100 });
+  s.conditions.push(new Condition({
+    name: 'poison', interval: 1.0, pointsRemaining: 5,
+    onTick: (e) => { e.hp -= 2; },
+  }));
+  // cooldown starts at 1.0; tick by 3.5 → cooldown = -2.5
+  // Should fire 3 times: cooldown -2.5 → -1.5 → -0.5 → +0.5
+  s.tick(3.5);
+  const fired = s.fireDueConditions();
+  assert.equal(fired.length, 3);
+  assert.equal(s.hp, 100 - 2 * 3);
+  assert.equal(s.conditions[0].pointsRemaining, 2);
+  assert.ok(Math.abs(s.conditions[0].cooldown - 0.5) < 1e-9);
+});
+
+test('fireDueConditions: removes condition when points exhausted', () => {
+  const { Sentient, Condition } = setup();
+  const s = new Sentient({ hp: 10 });
+  s.conditions.push(new Condition({
+    name: 'poison', interval: 1.0, pointsRemaining: 1,
+    onTick: (e) => { e.hp -= 1; },
+  }));
+  s.tick(1.0);
+  s.fireDueConditions();
+  assert.equal(s.conditions.length, 0,
+    'exhausted condition (pointsRemaining=0 after firing) auto-removed');
+});
+
+test('fireDueConditions: stacked same-name conditions tick independently', () => {
+  const { Sentient, Condition } = setup();
+  const s = new Sentient({ hp: 100 });
+  s.conditions.push(new Condition({
+    name: 'poison', interval: 1.0, pointsRemaining: 2,
+    onTick: (e) => { e.hp -= 1; },
+  }));
+  // Second poison applied later — its cooldown is also 1.0 fresh, so
+  // it ticks together with the first one but stays an independent entry.
+  s.conditions.push(new Condition({
+    name: 'poison', interval: 1.0, pointsRemaining: 2,
+    onTick: (e) => { e.hp -= 1; },
+  }));
+  assert.equal(s.conditions.length, 2);
+  s.tick(1.0);
+  s.fireDueConditions();
+  // Both poisons fired once → hp -2; both still have 1 point left.
+  assert.equal(s.hp, 98);
+  assert.equal(s.conditions.length, 2);
+  s.tick(1.0);
+  s.fireDueConditions();
+  // Both fired again, both exhausted, both removed.
+  assert.equal(s.hp, 96);
+  assert.equal(s.conditions.length, 0);
+});
+
+test('fireDueConditions: not-yet-due conditions stay untouched', () => {
+  const { Sentient, Condition } = setup();
+  const s = new Sentient({ hp: 10 });
+  s.conditions.push(new Condition({
+    name: 'regen', interval: 2.0, pointsRemaining: 3,
+    onTick: (e) => { e.hp += 1; },
+  }));
+  s.tick(0.5);  // cooldown 2.0 → 1.5, not due
+  const fired = s.fireDueConditions();
+  assert.equal(fired.length, 0);
+  assert.equal(s.hp, 10);
+  assert.equal(s.conditions.length, 1);
+});
+
+
+// ─── Inheritance: Player & LocalPlayer get cooldown fields too ──
+
+test('Player inherits cooldown fields with Sentient defaults', () => {
+  const { Player, Sentient } = setup();
+  const p = new Player();
+  assert.equal(p.actionCooldown, 0);
+  assert.equal(p.canAct(), true);
+  assert.deepEqual(p.cooldowns, Sentient.DEFAULT_COOLDOWNS);
+  assert.equal(p.conditions.length, 0);
+});
+
+test('LocalPlayer inherits cooldown fields with Sentient defaults', () => {
+  const { LocalPlayer, Sentient } = setup();
+  const lp = new LocalPlayer();
+  assert.equal(lp.actionCooldown, 0);
+  assert.deepEqual(lp.cooldowns, Sentient.DEFAULT_COOLDOWNS);
+});
+
 // ─── Sentient combat surface ──────────────────────────────────
 // Sentient owns the combat-roll fields and the four primitives every
 // fighter uses: effectiveHitRate, effectiveCritRate, effectiveDodgeRate,
