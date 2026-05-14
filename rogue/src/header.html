@@ -281,6 +281,11 @@
     overflow: visible; opacity: 0.85;
     width: 166px;
   }
+  /* Mobile: minimap eats too much top-right real estate for what it
+     gives (a 150x150 circular overview that overlaps gameplay tiles).
+     Hidden entirely on touch devices — keyboard-driven players still
+     get it on desktop. */
+  body.touch #minimap-container { display: none; }
   #minimap-zoom-btns {
     position: absolute; top: 4px; right: 4px; display: flex; gap: 2px; z-index: 20;
   }
@@ -304,6 +309,32 @@
     border-radius: 8px; z-index: 100; pointer-events: auto; display: none; flex-direction: column;
     min-width: 250px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
   }
+
+  /* ─── Mobile: pin every draggable modal to the viewport ──────
+     The inline style="top: ...; left: ...; width: ..." attributes
+     on each modal beat normal CSS specificity, so !important is
+     necessary. Rule covers ALL draggable modals uniformly: full
+     viewport width minus an 8px inset on every side, with the
+     modal-body scrolling internally if its content overflows.
+     Inline left/width values are overridden; the modal becomes
+     "as wide as the phone allows" regardless of its desktop layout.
+
+     Modals with narrower desktop widths (220px equip, 300px magic,
+     320px settings) stretch to full-width too — acceptable on a
+     493-CSS-px viewport where horizontal space is the scarce thing.
+
+     Modals with internal scrollers (achieve-body, quest-body, debug-
+     modal-body) keep working — the outer max-height clamp shrinks
+     the inner scroll region naturally. */
+  body.touch .draggable-modal {
+    top: 8px !important; left: 8px !important; right: 8px !important;
+    width: auto !important; max-width: none; min-width: 0;
+    max-height: calc(100vh - 16px);
+  }
+  body.touch .draggable-modal .modal-body {
+    overflow: auto; max-height: calc(100vh - 64px);
+  }
+
   .modal-header {
     background: var(--surface-container); padding: 8px 12px; border-radius: 6px 6px 0 0;
     display: flex; justify-content: space-between; align-items: center; cursor: move;

@@ -82,7 +82,7 @@
   };
 
   // Canvas references and tile‑size configuration.
-  const canvas = document.getElementById('game');
+  const canvas = document.getElementById('gameCanvas');
   const ctx = canvas.getContext('2d');
   const TILE_SIZE = 32;
   // Set canvas dimensions to match viewport size immediately
