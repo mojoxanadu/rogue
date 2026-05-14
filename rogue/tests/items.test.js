@@ -2,7 +2,7 @@
 //
 // Each test loads items.js fresh into a sandboxed VM context (see _harness.js),
 // then stubs the global ItemDefs registry that the classes consult via getters.
-// No reliance on items_registry.js or the real ITEM_DEF data — pure unit tests
+// No reliance on items_registry.js or LEGACY_ITEM_DATA — pure unit tests
 // of the class behavior.
 
 const test   = require('node:test');

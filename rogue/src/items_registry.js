@@ -2,13 +2,15 @@
 //  ITEMS REGISTRY  –  src/items_registry.js
 //
 //  Builds the global ItemDefs map (camelCase name → ItemDef) from
-//  the legacy emoji-keyed ITEM_DEF dictionary in state.js. Both
-//  registries coexist during the migration; new code reads
-//  ItemDefs[name], old code keeps reading ITEM_DEF[emoji] until
-//  call sites are migrated one at a time.
+//  the LEGACY_ITEM_DATA table in state.js. ItemDefs is the only
+//  runtime registry game code should read — LEGACY_ITEM_DATA is
+//  source-data, not a registry, and exists only to feed this
+//  builder. Eventual goal: hand-port each LEGACY_ITEM_DATA entry
+//  into a `new ItemDef({...})` here directly, after which the
+//  legacy table can be deleted.
 //
-//  Must be concatenated AFTER state.js (which declares ITEM_DEF)
-//  and items.js (which defines the ItemDef class).
+//  Must be concatenated AFTER state.js (which declares
+//  LEGACY_ITEM_DATA) and items.js (which defines the ItemDef class).
 // ============================================================
 
 const ItemDefs = {};
@@ -27,12 +29,12 @@ function _toCamelCase(displayName) {
 }
 
 (function buildItemDefsRegistry() {
-  if (typeof ITEM_DEF === 'undefined') {
-    console.warn('items_registry.js: ITEM_DEF not defined yet — registry empty');
+  if (typeof LEGACY_ITEM_DATA === 'undefined') {
+    console.warn('items_registry.js: LEGACY_ITEM_DATA not defined yet — registry empty');
     return;
   }
   const collisions = {};
-  for (const [icon, spec] of Object.entries(ITEM_DEF)) {
+  for (const [icon, spec] of Object.entries(LEGACY_ITEM_DATA)) {
     const name = _toCamelCase(spec.name);
     if (!name) {
       console.warn(`items_registry.js: skipping ${icon} (no derivable name from "${spec.name}")`);
@@ -62,7 +64,7 @@ function _toCamelCase(displayName) {
   if (colCount > 0) {
     console.warn(`items_registry.js: ${colCount} camelCase name collisions (first wins):`, collisions);
   }
-  console.log(`items_registry.js: built ${Object.keys(ItemDefs).length} ItemDefs from ${Object.keys(ITEM_DEF).length} ITEM_DEF entries`);
+  console.log(`items_registry.js: built ${Object.keys(ItemDefs).length} ItemDefs from ${Object.keys(LEGACY_ITEM_DATA).length} LEGACY_ITEM_DATA entries`);
 })();
 
 window.ItemDefs = ItemDefs;

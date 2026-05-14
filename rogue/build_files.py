@@ -10,7 +10,7 @@ FILES = [
     'state.js',
     # Item model classes (UX-agnostic). items.js defines the classes;
     # items_registry.js builds the camelCase-name registry from
-    # state.js's legacy emoji-keyed ITEM_DEF, so it must follow both.
+    # state.js's LEGACY_ITEM_DATA table, so it must follow both.
     'items.js',
     'items_registry.js',
     # Entity hierarchy + World/Zone. UX-agnostic model classes; skeleton

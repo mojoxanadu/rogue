@@ -123,7 +123,9 @@ function _performStickyMove(src, targetSource, target) {
 
 // === E13: Item Status Glow Helper ===
   function itemHasStatusEffect(icon) {
-    if(!icon || typeof ITEM_DEF === 'undefined') return false;
+    // Guard checks the runtime registry (ItemDefs / ItemDef.byIcon), not the
+    // legacy raw-data table — items_registry.js now owns the lookup path.
+    if(!icon || typeof ItemDefs === 'undefined') return false;
     const def = ItemDef.byIcon(icon);
     if(!def) return false;
     return !!(def.evadePercent || def.thornsDmg || def.intBonus || def.special ||
@@ -866,7 +868,7 @@ function _performStickyMove(src, targetSource, target) {
         player.maxMp += 10;
         player.mp = player.maxMp;
         player.spellDmgBonus += 2;
-        // Was '📜' (Certified Pastafarian per ITEM_DEF — useless item).
+        // Was '📜' (Certified Pastafarian per LEGACY_ITEM_DATA — useless item).
         // Likely a legacy bug; addToInventory is undefined so this branch
         // is dead anyway. Migration just removes the emoji literal.
         addToInventory('certifiedPastafarian');

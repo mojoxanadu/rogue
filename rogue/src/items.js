@@ -24,7 +24,7 @@
 //  logic from rendering.
 //
 //  See items_registry.js for how the registry is populated from
-//  the legacy emoji-keyed ITEM_DEF in state.js.
+//  the LEGACY_ITEM_DATA table in state.js.
 // ============================================================
 
 // ─── Constants (no magic numbers) ─────────────────────────────
@@ -241,7 +241,7 @@ class ItemStack {
    * If the icon isn't in the catalog, returns a stack whose
    * itemName is the icon itself (so the data isn't lost) and
    * logs a warning. That lets migration proceed without halting
-   * on icons that haven't been added to ITEM_DEF yet.
+   * on icons that haven't been added to LEGACY_ITEM_DATA yet.
    */
   static fromIcon(icon, qty = NON_STACKABLE_QTY) {
     const def = ItemDef.byIcon(icon);

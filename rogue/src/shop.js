@@ -1947,7 +1947,7 @@
   };
 
   // Add Red Herring item
-  // (This would normally go in ITEM_DEF but we'll add it here for the quest)
+  // (This would normally go in LEGACY_ITEM_DATA but we'll add it here for the quest)
   window.findRedHerring = () => {
     if(!player.hasRedHerring) {
       player.hasRedHerring = true;

@@ -3,7 +3,7 @@
 // that production code relies on. If state.js renames an item, these
 // tests fail loudly with which camelCase identifier broke.
 //
-// Method: stub a minimal ITEM_DEF in a fresh VM context, load items.js
+// Method: stub a minimal LEGACY_ITEM_DATA in a fresh VM context, load items.js
 // then items_registry.js, and assert against the resulting ItemDefs map.
 
 const test   = require('node:test');
@@ -13,7 +13,7 @@ const { newContext, loadInto } = require('./_harness');
 function buildRegistry(itemDef) {
   const ctx = newContext();
   loadInto(ctx, 'items.js');
-  ctx.ITEM_DEF = itemDef;
+  ctx.LEGACY_ITEM_DATA = itemDef;
   loadInto(ctx, 'items_registry.js');
   return ctx;
 }
@@ -21,7 +21,7 @@ function buildRegistry(itemDef) {
 
 // ─── Registry builder mechanics ──────────────────────────────
 
-test('Registry builds one ItemDef per ITEM_DEF entry, keyed by camelCase name', () => {
+test('Registry builds one ItemDef per LEGACY_ITEM_DATA entry, keyed by camelCase name', () => {
   const ctx = buildRegistry({
     '🥾': { name: 'Old Boot',       type: 'armor',  slot: 'feet', stackable: false },
     '🧪': { name: 'Health Potion',  type: 'potion', stackable: true, maxHeal: 25 },
@@ -71,7 +71,7 @@ test('Registry: two defs can share an icon (gold + uniqueCoin both use 🪙)', (
   // _byIcon for the conflicting icon resolves to the first registration.
   // (The test uses a distinct second icon to avoid pre-empting the reverse
   // map check; in production gold and uniqueCoin both legitimately use 🪙
-  // and byIcon('🪙') → uniqueCoin because it's declared first in ITEM_DEF.)
+  // and byIcon('🪙') → uniqueCoin because it's declared first in LEGACY_ITEM_DATA.)
   assert.equal(ctx.ItemDef.byIcon('🪙').name, 'uniqueCoin');
 });
 
