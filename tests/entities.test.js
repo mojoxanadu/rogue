@@ -333,12 +333,58 @@ test('Player has 6 named equip slots, all null', () => {
   }
 });
 
-test('Player XP/level/gp default to 0/1/0', () => {
+test('Player XP/level default to 0/1, gp default from Player.DEFAULTS', () => {
   const { Player } = setup();
   const p = new Player();
   assert.equal(p.xp,    0);
   assert.equal(p.level, 1);
-  assert.equal(p.gp,    0);
+  assert.equal(p.gp,    Player.DEFAULTS.gp);  // 100 by default
+});
+
+test('Player.DEFAULTS supplies starting combat stats', () => {
+  const { Player } = setup();
+  const p = new Player();
+  // hp/maxHp/mp/maxMp/baseDmg/hit-crit-dodge/per-school come from DEFAULTS
+  assert.equal(p.hp,             Player.DEFAULTS.hp);
+  assert.equal(p.maxHp,          Player.DEFAULTS.maxHp);
+  assert.equal(p.mp,             Player.DEFAULTS.mp);
+  assert.equal(p.maxMp,          Player.DEFAULTS.maxMp);
+  assert.equal(p.baseDmg,        Player.DEFAULTS.baseDmg);
+  assert.equal(p.meleeDmgBonus,  Player.DEFAULTS.meleeDmgBonus);
+  assert.equal(p.rangedDmgBonus, Player.DEFAULTS.rangedDmgBonus);
+  assert.equal(p.spellDmgBonus,  Player.DEFAULTS.spellDmgBonus);
+  assert.equal(p.hitRate,        Player.DEFAULTS.hitRate);
+  assert.equal(p.critRate,       Player.DEFAULTS.critRate);
+  assert.equal(p.dodgeRate,      Player.DEFAULTS.dodgeRate);
+});
+
+test('Player.DEFAULTS matches the legacy CONSTANTS.PLAYER_INITIAL_* values', () => {
+  // These numbers MUST remain identical to the old CONSTANTS.PLAYER_*
+  // constants until the wire-up commit migrates callers. If you intend
+  // to rebalance the starting Player, this test should be updated in
+  // the same commit so the change is explicit.
+  const { Player } = setup();
+  assert.equal(Player.DEFAULTS.maxHp,          16);
+  assert.equal(Player.DEFAULTS.maxMp,          0);
+  assert.equal(Player.DEFAULTS.gp,             100);
+  assert.equal(Player.DEFAULTS.baseDmg,        3);
+  assert.equal(Player.DEFAULTS.meleeDmgBonus,  0);
+  assert.equal(Player.DEFAULTS.rangedDmgBonus, 0);
+  assert.equal(Player.DEFAULTS.spellDmgBonus,  0);
+  assert.equal(Player.DEFAULTS.hitRate,        0.6);
+  assert.equal(Player.DEFAULTS.critRate,       0.0);
+  assert.equal(Player.DEFAULTS.dodgeRate,      0.0);
+});
+
+test('Player constructor: spec overrides DEFAULTS', () => {
+  const { Player } = setup();
+  const p = new Player({ hp: 50, maxHp: 50, gp: 9999, hitRate: 0.95 });
+  assert.equal(p.hp,      50);
+  assert.equal(p.maxHp,   50);
+  assert.equal(p.gp,      9999);
+  assert.equal(p.hitRate, 0.95);
+  // Unspecified fields still come from DEFAULTS
+  assert.equal(p.baseDmg, Player.DEFAULTS.baseDmg);
 });
 
 test('Player inherits Sentient.isAlive', () => {

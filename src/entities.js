@@ -164,17 +164,23 @@ class Sentient extends Entity {
  */
 class Player extends Sentient {
   constructor(spec = {}) {
-    super(spec);
-    this.inventory = spec.inventory ?? new Array(Player.DEFAULT_INVENTORY_SIZE).fill(null);
-    this.equipped  = spec.equipped  ?? {
+    // Player.DEFAULTS provides starting combat stats (hp/mp/gp/baseDmg/
+    // hit-crit-dodge/per-school bonus). The merge layers spec on top, so
+    // a caller can still override any field. This is the SINGLE SOURCE OF
+    // TRUTH for the legacy CONSTANTS.PLAYER_INITIAL_* values; state.js's
+    // CONSTANTS now exposes them as getters that delegate to here.
+    const filled = { ...Player.DEFAULTS, ...spec };
+    super(filled);
+    this.inventory = filled.inventory ?? new Array(Player.DEFAULT_INVENTORY_SIZE).fill(null);
+    this.equipped  = filled.equipped  ?? {
       head: null, chest: null, legs: null, feet: null,
       leftHand: null, rightHand: null,
     };
-    this.xp    = spec.xp    ?? 0;
-    this.level = spec.level ?? 1;
-    this.gp    = spec.gp    ?? 0;
+    this.xp    = filled.xp    ?? 0;
+    this.level = filled.level ?? 1;
+    this.gp    = filled.gp    ?? 0;
     // E8 Weapon-Master training bonus: consumed (zeroed) on next attack.
-    this.trainingBonus = spec.trainingBonus ?? 0;
+    this.trainingBonus = filled.trainingBonus ?? 0;
   }
 
   // ── Equipment helpers ──────────────────────────────────────
@@ -240,6 +246,26 @@ class Player extends Sentient {
   }
 }
 Player.DEFAULT_INVENTORY_SIZE = 30;
+
+/**
+ * Starting combat values for a fresh Player. The legacy
+ * CONSTANTS.PLAYER_INITIAL_* getters in state.js now delegate here, so
+ * this object is the single source of truth for those defaults. To
+ * rebalance, change these numbers — `setPlayerDefaults()` (in player.js)
+ * still reads CONSTANTS.PLAYER_*, but those resolve back to this object.
+ */
+Player.DEFAULTS = {
+  hp: 16, maxHp: 16,
+  mp: 0,  maxMp: 0,
+  gp: 100,
+  baseDmg: 3,
+  meleeDmgBonus:  0,
+  rangedDmgBonus: 0,
+  spellDmgBonus:  0,
+  hitRate:   0.6,
+  critRate:  0.0,
+  dodgeRate: 0.0,
+};
 
 
 // ─── LocalPlayer ────────────────────────────────────────────

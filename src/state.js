@@ -32,17 +32,24 @@
     RUN_SPEED: 80,
     XP_BASE: 100,
     XP_MULT: 1.5,
-    // ── KELCH MERGE: Player initial stats (replaces BASE_HP/BASE_MP) ──
-    PLAYER_INITIAL_MAX_MP: 0,
-    PLAYER_INITIAL_MAX_HP: 16,
-    PLAYER_INITIAL_GP: 100,
-    PLAYER_UNARMED_BASE_DMG: 3,
-    PLAYER_INITIAL_MELEE_BONUS: 0,
-    PLAYER_INITIAL_RANGED_BONUS: 0,
-    PLAYER_INITIAL_SPELL_BONUS: 0,
-    PLAYER_INITIAL_HIT_RATE: 0.6,
-    PLAYER_INITIAL_CRIT_RATE: 0.0,
-    PLAYER_INITIAL_DODGE_RATE: 0.0,
+    // ── Player initial stats — delegated to Player.DEFAULTS ───────────
+    // These keys are accessed all over the codebase
+    // (mechanics.js, ui_logic.js, player.js). The actual numbers live
+    // on Player.DEFAULTS (entities.js). The getters resolve `Player`
+    // lazily at access time — safe because the first read happens in
+    // player.js's setPlayerDefaults(), well after entities.js has run.
+    // Call sites get migrated to read Player.DEFAULTS directly in a
+    // future commit; this is the no-behavior-change bridge.
+    get PLAYER_INITIAL_MAX_MP()       { return Player.DEFAULTS.maxMp; },
+    get PLAYER_INITIAL_MAX_HP()       { return Player.DEFAULTS.maxHp; },
+    get PLAYER_INITIAL_GP()           { return Player.DEFAULTS.gp; },
+    get PLAYER_UNARMED_BASE_DMG()     { return Player.DEFAULTS.baseDmg; },
+    get PLAYER_INITIAL_MELEE_BONUS()  { return Player.DEFAULTS.meleeDmgBonus; },
+    get PLAYER_INITIAL_RANGED_BONUS() { return Player.DEFAULTS.rangedDmgBonus; },
+    get PLAYER_INITIAL_SPELL_BONUS()  { return Player.DEFAULTS.spellDmgBonus; },
+    get PLAYER_INITIAL_HIT_RATE()     { return Player.DEFAULTS.hitRate; },
+    get PLAYER_INITIAL_CRIT_RATE()    { return Player.DEFAULTS.critRate; },
+    get PLAYER_INITIAL_DODGE_RATE()   { return Player.DEFAULTS.dodgeRate; },
     DIZZY_TURNS: 15,
     FREEZE_TURNS: 40,
     RESPEC_BASE_COST: 100,
