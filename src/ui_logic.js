@@ -1093,52 +1093,15 @@ function _performStickyMove(src, targetSource, target) {
     const grid = document.getElementById('inventory-grid');
     if(!grid) return;
     grid.innerHTML = '';
-    // Row 0: inventory quickslots (keys 1-0) with hotkey numbers
-    for(let i=0; i<player.quickslotCount; i++) {
-      let item = inventory[i], slot = document.createElement('div');
-      slot.className = 'inv-slot'; slot.style.width='36px'; slot.style.height='36px'; slot.style.minWidth='0';
-      slot.style.borderRadius='6px'; slot.style.margin='1px';
-      if (window._stickyDrag && window._stickyDrag.source === 'inv' && window._stickyDrag.idx === i) {
-        slot.classList.add('sticky-selected');
-      }
-      slot.draggable = item ? true : false;
-      if(item) slot.addEventListener('dragstart', (e) => handleDragStart(e, 'inv', i));
-      slot.addEventListener('dragover', allowDrop);
-      slot.addEventListener('drop', (e) => handleDropItem(e, 'inv', i));
-      let hotkey = i===9 ? '0' : (i+1);
-      slot.innerHTML = `<span class="hotkey">${hotkey}</span>`;
-      if(item) {
-        const itemDef = item.def;
-        const isBag = itemDef && itemDef.type === 'bag';
-        slot.innerHTML += item.icon;
-        if(item.qty > 1) slot.innerHTML += `<span class="qty">${item.qty}</span>`;
-        if(isBag && window._openBagPanel && window._openBagPanel.source === 'inv' && window._openBagPanel.idx === i) {
-          slot.style.borderColor = '#dbc7a7';
-          slot.style.boxShadow = '0 0 10px rgba(219,199,167,0.2)';
-        }
-        // E13: Green glow for items with status effects
-        const hasEffect = itemHasStatusEffect(item.icon);
-        const isIdentified = player.identifiedItems && player.identifiedItems.has(item.icon);
-        if(hasEffect) {
-          slot.style.outline = '2px solid #0f8';
-          if(!isIdentified) slot.title = (item.def?.displayName ?? item.icon) + ' [Unidentified effects]';
-        }
-        slot.ondblclick = () => { if(isBag) openBagFromSource('inv', i); };
-        slot.oncontextmenu = (e) => {
-          e.preventDefault();
-          if(isBag) openBagFromSource('inv', i);
-        };
-      }
-      slot.onclick = () => {
-        // Bag-panel's quickslot row mirrors HUD behavior: only acts as a
-        // drop target for sticky-tap; tap-to-use otherwise.
-        if (handleStickyTap('inv', i)) return;
-        if(item && item.def && item.def.type === 'bag') return;
-        handleItemClick(i);
-      };
-      grid.appendChild(slot);
-    }
-    // Rows 1-3: inventory stash slots (30 slots)
+    // The inventory modal renders the full 30-slot inventory only. The
+    // quickslot HUD lives at the bottom of the screen (renderQuickslots
+    // → #quickslots-grid) and shows the first player.quickslotCount slots
+    // separately. Earlier this loop ALSO rendered a quickslot row at the
+    // top of the modal — that was a holdover from when inventory and
+    // pouch were separate arrays. After the Phase 2 merge, the top row
+    // duplicated slots 0-9 (and showed the same item in two places in
+    // the same modal). Removed.
+    // ─── Inventory stash slots (30 slots) ───────────────────────
     for(let i=0; i<30; i++) {
       let item = inventory[i], slot = document.createElement('div');
       slot.className = 'inv-slot'; slot.style.width='36px'; slot.style.height='36px'; slot.style.fontSize='16px'; slot.style.minWidth='0';
