@@ -17,6 +17,10 @@ FILES = [
     # only at this commit (no instantiation, no global wire-up yet).
     'entities.js',
     'world.js',
+    # Cooldown-based turn-loop driver. UX-agnostic; uses the Sentient
+    # interface defined in entities.js. Wired into the game loop in
+    # a follow-up commit; this commit defines + tests it in isolation.
+    'scheduler.js',
     'player.js',
     'limerick_api.js',
     'ui_logic.js',
