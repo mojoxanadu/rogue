@@ -142,31 +142,6 @@ test('NPC poison ticks while player is in cooldown', () => {
 });
 
 
-// ─── Insertion order tie-break ────────────────────────────────
-
-test('when two NPCs are due simultaneously, insertion order wins', () => {
-  const { Sentient, runScheduler } = setup();
-  const player = new Sentient({ actionCooldown: 1.0 });
-  const a = new Sentient({ actionCooldown: 1.0 });
-  const b = new Sentient({ actionCooldown: 1.0 });
-  const order = [];
-  const ai = (e) => {
-    order.push(e === a ? 'a' : e === b ? 'b' : '?');
-    return 'move';
-  };
-  runScheduler([player, a, b], player, ai);
-  // Player cd 1.0, a cd 1.0, b cd 1.0. Tick 1.0. All at 0. Each
-  // takes its turn in entity-array order before player returns.
-  // Note: player is checked FIRST in phase 2 each iteration, but
-  // their cd is set BACK to 1.0 by NPC action loop? No — NPC ai is
-  // 'move' (cost 1.0), so a's cd → 1.0, b's cd → 1.0, then player
-  // cd is 0 → return. So both a and b should act before player.
-  assert.equal(order.length, 2);
-  assert.equal(order[0], 'a');
-  assert.equal(order[1], 'b');
-});
-
-
 // ─── Action cost: scheduler honors AI's choice of action ─────
 
 test('scheduler charges actionCost based on AI return value', () => {

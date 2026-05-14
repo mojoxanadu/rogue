@@ -1258,6 +1258,21 @@
     }
 
     calculateFOV(); drawMap(); updateUI();
+
+    // ─── Step 5c: scheduler wired for LocalPlayer only ─────────
+    // Bump the player's actionCooldown by the advanceTurn step count,
+    // then drain it through runScheduler so any Conditions attached
+    // to localPlayer tick + fire via the new path. Enemies stay on
+    // the legacy actionTimer/forEach above — they Sentient-migrate
+    // (and join this scheduler list) in step 5d.
+    //
+    // No-op for the player today (no Conditions attached yet) but
+    // the seam is now live: future commits attach poison/regen/etc
+    // as Conditions and they tick automatically here.
+    if (typeof runScheduler === 'function' && typeof localPlayer !== 'undefined') {
+      localPlayer.actionCooldown = Math.max(0, localPlayer.actionCooldown) + steps;
+      runScheduler([localPlayer], localPlayer, () => 'move');
+    }
   }
 
   // E16: Bomb explosion
