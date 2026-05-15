@@ -118,14 +118,14 @@
     let def = item.def;
     if(!def || def.type !== 'bag') return;
     // Initialize contents array if new bag
-    if(!item.contents) {
-      item.contents = new Array(def.bagSlots ?? 3).fill(null);
+    if(!item.slots) {
+      item.slots = new Array(def.bagSlots ?? 3).fill(null);
       // Pre-fill new bags with random loot (the "loot bag" aspect)
       if(def.bagSlots <= 3) {
         let lootTable = ['🪙', '🪙', '🧪', '🍖', '🕯️'];
         let count = 1 + Math.floor(Math.random() * Math.min(2, def.bagSlots));
-        for(let i = 0; i < count && i < item.contents.length; i++) {
-          item.contents[i] = ItemStack.fromIcon(lootTable[Math.floor(Math.random() * lootTable.length)], 1);
+        for(let i = 0; i < count && i < item.slots.length; i++) {
+          item.slots[i] = ItemStack.fromIcon(lootTable[Math.floor(Math.random() * lootTable.length)], 1);
         }
       }
     }
@@ -149,13 +149,13 @@
   window.takeItemFromBagSource = (source, bagIdx, itemIdx) => {
     let arr = source === 'inv' ? inventory : inventory;
     let bag = arr[bagIdx];
-    if(!bag || !bag.contents || !bag.contents[itemIdx]) return;
-    let taken = bag.contents[itemIdx];
+    if(!bag || !bag.slots || !bag.slots[itemIdx]) return;
+    let taken = bag.slots[itemIdx];
     // Try to add to inventory
     let slot = inventory.findIndex(s => s === null);
     if(slot !== -1) {
       inventory[slot] = ItemStack.fromIcon(taken.icon, taken.qty ?? 1);
-      bag.contents[itemIdx] = null;
+      bag.slots[itemIdx] = null;
       let def = taken.def;
       logMsg(`Took ${taken.icon} ${def ? def.name : ''} from bag.`);
     } else {
@@ -163,11 +163,11 @@
       let pSlot = inventory.findIndex((s, i) => s === null && !(source === 'inventory' && i === bagIdx));
       if(pSlot !== -1) {
         inventory[pSlot] = ItemStack.fromIcon(taken.icon, taken.qty ?? 1);
-        bag.contents[itemIdx] = null;
+        bag.slots[itemIdx] = null;
         logMsg(`Took ${taken.icon} to inventory (inventory full).`);
       } else {
         zone.dropAt(player.x, player.y, new ItemStack(taken.itemName, taken.qty ?? 1));
-        bag.contents[itemIdx] = null;
+        bag.slots[itemIdx] = null;
         logMsg(`${taken.icon} dropped on ground (no space).`);
       }
     }

@@ -40,24 +40,25 @@
 window._stickyDrag = null;
 if (!window._openBags) window._openBags = new Set();
 
-// Lazy-init a bag's contents array. The ItemStack constructor at
-// items.js:136 allocates `slots` for container defs, but the existing
-// bag-panel code, engine pickup, and quest reward paths all read
-// `bag.contents`. Standardize on `contents` here; Phase 6 cleanup can
-// collapse the two field names.
-function _bagContents(bag) {
+// Return a bag's slots[], lazy-initialising if missing. The ItemStack
+// constructor (items.js:136) allocates slots for container defs, but
+// some legacy spawn paths produce ItemStacks before items_registry is
+// built or with stripped class identity (JSON-roundtrip from save).
+// This helper keeps callers from sprinkling `bag.slots ?? (bag.slots = ...)`
+// everywhere.
+function _bagSlots(bag) {
   if (!bag) return [];
-  if (!bag.contents) bag.contents = new Array(bag.def?.bagSlots ?? 3).fill(null);
-  return bag.contents;
+  if (!bag.slots) bag.slots = new Array(bag.def?.bagSlots ?? 3).fill(null);
+  return bag.slots;
 }
-window._bagContents = _bagContents;
+window._bagSlots = _bagSlots;
 
 // Recursively check if `bag` contains `candidate` at any depth. Used to
 // reject bag-in-bag drops that would create a cycle (A contains B,
 // then attempting to put A inside B).
 function _bagContainsDeep(bag, candidate) {
   if (!bag || !candidate) return false;
-  const c = bag.contents;
+  const c = bag.slots;
   if (!c) return false;
   for (const s of c) {
     if (!s) continue;
@@ -113,7 +114,7 @@ window.startStickyDrag = function(source, idxOrSlot, bagRef) {
   if (source === 'inv'   && !inventory[idxOrSlot]) return;
   if (source === 'equip' && !player.equipped[idxOrSlot]) return;
   if (source === 'bag') {
-    const c = bagRef && bagRef.contents;
+    const c = bagRef && bagRef.slots;
     if (!c || !c[idxOrSlot]) return;
     window._stickyDrag = { source: 'bag', bagRef, slotIdx: idxOrSlot };
   } else if (source === 'equip') {
@@ -138,7 +139,7 @@ function _equipSlotFits(slot, def) {
 function _readAddr(addr) {
   if (addr.source === 'inv') return inventory[addr.idx] || null;
   if (addr.source === 'bag') {
-    const c = (addr.bagRef && addr.bagRef.contents) || [];
+    const c = (addr.bagRef && addr.bagRef.slots) || [];
     return c[addr.slotIdx] || null;
   }
   if (addr.source === 'equip') {
@@ -152,7 +153,7 @@ function _readAddr(addr) {
 function _writeAddr(addr, stack) {
   if (addr.source === 'inv') { inventory[addr.idx] = stack; return; }
   if (addr.source === 'bag') {
-    const c = window._bagContents(addr.bagRef);
+    const c = window._bagSlots(addr.bagRef);
     c[addr.slotIdx] = stack;
     return;
   }
@@ -1565,7 +1566,7 @@ function _performStickyMove(src, target) {
     if (drag) {
       const isSameInvSlot = (drag.source === 'inv' && drag.idx === invIdx);
       if (!isSameInvSlot) {
-        const c = window._bagContents(bag);
+        const c = window._bagSlots(bag);
         const emptyIdx = c.findIndex(s => s === null || s === undefined);
         if (emptyIdx === -1) {
           if (typeof logMsg === 'function') logMsg(`<span style='color:var(--warning)'>The bag is full.</span>`);
@@ -1584,13 +1585,13 @@ function _performStickyMove(src, target) {
 
   // Same toggle for a bag that lives INSIDE another bag (nested).
   window.handleBagBagTap = (parentBag, slotIdx) => {
-    const bag = (parentBag.contents || [])[slotIdx];
+    const bag = (parentBag.slots || [])[slotIdx];
     if (!bag || bag.def?.type !== 'bag') return;
     const drag = window._stickyDrag;
     if (drag) {
       const isSameBagSlot = (drag.source === 'bag' && drag.bagRef === parentBag && drag.slotIdx === slotIdx);
       if (!isSameBagSlot) {
-        const c = window._bagContents(bag);
+        const c = window._bagSlots(bag);
         const emptyIdx = c.findIndex(s => s === null || s === undefined);
         if (emptyIdx === -1) {
           if (typeof logMsg === 'function') logMsg(`<span style='color:var(--warning)'>The bag is full.</span>`);
@@ -1644,7 +1645,7 @@ function _performStickyMove(src, target) {
   // Render every contents-slot of an open bag inline, and recurse for
   // any nested open bags. depth tint brightens the further down we go.
   function _appendBagContents(grid, bag, depth) {
-    const c = window._bagContents(bag);
+    const c = window._bagSlots(bag);
     for (let k = 0; k < c.length; k++) {
       const inner = c[k];
       const innerIsBag = !!(inner && inner.def && inner.def.type === 'bag');
@@ -1704,7 +1705,7 @@ function _performStickyMove(src, target) {
   }
 
   function _onBagSlotTap(parentBag, slotIdx) {
-    const inner = (parentBag.contents || [])[slotIdx];
+    const inner = (parentBag.slots || [])[slotIdx];
     if (inner && inner.def && inner.def.type === 'bag') {
       return window.handleBagBagTap(parentBag, slotIdx);
     }
@@ -1730,11 +1731,11 @@ function _performStickyMove(src, target) {
       const bagArr = window._dragBagSource === 'inv' ? inventory : inventory;
       const bag = bagArr[window._dragBagIdx];
       const bagSlotIdx = window.draggedItemIdx;
-      if(bag && bag.contents && bag.contents[bagSlotIdx]) {
-        const bagItem = bag.contents[bagSlotIdx];
+      if(bag && bag.slots && bag.slots[bagSlotIdx]) {
+        const bagItem = bag.slots[bagSlotIdx];
         let placed = tryPlaceInInventory(bagItem);
         if(placed) {
-          bag.contents[bagSlotIdx] = null;
+          bag.slots[bagSlotIdx] = null;
           logMsg(`${bagItem.icon} stashed in inventory from bag.`);
           if(typeof Sound !== 'undefined') Sound.clink();
         } else {
@@ -1818,13 +1819,13 @@ function _performStickyMove(src, target) {
       const bagArr = window._dragBagSource === 'inv' ? inventory : inventory;
       const bag = bagArr[window._dragBagIdx];
       const bagSlotIdx = window.draggedItemIdx;
-      if(bag && bag.contents && bag.contents[bagSlotIdx]) {
-        const bagItem = bag.contents[bagSlotIdx];
+      if(bag && bag.slots && bag.slots[bagSlotIdx]) {
+        const bagItem = bag.slots[bagSlotIdx];
         const tgtArr = targetSource === 'inv' ? inventory : inventory;
         const displaced = tgtArr[targetIdx];
         tgtArr[targetIdx] = new ItemStack(bagItem.itemName, bagItem.qty ?? 1);
         // Put displaced item (if any) into the bag slot we dragged from
-        bag.contents[bagSlotIdx] = displaced ? new ItemStack(displaced.itemName, displaced.qty ?? 1) : null;
+        bag.slots[bagSlotIdx] = displaced ? new ItemStack(displaced.itemName, displaced.qty ?? 1) : null;
         logMsg(`${bagItem.icon} moved from bag to ${targetSource}.`);
         if(typeof Sound !== 'undefined') Sound.clink();
       }
@@ -1844,10 +1845,10 @@ function _performStickyMove(src, target) {
       // Bug 33: If target slot has a bag, try to add dragged item into the bag
       if(tgtItem && srcItem && tgtItem.def && tgtItem.def.type === 'bag') {
         let bagDef = tgtItem.def;
-        if(!tgtItem.contents) tgtItem.contents = new Array(bagDef.bagSlots ?? 3).fill(null);
-        let freeSlot = tgtItem.contents.findIndex(s => s === null);
+        if(!tgtItem.slots) tgtItem.slots = new Array(bagDef.bagSlots ?? 3).fill(null);
+        let freeSlot = tgtItem.slots.findIndex(s => s === null);
         if(freeSlot !== -1) {
-          tgtItem.contents[freeSlot] = new ItemStack(srcItem.itemName, srcItem.qty ?? 1);
+          tgtItem.slots[freeSlot] = new ItemStack(srcItem.itemName, srcItem.qty ?? 1);
           srcArr[window.draggedItemIdx] = null;
           logMsg(`${srcItem.icon} placed into ${bagDef.name}.`);
           Sound.clink();
