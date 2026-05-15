@@ -8,8 +8,8 @@ const assert = require('node:assert/strict');
 const { loadSrc } = require('./_harness');
 
 function setup() {
-  // Lootable is standalone — no dependency on entities/items.
-  return loadSrc('loot.js');
+  // Lootable extends Entity (Phase 4a-2.5), so entities.js must load first.
+  return loadSrc('entities.js', 'loot.js');
 }
 
 // ─── Construction ─────────────────────────────────────────────
@@ -18,6 +18,9 @@ test('Lootable: minimal construction sets defaults', () => {
   const { Lootable } = setup();
   const l = new Lootable({ ownerKind: 'floor' });
   assert.equal(l.ownerKind, 'floor');
+  // Lootables OWNED by another entity (corpse/npc) have no position of
+  // their own — Lootable resets x/y back to null when caller didn't
+  // pass an explicit position. (Entity would have folded null → 0.)
   assert.equal(l.x, null);
   assert.equal(l.y, null);
   assert.equal(l.slots.length, 0);

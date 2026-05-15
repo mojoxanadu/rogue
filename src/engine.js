@@ -23,7 +23,10 @@
   let chestStates = {};
   let snoreLoop = null;
   let sleepHealLoop = null;
-  window.corpses = [];
+  // window.corpses removed in Phase 4a-2; the canonical store is
+  // zone.corpses (see player.js / world.js). Every reader/writer in
+  // engine, map, input, render, and ui_logic was migrated to use the
+  // Zone API directly.
   window.floorInteractItems = [];
 
   // === Corpse & Loot System ===
@@ -177,43 +180,28 @@
   window._rollMonsterLoot = _rollMonsterLoot;
 
   function createCorpse(x, y, enemyType, enemyStats, loot) {
-    let name = (MONSTER_DEF[enemyType] && MONSTER_DEF[enemyType].name) || enemyType;
-    let icon = enemyStats.icon || '💀';
-    corpses.push({
-      x, y,
-      name: name,
-      icon: icon,
-      loot: loot,
-      createdAt: Date.now(),
-      isBones: false
-    });
+    const name = (MONSTER_DEF[enemyType] && MONSTER_DEF[enemyType].name) || enemyType;
+    const icon = enemyStats.icon || '💀';
+    // Wrap the loot array in a corpse-owned Lootable. The Lootable
+    // lives *inside* the corpse — no x/y of its own (inherits from
+    // owner). Phase 4 popup reads this; pickpocket (Phase 6) will
+    // mutate the same slots pre-death. Empty loot is fine — corpse
+    // still spawns visually and decays on the normal schedule.
+    const lootable = (typeof Lootable !== 'undefined')
+      ? new Lootable({ ownerKind: 'corpse', slots: loot || [] })
+      : null;
+    const corpse = new Corpse({ x, y, name, icon, lootable });
+    // Legacy alias for renderers/loot-window code that reads c.loot
+    // directly. Same Array reference as lootable.slots; Phase 6 cutover
+    // removes the alias.
+    corpse.loot = corpse.lootable ? corpse.lootable.slots : (loot || []);
+    zone.addCorpse(corpse);
   }
 
-  function expireCorpses() {
-    let now = Date.now();
-    for(let i = corpses.length - 1; i >= 0; i--) {
-      let c = corpses[i];
-      if(!c.isBones && now - c.createdAt > CORPSE_EXPIRY_MS) {
-        c.isBones = true;
-        c.icon = 'BONES_PILE';
-        c.name = 'pile of bones';
-        // Loot drops to floor
-        if(c.loot && c.loot.length > 0) {
-          c.loot.forEach(item => {
-            // Wealth items (gold today, platinum etc. future): pickupTo
-            // routes the stack's qty into a player stat instead of
-            // landing in inventory. Everything else falls to the floor.
-            if(item.def?.pickupTo === 'gp') {
-              changeGold(item.qty);
-            } else {
-              itemsOnGround.push({ x: c.x, y: c.y, icon: item.icon });
-            }
-          });
-          c.loot = [];
-        }
-      }
-    }
-  }
+  // Phase 4a-2.5: corpse decay moved off the wall clock onto game-time
+  // scheduler ticks. Each Corpse instance carries its own actionCooldown
+  // (LIFETIME, then BONES_DURATION) and self-mutates via takeTurn. The
+  // old expireCorpses() polling loop is gone.
 
   // (autoLootCorpse removed — used to be triggered by the Scavenger
   // talent, which is gone. A future loot redesign will reintroduce
@@ -276,7 +264,7 @@
 
   // Open loot window for a corpse
   window.openLootWindow = function(corpseIdx) {
-    let c = corpses[corpseIdx];
+    let c = zone.corpses[corpseIdx];
     if(!c) return;
     if(!c.loot || c.loot.length === 0) {
       logMsg(`The ${c.name} has nothing on it.`);
@@ -325,7 +313,7 @@
 
   // Loot all from corpse
   window.lootAll = function(corpseIdx) {
-    let c = corpses[corpseIdx];
+    let c = zone.corpses[corpseIdx];
     if(!c || !c.loot) return;
     let remaining = [];
     let didLoot = false;
@@ -360,7 +348,7 @@
 
   // Take single item from corpse
   window.lootItem = function(corpseIdx, itemIdx) {
-    let c = corpses[corpseIdx];
+    let c = zone.corpses[corpseIdx];
     if(!c || !c.loot || !c.loot[itemIdx]) return;
     let item = c.loot[itemIdx];
     if(item.def?.pickupTo === 'gp') {
@@ -397,8 +385,8 @@
       explored: explored.map(row => row.slice()),
       darkMap: darkMap.map(row => row.slice()),
       enemies: JSON.parse(JSON.stringify(enemies)),
-      itemsOnGround: JSON.parse(JSON.stringify(itemsOnGround)),
-      corpses: JSON.parse(JSON.stringify(corpses)),
+      lootables: JSON.parse(JSON.stringify(zone.lootables)),
+      corpses: JSON.parse(JSON.stringify(zone.corpses)),
       mapW: mapW,
       mapH: mapH,
       chestStates: JSON.parse(JSON.stringify(chestStates)),
@@ -438,10 +426,20 @@
       enemies.push(typeof NPC !== 'undefined' && NPC.fromSpec ? NPC.fromSpec(spec) : spec);
     });
     syncActiveZone();
-    itemsOnGround.length = 0;
-    cached.itemsOnGround.forEach(i => itemsOnGround.push(i));
-    corpses.length = 0;
-    if(cached.corpses) cached.corpses.forEach(c => corpses.push(c));
+    // Restore floor Lootables. Cache stores plain-object snapshots
+    // (Lootable identity is stripped by JSON.stringify); re-hydrate
+    // each into a Lootable instance so engine code can call its
+    // methods.
+    zone.clearLootables();
+    (cached.lootables || []).forEach(spec => {
+      const slots = (spec.slots || []).map(s => new ItemStack(s.itemName, s.qty ?? 1));
+      zone.addLootable(new Lootable({
+        ownerKind: spec.ownerKind, x: spec.x, y: spec.y, slots,
+        isLocked: !!spec.isLocked, lockKind: spec.lockKind || null,
+      }));
+    });
+    zone.clearCorpses();
+    if(cached.corpses) cached.corpses.forEach(c => zone.addCorpse(c));
     chestStates = JSON.parse(JSON.stringify(cached.chestStates));
     currentScene = cached.scene;
     let custom = cached.customState || {};
@@ -522,8 +520,8 @@
     currentScene = 'town'; // Bug 7: start in Tristram
     levelCache = {};
     enemies.length = 0;
-    itemsOnGround.length = 0;
-    corpses.length = 0;
+    zone.clearLootables();
+    zone.clearCorpses();
     chestStates = {};
     lightTurns = 0;
     floatingTexts.length = 0;
@@ -570,7 +568,7 @@
       isScene:      !!opts.isScene,
       nowMs:        opts.nowMs ?? Date.now(),
       steps:        opts.steps ?? 1,
-      player, theMap, mapW, mapH, enemies, itemsOnGround,
+      player, theMap, mapW, mapH, enemies, zone,
       TILES, CONSTANTS, currentScene,
       isTileFloor,
       _movedFlag:   false,
@@ -690,16 +688,16 @@
         darkMap = Array(mapH).fill().map(() => Array(mapW).fill(false));
         explored = Array(mapH).fill().map(() => Array(mapW).fill(false));
         visible = Array(mapH).fill().map(() => Array(mapW).fill(false));
-         enemies = []; itemsOnGround = [];
+         enemies = []; zone.clearLootables();
          syncActiveZone();
          currentScene = 'nest';
          // #13: Wire background art scene
          player.x = 30; player.y = 17;
          // Place eggs and loot in the nest
-         itemsOnGround.push({x: 29, y: 23, icon: '🥚'});
-         itemsOnGround.push({x: 30, y: 23, icon: '🥚'});
-         itemsOnGround.push({x: 31, y: 23, icon: '🥚'});
-         itemsOnGround.push({x: 30, y: 24, icon: '🏅'});
+         zone.dropAt(29, 23, ItemStack.fromIcon('🥚'));
+         zone.dropAt(30, 23, ItemStack.fromIcon('🥚'));
+         zone.dropAt(31, 23, ItemStack.fromIcon('🥚'));
+         zone.dropAt(30, 24, ItemStack.fromIcon('🏅'));
          // Eagle is here if player fed it
          if(player.fedEagle) {
            spawnNpc(enemies, 30, 23, "eagle", { stats: {...MONSTER_DEF["eagle"]} });
@@ -811,9 +809,7 @@
             Sound.playTone(90 + Math.random() * 30, 'sawtooth', 0.18, 0.08, 25);
           }
         }
-        if (Array.isArray(itemsOnGround)) {
-          itemsOnGround.push({ x: player.x, y: player.y, icon: '💩' });
-        }
+        zone.dropAt(player.x, player.y, ItemStack.fromIcon('💩'));
         player._diarrheaNextFartMs = nowMs + 8000 + Math.floor(Math.random() * 12000);
       }
       // Wall-clock safety: if the player has been idle past untilMs,
@@ -889,8 +885,13 @@
     // 'brake'/'idle'/'timeout') and we hand control back.
     {
       const ctx = makeNpcCtx({ isScene: false, steps });
-      const live = enemies.filter(e =>
-        e && e.stats && typeof e.takeTurn === 'function'
+      // Phase 4a-2.5: schedulable list combines the legacy `enemies`
+      // NPC array with zone.entities (which holds Corpses + Lootables
+      // and, in Phase 6, will absorb NPCs too). Filter to anything
+      // with takeTurn — drops the `e.stats &&` gate so Corpses
+      // (no combat stats) get ticked for decay.
+      const live = [...enemies, ...zone.entities].filter(e =>
+        e && e !== localPlayer && typeof e.takeTurn === 'function'
       );
       if (typeof runScheduler === 'function' && typeof localPlayer !== 'undefined') {
         localPlayer.actionCooldown = Math.max(0, localPlayer.actionCooldown) + steps;
@@ -948,7 +949,7 @@
         // Cat spawns a bit further away, chases the rat
         spawnNpc(enemies, spawnTile.x + 1, spawnTile.y, 'cat', { stats: {...MONSTER_DEF['cat']} });
         // Old boot appears at feet (harmless flavor item)
-        itemsOnGround.push({ x: player.x + 1, y: player.y, icon: '👢' });
+        zone.dropAt(player.x + 1, player.y, ItemStack.fromIcon('👢'));
         addFloatingText(spawnTile.x, spawnTile.y, '🐀', '#aaa', 14);
       }
     }
@@ -2177,6 +2178,10 @@
       return;
     }
 
+    // Moving anywhere closes any open loot popup — the popup is for
+    // "what's here?" and once the player leaves, the answer changes.
+    if (typeof window.hideLootPopup === 'function') window.hideLootPopup();
+
     player.x = nx; player.y = ny;
     player.stationaryTurns = 0;
     window._lastPlayerMoveTime = performance.now();
@@ -2206,16 +2211,25 @@
     // Eagle Crag entry detection (Floor 3) — legacy check, now handled by BOUNDARY_DATA scene path
 
     // Corpse walk-over: funny messages
-    if(typeof corpses !== 'undefined') {
-      let steppedCorpse = corpses.find(c => c.x === nx && c.y === ny && !c.isBones);
+    {
+      let steppedCorpse = zone.corpses.find(c => c.x === nx && c.y === ny && !c.isBones);
       if(steppedCorpse && Math.random() < 0.4) {
         let msg = CORPSE_WALK_MESSAGES[Math.floor(Math.random() * CORPSE_WALK_MESSAGES.length)];
         logMsg(`<span style='color:#888; font-style:italic;'>${msg}</span>`);
       }
     }
 
-    // Expire old corpses (check every move)
-    expireCorpses();
+    // Corpse decay is now scheduler-driven (Phase 4a-2.5) — Corpse.takeTurn
+    // handles flesh→bones and bones→removal on game-time ticks. No
+    // wall-clock poll needed here.
+
+    // Phase 4b: open the loot popup if the tile the player just stepped
+    // onto has any lootable source (corpse, floor pile, or container).
+    // hideLootPopup was called above on move-start; this re-opens for
+    // the new tile.
+    if (typeof window.showLootPopup === 'function') {
+      window.showLootPopup(player.x, player.y);
+    }
 
     if(tile === TILES.WATER || tile === TILES.DEEP_WATER) {
       Sound.splash();

@@ -297,10 +297,10 @@ test('Zone.corpses defaults to empty array', () => {
 });
 
 test('Zone.addCorpse / removeCorpse', () => {
-  const { Zone } = setup();
+  const { Zone, Corpse } = setup();
   const z = new Zone({ width: 5, height: 5 });
-  const c1 = { x: 1, y: 2, name: 'rat' };
-  const c2 = { x: 3, y: 4, name: 'bat' };
+  const c1 = new Corpse({ x: 1, y: 2, name: 'rat' });
+  const c2 = new Corpse({ x: 3, y: 4, name: 'bat' });
   z.addCorpse(c1);
   z.addCorpse(c2);
   assert.equal(z.corpses.length, 2);
@@ -311,11 +311,11 @@ test('Zone.addCorpse / removeCorpse', () => {
 });
 
 test('Zone.corpsesAt filters by tile', () => {
-  const { Zone } = setup();
+  const { Zone, Corpse } = setup();
   const z = new Zone({ width: 5, height: 5 });
-  z.addCorpse({ x: 1, y: 2 });
-  z.addCorpse({ x: 1, y: 2 });
-  z.addCorpse({ x: 3, y: 4 });
+  z.addCorpse(new Corpse({ x: 1, y: 2 }));
+  z.addCorpse(new Corpse({ x: 1, y: 2 }));
+  z.addCorpse(new Corpse({ x: 3, y: 4 }));
   assert.equal(z.corpsesAt(1, 2).length, 2);
   assert.equal(z.corpsesAt(3, 4).length, 1);
   assert.equal(z.corpsesAt(0, 0).length, 0);

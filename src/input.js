@@ -242,8 +242,8 @@ const hBtn = document.getElementById('hamburgerBtn');
       explored: _debugDeepClone(explored),
       visible: _debugDeepClone(visible),
       enemies: _debugDeepClone(enemies),
-      itemsOnGround: _debugDeepClone(itemsOnGround),
-      corpses: (typeof corpses !== 'undefined') ? _debugDeepClone(corpses) : [],
+      lootables: _debugDeepClone(zone.lootables),
+      corpses: _debugDeepClone(zone.corpses),
       mapW,
       mapH
     };
@@ -269,12 +269,19 @@ const hBtn = document.getElementById('hamburgerBtn');
     explored = _debugDeepClone(snap.explored || []);
     visible = _debugDeepClone(snap.visible || []);
     enemies = _debugDeepClone(snap.enemies || []);
-    itemsOnGround = _debugDeepClone(snap.itemsOnGround || []);
     syncActiveZone();
-    if(typeof corpses !== 'undefined') {
-      corpses.length = 0;
-      (snap.corpses || []).forEach(c => corpses.push(c));
-    }
+    // Re-hydrate Lootables from the snapshot — JSON.stringify stripped
+    // their class identity, so we reconstruct each one.
+    zone.clearLootables();
+    (snap.lootables || []).forEach(spec => {
+      const slots = (spec.slots || []).map(s => new ItemStack(s.itemName, s.qty ?? 1));
+      zone.addLootable(new Lootable({
+        ownerKind: spec.ownerKind, x: spec.x, y: spec.y, slots,
+        isLocked: !!spec.isLocked, lockKind: spec.lockKind || null,
+      }));
+    });
+    zone.clearCorpses();
+    (snap.corpses || []).forEach(c => zone.addCorpse(c));
 
     if(typeof calculateFOV === 'function') calculateFOV();
     if(typeof drawMap === 'function') drawMap();
@@ -576,7 +583,8 @@ const hBtn = document.getElementById('hamburgerBtn');
             return (!best || d < best.d) ? { e, d } : best;
           }, null);
           debugLog(`Scene: ${currentScene} | Floor: ${currentLevel} | Pos: ${p.x},${p.y}`);
-          debugLog(`Map: ${mapW}x${mapH} | Enemies: ${(enemies || []).length} | Ground items: ${(itemsOnGround || []).length}`);
+          const groundItemCount = zone.lootables.reduce((n, l) => n + (l.ownerKind === 'floor' ? l.size() : 0), 0);
+          debugLog(`Map: ${mapW}x${mapH} | Enemies: ${(enemies || []).length} | Ground items: ${groundItemCount}`);
           if(nearest) debugLog(`Nearest hostile: ${nearest.e.type} (${nearest.d} tiles)`);
           else debugLog('Nearest hostile: none');
           break;
@@ -586,10 +594,11 @@ const hBtn = document.getElementById('hamburgerBtn');
           const tile = theMap?.[player.y]?.[player.x];
           debugLog(`You are at ${player.x},${player.y} in ${currentScene}:${currentLevel}. Tile=${tile}`);
           const nearEnemies = (enemies || []).filter(en => Math.abs(en.x - player.x) <= 2 && Math.abs(en.y - player.y) <= 2 && en.stats && en.stats.hp > 0);
-          const nearItems = (itemsOnGround || []).filter(it => Math.abs(it.x - player.x) <= 2 && Math.abs(it.y - player.y) <= 2);
+          const nearPiles = zone.lootables.filter(l => l.ownerKind === 'floor' &&
+              Math.abs(l.x - player.x) <= 2 && Math.abs(l.y - player.y) <= 2);
           if(nearEnemies.length) debugLog(`Nearby enemies: ${nearEnemies.map(en => `${en.type}@${en.x},${en.y}`).join(', ')}`);
           else debugLog('Nearby enemies: none');
-          if(nearItems.length) debugLog(`Nearby items: ${nearItems.map(it => `${it.icon}@${it.x},${it.y}`).join(', ')}`);
+          if(nearPiles.length) debugLog(`Nearby items: ${nearPiles.flatMap(l => l.slots.map(s => `${s.icon}@${l.x},${l.y}`)).join(', ')}`);
           else debugLog('Nearby items: none');
           if(longMode) {
             const exits = [];
@@ -1622,8 +1631,8 @@ const hBtn = document.getElementById('hamburgerBtn');
     }
 
     function flashInteractionFailure(kind, idx) {
-      if(kind === 'corpse' && typeof corpses !== 'undefined' && corpses[idx]) corpses[idx]._flashRed = Date.now();
-      if(kind === 'item' && itemsOnGround[idx]) itemsOnGround[idx]._flashRed = Date.now();
+      if(kind === 'corpse' && zone.corpses[idx]) zone.corpses[idx]._flashRed = Date.now();
+      if(kind === 'item' && zone.lootables[idx]) zone.lootables[idx]._flashRed = Date.now();
       drawMap();
     }
 
@@ -1691,7 +1700,7 @@ const hBtn = document.getElementById('hamburgerBtn');
         if (drag.source === 'inv') {
           const item = inventory[drag.idx];
           if (item) {
-            itemsOnGround.push({ x: player.x, y: player.y, icon: item.icon });
+            zone.dropAt(player.x, player.y, new ItemStack(item.itemName, item.qty ?? 1));
             inventory[drag.idx] = null;
             logMsg(`Dropped ${item.def?.displayName ?? item.icon} on the ground.`);
           }
@@ -1699,7 +1708,7 @@ const hBtn = document.getElementById('hamburgerBtn');
           const itemName = player.equipped[drag.slot];
           if (itemName) {
             const def = ItemDefs[itemName];
-            itemsOnGround.push({ x: player.x, y: player.y, icon: def?.icon ?? itemName });
+            zone.dropAt(player.x, player.y, new ItemStack(itemName, 1));
             logMsg(`Dropped ${def?.displayName ?? itemName} on the ground.`);
             // Reuse swapEquip(-1, slot) so derived stats recompute.
             if (typeof swapEquip === 'function') swapEquip(-1, drag.slot);
@@ -1748,11 +1757,12 @@ const hBtn = document.getElementById('hamburgerBtn');
           let dragData = null;
           try { dragData = JSON.parse(raw); } catch(_) {}
           if (dragData && dragData.source === 'equip') {
-            const icon = player.equipped[dragData.slot];
-            if (icon) {
-              itemsOnGround.push({ x: player.x, y: player.y, icon });
+            const itemName = player.equipped[dragData.slot];
+            if (itemName) {
+              zone.dropAt(player.x, player.y, new ItemStack(itemName, 1));
               player.equipped[dragData.slot] = null;
-              logMsg(`You drop the ${ItemDef.byIcon(icon)?.displayName ?? icon} on the ground.`);
+              const def = ItemDefs[itemName];
+              logMsg(`You drop the ${def?.displayName ?? itemName} on the ground.`);
               swapEquip(-1, dragData.slot);
               updateUI();
               if (typeof renderEquipModal === 'function') renderEquipModal();
@@ -1765,7 +1775,7 @@ const hBtn = document.getElementById('hamburgerBtn');
       if(window.draggedItemIdx !== null && window.draggedSource === 'inv') {
         let item = inventory[window.draggedItemIdx];
         if(item) {
-          itemsOnGround.push({ x: player.x, y: player.y, icon: item.icon });
+          zone.dropAt(player.x, player.y, new ItemStack(item.itemName, item.qty ?? 1));
           inventory[window.draggedItemIdx] = null;
           logMsg(`Dropped ${item.icon} on the ground.`);
           renderQuickslots(); updateUI();
@@ -1774,10 +1784,10 @@ const hBtn = document.getElementById('hamburgerBtn');
       }
       // Loot drag: item from corpse to canvas (drop on ground)
       if(window._lootDrag) {
-        let c = corpses[window._lootDrag.corpseIdx];
+        let c = zone.corpses[window._lootDrag.corpseIdx];
         if(c && c.loot && c.loot[window._lootDrag.itemIdx]) {
           let item = c.loot[window._lootDrag.itemIdx];
-          itemsOnGround.push({x: player.x, y: player.y, icon: item.icon});
+          zone.dropAt(player.x, player.y, new ItemStack(item.itemName, item.qty ?? 1));
           c.loot.splice(window._lootDrag.itemIdx, 1);
           logMsg(`Dropped ${item.icon} on the ground.`);
           window._lootDrag = null;
@@ -1802,22 +1812,18 @@ const hBtn = document.getElementById('hamburgerBtn');
       window._hoverCorpseReachable = false;
       window._hoverFloorItemReachable = false;
       // Check corpses
-      if(typeof corpses !== 'undefined') {
-        for(let i = 0; i < corpses.length; i++) {
-          if(corpses[i].x === tileX && corpses[i].y === tileY) {
-            window._hoverCorpseIdx = i;
-            window._hoverCorpseReachable = withinInteractionReach(corpses[i].x, corpses[i].y);
-            break;
-          }
-        }
-      }
-      // Check floor items
-      for(let i = 0; i < itemsOnGround.length; i++) {
-        if(itemsOnGround[i].x === tileX && itemsOnGround[i].y === tileY) {
-          window._hoverFloorItemIdx = i;
-          window._hoverFloorItemReachable = withinInteractionReach(itemsOnGround[i].x, itemsOnGround[i].y);
+      for(let i = 0; i < zone.corpses.length; i++) {
+        if(zone.corpses[i].x === tileX && zone.corpses[i].y === tileY) {
+          window._hoverCorpseIdx = i;
+          window._hoverCorpseReachable = withinInteractionReach(zone.corpses[i].x, zone.corpses[i].y);
           break;
         }
+      }
+      // Check floor pile at this tile (single Lootable per tile)
+      const _floor = zone.floorPileAt(tileX, tileY);
+      if (_floor) {
+        window._hoverFloorItemIdx = zone.entities.indexOf(_floor);
+        window._hoverFloorItemReachable = withinInteractionReach(_floor.x, _floor.y);
       }
       // Only redraw if hover state changed
       if(prevCorpse !== window._hoverCorpseIdx || prevItem !== window._hoverFloorItemIdx || prevCorpseReachable !== window._hoverCorpseReachable || prevItemReachable !== window._hoverFloorItemReachable) drawMap();
@@ -1845,10 +1851,11 @@ const hBtn = document.getElementById('hamburgerBtn');
       let ctrlLoot = e.ctrlKey;
 
       // Check corpses within 2 tiles (and visible)
-      if(typeof corpses !== 'undefined') {
-        for(let i = 0; i < corpses.length; i++) {
-          if(corpses[i].x === tileX && corpses[i].y === tileY && visible[corpses[i].y] && visible[corpses[i].y][corpses[i].x]) {
-            if(!withinInteractionReach(corpses[i].x, corpses[i].y)) {
+      {
+        for(let i = 0; i < zone.corpses.length; i++) {
+          const _c = zone.corpses[i];
+          if(_c.x === tileX && _c.y === tileY && visible[_c.y] && visible[_c.y][_c.x]) {
+            if(!withinInteractionReach(_c.x, _c.y)) {
               logMsg('Too far away.');
               flashInteractionFailure('corpse', i);
               return;
@@ -1920,35 +1927,37 @@ const hBtn = document.getElementById('hamburgerBtn');
         }
       }
 
-      // Check floor items within 2 tiles
-      for(let i = 0; i < itemsOnGround.length; i++) {
-        if(itemsOnGround[i].x === tileX && itemsOnGround[i].y === tileY) {
-          if(!withinInteractionReach(itemsOnGround[i].x, itemsOnGround[i].y)) {
-            logMsg('Too far away.');
-            flashInteractionFailure('item', i);
-            return;
-          }
-          showFloorItemMenu(i, e.clientX, e.clientY);
+      // Phase 4a-3: floor items live on a single Lootable per tile;
+      // the right-click menu offers "Pick Up All" for the whole pile.
+      // Granular per-stack pickup belongs to Phase 4b's loot popup.
+      const _floor = zone.floorPileAt(tileX, tileY);
+      if (_floor) {
+        if (!withinInteractionReach(_floor.x, _floor.y)) {
+          logMsg('Too far away.');
+          _floor._flashRed = Date.now();
+          drawMap();
           return;
         }
+        showFloorItemMenu(_floor, e.clientX, e.clientY);
+        return;
       }
     });
 
-    // Floor item context menu
-    window.showFloorItemMenu = (itemIdx, screenX, screenY) => {
-      let item = itemsOnGround[itemIdx];
-      if(!item) return;
+    // Floor pile context menu — Pick Up All for every stack in the pile.
+    // Values rendered into innerHTML are trusted: icons come from ItemDef
+    // (registered emoji literals) and pile.id is a number from Lootable.
+    window.showFloorItemMenu = (pile, screenX, screenY) => {
+      if (!pile || !pile.size || pile.size() === 0) return;
       let existing = document.getElementById('floor-ctx-menu');
-      if(existing) existing.remove();
-      let def = item.def;
-      let name = def ? def.name : item.icon;
-      let menu = document.createElement('div');
+      if (existing) existing.remove();
+      const header = pile.slots.map(s => s.icon).join(' ');
+      const menu = document.createElement('div');
       menu.id = 'floor-ctx-menu';
       menu.style.cssText = `position:fixed; z-index:9999; background:rgba(29,27,32,0.95); border:2px solid var(--secondary);
         border-radius:6px; padding:4px 0; min-width:120px; box-shadow:0 4px 12px rgba(0,0,0,0.5);`;
-      menu.innerHTML = `<div style="padding:4px 12px; color:var(--primary); font-size:11px; border-bottom:1px solid #444; margin-bottom:2px;">${item.icon} ${name}</div>
+      menu.innerHTML = `<div style="padding:4px 12px; color:var(--primary); font-size:11px; border-bottom:1px solid #444; margin-bottom:2px;">${header}</div>
         <div style="padding:6px 12px; cursor:pointer; font-size:12px;" onmouseover="this.style.background='#4A4458'" onmouseout="this.style.background=''"
-          onclick="pickupFloorItem(${itemIdx}); document.getElementById('floor-ctx-menu').remove();">Pick Up</div>`;
+          onclick="pickupFloorPile(${pile.id}); document.getElementById('floor-ctx-menu').remove();">Pick Up All</div>`;
       menu.style.left = Math.min(screenX, window.innerWidth - 130) + 'px';
       menu.style.top = Math.min(screenY, window.innerHeight - 80) + 'px';
       document.body.appendChild(menu);
@@ -1957,45 +1966,49 @@ const hBtn = document.getElementById('hamburgerBtn');
       }, 50);
     };
 
-    window.pickupFloorItem = (itemIdx) => {
-      let item = itemsOnGround[itemIdx];
-      if(!item) return;
-      const handleCupcakePickup = (icon) => {
-        if(icon !== '🧁') return;
-        if(!window._grokCupcakePickups) window._grokCupcakePickups = 0;
-        window._grokCupcakePickups++;
-        if(window._grokCupcakePickups === 1) {
-          logMsg("<span style='color:#f88'>🧌 Grok: 'Hey!!! I made those cupcakes for Bruce, not for you!!!'</span>");
-          if(typeof playVoiceClip === 'function') playVoiceClip('voice_orc_cupcake_1');
-        } else {
-          logMsg("<span style='color:#f88'>🧌 Grok: 'Hey! Aren't you fat enough already? Leave some for the Grues!'</span>");
-          if(typeof playVoiceClip === 'function') playVoiceClip('voice_orc_cupcake_2');
-        }
-      };
-      if(!withinInteractionReach(item.x, item.y)) {
+    // Pick up every stack from a floor pile (resolved by Lootable.id).
+    window.pickupFloorPile = (pileId) => {
+      const pile = zone.entities.find(e => e && e.id === pileId &&
+        (typeof Lootable !== 'undefined') && e instanceof Lootable && e.ownerKind === 'floor');
+      if (!pile) return;
+      if (!withinInteractionReach(pile.x, pile.y)) {
         logMsg('Too far away.');
-        flashInteractionFailure('item', itemIdx);
+        pile._flashRed = Date.now();
+        drawMap();
         return;
       }
-      let slot = inventory.findIndex(s => s === null);
-      if(slot !== -1) {
-        inventory[slot] = ItemStack.fromIcon(item.icon, 1);
-        itemsOnGround.splice(itemIdx, 1);
-        logMsg(`Picked up ${item.icon}`);
-        Sound.clink();
-        handleCupcakePickup(item.icon);
-      } else {
-        let placed = tryPlaceInInventory(item);
-        if(placed) {
-          itemsOnGround.splice(itemIdx, 1);
-          logMsg(`Picked up ${item.icon} (to inventory)`);
+      const handleCupcakePickup = (icon) => {
+        if (icon !== '🧁') return;
+        if (!window._grokCupcakePickups) window._grokCupcakePickups = 0;
+        window._grokCupcakePickups++;
+        if (window._grokCupcakePickups === 1) {
+          logMsg("<span style='color:#f88'>🧌 Grok: 'Hey!!! I made those cupcakes for Bruce, not for you!!!'</span>");
+          if (typeof playVoiceClip === 'function') playVoiceClip('voice_orc_cupcake_1');
+        } else {
+          logMsg("<span style='color:#f88'>🧌 Grok: 'Hey! Aren't you fat enough already? Leave some for the Grues!'</span>");
+          if (typeof playVoiceClip === 'function') playVoiceClip('voice_orc_cupcake_2');
+        }
+      };
+      const stacks = pile.slots.slice();
+      for (const stack of stacks) {
+        if (stack.def?.pickupTo === 'gp') {
+          changeGold(stack.qty, { x: pile.x, y: pile.y, floatText: true });
+          pile.slots.splice(pile.slots.indexOf(stack), 1);
+          continue;
+        }
+        const placed = tryPlaceInInventory(stack);
+        if (placed) {
+          pile.slots.splice(pile.slots.indexOf(stack), 1);
+          logMsg(`Picked up ${stack.icon}`);
           Sound.clink();
-          handleCupcakePickup(item.icon);
+          handleCupcakePickup(stack.icon);
         } else {
           logMsg("No room!");
-          flashInteractionFailure('item', itemIdx);
+          pile._flashRed = Date.now();
+          break;
         }
       }
+      if (pile.slots.length === 0) zone.removeLootable(pile);
       renderQuickslots(); renderInventory(); updateUI(); drawMap();
     };
   }
@@ -2101,6 +2114,11 @@ const hBtn = document.getElementById('hamburgerBtn');
     }
 
     if(e.key === 'Escape') {
+       // Loot popup is a non-modal overlay — dismiss first if open.
+       if (window._lootPopupTile && typeof window.hideLootPopup === 'function') {
+         window.hideLootPopup();
+         return;
+       }
        // Close store/shop overlay first
        const overlay = document.getElementById('overlay');
        if(overlay && overlay.style.display === 'flex') {

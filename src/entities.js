@@ -574,9 +574,80 @@ LocalPlayer.DEFAULT_QUICKSLOT_COUNT = 6;
 
 Sentient.DEFAULT_COOLDOWNS = { move: 1.0, attack: 1.0 };
 
+
+// ─── Corpse ────────────────────────────────────────────────
+/**
+ * A monster that died. Visual + schedulable; not playable. Decays in
+ * two stages on game-time scheduler ticks (NOT wall clock, so a player
+ * who walks away and comes back doesn't find rotted bones unless time
+ * actually passed in-game):
+ *
+ *   stage 1: flesh corpse → bones at Corpse.LIFETIME turns (~50).
+ *            Any remaining loot scatters to a floor pile at this tile
+ *            via zone.dropAt(); the corpse's lootable is emptied.
+ *   stage 2: bones removed entirely at +Corpse.BONES_DURATION (~100
+ *            more turns) — total ~150 turns from spawn.
+ *
+ * Extends Sentient (not Entity) for the cooldown/scheduler machinery
+ * (canAct, tick, fireDueConditions). hp/maxHp default to 0 — corpses
+ * aren't alive, but the scheduler doesn't check isAlive.
+ */
+class Corpse extends Sentient {
+  constructor(spec = {}) {
+    super(spec);
+    this.name     = spec.name     ?? 'corpse';
+    this.isBones  = !!spec.isBones;
+    this.lootable = spec.lootable ?? null;
+    // Single-keyed cooldown table for the two-stage decay. actionCooldown
+    // is initialized to the first stage's cost (saved as Date.now()
+    // pre-Phase-4a-2.5; preserved across migration if spec.actionCooldown
+    // is provided).
+    const decayCost = this.isBones ? Corpse.BONES_DURATION : Corpse.LIFETIME;
+    this.cooldowns      = spec.cooldowns      ?? { decay: decayCost };
+    this.actionCooldown = spec.actionCooldown ?? decayCost;
+  }
+
+  /**
+   * Scheduler tick. Called once when actionCooldown elapses.
+   * ctx (built by engine.makeNpcCtx) carries the active Zone reference.
+   *
+   * Two stages of decay:
+   *   stage 1 (flesh → bones): flip icon/name only. Loot stays on the
+   *     corpse's lootable; the popup keeps showing it under a single
+   *     section (icon becomes 🦴 visually but the loot is still there
+   *     to grab).
+   *   stage 2 (bones → vanish): scatter any remaining loot to the floor
+   *     at this tile, then remove the corpse from the zone.
+   */
+  takeTurn(ctx) {
+    if (!this.isBones) {
+      // Stage 1: flesh → bones. Loot intact; just visual.
+      this.isBones = true;
+      this.icon    = Corpse.BONES_ICON;
+      this.name    = 'pile of bones';
+      this.cooldowns.decay = Corpse.BONES_DURATION;
+      return 'decay';
+    }
+    // Stage 2: scatter remaining loot to the floor before removal so
+    // the player can still pick it up if they come back here.
+    if (this.lootable && this.lootable.size() > 0 && ctx && ctx.zone && ctx.zone.dropAt) {
+      for (const stack of this.lootable.slots) {
+        ctx.zone.dropAt(this.x, this.y, stack);
+      }
+      this.lootable.slots.length = 0;
+    }
+    if (ctx && ctx.zone && ctx.zone.removeCorpse) ctx.zone.removeCorpse(this);
+    return 'decay';
+  }
+}
+Corpse.LIFETIME       = 50;   // flesh → bones
+Corpse.BONES_DURATION = 100;  // bones → removed (total 150 turns)
+Corpse.BONES_ICON     = 'BONES_PILE';  // sentinel; render.js draws this specially
+
 // Expose to the global concat scope.
 window.Entity      = Entity;
 window.Sentient    = Sentient;
 window.Player      = Player;
 window.LocalPlayer = LocalPlayer;
 window.Condition   = Condition;
+window.Corpse      = Corpse;

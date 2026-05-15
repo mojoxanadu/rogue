@@ -741,7 +741,7 @@
     darkMap = Array(mapH).fill().map(()=>Array(mapW).fill(false));
     explored = Array(mapH).fill().map(()=>Array(mapW).fill(false));
     visible = Array(mapH).fill().map(()=>Array(mapW).fill(false));
-    enemies = []; itemsOnGround = []; lightTurns = 0; if(typeof corpses !== 'undefined') corpses.length = 0;
+    enemies = []; zone.clearLootables(); lightTurns = 0; zone.clearCorpses();
     syncActiveZone();
     window._swordmasterMazeActive = false;
     window._swordmasterMazeBounds = null;
@@ -865,7 +865,7 @@
         let corpsePos = findNearbyFloorTile(leftyPos.x, leftyPos.y, 4, reserved);
         if(corpsePos && typeof createCorpse === 'function') {
           createCorpse(corpsePos.x, corpsePos.y, 'busker', { icon: '🧑‍🎤' }, [new ItemStack('accordion', 1), new ItemStack('paperclip', 1)]);
-          let buskerCorpse = corpses[corpses.length - 1];
+          let buskerCorpse = zone.corpses[zone.corpses.length - 1];
           if(buskerCorpse) {
             buskerCorpse.name = 'busker corpse';
             buskerCorpse.buskerJoke = true;
@@ -902,10 +902,10 @@
         // Add thief and loot
         spawnNpc(enemies, hideoutRoom.cx, hideoutRoom.cy, 'thief', { stats: {...MONSTER_DEF['thief'], patrolling: false, wandering: true} });
         // Add some loot
-        itemsOnGround.push({ x: hideoutRoom.cx + 1, y: hideoutRoom.cy, icon: '💰' });
-        itemsOnGround.push({ x: hideoutRoom.cx - 1, y: hideoutRoom.cy, icon: '🗝️' });
+        zone.dropAt(hideoutRoom.cx + 1, hideoutRoom.cy,     ItemStack.fromIcon('💰'));
+        zone.dropAt(hideoutRoom.cx - 1, hideoutRoom.cy,     ItemStack.fromIcon('🗝️'));
         if(Math.random() < 0.5) {
-          itemsOnGround.push({ x: hideoutRoom.cx, y: hideoutRoom.cy + 1, icon: '🗡️' });
+          zone.dropAt(hideoutRoom.cx, hideoutRoom.cy + 1,   ItemStack.fromIcon('🗡️'));
         }
       }
 
@@ -997,8 +997,8 @@
             spawnNpc(enemies, rm.cx + 1, rm.cy, 'pacifist_orc', { stats: {...MONSTER_DEF['orc'], icon: '🧌', hp: 999, dmg: 0, quest: true}, isQuestNPC: true });
             logMsg("<span style='color:#666; font-style:italic;'>You sense something watching from the darkness...</span>");
             // E.753.CUPCAKE: Two cupcakes on the floor near Grok
-            itemsOnGround.push({ x: rm.cx - 1, y: rm.cy,     icon: '🧁', _cupcakeIdx: 0 });
-            itemsOnGround.push({ x: rm.cx,     y: rm.cy + 1, icon: '🧁', _cupcakeIdx: 1 });
+            zone.dropAt(rm.cx - 1, rm.cy,     ItemStack.fromIcon('🧁'));
+            zone.dropAt(rm.cx,     rm.cy + 1, ItemStack.fromIcon('🧁'));
           }
         }
 
@@ -1170,7 +1170,7 @@
            if(dx > chamberX && dx < chamberX + chamberW - 1 &&
               dy > chamberY && dy < chamberY + chamberH - 1 &&
               theMap[dy] && isTileFloor(theMap[dy][dx])) {
-             itemsOnGround.push({ x: dx, y: dy, icon: d.icon });
+             zone.dropAt(dx, dy, ItemStack.fromIcon(d.icon));
            }
          });
         window._ifritChamber = { x1: chamberX + 1, y1: chamberY + 1, x2: chamberX + chamberW - 2, y2: chamberY + chamberH - 2 };
@@ -1213,7 +1213,7 @@
       spawnNpc(enemies, 20, 20, "black_knight", { stats: {...MONSTER_DEF["black_knight"]} });
       spawnNpc(enemies, 5, 5, "killer_rabbit", { stats: {...MONSTER_DEF["killer_rabbit"]} });
       spawnNpc(enemies, 2, 15, "french_taunter", { stats: {...MONSTER_DEF["french_taunter"]} });
-      itemsOnGround.push({ x: 6, y: 5, icon: '💣🌟' }); // Holy Hand Grenade
+      zone.dropAt(6, 5, ItemStack.fromIcon('💣🌟')); // Holy Hand Grenade
       
       // ── FATE OF ATLANTIS: Orichalcum Beads scattered in the desert ──
       // 8 beads total. The drawbridge machine costs 3. Players will likely
@@ -1224,7 +1224,7 @@
       ];
       beadPositions.forEach(p => {
         if(isTileFloor(theMap[p.y]?.[p.x]))
-          itemsOnGround.push({ x: p.x, y: p.y, icon: '📿' });
+          zone.dropAt(p.x, p.y, ItemStack.fromIcon('📿'));
       });
       
       // ── ATLANTEAN MACHINES (5 total, 4 decoys, 1 real drawbridge machine) ──
@@ -1551,7 +1551,7 @@
       explored = Array(mapH).fill().map(() => Array(mapW).fill(false));
       visible = Array(mapH).fill().map(() => Array(mapW).fill(false));
       enemies = [];
-      itemsOnGround = [];
+      zone.clearLootables();
       syncActiveZone();
 
       const walkable = sceneData.walkable || [];
@@ -1683,7 +1683,7 @@
   function spawnLoot(x, y, isChest) {
     // Helper: place a single item as a floor item (requires right-click to pick up)
     function placeItem(icon) {
-      itemsOnGround.push({x, y, icon});
+      zone.dropAt(x, y, ItemStack.fromIcon(icon));
     }
 
     // Rare drop override (~1% chance on floor scatter)

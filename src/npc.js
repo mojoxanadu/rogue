@@ -544,7 +544,7 @@ class Thief extends NPC {
   takeTurn(ctx) {
     if (ctx.isScene) return 'move';
     const e = this;
-    const { player, theMap, mapW, mapH, enemies, itemsOnGround, isTileFloor, CONSTANTS } = ctx;
+    const { player, theMap, mapW, mapH, enemies, zone, isTileFloor, CONSTANTS } = ctx;
     const dist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
     if (e.stats.patrolling) {
       if (dist <= 4 && (player.stationaryTurns ?? 0) >= 2) {
@@ -562,8 +562,9 @@ class Thief extends NPC {
       }
     } else {
       if (dist === 1 && Math.random() < CONSTANTS.STEAL_CHANCE) { ctx.thiefSteal(e); return 'attack'; }
-      const item = itemsOnGround.find(i => Math.abs(i.x-e.x)+Math.abs(i.y-e.y) <= 5);
-      if (item) { e.x += Math.sign(item.x-e.x); e.y += Math.sign(item.y-e.y); }
+      // Thieves walk toward the nearest floor pile (within 5 tiles).
+      const pile = zone.lootables.find(l => l && l.ownerKind === 'floor' && Math.abs(l.x-e.x)+Math.abs(l.y-e.y) <= 5);
+      if (pile) { e.x += Math.sign(pile.x-e.x); e.y += Math.sign(pile.y-e.y); }
       else      { e.x += (Math.random()>0.5?1:-1); e.y += (Math.random()>0.5?1:-1); }
     }
     return 'move';
@@ -808,6 +809,36 @@ NPC.fromSpec = function (spec = {}) {
 //  Returns the constructed NPC instance so callers can post-mutate
 //  (e.g., assign patrolPath after computing positions).
 // ──────────────────────────────────────────────────────────────
+// Normalize a single loot spec into an ItemStack or null.
+//
+// Accepts both modern and legacy shapes so callers like
+// spawnRandomAnimals can keep passing MONSTER_DEF.loot verbatim:
+//
+//   modern:  ItemStack instance (already has .itemName) — kept as-is
+//   modern:  { itemName: 'gold', qty: 5 }                — wrapped in ItemStack
+//   legacy:  { icon: '🩸', chance: 0.9, qty?: 1 }       — chance rolled at
+//                                                          spawn; on hit
+//                                                          resolved via
+//                                                          ItemStack.fromIcon
+//
+// Returns null for misses (legacy entry whose chance roll failed) or
+// for malformed entries — the caller drops nulls from the slots list.
+function _normalizeLootEntry(entry) {
+  if (!entry) return null;
+  if (typeof ItemStack !== 'undefined' && entry instanceof ItemStack) return entry;
+  if (typeof entry.itemName === 'string') {
+    return (typeof ItemStack !== 'undefined') ? new ItemStack(entry.itemName, entry.qty ?? 1) : entry;
+  }
+  if (typeof entry.icon === 'string') {
+    const chance = (typeof entry.chance === 'number') ? entry.chance : 1.0;
+    if (Math.random() >= chance) return null;
+    return (typeof ItemStack !== 'undefined' && ItemStack.fromIcon)
+      ? ItemStack.fromIcon(entry.icon, entry.qty ?? 1)
+      : null;
+  }
+  return null;
+}
+
 function spawnNpc(list, x, y, type, opts = {}) {
   const { stats: explicitStats, loot: preRolledLoot, ...rest } = opts;
   const def = (typeof MONSTER_DEF !== 'undefined' && MONSTER_DEF[type]) || {};
@@ -817,15 +848,18 @@ function spawnNpc(list, x, y, type, opts = {}) {
   // Phase 2: every NPC carries a Lootable at spawn time so pickpocket
   // (and later steal mechanics) can mutate the same list before death.
   // Loot precedence: explicit spec.loot > engine-side roller > empty.
+  // Both paths run through _normalizeLootEntry which handles legacy
+  // {icon,chance} entries — outdoor-animal MONSTER_DEFs use that shape.
   if (typeof Lootable !== 'undefined') {
-    let slots;
+    let raw;
     if (Array.isArray(preRolledLoot)) {
-      slots = preRolledLoot;
+      raw = preRolledLoot;
     } else if (typeof window !== 'undefined' && typeof window._rollMonsterLoot === 'function') {
-      slots = window._rollMonsterLoot(npc);
+      raw = window._rollMonsterLoot(npc);
     } else {
-      slots = [];
+      raw = [];
     }
+    const slots = raw.map(_normalizeLootEntry).filter(s => s !== null);
     npc.lootable = new Lootable({ ownerKind: 'npc', slots });
     // Alias for legacy readers (render.js, expireCorpses, etc.) that
     // expect an Array. Same reference as lootable.slots — mutations on

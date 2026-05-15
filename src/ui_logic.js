@@ -544,8 +544,20 @@ function _performStickyMove(src, targetSource, target) {
       currentLevel, currentScene, mapW, mapH,
       theMap, explored,
       _comment_entities: "Entities on the current floor.",
-      itemsOnGround, enemies,
-      corpses: (typeof corpses !== 'undefined') ? corpses : [],
+      lootables: zone.lootables.map(l => ({
+        ownerKind: l.ownerKind, x: l.x, y: l.y,
+        slots: l.slots.map(s => ({ itemName: s.itemName, qty: s.qty })),
+        isLocked: l.isLocked, lockKind: l.lockKind,
+      })),
+      enemies,
+      corpses: zone.corpses.map(c => ({
+        x: c.x, y: c.y, name: c.name, icon: c.icon,
+        isBones: c.isBones, actionCooldown: c.actionCooldown,
+        lootable: c.lootable ? {
+          ownerKind: c.lootable.ownerKind, x: c.lootable.x, y: c.lootable.y,
+          slots: c.lootable.slots.map(s => ({ itemName: s.itemName, qty: s.qty })),
+        } : null,
+      })),
       _comment_progress: "Persistent progression data.",
       levelCache, stolenItems, questState,
       _comment_settings: "Player settings and macros.",
@@ -588,12 +600,32 @@ function _performStickyMove(src, targetSource, target) {
     else if(!(player.identifiedItems instanceof Set)) player.identifiedItems = new Set();
     currentLevel = data.currentLevel; currentScene = data.currentScene;
     theMap = data.theMap; explored = data.explored;
-    itemsOnGround = data.itemsOnGround; enemies = data.enemies;
+    enemies = data.enemies;
     levelCache = data.levelCache; stolenItems = data.stolenItems || [];
-    if(typeof corpses !== 'undefined') {
-      corpses.length = 0;
-      (data.corpses || []).forEach(c => corpses.push(c));
-    }
+    // Rehydrate Lootables (JSON-cloned in save).
+    zone.clearLootables();
+    (data.lootables || []).forEach(spec => {
+      const slots = (spec.slots || []).map(s => new ItemStack(s.itemName, s.qty ?? 1));
+      zone.addLootable(new Lootable({
+        ownerKind: spec.ownerKind, x: spec.x, y: spec.y, slots,
+        isLocked: !!spec.isLocked, lockKind: spec.lockKind || null,
+      }));
+    });
+    // Rehydrate Corpses (with their owned Lootable).
+    zone.clearCorpses();
+    (data.corpses || []).forEach(spec => {
+      const lootable = spec.lootable ? new Lootable({
+        ownerKind: 'corpse', x: spec.x, y: spec.y,
+        slots: (spec.lootable.slots || []).map(s => new ItemStack(s.itemName, s.qty ?? 1)),
+      }) : null;
+      const c = new Corpse({
+        x: spec.x, y: spec.y, name: spec.name, icon: spec.icon,
+        isBones: !!spec.isBones, actionCooldown: spec.actionCooldown ?? 0,
+        lootable,
+      });
+      c.loot = c.lootable ? c.lootable.slots : [];
+      zone.addCorpse(c);
+    });
     if(data.gameSettings) Object.assign(window.gameSettings, data.gameSettings);
     if(data.keybindings) Object.assign(window._keybindings || {}, data.keybindings);
     if(data.macros) player.macros = data.macros;
@@ -869,6 +901,201 @@ function _performStickyMove(src, targetSource, target) {
     }
   };
 
+  // ─── Loot Popup (Phase 4b) ──────────────────────────────────
+  //
+  // Non-modal HUD overlay shown when the player stands on (or bumps
+  // into) a tile with one or more Lootables. Sections per source —
+  // each Corpse contributes its lootable as a "<Name>:" / "Bones of
+  // <name>:" section; placed Lootables contribute floor piles
+  // ("Floor:") and containers ("<Name>: [🔒]" if locked).
+  //
+  // Triggers (wired in engine.js movePlayer):
+  //   walk onto a tile with any lootable → show
+  //   any player action (move off-tile, attack, cast, ...) → hide
+  //   ESC → hide
+  //
+  // State: window._lootPopupTile = {x,y} (or null when hidden).
+
+  // Snapshot the lootable sources at the player's tile into a list of
+  // sections the renderer can iterate. Each section has:
+  //   { heading, locked, lootable, stacks: [{stack, slotIdx}] }
+  // - corpse-owned lootables come from zone.corpsesAt
+  // - placed Lootables (floor/container/door) from zone.lootablesAt
+  function _lootSectionsAtTile(x, y) {
+    const sections = [];
+    if (typeof zone === 'undefined') return sections;
+    for (const corpse of zone.corpsesAt(x, y)) {
+      const l = corpse.lootable;
+      if (!l) continue;
+      sections.push({
+        heading: corpse.isBones ? `Bones of ${corpse.name}` : corpse.name,
+        locked: false,
+        lootable: l,
+        stacks: l.slots.map((stack, slotIdx) => ({ stack, slotIdx })),
+      });
+    }
+    for (const l of zone.lootablesAt(x, y)) {
+      if (l.ownerKind === 'floor') {
+        sections.push({
+          heading: 'Floor',
+          locked: false,
+          lootable: l,
+          stacks: l.slots.map((stack, slotIdx) => ({ stack, slotIdx })),
+        });
+      } else if (l.ownerKind === 'container' || l.ownerKind === 'door') {
+        const name = l.def?.displayName || l.def?.name || (l.ownerKind === 'door' ? 'Door' : 'Container');
+        sections.push({
+          heading: name,
+          locked: !!l.isLocked,
+          lootable: l,
+          stacks: l.isLocked ? [] : l.slots.map((stack, slotIdx) => ({ stack, slotIdx })),
+        });
+      }
+    }
+    return sections;
+  }
+
+  // Re-paint the popup div from current Zone state. Hides if there's
+  // nothing useful to show.
+  function _renderLootPopup() {
+    const el = document.getElementById('loot-popup');
+    if (!el) return;
+    const tile = window._lootPopupTile;
+    if (!tile) { el.style.display = 'none'; return; }
+    const sections = _lootSectionsAtTile(tile.x, tile.y);
+    // Drop sections that are entirely empty (no stacks AND not locked).
+    const live = sections.filter(s => s.locked || s.stacks.length > 0);
+    if (live.length === 0) { el.style.display = 'none'; window._lootPopupTile = null; return; }
+
+    const hasUnlocked = live.some(s => !s.locked && s.stacks.length > 0);
+    const parts = [];
+    if (hasUnlocked) {
+      parts.push(`<button class="lp-allbtn" onclick="pickupAllAtTile(${tile.x},${tile.y})">Pick Up All</button>`);
+    }
+    for (const s of live) {
+      const lockBadge = s.locked ? `<span class="lp-lock">🔒</span>` : '';
+      parts.push(`<div class="lp-section">`);
+      parts.push(`<div class="lp-heading">${lockBadge}${s.heading}</div>`);
+      if (s.locked) {
+        parts.push(`<div class="lp-row lp-locked">(locked — unlock options TBD)</div>`);
+      } else {
+        for (const { stack, slotIdx } of s.stacks) {
+          const def = stack.def;
+          const name = def?.displayName ?? stack.itemName ?? stack.icon ?? '?';
+          const qty  = (stack.qty && stack.qty > 1) ? ` ×${stack.qty}` : '';
+          parts.push(
+            `<div class="lp-row" onclick="pickupLootSlot(${s.lootable.id},${slotIdx})">` +
+              `<span class="lp-icon">${stack.icon ?? ''}</span>` +
+              `<span class="lp-name">${name}</span>` +
+              `<span class="lp-qty">${qty}</span>` +
+            `</div>`
+          );
+        }
+      }
+      parts.push(`</div>`);
+    }
+    parts.push(`<div class="lp-hint">ESC or any action closes</div>`);
+    el.innerHTML = parts.join('');
+    el.style.display = 'block';
+  }
+
+  window.showLootPopup = (x, y) => {
+    if (typeof zone === 'undefined') return;
+    const sections = _lootSectionsAtTile(x, y);
+    if (sections.length === 0) return;
+    window._lootPopupTile = { x, y };
+    _renderLootPopup();
+  };
+
+  window.hideLootPopup = () => {
+    window._lootPopupTile = null;
+    const el = document.getElementById('loot-popup');
+    if (el) el.style.display = 'none';
+  };
+
+  // Pick up a single slot from a Lootable identified by its id.
+  // Stack goes to inventory (or gold goes to player.gp). Empty lootables
+  // get removed from zone if they're placed (floor/container/door).
+  window.pickupLootSlot = (lootableId, slotIdx) => {
+    if (typeof zone === 'undefined') return;
+    const lootable = _findLootableById(lootableId);
+    if (!lootable) return;
+    if (lootable.isLocked) return;
+    const stack = lootable.slots[slotIdx];
+    if (!stack) return;
+    if (stack.def?.pickupTo === 'gp') {
+      changeGold(stack.qty, { x: lootable.x ?? player.x, y: lootable.y ?? player.y, floatText: true });
+      lootable.remove(slotIdx);
+    } else {
+      const placed = tryPlaceInInventory(stack);
+      if (placed) {
+        lootable.remove(slotIdx);
+        logMsg(`Picked up ${stack.icon}`);
+        Sound.clink && Sound.clink();
+      } else {
+        logMsg("Inventory full!");
+        return;
+      }
+    }
+    _afterLootMutation(lootable);
+  };
+
+  // Pick Up All — iterates every unlocked section at the tile and grabs
+  // everything that fits. Items that don't fit stay where they are.
+  window.pickupAllAtTile = (x, y) => {
+    if (typeof zone === 'undefined') return;
+    const sections = _lootSectionsAtTile(x, y).filter(s => !s.locked);
+    for (const s of sections) {
+      // Iterate a snapshot so splices don't shift the live slots.
+      const stacks = s.lootable.slots.slice();
+      for (const stack of stacks) {
+        if (stack.def?.pickupTo === 'gp') {
+          changeGold(stack.qty, { x, y, floatText: true });
+          const idx = s.lootable.slots.indexOf(stack);
+          if (idx !== -1) s.lootable.remove(idx);
+          continue;
+        }
+        const placed = tryPlaceInInventory(stack);
+        if (placed) {
+          const idx = s.lootable.slots.indexOf(stack);
+          if (idx !== -1) s.lootable.remove(idx);
+          logMsg(`Picked up ${stack.icon}`);
+          Sound.clink && Sound.clink();
+        } else {
+          logMsg("Inventory full!");
+          // Stop trying — re-render shows what's left.
+          break;
+        }
+      }
+      _afterLootMutation(s.lootable);
+    }
+  };
+
+  function _findLootableById(id) {
+    if (typeof zone === 'undefined') return null;
+    for (const e of zone.entities) {
+      if (e && e.id === id && typeof Lootable !== 'undefined' && e instanceof Lootable) return e;
+    }
+    for (const c of zone.corpses) {
+      if (c && c.lootable && c.lootable.id === id) return c.lootable;
+    }
+    return null;
+  }
+
+  function _afterLootMutation(lootable) {
+    // Floor piles auto-removed when empty — leftover empty pile is
+    // visual clutter. Corpse-owned lootables stay (corpse will scatter
+    // on its own decay).
+    if (lootable.ownerKind === 'floor' && lootable.size() === 0) {
+      zone.removeLootable(lootable);
+    }
+    renderQuickslots();
+    renderInventory();
+    updateUI();
+    drawMap();
+    _renderLootPopup();
+  }
+
   window.toggleMoreActions = () => {
     const el = document.getElementById('more-actions-modal');
     if(!el) return;
@@ -1060,14 +1287,14 @@ function _performStickyMove(src, targetSource, target) {
   window.dropItemFromCtx = (idx) => {
     let item = inventory[idx];
     if(!item) return;
-    itemsOnGround.push({ x: player.x, y: player.y, icon: item.icon });
+    zone.dropAt(player.x, player.y, new ItemStack(item.itemName, item.qty ?? 1));
     inventory[idx] = null;
     logMsg(`Dropped ${item.icon} on the ground.`);
     renderQuickslots(); updateUI();
   };
 
   window.handleInventoryClick = (i) => {
-    if(dropMode) { itemsOnGround.push({ x: player.x, y: player.y, icon: inventory[i].icon }); decrementInventory(i); dropMode = false; renderInventory(); return; }
+    if(dropMode) { zone.dropAt(player.x, player.y, new ItemStack(inventory[i].itemName, 1)); decrementInventory(i); dropMode = false; renderInventory(); return; }
     if(inventory[i]) logMsg(`Inventory[${i}]: ${inventory[i].def?.name || inventory[i].icon}`);
   };
 
@@ -1286,7 +1513,7 @@ function _performStickyMove(src, targetSource, target) {
     }
     // From corpse loot drag
     if(window._lootDrag) {
-      let c = corpses[window._lootDrag.corpseIdx];
+      let c = zone.corpses[window._lootDrag.corpseIdx];
       if(c && c.loot && c.loot[window._lootDrag.itemIdx]) {
         let lootItem = c.loot[window._lootDrag.itemIdx];
         let placed = tryPlaceInInventory(lootItem);
@@ -1371,7 +1598,7 @@ function _performStickyMove(src, targetSource, target) {
     }
     // Handle loot drag from corpse window → inventory/inventory slot
     if(window.draggedSource === 'loot' && window._lootDrag) {
-      let c = corpses[window._lootDrag.corpseIdx];
+      let c = zone.corpses[window._lootDrag.corpseIdx];
       if(c && c.loot && c.loot[window._lootDrag.itemIdx]) {
         let lootItem = c.loot[window._lootDrag.itemIdx];
         let tgtArr = targetSource === 'inv' ? inventory : inventory;
@@ -1382,7 +1609,7 @@ function _performStickyMove(src, targetSource, target) {
           // Try to put displaced item back somewhere
           let freeInv = inventory.findIndex(s => s === null);
           if(freeInv !== -1) inventory[freeInv] = displaced;
-          else { let fp = inventory.findIndex(s => s === null); if(fp !== -1) inventory[fp] = displaced; else itemsOnGround.push({x: player.x, y: player.y, icon: displaced.icon}); }
+          else { let fp = inventory.findIndex(s => s === null); if(fp !== -1) inventory[fp] = displaced; else zone.dropAt(player.x, player.y, displaced); }
         }
         logMsg(`${lootItem.icon} moved to ${targetSource}.`);
         Sound.clink();
@@ -2435,6 +2662,36 @@ function _performStickyMove(src, targetSource, target) {
   window.debugToggleGodMode = () => { debugFlags.godMode = !debugFlags.godMode; logMsg(`God Mode ${debugFlags.godMode ? 'ON' : 'OFF'}`); };
   window.debugToggleNoRegen = () => { debugFlags.noRegen = !debugFlags.noRegen; logMsg(`No Regen ${debugFlags.noRegen ? 'ON' : 'OFF'}`); };
   window.debugAddGold = (amt) => { changeGold(amt); logMsg(`Added ${amt} gold.`); };
+
+  // Dump all Lootables (floor piles, containers, corpses) at the player's
+  // tile to the game log as JSON. Useful for verifying the Phase 4 loot
+  // model state — what does the popup see at this tile right now? Null
+  // and empty fields are stripped to keep the dump scannable.
+  window.debugLogLootHere = () => {
+    const x = player.x, y = player.y;
+    const prune = (obj) => {
+      const out = {};
+      for (const [k, v] of Object.entries(obj)) {
+        if (v === null || v === undefined) continue;
+        if (Array.isArray(v) && v.length === 0) continue;
+        out[k] = v;
+      }
+      return out;
+    };
+    const summarizeLootable = (l) => prune({
+      ownerKind: l.ownerKind, id: l.id, x: l.x, y: l.y,
+      icon: l.icon, isLocked: l.isLocked, lockKind: l.lockKind,
+      slots: l.slots.map(s => prune({ itemName: s.itemName, qty: s.qty, icon: s.icon })),
+    });
+    const piles   = zone.lootablesAt(x, y).map(summarizeLootable);
+    const corpses = zone.corpsesAt(x, y).map(c => prune({
+      type: 'corpse', name: c.name, icon: c.icon, isBones: c.isBones,
+      actionCooldown: c.actionCooldown,
+      lootable: c.lootable ? summarizeLootable(c.lootable) : null,
+    }));
+    const out = prune({ tile: { x, y }, corpses, lootables: piles });
+    logMsg(`<pre style="color:#aef; font-size:10px; margin:0; white-space:pre-wrap;">${JSON.stringify(out, null, 2)}</pre>`);
+  };
   window.debugAddStatPoints = (amt) => { player.statPoints += amt; logMsg(`Added ${amt} stat points.`); updateUI(); };
   // Floor navigation (floor = the current dungeon depth; level = player character level)
   window.debugWarpNextFloor = () => { currentLevel++; levelCache[currentLevel] = null; initMap(50); calculateFOV(); drawMap(); updateUI(); logMsg(`Warped to Floor ${currentLevel}.`); };
@@ -2530,7 +2787,7 @@ function _performStickyMove(src, targetSource, target) {
     if (slot !== -1) {
       inventory[slot] = new ItemStack(name, 1);
     } else {
-      itemsOnGround.push({x: player.x, y: player.y, icon: def.icon});
+      zone.dropAt(player.x, player.y, new ItemStack(name, 1));
     }
     logMsg(`Added ${def.displayName} to ${slot !== -1 ? 'inventory' : 'ground'}.`);
     renderQuickslots(); updateUI();

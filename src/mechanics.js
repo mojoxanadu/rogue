@@ -164,7 +164,7 @@
         bag.contents[itemIdx] = null;
         logMsg(`Took ${taken.icon} to inventory (inventory full).`);
       } else {
-        itemsOnGround.push({ x: player.x, y: player.y, icon: taken.icon });
+        zone.dropAt(player.x, player.y, new ItemStack(taken.itemName, taken.qty ?? 1));
         bag.contents[itemIdx] = null;
         logMsg(`${taken.icon} dropped on ground (no space).`);
       }
@@ -483,7 +483,7 @@
         } else {
           let freeSlot = inventory.findIndex(s => s === null);
           if(freeSlot !== -1) inventory[freeSlot] = new ItemStack(residueName, 1);
-          else { let fp = inventory.findIndex(s => s === null); if(fp !== -1) inventory[fp] = new ItemStack(residueName, 1); else itemsOnGround.push({x: player.x, y: player.y, icon: ItemDef.iconOf(residueName)}); }
+          else { let fp = inventory.findIndex(s => s === null); if(fp !== -1) inventory[fp] = new ItemStack(residueName, 1); else zone.dropAt(player.x, player.y, new ItemStack(residueName, 1)); }
         }
         logMsg("<span style='color:#888; font-style:italic;'>The scroll crumbles to magic residue.</span>");
         renderQuickslots(); renderInventory(); updateUI();
@@ -532,7 +532,7 @@
           inventory[pSlot] = new ItemStack('healthPotion', 1);
           logMsg(`<span style='color:var(--success)'>${ItemDef.iconOf('magicTeapot')} The Magic Teapot brews a Health Potion! (stashed in inventory)</span>`);
         } else {
-          itemsOnGround.push({x: player.x, y: player.y, icon: '🧪'});
+          zone.dropAt(player.x, player.y, new ItemStack('healthPotion', 1));
           logMsg(`<span style='color:var(--success)'>${ItemDef.iconOf('magicTeapot')} The Magic Teapot brews a Health Potion! (dropped at feet)</span>`);
         }
       }
@@ -602,79 +602,9 @@
     renderQuickslots();
   };
 
-  // === Advanced Inventory/Bag Logic (v7.0.0) ===
-  function pickupItems() {
-    let toRemove = [];
-    itemsOnGround.forEach((item, index) => {
-      if(item.x === player.x && item.y === player.y) {
-        // Greed Trap check
-        if(item.greedTrap && player.stats.int < 15) {
-           logMsg("TRAPPED BY GREED!"); isDead = true; die(); return;
-        }
-        
-        let def = item.def;
-        if(!def) {
-          // Unknown item — still pick it up as a generic misc item
-          def = { name: item.icon, type: "misc", stackable: false, maxGP: 1 };
-        }
-
-        // Gold Bag — auto-convert to gold on pickup
-        if(def.type === "wealth") {
-          let goldValue = def.maxGP ?? 50;
-          changeGold(goldValue, { x: player.x, y: player.y, floatText: true });
-          logMsg(`<span style='color:var(--success)'>💰 Found ${goldValue}g!</span>`);
-          toRemove.push(index);
-          return;
-        }
-
-        // Try Main Inventory First
-        let stacked = false;
-        if(def.stackable) {
-          let maxStack = def.maxStack ?? 10;
-          let slot = inventory.find(i => i && i.itemName === item.itemName && (i.qty ?? 1) < maxStack);
-          if(slot) { slot.qty = (slot.qty ?? 1) + 1; stacked = true; }
-        }
-        if(!stacked) {
-          let emptyIdx = inventory.findIndex(i => i === null);
-          if(emptyIdx !== -1) { inventory[emptyIdx] = ItemStack.fromIcon(item.icon, 1); stacked = true; }
-        }
-
-        // Try Inventory Second
-        if(!stacked) {
-          if(def.stackable) {
-            let maxStack = def.maxStack ?? 10;
-            let ps = inventory.find(i => i && i.itemName === item.itemName && (i.qty ?? 1) < maxStack);
-            if(ps) { ps.qty = (ps.qty ?? 1) + 1; stacked = true; }
-          }
-          if(!stacked) {
-            let pIdx = inventory.findIndex(i => i === null);
-            if(pIdx !== -1) { inventory[pIdx] = ItemStack.fromIcon(item.icon, 1); stacked = true; logMsg(`Stashed ${item.icon} in Inventory.`); }
-          }
-        }
-
-        if(stacked) {
-          toRemove.push(index);
-          logMsg(`Picked up ${item.icon}`);
-          // E760.IFRIT_AGRO: taking guarded chamber loot provokes Ifrit.
-          if(currentLevel === 1 && currentScene !== 'town') {
-            const ifrit = enemies.find(e => e && e.type === 'ifrit' && e.isIfrit);
-            const chamber = window._ifritChamber;
-            if(ifrit && !ifrit.provoked && chamber && item.x >= chamber.x1 && item.x <= chamber.x2 && item.y >= chamber.y1 && item.y <= chamber.y2) {
-              ifrit.provoked = true;
-              logMsg("<span style='color:var(--error)'>🔥 Ifrit roars: 'THIEF! You touch my treasures, you burn!'</span>");
-              if(typeof Sound !== 'undefined' && Sound.playVoice) Sound.playVoice('voice_ifrit_provoked');
-            }
-          }
-          // Achievement triggers
-          if(item.itemName === 'plansForWorldDomination') awardAchievement('world_domination');
-          if(item.itemName === 'holyHandGrenade') awardAchievement('holy_hand');
-        }
-        else { logMsg("<span style='color:var(--warning)'>Inventory full!</span>"); }
-      }
-    });
-    for(let i=toRemove.length-1; i>=0; i--) itemsOnGround.splice(toRemove[i], 1);
-    renderQuickslots(); renderInventory(); updateUI();
-  }
+  // (pickupItems() removed in Phase 4a-3 — was defined but unreferenced
+  // for many versions. Phase 4b's loot popup is the new tile-pickup
+  // entry point.)
 
   function decrementItem(idx) { 
     if(!inventory[idx]) return; 
@@ -1275,7 +1205,7 @@
       inventory[freeSlot] = new ItemStack(cur, 1);
       logMsg(`<span style='color:var(--success)'>Unequipped ${def?.displayName || cur} to inventory.</span>`);
     } else {
-      itemsOnGround.push({ x: player.x, y: player.y, icon: def?.icon || '?' });
+      zone.dropAt(player.x, player.y, new ItemStack(cur, 1));
       logMsg(`<span style='color:var(--warning)'>Inventory full — ${def?.displayName || cur} dropped at your feet.</span>`);
     }
     player.equipped[slot] = null;
