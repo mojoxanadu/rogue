@@ -891,6 +891,11 @@ function _performStickyMove(src, targetSource, target) {
     if(!el) return;
     el.style.display = (el.style.display === 'none' || el.style.display === '') ? 'flex' : 'none';
     if(el.style.display === 'flex') {
+      // Opening any modal dismisses the loot popup so it doesn't sit
+      // hidden beneath the modal (and then awkwardly reappear once the
+      // modal closes). Player can re-trigger the popup by stepping
+      // off-and-back-onto the tile.
+      if (typeof window.hideLootPopup === 'function') window.hideLootPopup();
       if(id === 'stats-modal') { showStatsTab('stats'); }
       if(id === 'magic-modal') showMagic();
       if(id === 'inventory-modal') renderInventory();
@@ -967,16 +972,23 @@ function _performStickyMove(src, targetSource, target) {
   function _unlockOptionsFor(lootable) {
     const hasItem = (name) => inventory.some(s => s && s.itemName === name);
     const tal     = (id) => (player.talents?.[id]?.level) || 0;
-    const knowsSpell = (id) => Array.isArray(player.spells) && player.spells.includes(id);
+    // player.spells is a dict { spellId: { level: N } }. Knowing a
+    // spell is presence of the key (any positive level).
+    const knowsSpell = (id) => !!(player.spells && player.spells[id] && (player.spells[id].level ?? 0) > 0);
     const slots = lootable.def?.bagSlots ?? 1;
+    const unlockMp = (typeof SPELL_DEFS !== 'undefined' && SPELL_DEFS.unlock?.mpCost) || 5;
+    const knowsUnlock = knowsSpell('unlock');
+    const enoughMp = (player.mp ?? 0) >= unlockMp;
     return [
       { method: 'key',        label: 'Use Key',         icon: '🗝️',
         enabled: hasItem('key') },
       { method: 'masterKey',  label: 'Use Master Key',  icon: '🔑',
         enabled: hasItem('masterKey') },
       { method: 'castUnlock', label: 'Cast Unlock',     icon: '✨',
-        enabled: knowsSpell('castUnlock'),
-        hint:    knowsSpell('castUnlock') ? '' : '(spell not learned)' },
+        enabled: knowsUnlock && enoughMp,
+        hint:    !knowsUnlock ? '(spell not learned)'
+               : !enoughMp   ? `(needs ${unlockMp} MP)`
+               :                `(${unlockMp} MP)` },
       { method: 'pickLock',   label: 'Pick Lock',       icon: '🔍',
         enabled: tal('lockpicking') > 0,
         hint:    tal('lockpicking') > 0 ? `(${19 * tal('lockpicking')}%)` : '(no talent)' },
@@ -1017,9 +1029,13 @@ function _performStickyMove(src, targetSource, target) {
       logMsg(`You turn a master key in the ${containerName}.`);
       unlock();
     } else if (method === 'castUnlock') {
-      logMsg(`<span style='color:#888'>Cast Unlock spell not yet implemented.</span>`);
-      _renderLootPopup();
-      return;
+      const knowsUnlock = !!(player.spells && player.spells.unlock && (player.spells.unlock.level ?? 0) > 0);
+      const mpCost = (typeof SPELL_DEFS !== 'undefined' && SPELL_DEFS.unlock?.mpCost) || 5;
+      if (!knowsUnlock) { logMsg('You do not know the Unlock spell.'); return; }
+      if ((player.mp ?? 0) < mpCost) { logMsg(`Not enough MP (need ${mpCost}).`); return; }
+      player.mp -= mpCost;
+      logMsg(`<span style='color:var(--primary)'>You cast Unlock on the ${containerName}.</span>`);
+      unlock();
     } else if (method === 'pickLock') {
       const N = tal('lockpicking');
       if (N <= 0) { logMsg('You lack the Lockpicking talent.'); return; }
@@ -1057,8 +1073,14 @@ function _performStickyMove(src, targetSource, target) {
     const tile = window._lootPopupTile;
     if (!tile) { el.style.display = 'none'; return; }
     const sections = _lootSectionsAtTile(tile.x, tile.y);
-    // Drop sections that are entirely empty (no stacks AND not locked).
-    const live = sections.filter(s => s.locked || s.stacks.length > 0);
+    // Container sections show even when empty so the player can confirm
+    // "I already cleared this one." Floor/corpse sections still drop
+    // away when empty — there's nothing visually there anyway.
+    const live = sections.filter(s =>
+      s.locked ||
+      s.stacks.length > 0 ||
+      s.lootable.ownerKind === 'container'
+    );
     if (live.length === 0) { el.style.display = 'none'; window._lootPopupTile = null; return; }
 
     const hasUnlocked = live.some(s => !s.locked && s.stacks.length > 0);
@@ -1083,6 +1105,10 @@ function _performStickyMove(src, targetSource, target) {
             `</div>`
           );
         }
+      } else if (s.stacks.length === 0) {
+        // Empty (unlocked) container — show placeholder so the player
+        // knows the section exists and is cleared.
+        parts.push(`<div class="lp-row" style="opacity:0.5; cursor:default;"><span class="lp-name">(empty)</span></div>`);
       } else {
         for (const { stack, slotIdx } of s.stacks) {
           const def = stack.def;
@@ -1204,7 +1230,11 @@ function _performStickyMove(src, targetSource, target) {
   window.toggleMoreActions = () => {
     const el = document.getElementById('more-actions-modal');
     if(!el) return;
-    el.style.display = (el.style.display === 'block') ? 'none' : 'block';
+    const opening = el.style.display !== 'block';
+    el.style.display = opening ? 'block' : 'none';
+    // Opening the more-actions ring dismisses the loot popup (both
+    // are HUD overlays — only one should be vying for attention).
+    if (opening && typeof window.hideLootPopup === 'function') window.hideLootPopup();
   };
 
   window.quickSave = () => {
@@ -1216,6 +1246,7 @@ function _performStickyMove(src, targetSource, target) {
     document.getElementById('overlay').style.display = 'none';
   };
   window.showOverlay = () => {
+    if (typeof window.hideLootPopup === 'function') window.hideLootPopup();
     document.getElementById('overlay').style.display = 'flex';
   };
 

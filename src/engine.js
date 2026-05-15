@@ -678,7 +678,25 @@
           : 1);
     advanceSceneNPCs();
     window._turnCount = (window._turnCount ?? 0) + steps;
-    
+
+    // Foraging talent — small per-turn chance to spawn a food pile on
+    // a visible floor tile. Scales with rank N (1%×N per turn). This
+    // is the "more random spawns on old floors too" half of the talent
+    // (the other half — guaranteed food on newly-generated floors —
+    // lives in map.js initMap). Limited to dungeon scenes so outdoor
+    // exploration doesn't carpet meadows in pizza.
+    {
+      const N = (player.talents?.foraging?.level) || 0;
+      if (N > 0 && currentScene === 'dungeon' && Math.random() < 0.01 * N * steps) {
+        const p = getRandomFloor && getRandomFloor();
+        if (p && visible[p.y] && visible[p.y][p.x]) {
+          const foodIcons = ['🍕','🍖','🧀','🥕','🍞','🥩'];
+          const icon = foodIcons[Math.floor(Math.random() * foodIcons.length)];
+          zone.dropAt(p.x, p.y, ItemStack.fromIcon(icon));
+        }
+      }
+    }
+
     // Atronach & Regen Suppression (v7.2.0)
     if (!player.atronach) {
        // natural regen
