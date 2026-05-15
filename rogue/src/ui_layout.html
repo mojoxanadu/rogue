@@ -810,10 +810,6 @@
       const hasMovies = hasAssets && window.assets.movies && Object.keys(window.assets.movies).length > 0;
       const hasSprites = hasAssets && window.assets.sprites && Object.keys(window.assets.sprites).length > 0;
       
-      if(typeof logMsg === 'function') {
-        logMsg("<span style='color:#888'>Class modal: assets=" + hasAssets + " movies=" + (hasMovies ? Object.keys(window.assets.movies).length : 0) + " sprites=" + (hasSprites ? Object.keys(window.assets.sprites).length : 0) + "</span>");
-      }
-      
       // Helper: convert data URL to blob URL
       function dataUrlToBlobUrl(dataUrl) {
         if(!dataUrl || typeof dataUrl !== 'string') return null;
@@ -843,9 +839,6 @@
           } else if(backdrop && backdrop.src) {
             backdropImg.src = backdrop.src;
           }
-          if(typeof logMsg === 'function') logMsg("<span style='color:#8f8'>Class backdrop loaded. type=" + typeof backdrop + "</span>");
-        } else if(typeof logMsg === 'function') {
-          logMsg("<span style='color:#f88'>Class backdrop not in sprites.</span>");
         }
       }
       
@@ -919,17 +912,11 @@
               vid.load();
               vid.play().catch(function(){});
               anyVideoLoaded = true;
-              if (typeof logMsg === 'function') logMsg("<span style='color:#8f8'>Class video " + cls + " loaded via blob URL.</span>");
-            } else if (typeof logMsg === 'function') {
-              logMsg("<span style='color:#f88'>Failed to create blob URL for " + cls + ".</span>");
             }
-          } else if (typeof logMsg === 'function') {
-            logMsg("<span style='color:#f88'>Class video '" + cls + "' not in movies.</span>");
           }
         });
       }
       if (!anyVideoLoaded) {
-        if (typeof logMsg === 'function') logMsg("<span style='color:#ff8'>No class videos available — falling back to text cards.</span>");
         showFallbackCards();
       }
     };

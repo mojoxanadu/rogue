@@ -284,6 +284,7 @@
     for(let y=0; y<mapH; y++) if(visible[y]) visible[y].fill(false);
     if(window.debugFlags && debugFlags.fullLight) {
       for(let y=0; y<mapH; y++) { visible[y].fill(true); explored[y].fill(true); }
+      _emitSawVerminIfFirstTime();
       return;
     }
     let sightLimit = lightTurns > 0 ? 15 : 5;
@@ -303,6 +304,23 @@
         visible[mapY][mapX] = true; explored[mapY][mapX] = true;
         if(theMap[mapY][mapX] === TILES.WALL || (window._eagleDoor && !window._eagleDoor.opened && mapX === window._eagleDoor.x && mapY === window._eagleDoor.y)) break;
         if(darkMap[mapY][mapX] && lightTurns <= 0) break;
+      }
+    }
+    _emitSawVerminIfFirstTime();
+  }
+
+  // Fires the `saw_vermin` quest event the first time the player has a vermin
+  // in their FOV. Matches the kill counter's allowlist so the quest can't be
+  // started by sighting a creature that wouldn't count toward completion.
+  function _emitSawVerminIfFirstTime() {
+    if(window._sawVerminFired) return;
+    if(typeof QuestEngine === 'undefined' || !enemies || !visible) return;
+    for(const e of enemies) {
+      if((e.type === 'mouse' || e.type === 'cockroach') &&
+         visible[e.y] && visible[e.y][e.x]) {
+        window._sawVerminFired = true;
+        QuestEngine.emit('saw_vermin', {});
+        return;
       }
     }
   }
@@ -981,11 +999,11 @@
       // In tallest grass the avatar appears a few px smaller (partially obscured).
       // In shortest grass or non-grass tiles, full size.
       const playerTile = theMap[player.y] && theMap[player.y][player.x];
-      let avatarSize = Math.floor(TILE_SIZE * 1.5);
+      let avatarSize = Math.floor(TILE_SIZE * 1.25);
       if(playerTile === TILES.GRASS) {
         const gh = grassHeight(player.x, player.y);
         // Tall grass (gh=1) → 88% size; short grass (gh=0) → full size
-        avatarSize = Math.floor(TILE_SIZE * 1.5 * (1.0 - gh * 0.12));
+        avatarSize = Math.floor(TILE_SIZE * 1.25 * (1.0 - gh * 0.12));
       }
       drawAvatar(ctx, cx*TILE_SIZE, cy*TILE_SIZE, avatarSize);
     }
@@ -1206,18 +1224,22 @@
     // Determine if facing east (mirror west-facing emojis)
     let facingEast = player.facing && player.facing.dx > 0;
 
+    // Anchor the glyph's bottom just above the tile floor so feet stay in
+    // the logically-occupied tile. Any size excess overflows upward (head).
+    const tileCx = px + TILE_SIZE / 2;
+    const footY = py + TILE_SIZE - 2;
+
     ctx.save();
     ctx.font = `${size - 2}px sans-serif`;
     ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
+    ctx.textBaseline = 'bottom';
 
     if(facingEast && emoji !== '🛌') {
-      // Mirror horizontally around the tile centre
-      ctx.translate(px + size / 2, py + size / 2);
+      ctx.translate(tileCx, footY);
       ctx.scale(-1, 1);
       ctx.fillText(emoji, 0, 0);
     } else {
-      ctx.fillText(emoji, px + size / 2, py + size / 2);
+      ctx.fillText(emoji, tileCx, footY);
     }
     ctx.restore();
   }
