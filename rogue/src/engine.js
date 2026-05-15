@@ -175,6 +175,17 @@
     } else {
       loot = generateLoot(type, stats);
     }
+    // Money Grubber talent: bonus gold scaling with rank N. Adds a
+    // separate gold stack so the popup shows it as a distinct entry.
+    // Excludes castle_rat / thief / ifrit / farm birds (chicken/duck)
+    // which intentionally drop no gold.
+    const NO_GOLD = new Set(['castle_rat','ifrit','chicken','duck','cow','pig']);
+    if (!NO_GOLD.has(type)) {
+      const mg = (player.talents?.moneyGrubber?.level) || 0;
+      if (mg > 0 && Math.random() < (0.15 * mg)) {
+        loot.push(new ItemStack('gold', 5 + Math.floor(Math.random() * 5 * mg)));
+      }
+    }
     return loot;
   }
   window._rollMonsterLoot = _rollMonsterLoot;
@@ -2146,6 +2157,20 @@
       return;
     }
     if (tile === TILES.WALL || tile === TILES.TREE || tile === TILES.ROCK || tile === TILES.MOAT) { Sound.oof(); return; }
+
+    // Phase 5b: bumping into an impassable container (Box, Chest, Safe,
+    // etc. with def.impassable) opens the loot popup at THAT tile rather
+    // than moving the player onto it. Walking onto a non-impassable
+    // container falls through to the regular move-and-show-popup path.
+    if (typeof zone !== 'undefined') {
+      const bumped = zone.lootablesAt(nx, ny).find(l => l.ownerKind === 'container' && l.def?.impassable);
+      if (bumped) {
+        if (typeof window.hideLootPopup === 'function') window.hideLootPopup();
+        if (typeof window.showLootPopup === 'function') window.showLootPopup(nx, ny);
+        Sound.oof();
+        return;
+      }
+    }
     if(tile === TILES.DEEP_WATER && isEagleSkyTile(nx, ny)) {
       Sound.oof();
       logMsg("<span style='color:#88CCFF'>A sheer cliff drops away into open sky. Best not to test whether you can fly.</span>");

@@ -955,6 +955,100 @@ function _performStickyMove(src, targetSource, target) {
     return sections;
   }
 
+  // ─── Unlock options (Phase 5c+5d) ───────────────────────────
+  //
+  // For a locked Lootable, return the list of unlock methods the
+  // player can attempt. Each option carries:
+  //   { method, label, icon, enabled, hint }
+  // - 'key' / 'masterKey'  : enabled if matching key in inventory
+  // - 'castUnlock'         : enabled if Cast Unlock spell known
+  // - 'pickLock'           : enabled if Lockpicking talent owned
+  // - 'kick'               : always enabled (player takes damage)
+  function _unlockOptionsFor(lootable) {
+    const hasItem = (name) => inventory.some(s => s && s.itemName === name);
+    const tal     = (id) => (player.talents?.[id]?.level) || 0;
+    const knowsSpell = (id) => Array.isArray(player.spells) && player.spells.includes(id);
+    const slots = lootable.def?.bagSlots ?? 1;
+    return [
+      { method: 'key',        label: 'Use Key',         icon: '🗝️',
+        enabled: hasItem('key') },
+      { method: 'masterKey',  label: 'Use Master Key',  icon: '🔑',
+        enabled: hasItem('masterKey') },
+      { method: 'castUnlock', label: 'Cast Unlock',     icon: '✨',
+        enabled: knowsSpell('castUnlock'),
+        hint:    knowsSpell('castUnlock') ? '' : '(spell not learned)' },
+      { method: 'pickLock',   label: 'Pick Lock',       icon: '🔍',
+        enabled: tal('lockpicking') > 0,
+        hint:    tal('lockpicking') > 0 ? `(${19 * tal('lockpicking')}%)` : '(no talent)' },
+      { method: 'kick',       label: 'Kick',            icon: '🦶',
+        enabled: true,
+        hint:    `(${5 + 10 * tal('shitKicker')}%, 1..${slots} dmg)` },
+    ];
+  }
+
+  // Resolve an unlock attempt — consumes resources, rolls success,
+  // mutates the Lootable on success, applies kick damage either way.
+  // Returns nothing; messages are logged and the popup re-renders.
+  window.attemptUnlock = (lootableId, method) => {
+    const lootable = _findLootableById(lootableId);
+    if (!lootable || !lootable.isLocked) { _renderLootPopup(); return; }
+    const containerName = lootable.def?.displayName ?? 'container';
+    const tal = (id) => (player.talents?.[id]?.level) || 0;
+    const consumeOne = (name) => {
+      const idx = inventory.findIndex(s => s && s.itemName === name);
+      if (idx === -1) return false;
+      const stk = inventory[idx];
+      stk.qty = (stk.qty ?? 1) - 1;
+      if (stk.qty <= 0) inventory[idx] = null;
+      return true;
+    };
+    const unlock = () => {
+      lootable.isLocked = false;
+      lootable.lockKind = null;
+      logMsg(`<span style='color:var(--success)'>The ${containerName} unlocks.</span>`);
+      Sound.clink && Sound.clink();
+    };
+    if (method === 'key') {
+      if (!consumeOne('key')) { logMsg('No key available.'); return; }
+      logMsg(`You turn a key in the ${containerName}.`);
+      unlock();
+    } else if (method === 'masterKey') {
+      if (!consumeOne('masterKey')) { logMsg('No master key available.'); return; }
+      logMsg(`You turn a master key in the ${containerName}.`);
+      unlock();
+    } else if (method === 'castUnlock') {
+      logMsg(`<span style='color:#888'>Cast Unlock spell not yet implemented.</span>`);
+      _renderLootPopup();
+      return;
+    } else if (method === 'pickLock') {
+      const N = tal('lockpicking');
+      if (N <= 0) { logMsg('You lack the Lockpicking talent.'); return; }
+      const chance = 0.19 * N;
+      if (Math.random() < chance) {
+        logMsg(`You deftly pick the lock on the ${containerName}.`);
+        unlock();
+      } else {
+        logMsg(`<span style='color:var(--warning)'>You fumble the picks; the ${containerName} stays locked.</span>`);
+      }
+    } else if (method === 'kick') {
+      const slots = lootable.def?.bagSlots ?? 1;
+      const chance = 0.05 + 0.10 * tal('shitKicker');
+      const dmg = 1 + Math.floor(Math.random() * slots);
+      if (typeof player.takeDamage === 'function') player.takeDamage(dmg, 'corporal');
+      else player.hp = Math.max(0, player.hp - dmg);
+      logMsg(`<span style='color:var(--error)'>You kick the ${containerName} — ${dmg} damage!</span>`);
+      if (Math.random() < chance) {
+        logMsg(`The ${containerName} splinters open.`);
+        unlock();
+      } else {
+        logMsg(`<span style='color:var(--warning)'>It holds.</span>`);
+      }
+    }
+    updateUI();
+    drawMap();
+    _renderLootPopup();
+  };
+
   // Re-paint the popup div from current Zone state. Hides if there's
   // nothing useful to show.
   function _renderLootPopup() {
@@ -977,7 +1071,18 @@ function _performStickyMove(src, targetSource, target) {
       parts.push(`<div class="lp-section">`);
       parts.push(`<div class="lp-heading">${lockBadge}${s.heading}</div>`);
       if (s.locked) {
-        parts.push(`<div class="lp-row lp-locked">(locked — unlock options TBD)</div>`);
+        const opts = _unlockOptionsFor(s.lootable);
+        for (const opt of opts) {
+          const dim = opt.enabled ? '' : ' style="opacity:0.45; cursor:not-allowed;"';
+          const handler = opt.enabled ? `onclick="attemptUnlock(${s.lootable.id},'${opt.method}')"` : '';
+          parts.push(
+            `<div class="lp-row"${dim} ${handler}>` +
+              `<span class="lp-icon">${opt.icon}</span>` +
+              `<span class="lp-name">${opt.label}</span>` +
+              `<span class="lp-qty">${opt.hint || ''}</span>` +
+            `</div>`
+          );
+        }
       } else {
         for (const { stack, slotIdx } of s.stacks) {
           const def = stack.def;
