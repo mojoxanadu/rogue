@@ -9,6 +9,7 @@
 #   make check        diff release against $(SNAPSHOT) modulo timestamps
 #   make lint         node --check every <script> block in dev_build.html
 #   make test         node:test runner against tests/*.test.js
+#   make mobile       PWA bundle (mobile/dist/ — drop on any HTTPS host)
 #   make clean        wipe artifacts (keeps raw/ and src/)
 
 include config
@@ -20,7 +21,7 @@ SNAPSHOT  ?= @HEAD:rogue/roguelike.html
 
 PY_SHARED := config.py build_files.py
 
-.PHONY: all dev assets release check lint test clean
+.PHONY: all dev assets release check lint test mobile clean
 .DEFAULT_GOAL := dev
 
 dev: dev_build.html
@@ -48,6 +49,11 @@ lint: dev_build.html lint.py
 
 test:
 	node --test tests/
+
+# PWA bundle. Ensures dev_build.html is fresh, then delegates to the
+# subdir Makefile that injects manifest+SW glue into dist/.
+mobile: dev
+	$(MAKE) -C mobile
 
 clean:
 	rm -f dev_build.html assets.json roguelike.html roguelike_build*.html raw/title_rendered.png

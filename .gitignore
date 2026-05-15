@@ -12,6 +12,9 @@ assets.json
 err
 log
 
+# PWA bundle (derived from dev_build.html via mobile/Makefile).
+mobile/dist/
+
 # Local-only credentials + ops scripts (intentionally not secured — throwaway PAT for GitHub mirror).
 GITHUB_TOKEN
 snapshot
