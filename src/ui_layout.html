@@ -299,6 +299,13 @@
   toggleModal(). Each modal has a header with a close button and a body
   that is filled dynamically by JavaScript.
 -->
+<!-- Loot popup — non-modal HUD overlay shown when the player stands on
+     (or bumps into) a tile with one or more Lootables. Renders sections
+     per Lootable with the design-note format: "Corpse:", "Floor:",
+     locked entries marked with a lock icon. Dismissed by ESC or any
+     other player action. Hidden by default. -->
+<div id="loot-popup" class="interactive" style="display:none;"></div>
+
 <!-- Circular "more actions" modal. Six buttons arranged on a circle.
      Outside-click closes; no border around the modal. -->
 <div id="more-actions-modal" onclick="if(event.target===this) toggleMoreActions()"

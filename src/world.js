@@ -43,6 +43,17 @@ class Zone {
     this.worldY    = spec.worldY    ?? 0;
     this.tiles     = spec.tiles     ?? Zone._emptyGrid(spec.width, spec.height, 0);
     this.entities  = spec.entities  ?? [];
+    // Corpses are real game entities with a lifecycle (expire to bones,
+    // can be walked on, can be eaten in future). Kept in their own
+    // collection rather than mixed into lootables so the lifecycle
+    // (createdAt, isBones, expiry) stays cohesive. Each corpse holds a
+    // reference to its loot via corpse.lootable.
+    this.corpses   = spec.corpses   ?? [];
+    // World-bound Lootables: floor piles, placed containers, locked
+    // doors. Distinguished by lootable.ownerKind. Anonymous floor piles
+    // are find-or-created via dropAt(); placed containers and doors are
+    // added explicitly during map generation (Phases 5+).
+    this.lootables = spec.lootables ?? [];
     // Visibility layers — undefined means "not yet built"; consumers
     // (FOV code, render) initialize lazily.
     this.darkMap   = spec.darkMap   ?? null;
@@ -99,6 +110,60 @@ class Zone {
   /** Entities at a specific tile (predicate-friendly). */
   entitiesAt(x, y) {
     return this.entities.filter(e => e && e.x === x && e.y === y);
+  }
+
+  // ─── Corpses ────────────────────────────────────────────────
+
+  addCorpse(corpse) {
+    if (!corpse) return;
+    this.corpses.push(corpse);
+  }
+
+  removeCorpse(corpse) {
+    const i = this.corpses.indexOf(corpse);
+    if (i === -1) return false;
+    this.corpses.splice(i, 1);
+    return true;
+  }
+
+  corpsesAt(x, y) {
+    return this.corpses.filter(c => c && c.x === x && c.y === y);
+  }
+
+  // ─── Lootables (world-bound) ────────────────────────────────
+
+  addLootable(lootable) {
+    if (!lootable) return;
+    this.lootables.push(lootable);
+  }
+
+  removeLootable(lootable) {
+    const i = this.lootables.indexOf(lootable);
+    if (i === -1) return false;
+    this.lootables.splice(i, 1);
+    return true;
+  }
+
+  lootablesAt(x, y) {
+    return this.lootables.filter(l => l && l.x === x && l.y === y);
+  }
+
+  /**
+   * Find-or-create the floor Lootable at (x,y) and push `stack` into it.
+   * "Floor" pile is anonymous loot lying on the ground (gold pile, item
+   * dropped by the player, scatter from a decayed corpse). Multiple
+   * stacks accumulate into a single floor Lootable per tile so the popup
+   * renders one "Floor:" section per tile, not one per item.
+   * Returns the Lootable.
+   */
+  dropAt(x, y, stack) {
+    let l = this.lootables.find(L => L && L.ownerKind === 'floor' && L.x === x && L.y === y);
+    if (!l) {
+      l = new Lootable({ ownerKind: 'floor', x, y });
+      this.lootables.push(l);
+    }
+    l.add(stack);
+    return l;
   }
 }
 
