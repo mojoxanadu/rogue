@@ -130,7 +130,9 @@
       }
     }
     Sound.chestOpen();
-    window._openBagPanel = { source, idx };
+    // Phase: bags now track open state via window._openBags (Set of
+    // ItemStack refs) so multiple can be inline-expanded at once.
+    if (window._openBags) window._openBags.add(item);
     const inventoryModal = document.getElementById('inventory-modal');
     if(inventoryModal && (inventoryModal.style.display === 'none' || inventoryModal.style.display === '')) {
       inventoryModal.style.display = 'flex';
@@ -170,25 +172,29 @@
       }
     }
     renderQuickslots(); renderInventory(); updateUI();
-    if(!bag.contents.some(Boolean)) {
-      window._openBagPanel = { source, idx: bagIdx };
-    }
   };
 
   // Legacy wrapper
   window.takeItemFromBag = (bagIdx, itemIdx) => { window.takeItemFromBagSource('inventory', bagIdx, itemIdx); };
 
-  // Generate a random bag (by camelCase name) appropriate for the given level.
-  // Returns the bag's name string; callers wrap in `new ItemStack(name, 1)`.
-  // Fallback 'smallClothBag' when no candidates fit the criteria.
+  // Generate a random bag (by camelCase name) appropriate for the given
+  // level. Returns the bag's name string; callers wrap in
+  // `new ItemStack(name, 1)`. Fallback 'smallClothBag' when no
+  // candidates fit the criteria.
+  //
+  // Restricted to type:'bag' — Phase 3 added type:'container' for
+  // world-bound containers (Box, Iron Chest, Safe, ...) which also
+  // pass def.isContainer() because they have bagSlots > 0. Those are
+  // NOT pickup-able and must never end up in loot/bag pools.
   window.randomBag = (playerLevel) => {
     const candidates = [];
     for(const [name, def] of Object.entries(ItemDefs)) {
-      if(!def.isContainer() || def.bagSlots > 10) continue;
-      if(def.minLevel && playerLevel < def.minLevel) continue;
+      if (def.type !== 'bag') continue;
+      if (!def.isContainer() || def.bagSlots > 10) continue;
+      if (def.minLevel && playerLevel < def.minLevel) continue;
       candidates.push(name);
     }
-    if(candidates.length === 0) return 'smallClothBag';
+    if (candidates.length === 0) return 'smallClothBag';
     return candidates[Math.floor(Math.random() * candidates.length)];
   };
 

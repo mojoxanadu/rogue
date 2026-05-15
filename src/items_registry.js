@@ -34,18 +34,23 @@ function _toCamelCase(displayName) {
     return;
   }
   const collisions = {};
-  for (const [icon, spec] of Object.entries(LEGACY_ITEM_DATA)) {
+  for (const [key, spec] of Object.entries(LEGACY_ITEM_DATA)) {
     const name = _toCamelCase(spec.name);
     if (!name) {
-      console.warn(`items_registry.js: skipping ${icon} (no derivable name from "${spec.name}")`);
+      console.warn(`items_registry.js: skipping ${key} (no derivable name from "${spec.name}")`);
       continue;
     }
     if (ItemDefs[name]) {
-      // Two emoji entries share a displayName → camelCase collision.
+      // Two entries share a displayName → camelCase collision.
       // Keep the first; record the rest for inspection.
-      (collisions[name] = collisions[name] || []).push({ icon, existing: ItemDefs[name].icon });
+      (collisions[name] = collisions[name] || []).push({ key, existing: ItemDefs[name].icon });
       continue;
     }
+    // Icon resolution: prefer explicit spec.icon if present (lets two
+    // entries share a glyph by keying on camelCase name instead of
+    // icon). Falls back to the dict key — the legacy shape uses the
+    // icon as the key, so existing entries keep working unchanged.
+    const icon = (typeof spec.icon === 'string' && spec.icon) ? spec.icon : key;
     const def = new ItemDef({
       ...spec,
       name,

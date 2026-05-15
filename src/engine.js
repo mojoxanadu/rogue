@@ -222,6 +222,14 @@
   function tryPlaceInInventory(item) {
     const def = item.def || { stackable:false };
     const qty = item.qty ?? 1;
+    // Defensive: world-bound containers (Box, Chest, Safe, ...) are
+    // never pickup-able. If one somehow appears in a loot list (loot-
+    // gen bug, corrupted save), refuse to absorb it rather than let
+    // the player carry a Safe in their pocket.
+    if (def.type === 'container') {
+      logMsg(`<span style='color:var(--warning)'>You can't carry the ${def.displayName || def.name || 'container'}.</span>`);
+      return false;
+    }
 
     // Stack in existing inventory slots first
     if(def.stackable) {

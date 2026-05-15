@@ -347,6 +347,14 @@
     display: flex; justify-content: center; align-items: center;
     font-size: 20px; position: relative; cursor: grab;
   }
+  /* Open-bag tint — slots that belong to an "open" bag (the bag's own
+     cell + its inline-expanded interior) share a warm tan background
+     so they read as one connected group. Nesting depth darkens the
+     tint slightly so a bag-in-a-bag is visually distinguishable. */
+  .inv-slot.bag-open       { background: rgba(122,90,60,0.35); border-color: #a08060; }
+  .inv-slot.bag-open-d1    { background: rgba(122,90,60,0.55); border-color: #b89070; }
+  .inv-slot.bag-open-d2    { background: rgba(122,90,60,0.75); border-color: #c8a080; }
+
   /* Hover gated to real hover-capable devices AND not flagged touch by
      JS device sniff. Belt-and-suspenders: some mobile browsers report
      (hover: hover) when a stylus or BT pointer is paired, so the media
