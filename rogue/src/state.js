@@ -586,21 +586,26 @@
     //   bagSlots   — capacity (also drives lock-spawn chance: slots * 10%)
     //   lockable   — may spawn locked; once unlocked, stays unlocked
     //   impassable — blocks tile-walk (must bump to loot)
-    "🟫":    { name: "Box",              type: "container", stackable: false, bagSlots: 2,                   impassable: true, maxGP: 8 },
-    "🛢️":   { name: "Barrel",           type: "container", stackable: false, bagSlots: 2,                   impassable: true, maxGP: 10 },
-    "🪑📦":  { name: "End Table",        type: "container", stackable: false, bagSlots: 2,                   impassable: true, maxGP: 12 },
-    "💰📦":  { name: "Strongbox",        type: "container", stackable: false, bagSlots: 3,  lockable: true,                    maxGP: 60 },
-    "🪵📦":  { name: "Small Crate",      type: "container", stackable: false, bagSlots: 3,                                     maxGP: 15 },
-    "🗃️":   { name: "Small Chest",      type: "container", stackable: false, bagSlots: 4,  lockable: true,                    maxGP: 80 },
-    "🪑":    { name: "Table",            type: "container", stackable: false, bagSlots: 4,                   impassable: true, maxGP: 25 },
-    "🗃️🪨": { name: "Large Chest",      type: "container", stackable: false, bagSlots: 7,  lockable: true,  impassable: true, maxGP: 150 },
-    "🪨📦":  { name: "Large Crate",      type: "container", stackable: false, bagSlots: 7,                                     maxGP: 40 },
-    "⚙️🗃️": { name: "Iron Chest",       type: "container", stackable: false, bagSlots: 9,  lockable: true,  impassable: true, maxGP: 300 },
-    "🪑↔️":  { name: "Long Table",       type: "container", stackable: false, bagSlots: 9,                   impassable: true, maxGP: 60 },
-    "🗄️":   { name: "Safe",             type: "container", stackable: false, bagSlots: 12, lockable: true,  impassable: true, maxGP: 500 },
-    "✨📦":  { name: "Box of Holding",   type: "container", stackable: false, bagSlots: 15,                                    maxGP: 800 },
-    "✨🗃️": { name: "Chest of Holding", type: "container", stackable: false, bagSlots: 20, lockable: true,                    maxGP: 1500 },
-    "🗄️✨": { name: "Safe of Holding",  type: "container", stackable: false, bagSlots: 30, lockable: true,  impassable: true, maxGP: 3000 },
+    //
+    // Keyed by camelCase name (not icon) so multiple containers may
+    // share a glyph — double-emoji compounds were visually spilling
+    // into the right-neighbor tile, so every icon below is a single
+    // grapheme. Reuse is fine: the camelCase name is the identity.
+    box:            { name: "Box",              type: "container", icon: "🟫", stackable: false, bagSlots: 2,                   impassable: true, maxGP: 8 },
+    barrel:         { name: "Barrel",           type: "container", icon: "🛢️", stackable: false, bagSlots: 2,                   impassable: true, maxGP: 10 },
+    endTable:       { name: "End Table",        type: "container", icon: "🟫", stackable: false, bagSlots: 2,                   impassable: true, maxGP: 12 },
+    strongbox:      { name: "Strongbox",        type: "container", icon: "📫", stackable: false, bagSlots: 3,  lockable: true,                    maxGP: 60 },
+    smallCrate:     { name: "Small Crate",      type: "container", icon: "📦", stackable: false, bagSlots: 3,                                     maxGP: 15 },
+    smallChest:     { name: "Small Chest",      type: "container", icon: "🗃️", stackable: false, bagSlots: 4,  lockable: true,                    maxGP: 80 },
+    table:          { name: "Table",            type: "container", icon: "🟫", stackable: false, bagSlots: 4,                   impassable: true, maxGP: 25 },
+    largeChest:     { name: "Large Chest",      type: "container", icon: "🗃️", stackable: false, bagSlots: 7,  lockable: true,  impassable: true, maxGP: 150 },
+    largeCrate:     { name: "Large Crate",      type: "container", icon: "📦", stackable: false, bagSlots: 7,                                     maxGP: 40 },
+    ironChest:      { name: "Iron Chest",       type: "container", icon: "🗃️", stackable: false, bagSlots: 9,  lockable: true,  impassable: true, maxGP: 300 },
+    longTable:      { name: "Long Table",       type: "container", icon: "🟫", stackable: false, bagSlots: 9,                   impassable: true, maxGP: 60 },
+    safe:           { name: "Safe",             type: "container", icon: "🗄️", stackable: false, bagSlots: 12, lockable: true,  impassable: true, maxGP: 500 },
+    boxOfHolding:   { name: "Box of Holding",   type: "container", icon: "📦", stackable: false, bagSlots: 15,                                    maxGP: 800 },
+    chestOfHolding: { name: "Chest of Holding", type: "container", icon: "🗃️", stackable: false, bagSlots: 20, lockable: true,                    maxGP: 1500 },
+    safeOfHolding:  { name: "Safe of Holding",  type: "container", icon: "🗄️", stackable: false, bagSlots: 30, lockable: true,  impassable: true, maxGP: 3000 },
 
     // ── FOOD ─────────────────────────────────────────
     "🥕": { name: "Carrot", type: "food", stackable: true, maxStack: 99, maxHeal: 3, foodValue: 8, maxGP: 2 },

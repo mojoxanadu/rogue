@@ -331,23 +331,14 @@
 
 <div class="draggable-modal" id="inventory-modal" style="top: 100px; left: 200px; width: 628px;">
   <div class="modal-header"><span>🎒 Inventory</span><span class="modal-selected-name" id="inv-selected-name"></span><button class="modal-close" onclick="toggleModal('inventory-modal')">✖</button></div>
-  <div class="modal-body" style="padding:6px 8px; display:flex; gap:10px; align-items:flex-start;">
-    <div style="flex:1; min-width:0;">
-      <!-- Inventory slots flow like wrapped text: as many per row as
-           fit the available container width (set by the desktop modal
-           width, or by body.touch's full-viewport pinning on mobile).
-           No explicit row count — height auto-grows with the slot
-           count, so the modal stays exactly as tall as its content. -->
-      <div id="inventory-grid" style="display:flex; flex-wrap:wrap; gap:0;"></div>
-    </div>
-    <div id="inventory-bag-panel" style="display:none; width:172px; min-height:160px; padding:10px; border-radius:10px; border:1px solid rgba(208,188,255,0.35); background:linear-gradient(180deg, rgba(28,22,16,0.98), rgba(18,14,10,0.98)), repeating-linear-gradient(135deg, rgba(255,255,255,0.03) 0 6px, rgba(0,0,0,0.03) 6px 12px); box-shadow: inset 0 0 0 1px rgba(255,214,170,0.05);">
-      <div id="inventory-bag-panel-header" style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; color:#dbc7a7; font-size:11px; letter-spacing:0.04em; text-transform:uppercase;">
-        <span>Bag</span>
-        <button onclick="closeBagPanel()" style="padding:1px 6px; font-size:10px; color:#dbc7a7; background:rgba(0,0,0,0.25); border:1px solid rgba(219,199,167,0.25);">x</button>
-      </div>
-      <div id="inventory-bag-panel-subtitle" style="margin-bottom:8px; color:#8f8578; font-size:10px;"></div>
-      <div id="inventory-bag-panel-grid" style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px;"></div>
-    </div>
+  <div class="modal-body" style="padding:6px 8px;">
+    <!-- Inventory slots flow like wrapped text: as many per row as
+         fit the available container width. When a bag is "open"
+         (tracked in window._openBags), its slots inline after the
+         bag's own slot with a tinted background so the player sees
+         bag + interior as one connected group. Modal grows vertically
+         as more bags open. -->
+    <div id="inventory-grid" style="display:flex; flex-wrap:wrap; gap:0;"></div>
   </div>
 </div>
 

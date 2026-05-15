@@ -28,18 +28,69 @@
 // selection is active — they only act as drop TARGETS, never as sources.
 //
 // State: window._stickyDrag is null OR
-//        { source: 'inv', idx: <inventory index 0..29> } OR
-//        { source: 'equip', slot: <'head'|'chest'|...> }
+//        { source: 'inv',   idx: <inventory index 0..29> } OR
+//        { source: 'equip', slot: <'head'|'chest'|...> } OR
+//        { source: 'bag',   bagRef: ItemStack, slotIdx: N }
+//
+// Open-bag state: window._openBags is a Set of ItemStack references.
+// A bag is "open" when its ItemStack is in the set; rendering inlines
+// its contents right after the bag's slot. Multiple bags can be open
+// at once (including nested). Open state survives sticky-drag moves
+// because the Set keys on the stable ItemStack reference.
 window._stickyDrag = null;
+if (!window._openBags) window._openBags = new Set();
+
+// Lazy-init a bag's contents array. The ItemStack constructor at
+// items.js:136 allocates `slots` for container defs, but the existing
+// bag-panel code, engine pickup, and quest reward paths all read
+// `bag.contents`. Standardize on `contents` here; Phase 6 cleanup can
+// collapse the two field names.
+function _bagContents(bag) {
+  if (!bag) return [];
+  if (!bag.contents) bag.contents = new Array(bag.def?.bagSlots ?? 3).fill(null);
+  return bag.contents;
+}
+window._bagContents = _bagContents;
+
+// Recursively check if `bag` contains `candidate` at any depth. Used to
+// reject bag-in-bag drops that would create a cycle (A contains B,
+// then attempting to put A inside B).
+function _bagContainsDeep(bag, candidate) {
+  if (!bag || !candidate) return false;
+  const c = bag.contents;
+  if (!c) return false;
+  for (const s of c) {
+    if (!s) continue;
+    if (s === candidate) return true;
+    if (s.def?.type === 'bag' && _bagContainsDeep(s, candidate)) return true;
+  }
+  return false;
+}
+window._bagContainsDeep = _bagContainsDeep;
 
 // Returns true if a sticky operation handled this tap (caller should NOT
 // fall through to use-item / open-bag / etc.).
-window.handleStickyTap = function(targetSource, targetIdxOrSlot) {
+//
+// Signature backwards-compatible:
+//   handleStickyTap('inv', 5)              → inv slot 5
+//   handleStickyTap('equip', 'head')       → equip slot
+//   handleStickyTap('bag', 2, bagRef)      → bag's slot 2 inside bagRef
+window.handleStickyTap = function(targetSource, targetIdxOrSlot, bagRef) {
   const src = window._stickyDrag;
   if (!src) return false;
+  const target = (targetSource === 'bag')
+    ? { source: 'bag', bagRef, slotIdx: targetIdxOrSlot }
+    : (targetSource === 'equip')
+      ? { source: 'equip', slot: targetIdxOrSlot }
+      : { source: 'inv',   idx:  targetIdxOrSlot };
   // Self-tap: cancel the selection.
-  const isSame = (src.source === targetSource &&
-    (src.source === 'equip' ? src.slot === targetIdxOrSlot : src.idx === targetIdxOrSlot));
+  const isSame = (
+    src.source === target.source && (
+      src.source === 'equip' ? src.slot === target.slot :
+      src.source === 'bag'   ? (src.bagRef === target.bagRef && src.slotIdx === target.slotIdx) :
+                               src.idx === target.idx
+    )
+  );
   if (isSame) {
     window._stickyDrag = null;
     if (typeof renderQuickslots === 'function') renderQuickslots();
@@ -48,8 +99,7 @@ window.handleStickyTap = function(targetSource, targetIdxOrSlot) {
     if (typeof window._updateSelectedNameLabels === 'function') window._updateSelectedNameLabels();
     return true;
   }
-  // Different target: perform the move.
-  _performStickyMove(src, targetSource, targetIdxOrSlot);
+  _performStickyMove(src, target);
   window._stickyDrag = null;
   if (typeof renderQuickslots === 'function') renderQuickslots();
   if (typeof renderInventory === 'function') renderInventory();
@@ -58,13 +108,19 @@ window.handleStickyTap = function(targetSource, targetIdxOrSlot) {
   return true;
 };
 
-// Begin a sticky selection. Called from tap handlers on bag-panel slots
-// and equip slots (NOT from quickslot HUD slots).
-window.startStickyDrag = function(source, idxOrSlot) {
-  // Reject empty sources
+// Begin a sticky selection. Same-shape signature as handleStickyTap.
+window.startStickyDrag = function(source, idxOrSlot, bagRef) {
   if (source === 'inv'   && !inventory[idxOrSlot]) return;
   if (source === 'equip' && !player.equipped[idxOrSlot]) return;
-  window._stickyDrag = source === 'equip' ? { source, slot: idxOrSlot } : { source, idx: idxOrSlot };
+  if (source === 'bag') {
+    const c = bagRef && bagRef.contents;
+    if (!c || !c[idxOrSlot]) return;
+    window._stickyDrag = { source: 'bag', bagRef, slotIdx: idxOrSlot };
+  } else if (source === 'equip') {
+    window._stickyDrag = { source, slot: idxOrSlot };
+  } else {
+    window._stickyDrag = { source, idx: idxOrSlot };
+  }
   if (typeof renderQuickslots === 'function') renderQuickslots();
   if (typeof renderInventory === 'function') renderInventory();
   if (typeof updateUI === 'function') updateUI();
@@ -78,50 +134,91 @@ function _equipSlotFits(slot, def) {
   return def.slot === slot;
 }
 
-function _performStickyMove(src, targetSource, target) {
-  if (src.source === 'inv' && targetSource === 'inv') {
-    // Inventory-to-inventory: swap the two stack references.
-    const tmp = inventory[src.idx];
-    inventory[src.idx] = inventory[target];
-    inventory[target] = tmp;
+// Read the stack at an addr (returns null for empty).
+function _readAddr(addr) {
+  if (addr.source === 'inv') return inventory[addr.idx] || null;
+  if (addr.source === 'bag') {
+    const c = (addr.bagRef && addr.bagRef.contents) || [];
+    return c[addr.slotIdx] || null;
+  }
+  if (addr.source === 'equip') {
+    const name = player.equipped[addr.slot];
+    return name ? new ItemStack(name, 1) : null;
+  }
+  return null;
+}
+
+// Write a stack into an addr (inv or bag only — equip uses dedicated paths).
+function _writeAddr(addr, stack) {
+  if (addr.source === 'inv') { inventory[addr.idx] = stack; return; }
+  if (addr.source === 'bag') {
+    const c = window._bagContents(addr.bagRef);
+    c[addr.slotIdx] = stack;
     return;
   }
-  if (src.source === 'inv' && targetSource === 'equip') {
-    // Equip from inventory — reuse the existing swap logic.
-    if (typeof swapEquip === 'function') swapEquip(src.idx, target);
+}
+
+function _performStickyMove(src, target) {
+  // Equip targets: route through existing equip/unequip path. Source
+  // must be inv (no bag-direct-equip yet — Phase 6 may unify).
+  if (target.source === 'equip') {
+    if (src.source === 'inv') {
+      if (typeof swapEquip === 'function') swapEquip(src.idx, target.slot);
+      return;
+    }
+    if (src.source === 'equip') {
+      if (typeof logMsg === 'function') {
+        logMsg(`<span style='color:#aaa'>To move an equipped item to another slot, tap an inventory slot to unequip first.</span>`);
+      }
+      return;
+    }
+    // bag → equip: unsupported for now (would need to clear bag slot
+    // AND validate equip-slot fit — niche; defer to Phase 6).
+    if (typeof logMsg === 'function') logMsg('Move bag item to inventory first, then equip.');
     return;
   }
-  if (src.source === 'equip' && targetSource === 'inv') {
-    // Unequip into a specific inv slot. If that slot is occupied, the
-    // existing item must fit the equip slot (it'll be swapped in).
-    const slot = src.slot;
-    const equippedName = player.equipped[slot];
+
+  // Equip source going to inv or bag: use existing unequip flow if
+  // target is inv; bag target works the same with swap semantics.
+  if (src.source === 'equip') {
+    const equippedName = player.equipped[src.slot];
     if (!equippedName) return;
-    const existing = inventory[target];
+    const existing = _readAddr(target);
     if (existing) {
       const existingDef = ItemDefs[existing.itemName];
-      if (!_equipSlotFits(slot, existingDef)) {
+      if (!_equipSlotFits(src.slot, existingDef)) {
         if (typeof logMsg === 'function') {
-          logMsg(`<span style='color:var(--warning)'>${existingDef?.displayName ?? 'That item'} doesn't fit the ${slot} slot.</span>`);
+          logMsg(`<span style='color:var(--warning)'>${existingDef?.displayName ?? 'That item'} doesn't fit the ${src.slot} slot.</span>`);
         }
         return;
       }
-      player.equipped[slot] = existing.itemName;
+      player.equipped[src.slot] = existing.itemName;
     } else {
-      player.equipped[slot] = null;
+      player.equipped[src.slot] = null;
     }
-    inventory[target] = new ItemStack(equippedName, 1);
+    _writeAddr(target, new ItemStack(equippedName, 1));
     return;
   }
-  if (src.source === 'equip' && targetSource === 'equip') {
-    // Equip-to-equip via tap is ambiguous (cross-slot move usually needs a
-    // type swap with the destination). Easier path: unequip to inventory
-    // first, then equip from there. Show a hint and bail.
-    if (typeof logMsg === 'function') {
-      logMsg(`<span style='color:#aaa'>To move an equipped item to another slot, tap an inventory slot to unequip first.</span>`);
+
+  // Inv ↔ inv, inv ↔ bag, bag ↔ inv, bag ↔ bag — uniform swap with
+  // bag-cycle guard.
+  const srcStack = _readAddr(src);
+  if (!srcStack) return;
+  if (target.source === 'bag') {
+    if (srcStack.def?.type === 'bag') {
+      if (srcStack === target.bagRef) {
+        if (typeof logMsg === 'function') logMsg(`<span style='color:var(--warning)'>Can't put a bag inside itself.</span>`);
+        return;
+      }
+      if (window._bagContainsDeep(srcStack, target.bagRef)) {
+        if (typeof logMsg === 'function') logMsg(`<span style='color:var(--warning)'>Would create a bag-in-bag cycle.</span>`);
+        return;
+      }
     }
-    return;
   }
+  const tgtStack = _readAddr(target);
+  _writeAddr(target, srcStack);
+  _writeAddr(src,    tgtStack);
 }
 
 // === E13: Item Status Glow Helper ===
@@ -1434,174 +1531,174 @@ function _performStickyMove(src, targetSource, target) {
     if(inventory[i]) logMsg(`Inventory[${i}]: ${inventory[i].def?.name || inventory[i].icon}`);
   };
 
-  window._openBagPanel = null;
-  window.closeBagPanel = () => {
-    window._openBagPanel = null;
-    renderInventory();
+  // Tap-on-bag handler: completes a pending sticky-drag if one's
+  // active (drops the carried item INTO this bag's slot space — for
+  // top-level inv bags, completion goes to the bag's first empty
+  // contents slot). Otherwise toggles select+open per the design:
+  //   not selected → select for sticky AND toggle open state
+  //   already selected → deselect, leave open state alone
+  window.handleBagInvTap = (invIdx) => {
+    const bag = inventory[invIdx];
+    if (!bag || bag.def?.type !== 'bag') return;
+    const drag = window._stickyDrag;
+    // Pending drag from somewhere else → drop into this bag's first
+    // empty contents slot. (Tap on a SPECIFIC inner slot is handled
+    // by the inner-slot handler, not here.)
+    if (drag) {
+      const isSameInvSlot = (drag.source === 'inv' && drag.idx === invIdx);
+      if (!isSameInvSlot) {
+        const c = window._bagContents(bag);
+        const emptyIdx = c.findIndex(s => s === null || s === undefined);
+        if (emptyIdx === -1) {
+          if (typeof logMsg === 'function') logMsg(`<span style='color:var(--warning)'>The bag is full.</span>`);
+          return;
+        }
+        return window.handleStickyTap('bag', emptyIdx, bag);
+      }
+      // Same-tap deselect (no open toggle).
+      return window.handleStickyTap('inv', invIdx);
+    }
+    // No pending drag → select+toggle-open.
+    if (window._openBags.has(bag)) window._openBags.delete(bag);
+    else                           window._openBags.add(bag);
+    window.startStickyDrag('inv', invIdx);
   };
 
-  function renderAttachedBagPanel() {
-    const panel = document.getElementById('inventory-bag-panel');
-    const header = document.getElementById('inventory-bag-panel-header');
-    const subtitle = document.getElementById('inventory-bag-panel-subtitle');
-    const grid = document.getElementById('inventory-bag-panel-grid');
-    if(!panel || !header || !subtitle || !grid) return;
-
-    const openBag = window._openBagPanel;
-    if(!openBag) {
-      panel.style.display = 'none';
-      grid.innerHTML = '';
-      return;
-    }
-
-    const sourceArr = openBag.source === 'inv' ? inventory : inventory;
-    const bag = sourceArr[openBag.idx];
-    const bagDef = bag && bag.def;
-    if(!bag || !bagDef || bagDef.type !== 'bag') {
-      panel.style.display = 'none';
-      grid.innerHTML = '';
-      window._openBagPanel = null;
-      return;
-    }
-
-    panel.style.display = 'block';
-    header.firstElementChild.textContent = `${bag.icon} ${bagDef.name}`;
-    subtitle.textContent = `${bagDef.bagSlots ?? 3} slots`;
-    grid.innerHTML = '';
-
-    const cols = Math.min(3, Math.max(1, Math.ceil(Math.sqrt((bag.contents || []).length || 1))));
-    grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-    (bag.contents || []).forEach((entry, slotIdx) => {
-      const cell = document.createElement('div');
-      cell.style.cssText = 'min-height:42px; border-radius:8px; border:1px solid rgba(219,199,167,0.18); background:rgba(0,0,0,0.22); display:flex; align-items:center; justify-content:center; position:relative;';
-
-      // B6: All bag slots accept drops from inventory/inventory
-      cell.addEventListener('dragover', allowDrop);
-      cell.addEventListener('drop', (e) => {
-        e.preventDefault();
-        if(window.draggedSource === 'inv' || window.draggedSource === 'inventory') {
-          const srcArr = window.draggedSource === 'inv' ? inventory : inventory;
-          const srcItem = srcArr[window.draggedItemIdx];
-          if(!srcItem) return;
-          const destArr = openBag.source === 'inv' ? inventory : inventory;
-          const destBag = destArr[openBag.idx];
-          if(!destBag || !destBag.contents) return;
-          // Swap: if slot is occupied, put displaced item back to src slot
-          const displaced = destBag.contents[slotIdx];
-          destBag.contents[slotIdx] = new ItemStack(srcItem.itemName, srcItem.qty ?? 1);
-          srcArr[window.draggedItemIdx] = displaced ? new ItemStack(displaced.itemName, displaced.qty ?? 1) : null;
-          logMsg(`${srcItem.icon} moved into bag.`);
-          if(typeof Sound !== 'undefined') Sound.clink();
-          window.draggedItemIdx = null; window.draggedSource = null;
-          renderQuickslots(); renderInventory(); updateUI();
+  // Same toggle for a bag that lives INSIDE another bag (nested).
+  window.handleBagBagTap = (parentBag, slotIdx) => {
+    const bag = (parentBag.contents || [])[slotIdx];
+    if (!bag || bag.def?.type !== 'bag') return;
+    const drag = window._stickyDrag;
+    if (drag) {
+      const isSameBagSlot = (drag.source === 'bag' && drag.bagRef === parentBag && drag.slotIdx === slotIdx);
+      if (!isSameBagSlot) {
+        const c = window._bagContents(bag);
+        const emptyIdx = c.findIndex(s => s === null || s === undefined);
+        if (emptyIdx === -1) {
+          if (typeof logMsg === 'function') logMsg(`<span style='color:var(--warning)'>The bag is full.</span>`);
+          return;
         }
-      });
-
-      if(entry) {
-        const entryName = entry.def?.displayName ?? entry.icon;
-        cell.title = entryName;
-        cell.style.cursor = 'grab';
-        cell.draggable = true;
-        cell.innerHTML = `<span style="font-size:18px;">${entry.icon}</span>${entry.qty > 1 ? `<span style="position:absolute; right:2px; bottom:1px; font-size:9px; color:#c9b39a;">x${entry.qty}</span>` : ''}`;
-        // B6: Drag start — expose this bag slot item as a draggable source tagged 'bag'
-        cell.addEventListener('dragstart', (e) => {
-          window.draggedSource = 'bag';
-          window.draggedItemIdx = slotIdx;
-          window._dragBagSource = openBag.source;
-          window._dragBagIdx = openBag.idx;
-          e.dataTransfer.setData('text/plain', String(slotIdx));
-        });
-        cell.addEventListener('dragend', () => {
-          window.draggedSource = null;
-          window.draggedItemIdx = null;
-          window._dragBagSource = null;
-          window._dragBagIdx = null;
-        });
-        cell.onclick = () => takeItemFromBagSource(openBag.source, openBag.idx, slotIdx);
-      } else {
-        cell.style.borderStyle = 'dashed';
-        cell.style.opacity = '0.65';
+        return window.handleStickyTap('bag', emptyIdx, bag);
       }
-      grid.appendChild(cell);
-    });
-  }
+      return window.handleStickyTap('bag', slotIdx, parentBag);
+    }
+    if (window._openBags.has(bag)) window._openBags.delete(bag);
+    else                           window._openBags.add(bag);
+    window.startStickyDrag('bag', slotIdx, parentBag);
+  };
 
+  // ─── Inventory rendering (Phase: inline open bags) ─────────
+  //
+  // The inventory modal renders the 30-slot inventory as a wrap-flowed
+  // sequence of cells. When a bag is "open" (its ItemStack lives in
+  // window._openBags), its contents inline right after the bag's own
+  // cell with a tinted background so the player sees bag + interior
+  // as one connected group. Open bags can nest — depth tints darken
+  // slightly. Modal grows vertically to fit.
   window.renderInventory = () => {
     const grid = document.getElementById('inventory-grid');
-    if(!grid) return;
+    if (!grid) return;
     grid.innerHTML = '';
-    // The inventory modal renders the full 30-slot inventory only. The
-    // quickslot HUD lives at the bottom of the screen (renderQuickslots
-    // → #quickslots-grid) and shows the first player.quickslotCount slots
-    // separately. Earlier this loop ALSO rendered a quickslot row at the
-    // top of the modal — that was a holdover from when inventory and
-    // pouch were separate arrays. After the Phase 2 merge, the top row
-    // duplicated slots 0-9 (and showed the same item in two places in
-    // the same modal). Removed.
-    // ─── Inventory stash slots (30 slots) ───────────────────────
-    for(let i=0; i<30; i++) {
-      let item = inventory[i], slot = document.createElement('div');
-      slot.className = 'inv-slot'; slot.style.width='36px'; slot.style.height='36px'; slot.style.fontSize='16px'; slot.style.minWidth='0';
-      slot.style.borderRadius='6px'; slot.style.margin='1px';
-      if (window._stickyDrag && window._stickyDrag.source === 'inv' && window._stickyDrag.idx === i) {
-        slot.classList.add('sticky-selected');
-      }
-      slot.draggable = item ? true : false;
-      if(item) slot.addEventListener('dragstart', (e) => handleDragStart(e, 'inventory', i));
-      slot.addEventListener('dragover', allowDrop);
-      slot.addEventListener('drop', (e) => handleDropItem(e, 'inventory', i));
-      if(item) {
-        const itemDef = item.def;
-        const isBag = itemDef && itemDef.type === 'bag';
-        slot.innerHTML = item.icon;
-        if(item.qty > 1) slot.innerHTML += `<span class="qty">${item.qty}</span>`;
-        if(isBag && window._openBagPanel && window._openBagPanel.source === 'inventory' && window._openBagPanel.idx === i) {
-          slot.style.borderColor = '#dbc7a7';
-          slot.style.boxShadow = '0 0 10px rgba(219,199,167,0.2)';
-        }
-        // E13: Green glow for items with status effects
-        const hasEffect = itemHasStatusEffect(item.icon);
-        const isIdentified = player.identifiedItems && player.identifiedItems.has(item.icon);
-        if(hasEffect) {
-          slot.style.outline = '2px solid #0f8';
-          if(!isIdentified) slot.title = (item.def?.displayName ?? item.icon) + ' [Unidentified effects]';
-        }
-      }
-      slot.onclick = () => {
-        // Sticky-tap: drop pending move here; or, if no pending move and
-        // this slot has an item, start a sticky-drag. Empty slots without
-        // a pending move do nothing (consistent with desktop drag UX).
-        // Source key MUST be 'inv' (not 'inventory') to match
-        // _performStickyMove's switch and the bag-panel/quickslot
-        // selection-display checks. Was 'inventory' previously and
-        // every sticky-move from the modal silently noop'd.
-        if (handleStickyTap('inv', i)) return;
-        if (item) {
-          // Bag items still need single-click for handleInventoryClick
-          // (which opens or interacts with the bag in the existing flow).
-          // Non-bag items: start a sticky-drag instead of immediately
-          // consuming/equipping — preserves the "tap, then tap target"
-          // mobile UX.
-          if (item.def && item.def.type === 'bag') {
-            handleInventoryClick(i);
-          } else {
-            startStickyDrag('inv', i);
-          }
-        }
-      };
-      slot.ondblclick = () => {
-        if(item && item.def && item.def.type === 'bag') openBagInInventory(i);
-      };
-      slot.oncontextmenu = (e) => {
-        e.preventDefault();
-        if(item && item.def && item.def.type === 'bag') {
-          openBagInInventory(i);
-        }
-      };
-      grid.appendChild(slot);
+
+    for (let i = 0; i < 30; i++) {
+      _appendInvSlot(grid, i);
     }
-    renderAttachedBagPanel();
   };
+
+  // Render a single inventory slot, and (recursively) its bag contents
+  // if the slot holds an open bag.
+  function _appendInvSlot(grid, invIdx) {
+    const item = inventory[invIdx];
+    const isBag = !!(item && item.def && item.def.type === 'bag');
+    const isOpenBag = isBag && window._openBags.has(item);
+    const cell = _makeInvCell({
+      item,
+      onTap:    () => _onInvSlotTap(invIdx),
+      tintDepth: isOpenBag ? 0 : -1,
+      stickySelected: !!(window._stickyDrag &&
+        window._stickyDrag.source === 'inv' &&
+        window._stickyDrag.idx === invIdx),
+    });
+    grid.appendChild(cell);
+    if (isOpenBag) _appendBagContents(grid, item, 1);
+  }
+
+  // Render every contents-slot of an open bag inline, and recurse for
+  // any nested open bags. depth tint brightens the further down we go.
+  function _appendBagContents(grid, bag, depth) {
+    const c = window._bagContents(bag);
+    for (let k = 0; k < c.length; k++) {
+      const inner = c[k];
+      const innerIsBag = !!(inner && inner.def && inner.def.type === 'bag');
+      const innerIsOpen = innerIsBag && window._openBags.has(inner);
+      const cell = _makeInvCell({
+        item: inner,
+        onTap:    () => _onBagSlotTap(bag, k),
+        tintDepth: depth,
+        stickySelected: !!(window._stickyDrag &&
+          window._stickyDrag.source === 'bag' &&
+          window._stickyDrag.bagRef === bag &&
+          window._stickyDrag.slotIdx === k),
+      });
+      grid.appendChild(cell);
+      if (innerIsOpen) _appendBagContents(grid, inner, depth + 1);
+    }
+  }
+
+  // Build a single inv-slot DOM node with shared styling.
+  // tintDepth: -1 = normal slot, 0..N = open-bag depth tint band.
+  function _makeInvCell({ item, onTap, tintDepth, stickySelected }) {
+    const slot = document.createElement('div');
+    slot.className = 'inv-slot';
+    slot.style.width = '36px'; slot.style.height = '36px';
+    slot.style.fontSize = '16px'; slot.style.minWidth = '0';
+    slot.style.borderRadius = '6px'; slot.style.margin = '1px';
+    if (stickySelected) slot.classList.add('sticky-selected');
+    if (tintDepth === 0) slot.classList.add('bag-open');
+    else if (tintDepth === 1) slot.classList.add('bag-open-d1');
+    else if (tintDepth >= 2) slot.classList.add('bag-open-d2');
+    if (item) {
+      slot.innerHTML = item.icon;
+      if (item.qty > 1) slot.innerHTML += `<span class="qty">${item.qty}</span>`;
+      // E13: Green glow for items with status effects
+      const hasEffect = itemHasStatusEffect(item.icon);
+      const isIdentified = player.identifiedItems && player.identifiedItems.has(item.icon);
+      if (hasEffect) {
+        slot.style.outline = '2px solid #0f8';
+        if (!isIdentified) slot.title = (item.def?.displayName ?? item.icon) + ' [Unidentified effects]';
+      } else if (item.def?.displayName) {
+        slot.title = item.def.displayName;
+      }
+    }
+    slot.onclick = onTap;
+    return slot;
+  }
+
+  function _onInvSlotTap(invIdx) {
+    const item = inventory[invIdx];
+    // Bag-tap is its own handler — toggles open + sticky select.
+    if (item && item.def && item.def.type === 'bag') {
+      return window.handleBagInvTap(invIdx);
+    }
+    // Non-bag: standard sticky-tap flow.
+    if (window.handleStickyTap('inv', invIdx)) return;
+    if (item) window.startStickyDrag('inv', invIdx);
+  }
+
+  function _onBagSlotTap(parentBag, slotIdx) {
+    const inner = (parentBag.contents || [])[slotIdx];
+    if (inner && inner.def && inner.def.type === 'bag') {
+      return window.handleBagBagTap(parentBag, slotIdx);
+    }
+    if (window.handleStickyTap('bag', slotIdx, parentBag)) return;
+    if (inner) window.startStickyDrag('bag', slotIdx, parentBag);
+  }
+
+  // Legacy stub — call sites still reference renderAttachedBagPanel.
+  // The old side-panel was retired; renderInventory now inlines bag
+  // contents directly in the main grid. No-op kept so old callers
+  // don't ReferenceError; remove in a future cleanup.
+  function renderAttachedBagPanel() { /* no-op since side panel removed */ }
 
   window.handleDragStart = (e, source, idx) => { window.draggedSource = source; window.draggedItemIdx = idx; e.dataTransfer.setData('text/plain', idx); };
   window.allowDrop = (e) => { e.preventDefault(); };
