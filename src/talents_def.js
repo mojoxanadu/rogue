@@ -257,7 +257,6 @@ const TALENT_DEFS = {
     cost:  { initial: 1, improve: 1, max: 5 },
     requires: { rogueClass: 1 },
     flags: [],
-    tbi:   true,
     desc:  `More food spawns on newly generated floors and a little more random spawns on old floors too. More for higher N.`,
   },
   greatStealth: {
@@ -395,11 +394,10 @@ const TALENT_DEFS = {
   },
   lockpicking: {
     name:  'Lockpicking',
-    cost:  { initial: null, improve: null, max: null },
+    cost:  { initial: 3, improve: 3, max: 5 },
     requires: { rogueClass: 1 },
     flags: [],
-    tbi:   true,
-    desc:  `Spellcasters start with Spellcaster Class, Wield Staffs, and`,
+    desc:  `Base chance 19% × N to pick a lock on a container or door.`,
   },
   mageSlayer: {
     name:  'Mage Slayer',
@@ -430,7 +428,6 @@ const TALENT_DEFS = {
     cost:  { initial: 3, improve: 2, max: 5 },
     requires: { scavenger: 1 },
     flags: [],
-    tbi:   true,
     desc:  `More gold bags spawn on newly generated floors, more drops as loot from foes. Higher frequency for higher N.`,
   },
   necroticHealing: {
@@ -509,7 +506,6 @@ const TALENT_DEFS = {
     cost:  { initial: 2, improve: 2, max: 5 },
     requires: { brawler: 1 },
     flags: [],
-    tbi:   true,
     desc:  `Adds effectiveness to your Kick action used to smash open locked doors and chests. Chance on each kick increased by 10% x N.`,
   },
   scavenger: {

@@ -1033,6 +1033,24 @@
       spawnMonsters(3 + currentLevel);
       // Scatter some floor loot
       for(let i=0; i<2; i++) { let p = getRandomFloor(); spawnLoot(p.x, p.y, false); }
+      // Phase 5a: place a few world-bound containers (Box, Chest, Safe...)
+      // for the player to find. Count scales with floor depth.
+      spawnContainers(1 + Math.floor(currentLevel / 3) + Math.floor(Math.random() * 2), currentLevel);
+      // Phase 5e: Foraging talent — extra food piles on newly generated
+      // floors. Each rank adds one guaranteed food pile.
+      const foragingLvl = (player.talents?.foraging?.level) || 0;
+      const foodIcons = ['🍕','🍖','🧀','🥕','🍞','🥩'];
+      for (let i = 0; i < foragingLvl; i++) {
+        const p = getRandomFloor();
+        if (p) zone.dropAt(p.x, p.y, ItemStack.fromIcon(foodIcons[Math.floor(Math.random() * foodIcons.length)]));
+      }
+      // Phase 5e: Money Grubber talent — extra gold-bag piles on newly
+      // generated floors, ramps with rank.
+      const mgLvl = (player.talents?.moneyGrubber?.level) || 0;
+      for (let i = 0; i < mgLvl; i++) {
+        const p = getRandomFloor();
+        if (p) zone.dropAt(p.x, p.y, new ItemStack('gold', 10 + Math.floor(Math.random() * 30 * Math.max(1, currentLevel))));
+      }
 
       // ── MUSIC: Play scene-appropriate background music ──
       // LESSON: Music sets the emotional tone. Different floors and scenes
@@ -1759,6 +1777,99 @@
       placeItem(floorLoot[Math.floor(Math.random() * floorLoot.length)]);
     }
   }
+
+  // ─── Container spawning (Phase 5a) ──────────────────────────
+  //
+  // Place world-bound Lootables (Box, Chest, Safe, etc.) on dungeon
+  // floors. Each container type from LEGACY_ITEM_DATA's "container"
+  // section is gated by a minimum floor depth so a Safe of Holding
+  // doesn't show up on floor 1 alongside a wooden box. Lockable
+  // containers roll `isLocked` at slots × 10% per the design notes.
+  // Loot inside is rolled from a level-appropriate pool.
+
+  // Container types available at each floor depth, weighted lightly so
+  // smaller containers stay more common. Returns the camelCase ItemDef
+  // name. Higher floors include everything from lower floors plus the
+  // tier-specific additions.
+  function _pickContainerType(playerFloor) {
+    const tiers = [
+      // tier 0 — floor 1+
+      { minFloor: 1,  types: ['box','barrel','endTable','smallCrate','strongbox','smallChest','table'] },
+      // tier 1 — floor 4+
+      { minFloor: 4,  types: ['largeChest','largeCrate','longTable','ironChest','boxOfHolding'] },
+      // tier 2 — floor 8+
+      { minFloor: 8,  types: ['safe','chestOfHolding'] },
+      // tier 3 — floor 12+
+      { minFloor: 12, types: ['safeOfHolding'] },
+    ];
+    const pool = [];
+    for (const tier of tiers) {
+      if (playerFloor >= tier.minFloor) pool.push(...tier.types);
+    }
+    return pool[Math.floor(Math.random() * pool.length)] || 'box';
+  }
+
+  // Roll a single loot stack for inside a container. Reuses the chest
+  // loot table — tweak weights here for container-specific tuning later.
+  function _rollContainerLoot(playerFloor) {
+    const r = Math.random();
+    if      (r < 0.18) return new ItemStack('gold', 20 + Math.floor(Math.random() * 30 * Math.max(1, playerFloor)));
+    else if (r < 0.30) return new ItemStack('sword', 1);
+    else if (r < 0.42) return new ItemStack('shield', 1);
+    else if (r < 0.55) return new ItemStack('healthPotion', 1);
+    else if (r < 0.65) return new ItemStack('candle', 1);
+    else if (r < 0.75) return new ItemStack(randomBag(playerFloor), 1);
+    else if (r < 0.84) return new ItemStack('identifyScroll', 1);
+    else if (r < 0.93) return new ItemStack('townPortalScroll', 1);
+    else               return new ItemStack('key', 1);
+  }
+
+  // Place a single container Lootable at (x, y). Returns the Lootable
+  // (or null if no container ItemDef was selectable).
+  function spawnContainer(x, y, playerFloor = 1) {
+    const name = _pickContainerType(playerFloor);
+    const def = (typeof ItemDefs !== 'undefined') ? ItemDefs[name] : null;
+    if (!def) return null;
+    // 1..bagSlots stacks inside, rolled from the loot table.
+    const slotCount = Math.max(1, Math.floor(Math.random() * (def.bagSlots ?? 1)) + 1);
+    const slots = [];
+    for (let i = 0; i < slotCount; i++) slots.push(_rollContainerLoot(playerFloor));
+    // Lock chance = slots × 10% per the design notes, only if lockable.
+    const isLocked = !!def.lockable && (Math.random() < (def.bagSlots * 0.10));
+    const lockKind = isLocked
+      ? (def.bagSlots >= 9 ? 'iron' : def.bagSlots >= 4 ? 'iron' : 'wood')
+      : null;
+    const lootable = new Lootable({
+      ownerKind: 'container',
+      x, y,
+      slots,
+      isLocked, lockKind,
+      icon: def.icon,
+      def,
+    });
+    zone.addLootable(lootable);
+    return lootable;
+  }
+  window.spawnContainer = spawnContainer;
+
+  // Place N containers on random floor tiles in the current zone. Picks
+  // floors not already occupied by enemies, the player, or other
+  // lootables. Used by initMap for dungeon scenes.
+  function spawnContainers(count, playerFloor = 1) {
+    for (let i = 0; i < count; i++) {
+      let pos = getRandomFloor();
+      let tries = 0;
+      while (tries++ < 20 && pos && (
+        (player.x === pos.x && player.y === pos.y) ||
+        enemies.some(e => e && e.x === pos.x && e.y === pos.y) ||
+        zone.lootablesAt(pos.x, pos.y).length > 0
+      )) {
+        pos = getRandomFloor();
+      }
+      if (pos) spawnContainer(pos.x, pos.y, playerFloor);
+    }
+  }
+  window.spawnContainers = spawnContainers;
 
   // E20: Spawn random animals in outdoor scenes
   function spawnRandomAnimals(scene) {

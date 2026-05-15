@@ -845,22 +845,35 @@
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
 
-    // Draw Floor Piles (with hover outline). Each floor Lootable on
-    // zone.entities holds 1..N ItemStacks at one tile; the first stack
-    // is the visible glyph (the popup will list the full pile).
-    zone.entities.forEach((pile) => {
-      if (!(typeof Lootable !== 'undefined' && pile instanceof Lootable)) return;
-      if (pile.ownerKind !== 'floor' || pile.size() === 0) return;
-      const top = pile.slots[0];
-      let vx = pile.x - player.x + cx, vy = pile.y - player.y + cy;
-      if(vx >= 0 && vx < VIEW_COLS && vy >= 0 && vy < VIEW_ROWS && visible[pile.y] && visible[pile.y][pile.x]) {
+    // Draw Lootables (floor piles + placed containers). Each draws its
+    // .icon — floor piles auto-derive from first slot; containers use
+    // their def.icon. Locked containers overlay a 🔒 badge.
+    zone.entities.forEach((l) => {
+      if (!(typeof Lootable !== 'undefined' && l instanceof Lootable)) return;
+      if (l.ownerKind !== 'floor' && l.ownerKind !== 'container') return;
+      if (l.ownerKind === 'floor' && l.size() === 0) return;
+      let vx = l.x - player.x + cx, vy = l.y - player.y + cy;
+      if(vx >= 0 && vx < VIEW_COLS && vy >= 0 && vy < VIEW_ROWS && visible[l.y] && visible[l.y][l.x]) {
         const tilePx = vx * TILE_SIZE;
         const tilePy = vy * TILE_SIZE;
-        const flashActive = pile._flashRed && Date.now() - pile._flashRed < 250;
-        const hoverActive = window._hoverFloorItemIdx === zone.entities.indexOf(pile);
+        const flashActive = l._flashRed && Date.now() - l._flashRed < 250;
+        const hoverActive = window._hoverFloorItemIdx === zone.entities.indexOf(l);
         const glowColor = flashActive ? '#ff4d4d' : hoverActive ? (window._hoverFloorItemReachable ? '#ffffff' : '#9a9a9a') : null;
-        if(glowColor) drawFootprintGlow((targetCtx, glyphPx, glyphPy) => drawFloorItemGlyph(targetCtx, top, glyphPx, glyphPy), tilePx, tilePy, glowColor);
-        drawFloorItemGlyph(ctx, top, tilePx, tilePy);
+        // Pass the lootable itself — drawFloorItemGlyph reads `.icon`,
+        // which works for both ItemStack (slot in floor pile) and a
+        // container Lootable (icon set at construction from def).
+        const drawTarget = (l.ownerKind === 'floor') ? l.slots[0] : l;
+        if(glowColor) drawFootprintGlow((targetCtx, glyphPx, glyphPy) => drawFloorItemGlyph(targetCtx, drawTarget, glyphPx, glyphPy), tilePx, tilePy, glowColor);
+        drawFloorItemGlyph(ctx, drawTarget, tilePx, tilePy);
+        // Lock badge for locked containers.
+        if (l.ownerKind === 'container' && l.isLocked) {
+          ctx.save();
+          ctx.font = '11px sans-serif';
+          ctx.textAlign = 'right';
+          ctx.textBaseline = 'top';
+          ctx.fillText('🔒', tilePx + TILE_SIZE - 2, tilePy + 1);
+          ctx.restore();
+        }
       }
     });
 
