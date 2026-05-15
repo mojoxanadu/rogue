@@ -64,7 +64,16 @@ function syncActiveZone() {
   zone.darkMap  = darkMap;
   zone.explored = explored;
   zone.visible  = visible;
-  zone.entities = enemies;
+  // Phase 4a-2.5: zone.entities is NOT aliased to enemies any more.
+  // It holds Corpses + Lootables (anything "drawn on a tile that isn't
+  // a Sentient"); the enemies global keeps holding NPCs until Phase 6
+  // retires it. Schedulers concatenate both lists.
+  //
+  // Re-running syncActiveZone after `enemies = []` reassignments must
+  // NOT wipe zone.entities — corpses and lootables on the current
+  // level survive a reassignment of `enemies`. The only place that
+  // legitimately clears world Lootables is map-gen, which calls
+  // zone.clearCorpses() / zone.clearLootables() explicitly.
 }
 syncActiveZone();
 window.world           = world;

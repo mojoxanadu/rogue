@@ -42,23 +42,37 @@ class Zone {
     this.worldX    = spec.worldX    ?? 0;
     this.worldY    = spec.worldY    ?? 0;
     this.tiles     = spec.tiles     ?? Zone._emptyGrid(spec.width, spec.height, 0);
+    // CANONICAL entity list — every drawable on this zone's tiles lives
+    // here: NPCs, Player, Corpse, Lootable (floor piles + containers +
+    // doors as Phases 5+ land). Specialized accessors (`corpses`,
+    // `lootables`) are filter getters over this list; mutators
+    // (addCorpse, addLootable, dropAt, etc.) push here. Cross-list
+    // duplication is forbidden — `entities` is the source of truth.
     this.entities  = spec.entities  ?? [];
-    // Corpses are real game entities with a lifecycle (expire to bones,
-    // can be walked on, can be eaten in future). Kept in their own
-    // collection rather than mixed into lootables so the lifecycle
-    // (createdAt, isBones, expiry) stays cohesive. Each corpse holds a
-    // reference to its loot via corpse.lootable.
-    this.corpses   = spec.corpses   ?? [];
-    // World-bound Lootables: floor piles, placed containers, locked
-    // doors. Distinguished by lootable.ownerKind. Anonymous floor piles
-    // are find-or-created via dropAt(); placed containers and doors are
-    // added explicitly during map generation (Phases 5+).
-    this.lootables = spec.lootables ?? [];
+    // Legacy spec.corpses/lootables (snapshots from before unification)
+    // get folded into entities so old saves keep loading.
+    if (Array.isArray(spec.corpses))   for (const c of spec.corpses)   this.entities.push(c);
+    if (Array.isArray(spec.lootables)) for (const l of spec.lootables) this.entities.push(l);
     // Visibility layers — undefined means "not yet built"; consumers
     // (FOV code, render) initialize lazily.
     this.darkMap   = spec.darkMap   ?? null;
     this.explored  = spec.explored  ?? null;
     this.visible   = spec.visible   ?? null;
+  }
+
+  // ─── Filter getters over the unified entities list ──────────
+  // Each call rebuilds a fresh array. Read-only — mutating the returned
+  // array does NOT affect zone.entities. Use addCorpse/removeCorpse/
+  // clearCorpses (and the lootable counterparts) for mutation.
+  get corpses() {
+    return this.entities.filter(e =>
+      (typeof Corpse !== 'undefined' && e instanceof Corpse)
+    );
+  }
+  get lootables() {
+    return this.entities.filter(e =>
+      (typeof Lootable !== 'undefined' && e instanceof Lootable)
+    );
   }
 
   /** Convert a zone-local coordinate to world space. */
@@ -113,17 +127,27 @@ class Zone {
   }
 
   // ─── Corpses ────────────────────────────────────────────────
+  // Convenience wrappers around the unified entities list. addCorpse
+  // pushes to entities; removeCorpse splices it; clearCorpses removes
+  // every Corpse in one pass (replaces the legacy `corpses.length = 0`
+  // mutation, which now silently fails since the corpses getter
+  // returns a derived array).
 
   addCorpse(corpse) {
     if (!corpse) return;
-    this.corpses.push(corpse);
+    this.entities.push(corpse);
   }
 
   removeCorpse(corpse) {
-    const i = this.corpses.indexOf(corpse);
+    const i = this.entities.indexOf(corpse);
     if (i === -1) return false;
-    this.corpses.splice(i, 1);
+    this.entities.splice(i, 1);
     return true;
+  }
+
+  clearCorpses() {
+    if (typeof Corpse === 'undefined') return;
+    this.entities = this.entities.filter(e => !(e instanceof Corpse));
   }
 
   corpsesAt(x, y) {
@@ -134,18 +158,32 @@ class Zone {
 
   addLootable(lootable) {
     if (!lootable) return;
-    this.lootables.push(lootable);
+    this.entities.push(lootable);
   }
 
   removeLootable(lootable) {
-    const i = this.lootables.indexOf(lootable);
+    const i = this.entities.indexOf(lootable);
     if (i === -1) return false;
-    this.lootables.splice(i, 1);
+    this.entities.splice(i, 1);
     return true;
+  }
+
+  clearLootables() {
+    if (typeof Lootable === 'undefined') return;
+    this.entities = this.entities.filter(e => !(e instanceof Lootable));
   }
 
   lootablesAt(x, y) {
     return this.lootables.filter(l => l && l.x === x && l.y === y);
+  }
+
+  /** The (single) floor pile at (x,y) — null if none. There is at most
+   *  one floor Lootable per tile; multiple items at one tile share its
+   *  slots[]. Mirrors the find-or-create rule in dropAt(). */
+  floorPileAt(x, y) {
+    return this.entities.find(l =>
+      (typeof Lootable !== 'undefined') && l instanceof Lootable &&
+      l.ownerKind === 'floor' && l.x === x && l.y === y) || null;
   }
 
   /**
@@ -157,10 +195,10 @@ class Zone {
    * Returns the Lootable.
    */
   dropAt(x, y, stack) {
-    let l = this.lootables.find(L => L && L.ownerKind === 'floor' && L.x === x && L.y === y);
+    let l = this.floorPileAt(x, y);
     if (!l) {
       l = new Lootable({ ownerKind: 'floor', x, y });
-      this.lootables.push(l);
+      this.entities.push(l);
     }
     l.add(stack);
     return l;

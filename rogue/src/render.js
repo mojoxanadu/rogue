@@ -845,17 +845,22 @@
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
 
-    // Draw Floor Items (with hover outline)
-    itemsOnGround.forEach((item, itemIdx) => {
-      let vx = item.x - player.x + cx, vy = item.y - player.y + cy;
-      if(vx >= 0 && vx < VIEW_COLS && vy >= 0 && vy < VIEW_ROWS && visible[item.y] && visible[item.y][item.x]) {
+    // Draw Floor Piles (with hover outline). Each floor Lootable on
+    // zone.entities holds 1..N ItemStacks at one tile; the first stack
+    // is the visible glyph (the popup will list the full pile).
+    zone.entities.forEach((pile) => {
+      if (!(typeof Lootable !== 'undefined' && pile instanceof Lootable)) return;
+      if (pile.ownerKind !== 'floor' || pile.size() === 0) return;
+      const top = pile.slots[0];
+      let vx = pile.x - player.x + cx, vy = pile.y - player.y + cy;
+      if(vx >= 0 && vx < VIEW_COLS && vy >= 0 && vy < VIEW_ROWS && visible[pile.y] && visible[pile.y][pile.x]) {
         const tilePx = vx * TILE_SIZE;
         const tilePy = vy * TILE_SIZE;
-        const flashActive = item._flashRed && Date.now() - item._flashRed < 250;
-        const hoverActive = window._hoverFloorItemIdx === itemIdx;
+        const flashActive = pile._flashRed && Date.now() - pile._flashRed < 250;
+        const hoverActive = window._hoverFloorItemIdx === zone.entities.indexOf(pile);
         const glowColor = flashActive ? '#ff4d4d' : hoverActive ? (window._hoverFloorItemReachable ? '#ffffff' : '#9a9a9a') : null;
-        if(glowColor) drawFootprintGlow((targetCtx, glyphPx, glyphPy) => drawFloorItemGlyph(targetCtx, item, glyphPx, glyphPy), tilePx, tilePy, glowColor);
-        drawFloorItemGlyph(ctx, item, tilePx, tilePy);
+        if(glowColor) drawFootprintGlow((targetCtx, glyphPx, glyphPy) => drawFloorItemGlyph(targetCtx, top, glyphPx, glyphPy), tilePx, tilePy, glowColor);
+        drawFloorItemGlyph(ctx, top, tilePx, tilePy);
       }
     });
 
@@ -891,8 +896,8 @@
     }
 
     // Draw Corpses
-    if(typeof corpses !== 'undefined') {
-      corpses.forEach((c, cIdx) => {
+    {
+      zone.corpses.forEach((c, cIdx) => {
         let vx = c.x - player.x + cx, vy = c.y - player.y + cy;
         if(vx >= 0 && vx < VIEW_COLS && vy >= 0 && vy < VIEW_ROWS && (visible[c.y] && visible[c.y][c.x] || explored[c.y] && explored[c.y][c.x])) {
           const tilePx = vx * TILE_SIZE;

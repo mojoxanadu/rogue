@@ -36,7 +36,7 @@
 //     kick) and per-kind difficulty land in Phase 5; this class just
 //     carries the data fields they will read.
 
-class Lootable {
+class Lootable extends Entity {
   /**
    * @param {object} opts
    * @param {string} opts.ownerKind - one of Lootable.OWNER_KINDS
@@ -45,6 +45,8 @@ class Lootable {
    * @param {ItemStack[]} [opts.slots=[]]
    * @param {boolean} [opts.isLocked=false]
    * @param {string|null} [opts.lockKind=null]  - 'wood' | 'iron' | 'magic' | null
+   * @param {string|null} [opts.icon=null]      - explicit icon (containers/doors);
+   *                                              floor piles derive from slot[0]
    * @param {number|null} [opts.id=null]        - auto-assigned if null
    */
   constructor({
@@ -54,8 +56,18 @@ class Lootable {
     slots = [],
     isLocked = false,
     lockKind = null,
+    icon = null,
     id = null,
+    def = null,
   } = {}) {
+    super({ x, y, icon: icon ?? '?', def });
+    // Entity's constructor folds null x/y down to 0 via `?? 0`. Lootables
+    // OWNED by another entity (corpse / npc) have NO position of their
+    // own — they live inside the owner. Reset to null when caller didn't
+    // pass an explicit position, so the debug dump and any other code
+    // can distinguish "placed at (0,0)" from "contained, no position".
+    if (x == null) this.x = null;
+    if (y == null) this.y = null;
     if (!Lootable.OWNER_KINDS.has(ownerKind)) {
       throw new Error(`Lootable: invalid ownerKind '${ownerKind}'. Must be one of: ${[...Lootable.OWNER_KINDS].join(', ')}`);
     }
@@ -67,12 +79,29 @@ class Lootable {
     }
     this.id        = id ?? Lootable._nextId();
     this.ownerKind = ownerKind;
-    this.x         = x;
-    this.y         = y;
     this.slots     = slots;
     this.isLocked  = isLocked;
     this.lockKind  = lockKind;
   }
+
+  /**
+   * Visible icon for a Lootable that's drawn on the map:
+   *   - floor pile: first stack's icon (auto-updates as items add/remove)
+   *   - container / door: the explicit icon passed at construction
+   *   - corpse / npc: null — these lootables live inside their owner and
+   *     never render separately; the owner (Corpse / NPC) draws its own
+   *     icon. Returning null instead of '?' avoids polluting debug
+   *     dumps with meaningless placeholders.
+   */
+  get icon() {
+    if (this.ownerKind === 'floor') {
+      const top = this.slots[0];
+      return (top && top.icon) ? top.icon : '?';
+    }
+    if (this.ownerKind === 'corpse' || this.ownerKind === 'npc') return null;
+    return this._icon;
+  }
+  set icon(v) { this._icon = v; }
 
   /** Append a stack to the loot. */
   add(stack) {

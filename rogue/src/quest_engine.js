@@ -621,8 +621,7 @@
             if (typeof renderQuickslots === 'function') renderQuickslots();
           } else {
             logMsg(`<span style='color:var(--error)'>Inventory full! Item dropped on ground.</span>`);
-            // itemsOnGround uses icon for rendering — derive from the def.
-            itemsOnGround.push({ x: player.x, y: player.y, icon: def?.icon ?? '?' });
+            zone.dropAt(player.x, player.y, new ItemStack(reward.item, reward.qty ?? 1));
           }
           break;
         }
