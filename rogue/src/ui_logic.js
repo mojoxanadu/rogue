@@ -1684,15 +1684,37 @@ function _performStickyMove(src, targetSource, target) {
     if (def.cost.improve == null) return true;      // single-rank, owned
     return ownedLvl >= def.cost.max;
   }
+  // Jack of All Trades lets the player buy (not improve) any
+  // talent without meeting prereqs, at 2× initial cost.
+  function _hasJoaT() {
+    return !!(player.talents && player.talents.jackOfAllTrades);
+  }
+  // Returns { allowed, cost, reason? }. Single source of truth for
+  // both the buy action and the bucket classifier.
+  function _buyVerdict(def, ownedLvl) {
+    if (_isMaxed(def, ownedLvl))    return { allowed: false, reason: 'maxed' };
+    const cost = _nextCost(def, ownedLvl);
+    if (cost == null)               return { allowed: false, reason: 'maxed' };
+    if (ownedLvl === 0) {
+      if (_meetsPrereq(def)) return { allowed: true, cost };
+      if (_hasJoaT())        return { allowed: true, cost: cost * 2 };
+      return { allowed: false, reason: 'prereq' };
+    }
+    // Improving — JoaT does NOT bypass; spec says "gain (but not improve)".
+    if (!_meetsPrereq(def)) return { allowed: false, reason: 'prereq' };
+    return { allowed: true, cost };
+  }
   function _classifyTalent(id) {
     const def = TALENT_DEFS[id];
     if (!def) return null;
     const ownedLvl = (player.talents[id] && player.talents[id].level) || 0;
     if (_isMaxed(def, ownedLvl)) return 'maxed';
-    if (!_meetsPrereq(def)) return 'unavailable';
-    const cost = _nextCost(def, ownedLvl);
-    if (cost == null) return null;                  // malformed entry — skip
-    return ((player.talentPoints || 0) >= cost) ? 'improvable' : 'needTP';
+    const v = _buyVerdict(def, ownedLvl);
+    if (!v.allowed) {
+      if (v.reason === 'maxed')  return 'maxed';
+      return 'unavailable';
+    }
+    return ((player.talentPoints || 0) >= v.cost) ? 'improvable' : 'needTP';
   }
 
   // ── Sorting ─────────────────────────────────────────────────
@@ -1749,18 +1771,19 @@ function _performStickyMove(src, targetSource, target) {
   window.buyTalent = (id) => {
     const def = TALENT_DEFS[id];
     if (!def) return;
-    if (!_meetsPrereq(def)) { logMsg && logMsg('Prereq not met.'); return; }
     const ownedLvl = (player.talents[id] && player.talents[id].level) || 0;
-    if (_isMaxed(def, ownedLvl)) { logMsg && logMsg(`${def.name} is maxed.`); return; }
-    const cost = _nextCost(def, ownedLvl);
-    if (cost == null) return;
-    if ((player.talentPoints || 0) < cost) {
-      logMsg && logMsg(`Need ${cost} TP for ${def.name}.`); return;
+    const v = _buyVerdict(def, ownedLvl);
+    if (!v.allowed) {
+      logMsg && logMsg(v.reason === 'maxed' ? `${def.name} is maxed.` : `Prereq not met for ${def.name}.`);
+      return;
     }
-    player.talentPoints -= cost;
+    if ((player.talentPoints || 0) < v.cost) {
+      logMsg && logMsg(`Need ${v.cost} TP for ${def.name}.`); return;
+    }
+    player.talentPoints -= v.cost;
     if (!player.talents[id]) player.talents[id] = { level: 0 };
     player.talents[id].level = ownedLvl + 1;
-    logMsg && logMsg(`<span style='color:var(--success)'>Acquired ${def.name} (rank ${player.talents[id].level}). −${cost} TP.</span>`);
+    logMsg && logMsg(`<span style='color:var(--success)'>Acquired ${def.name} (rank ${player.talents[id].level}). −${v.cost} TP.</span>`);
     showTalents(); updateUI();
   };
 
@@ -1840,12 +1863,17 @@ function _performStickyMove(src, targetSource, target) {
       const rankPart = reqRank > 1 ? ` ×${reqRank}` : '';
       rightCtrl = `<span style="color:#bba88f;">(requires ${reqLabel}${rankPart})</span>`;
     } else {
-      const cost = _nextCost(def, ownedLvl);
+      const v = _buyVerdict(def, ownedLvl);
+      const cost = v.cost;
       const action = ownedLvl === 0 ? 'Buy' : 'Improve';
+      // JoaT: when buying without prereq via JoaT, the cost is doubled.
+      // Surface that visually so the player knows why the price is high.
+      const joatNote = (ownedLvl === 0 && !_meetsPrereq(def) && _hasJoaT())
+        ? ' <span style="color:#dc9; font-size:10px;">(JoaT 2×)</span>' : '';
       if (cls === 'improvable') {
-        rightCtrl = `(<button onclick="buyTalent('${id}')" style="background:var(--primary); color:#000; border:none; border-radius:3px; padding:1px 8px; font-size:11px; cursor:pointer; font-weight:bold;">${action}</button> for ${cost} TP)`;
+        rightCtrl = `(<button onclick="buyTalent('${id}')" style="background:var(--primary); color:#000; border:none; border-radius:3px; padding:1px 8px; font-size:11px; cursor:pointer; font-weight:bold;">${action}</button> for ${cost} TP${joatNote})`;
       } else { // needTP
-        rightCtrl = `(<span style="color:#aaa;">${action}</span> for ${cost} TP)`;
+        rightCtrl = `(<span style="color:#aaa;">${action}</span> for ${cost} TP${joatNote})`;
       }
     }
 

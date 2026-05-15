@@ -768,3 +768,88 @@ test('countSpells: spells absent from SPELL_DEFS are not counted', () => {
   lp.spells = { illuminate: { level: 1 }, mysterySpell: { level: 1 } };
   assert.equal(lp.countSpells({ level: 1 }), 1);
 });
+
+
+// ─── Player.takeDamage — Toughness reduction ──────────────────
+
+test('takeDamage: no toughness → full damage', () => {
+  const { Player } = setup();
+  const p = new Player({ hp: 100, maxHp: 100 });
+  const dealt = p.takeDamage(10);
+  assert.equal(dealt, 10);
+  assert.equal(p.hp, 90);
+});
+
+test('takeDamage: toughness L1 → 10% reduction (floor)', () => {
+  const { Player } = setup();
+  const p = new Player({ hp: 100, maxHp: 100, talents: { toughness: { level: 1 } } });
+  // 10 * 0.9 = 9 → 9
+  assert.equal(p.takeDamage(10), 9);
+  // 5  * 0.9 = 4.5 → floor 4
+  const p2 = new Player({ hp: 100, maxHp: 100, talents: { toughness: { level: 1 } } });
+  assert.equal(p2.takeDamage(5), 4);
+});
+
+test('takeDamage: toughness L5 → 50% reduction', () => {
+  const { Player } = setup();
+  const p = new Player({ hp: 100, maxHp: 100, talents: { toughness: { level: 5 } } });
+  assert.equal(p.takeDamage(20), 10);
+});
+
+test('takeDamage: non-corporal kind bypasses toughness', () => {
+  const { Player } = setup();
+  const p = new Player({ hp: 100, maxHp: 100, talents: { toughness: { level: 5 } } });
+  // 'ifrit_fireball' is in NON_CORPORAL_KINDS — full damage.
+  assert.equal(p.takeDamage(20, 'ifrit_fireball'), 20);
+});
+
+test('takeDamage: zero or negative incoming → returns 0, hp unchanged', () => {
+  const { Player } = setup();
+  const p = new Player({ hp: 50, maxHp: 50 });
+  assert.equal(p.takeDamage(0),  0);
+  assert.equal(p.takeDamage(-5), 0);
+  assert.equal(p.hp, 50);
+});
+
+// ─── Player.actionCost — Speed reduces 'move' cost ────────────
+
+test("Player.actionCost('move'): no speed talent → base 1.0", () => {
+  const { Player } = setup();
+  const p = new Player();
+  assert.equal(p.actionCost('move'), 1.0);
+});
+
+test("Player.actionCost('move'): Speed L1 → 0.9", () => {
+  const { Player } = setup();
+  const p = new Player({ talents: { speed: { level: 1 } } });
+  assert.ok(Math.abs(p.actionCost('move') - 0.9) < 1e-9);
+});
+
+test("Player.actionCost('move'): Speed L3 → 0.7 (max rank)", () => {
+  const { Player } = setup();
+  const p = new Player({ talents: { speed: { level: 3 } } });
+  assert.ok(Math.abs(p.actionCost('move') - 0.7) < 1e-9);
+});
+
+test("Player.actionCost('attack'): Speed does not affect attack", () => {
+  const { Player } = setup();
+  const p = new Player({ talents: { speed: { level: 3 } } });
+  assert.equal(p.actionCost('attack'), 1.0);
+});
+
+test("Player.actionCost: floor at 10% of base for extreme stacking", () => {
+  const { Player } = setup();
+  // Bypass max-rank — model layer doesn't enforce caps, the buy UI does.
+  const p = new Player({ talents: { speed: { level: 50 } } });
+  // 1.0 * max(0.1, 1 - 5.0) → 0.1
+  assert.ok(Math.abs(p.actionCost('move') - 0.1) < 1e-9);
+});
+
+
+test('takeDamage: toughness fully absorbing low damage returns 0', () => {
+  const { Player } = setup();
+  const p = new Player({ hp: 50, maxHp: 50, talents: { toughness: { level: 5 } } });
+  // 1 * 0.5 = 0.5 → floor 0
+  assert.equal(p.takeDamage(1), 0);
+  assert.equal(p.hp, 50);
+});
