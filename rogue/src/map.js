@@ -925,20 +925,26 @@
         }
       }
 
-      // Place 2 chests in random room centres
+      // 2 chest-class container Lootables per dungeon floor, in
+      // random rooms. Each is a Small Chest / Large Chest / Iron Chest
+      // / Chest of Holding
+      // (tier scales with floor). Lockable per the standard slot×10%
+      // roll inside spawnChest.
       for(let i=0; i<2; i++) {
         let rm = rooms[Math.floor(Math.random() * rooms.length)];
         let cx = Math.min(mapW-2, rm.cx+1);
-        if(isTileFloor(theMap[rm.cy][cx])) theMap[rm.cy][cx] = TILES.CHEST;
+        if(isTileFloor(theMap[rm.cy][cx]) && zone.lootablesAt(cx, rm.cy).length === 0) {
+          spawnChest(cx, rm.cy, currentLevel, false);
+        }
       }
-      // #14: Occasionally spawn a Mimic disguised as a chest (5% chance per chest on floors 3+)
+      // #14: 5% chance per floor (3+) to spawn a Mimic-disguised chest.
+      // The Lootable carries _mimic:true; walking onto / bumping it
+      // triggers the engine's mimic transformation hook.
       if(currentLevel >= 3 && Math.random() < 0.05) {
         let rm = rooms[Math.floor(Math.random() * rooms.length)];
         let mx = Math.min(mapW-2, rm.cx+2);
-        if(isTileFloor(theMap[rm.cy][mx])) {
-          theMap[rm.cy][mx] = TILES.CHEST;
-          // Mark this chest as a mimic in chestStates
-          chestStates[`${mx},${rm.cy}`] = -1; // -1 = mimic
+        if(isTileFloor(theMap[rm.cy][mx]) && zone.lootablesAt(mx, rm.cy).length === 0) {
+          spawnChest(mx, rm.cy, currentLevel, true);
         }
       }
 
@@ -1851,6 +1857,43 @@
     return lootable;
   }
   window.spawnContainer = spawnContainer;
+
+  // Spawn a chest-class container. Picks a chest type appropriate
+  // to the floor:
+  //   floor 1+: Small Chest
+  //   floor 4+: also Large Chest
+  //   floor 8+: also Iron Chest, Chest of Holding
+  // If isMimic, the resulting Lootable carries _mimic:true. The first
+  // walk-onto / bump triggers the mimic transformation (handled in
+  // engine.js _checkMimicAt). Returns the Lootable.
+  function spawnChest(x, y, playerFloor = 1, isMimic = false) {
+    const tiers = ['smallChest'];
+    if (playerFloor >= 4) tiers.push('largeChest');
+    if (playerFloor >= 8) tiers.push('ironChest', 'chestOfHolding');
+    const name = tiers[Math.floor(Math.random() * tiers.length)];
+    const def = (typeof ItemDefs !== 'undefined') ? ItemDefs[name] : null;
+    if (!def) return null;
+    // Mimic chests don't bother with real loot — they spring on contact.
+    let slots = [];
+    if (!isMimic) {
+      const slotCount = Math.max(1, Math.floor(Math.random() * (def.bagSlots ?? 1)) + 1);
+      for (let i = 0; i < slotCount; i++) slots.push(_rollContainerLoot(playerFloor));
+    }
+    const isLocked = !!def.lockable && !isMimic && (Math.random() < (def.bagSlots * 0.10));
+    const lockKind = isLocked ? 'iron' : null;
+    const lootable = new Lootable({
+      ownerKind: 'container',
+      x, y,
+      slots,
+      isLocked, lockKind,
+      icon: def.icon,
+      def,
+    });
+    if (isMimic) lootable._mimic = true;
+    zone.addLootable(lootable);
+    return lootable;
+  }
+  window.spawnChest = spawnChest;
 
   // Place N containers on random floor tiles in the current zone. Picks
   // floors not already occupied by enemies, the player, or other

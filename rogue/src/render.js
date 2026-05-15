@@ -569,11 +569,9 @@
             ctx.fillStyle = '#5a4a38';
             ctx.fillRect(px + 4, py + TILE_SIZE - 8, TILE_SIZE - 8, 8);
           }
-          else if(tile === TILES.CHEST) {
-            ctx.fillStyle = fCol; ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
-            ctx.font = '20px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.fillText('📦', px+TILE_SIZE/2, py+TILE_SIZE/2);
-          }
+          // (Chest tiles retired in Phase 6c. Chests are container
+          // Lootables now, drawn by the unified Lootable render loop
+          // further down in this file.)
           else if(tile === TILES.STORE) {
             ctx.fillStyle = '#2A3A2A'; ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
             ctx.font = `${Math.floor(TILE_SIZE * 4)}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';

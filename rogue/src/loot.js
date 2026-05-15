@@ -9,7 +9,7 @@
 //
 //   itemsOnGround[]   — { x, y, icon }, no quantities, no locking
 //   corpse.loot[]     — ItemStacks owned by a visual corpse
-//   TILES.CHEST tiles — locked container with chestLoot baked at gen time
+//   chest tiles (now retired) — locked container with chestLoot baked at gen time
 //
 // Phases 2-6 fold all three into Lootable. Phase 1 (this file) just
 // defines the class and leaves the existing structures alone, so the

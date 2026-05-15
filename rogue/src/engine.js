@@ -20,7 +20,8 @@
   the global player, enemies, itemsOnGround, and activeEffects arrays.
 */
 // === Core Loops & AI ===
-  let chestStates = {};
+  // Phase 6c: chestStates global retired. Per-chest state (locked,
+  // mimic) lives on each container Lootable now.
   let snoreLoop = null;
   let sleepHealLoop = null;
   // window.corpses removed in Phase 4a-2; the canonical store is
@@ -205,6 +206,35 @@
     zone.addCorpse(corpse);
   }
 
+  // Phase 6c: mimic chest transformation. When the player walks onto
+  // or bumps into a tile holding a Lootable with _mimic:true, remove
+  // the Lootable, spawn a real mimic NPC, fire the surprise animation
+  // + sounds, and let the mimic attack first. Returns true if a mimic
+  // was triggered (caller should NOT continue normal move/popup flow).
+  function _checkMimicAt(x, y) {
+    if (typeof zone === 'undefined') return false;
+    const mimicLootable = zone.lootablesAt(x, y).find(l => l && l._mimic);
+    if (!mimicLootable) return false;
+    zone.removeLootable(mimicLootable);
+    spawnNpc(enemies, x, y, 'mimic', { stats: { ...MONSTER_DEF['mimic'] }, isMimic: true });
+    logMsg("<span style='color:var(--error)'>📦 The chest SNAPS its lid open and reveals jagged teeth! It's a MIMIC!</span>");
+    if (typeof Sound !== 'undefined' && Sound.playSample) {
+      Sound.playSample('mimic_reveal', 0.8);
+      Sound.playSample('mimic_laugh',  0.6);
+    }
+    if (typeof addFloatingText === 'function') addFloatingText(x, y, '📦', '#f00', 22);
+    drawMap(); updateUI();
+    // Mimic attacks first as a surprise (after a brief delay so the
+    // reveal sound + animation get a beat).
+    const mIdx = enemies.length - 1;
+    if (typeof monsterAttack === 'function') {
+      setTimeout(() => {
+        if (enemies[mIdx] && enemies[mIdx].stats?.hp > 0) monsterAttack(mIdx);
+      }, 500);
+    }
+    return true;
+  }
+
   // Phase 4a-2.5: corpse decay moved off the wall clock onto game-time
   // scheduler ticks. Each Corpse instance carries its own actionCooldown
   // (LIFETIME, then BONES_DURATION) and self-mutates via takeTurn. The
@@ -297,7 +327,6 @@
       corpses: JSON.parse(JSON.stringify(zone.corpses)),
       mapW: mapW,
       mapH: mapH,
-      chestStates: JSON.parse(JSON.stringify(chestStates)),
       scene: currentScene,
       customState: {
         swordmasterMazeActive: !!window._swordmasterMazeActive,
@@ -348,7 +377,6 @@
     });
     zone.clearCorpses();
     if(cached.corpses) cached.corpses.forEach(c => zone.addCorpse(c));
-    chestStates = JSON.parse(JSON.stringify(cached.chestStates));
     currentScene = cached.scene;
     let custom = cached.customState || {};
     window._swordmasterMazeActive = !!custom.swordmasterMazeActive;
@@ -430,7 +458,6 @@
     enemies.length = 0;
     zone.clearLootables();
     zone.clearCorpses();
-    chestStates = {};
     lightTurns = 0;
     floatingTexts.length = 0;
     activeEffects.length = 0;
@@ -2072,6 +2099,10 @@
     // than moving the player onto it. Walking onto a non-impassable
     // container falls through to the regular move-and-show-popup path.
     if (typeof zone !== 'undefined') {
+      // Phase 6c: mimic check fires BEFORE the popup opens, regardless
+      // of whether the chest is impassable. Bump or walk-onto, the
+      // mimic springs.
+      if (_checkMimicAt(nx, ny)) return;
       const bumped = zone.lootablesAt(nx, ny).find(l => l.ownerKind === 'container' && l.def?.impassable);
       if (bumped) {
         if (typeof window.hideLootPopup === 'function') window.hideLootPopup();
@@ -2094,10 +2125,9 @@
       return;
     }
 
-    // Handle chests — passable, right-click to open with key
-    if (tile === TILES.CHEST) {
-      logMsg("<span style='color:#888'>You walk past the locked chest. (Right-click to open with a key)</span>");
-    }
+    // (Chest tiles are gone since Phase 6c — chests are impassable
+    // container Lootables now, handled by the bump-into-container
+    // popup branch above.)
 
     if(currentScene === 'town' && (tile === TILES.WATER || tile === TILES.DEEP_WATER)) {
       Sound.splash();
@@ -2156,6 +2186,13 @@
     // Corpse decay is now scheduler-driven (Phase 4a-2.5) — Corpse.takeTurn
     // handles flesh→bones and bones→removal on game-time ticks. No
     // wall-clock poll needed here.
+
+    // Phase 6c: mimic check on the destination tile — non-impassable
+    // chest variants (Small Chest, Chest of Holding) get walked onto
+    // instead of bumped, so the bump path's mimic check wouldn't fire.
+    // _checkMimicAt returns true if the tile sprung; bail before
+    // showing a popup for the now-removed Lootable.
+    if (_checkMimicAt(player.x, player.y)) return;
 
     // Phase 4b: open the loot popup if the tile the player just stepped
     // onto has any lootable source (corpse, floor pile, or container).

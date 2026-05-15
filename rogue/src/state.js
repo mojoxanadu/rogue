@@ -94,8 +94,8 @@
   console.log(`state.js init: canvas=${canvas.width}x${canvas.height}, VIEW_COLS=${VIEW_COLS}, VIEW_ROWS=${VIEW_ROWS}`); 
   
   // Tile ID mapping. Each numeric ID corresponds to a specific terrain or object type.
-  const TILES = { 
-    WALL: 1, FLOOR: 2, STAIR_DOWN: 3, STAIR_UP: 4, CHEST: 5, STORE: 6, WATER: 7, LEFTYS: 8, BOOKSTORE: 9,
+  const TILES = {
+    WALL: 1, FLOOR: 2, STAIR_DOWN: 3, STAIR_UP: 4, STORE: 6, WATER: 7, LEFTYS: 8, BOOKSTORE: 9,
     TREE: 10, BUSH: 11, ROCK: 12, SAND: 13, DEEP_WATER: 14, GRASS: 15, MOAT: 16, BRIDGE: 17, 
     ANTIQUE_SHOP: 18, STANS_SHOP: 19, SCUMM_BAR: 20, WILLOW: 21, NEST: 22, PIT: 23, BOULDER: 24, TIGHTROPE: 25,
     ARCADE: 26, BOAT: 27, HUT: 28, CASTLE_DOOR: 29, 

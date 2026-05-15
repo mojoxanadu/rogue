@@ -1837,75 +1837,11 @@ const hBtn = document.getElementById('hamburgerBtn');
       let tileY = player.y + Math.floor((e.clientY - rect.top) / TILE_SIZE) - cy;
       if(tileX < 0 || tileX >= mapW || tileY < 0 || tileY >= mapH) return;
 
-      // Phase 6a: corpse right-click handled by walking onto the
-      // corpse's tile (loot popup auto-opens). The right-click here
-      // now only services chest tiles (Phase 6c will replace that
-      // path with proper container Lootables).
-
-      // Check chests at this tile (must be adjacent — 1 tile)
-      if(theMap[tileY] && theMap[tileY][tileX] === TILES.CHEST) {
-        let chestKey = `${tileX},${tileY}`;
-        let state = chestStates[chestKey];
-        if(state === -1) {
-            // Mimic! Transform into monster
-            chestStates[chestKey] = 0; // reset state
-            theMap[tileY][tileX] = TILES.FLOOR;
-            spawnNpc(enemies, tileX, tileY, 'mimic', { stats: {...MONSTER_DEF['mimic']}, isMimic: true });
-            logMsg("<span style='color:var(--error)'>📦 The chest SNAPS its lid open and reveals jagged teeth! It's a MIMIC!</span>");
-            Sound.playSample('mimic_reveal', 0.8);
-            Sound.playSample('mimic_laugh', 0.6);
-            addFloatingText(tileX, tileY, '📦', '#f00', 22);
-            drawMap(); updateUI();
-            // Start combat immediately
-            let mIdx = enemies.length - 1;
-            if(typeof meleeAttack === 'function') {
-              // Player is adjacent, auto-attack
-              setTimeout(() => {
-                if(enemies[mIdx] && enemies[mIdx].stats.hp > 0) {
-                  // Mimic attacks first as surprise
-                  if(typeof monsterAttack === 'function') monsterAttack(mIdx);
-                }
-              }, 500);
-            }
-            return;
-        }
-        if((state ?? 0) === 0) {
-          // Check if player has a key
-          let hasKey = inventory.some(i => i && i.itemName === 'key') || (player.inventory && player.inventory.some(i => i && i.itemName === 'key'));
-          if(hasKey) {
-            // Use key from inventory first, then inventory
-            let keyIdx = inventory.findIndex(i => i && i.itemName === 'key');
-            if(keyIdx !== -1) {
-              inventory[keyIdx].qty--;
-              if(inventory[keyIdx].qty <= 0) inventory[keyIdx] = null;
-            } else {
-              let inventoryIdx = player.inventory.findIndex(i => i && i.itemName === 'key');
-              if(inventoryIdx !== -1) {
-                player.inventory[inventoryIdx].qty--;
-                if(player.inventory[inventoryIdx].qty <= 0) player.inventory[inventoryIdx] = null;
-              }
-            }
-            chestStates[chestKey] = 2; // opened
-            theMap[tileY][tileX] = TILES.FLOOR; // replace with floor
-            logMsg("<span style='color:var(--success)'>🗝️ You unlock the chest!</span>");
-            Sound.chestOpen();
-            let loot = generateLoot('chest', null);
-            if(loot.length > 0) {
-              createCorpse(tileX, tileY, 'chest', {icon:'📦'}, loot);
-            } else {
-              logMsg("<span style='color:#888'>The chest is empty.</span>");
-            }
-            renderQuickslots(); drawMap(); updateUI();
-          } else {
-            logMsg("The chest is locked. You need a key. (Right-click to open)");
-          }
-          return;
-        }
-      }
-
-      // Phase 6b: floor pile right-click handled by walking onto the
-      // tile (loot popup auto-opens with per-stack rows + Pick Up All).
-      // showFloorItemMenu / pickupFloorPile retired with the popup.
+      // Phase 6a/6b/6c: every former right-click target (corpse,
+      // chest, floor pile) is handled by walking onto / bumping the
+      // tile and using the loot popup. The contextmenu listener now
+      // does nothing but preventDefault so the browser's right-click
+      // menu doesn't pop over the canvas.
     });
   }
 
