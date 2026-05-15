@@ -323,7 +323,7 @@
      slot displays a text fallback panel (see initClassVideos). -->
 
 <div class="draggable-modal" id="inventory-modal" style="top: 100px; left: 200px; width: 628px;">
-  <div class="modal-header"><span>🎒 Inventory</span><button class="modal-close" onclick="toggleModal('inventory-modal')">✖</button></div>
+  <div class="modal-header"><span>🎒 Inventory</span><span class="modal-selected-name" id="inv-selected-name"></span><button class="modal-close" onclick="toggleModal('inventory-modal')">✖</button></div>
   <div class="modal-body" style="padding:6px 8px; display:flex; gap:10px; align-items:flex-start;">
     <div style="flex:1; min-width:0;">
       <!-- Inventory slots flow like wrapped text: as many per row as
@@ -345,7 +345,7 @@
 </div>
 
 <div class="draggable-modal" id="equip-modal" style="top: 100px; left: 100px; width: 220px;">
-  <div class="modal-header"><span>🛡️ Equipment</span><button class="modal-close" onclick="toggleModal('equip-modal')">✖</button></div>
+  <div class="modal-header"><span>🛡️ Equipment</span><span class="modal-selected-name" id="eq-selected-name"></span><button class="modal-close" onclick="toggleModal('equip-modal')">✖</button></div>
   <div class="modal-body">
     <div class="equip-container">
       <div class="equip-slot" id="eqhead" style="top: 5px;"><div class="equip-label">Head</div></div>

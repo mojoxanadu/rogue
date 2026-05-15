@@ -45,6 +45,7 @@ window.handleStickyTap = function(targetSource, targetIdxOrSlot) {
     if (typeof renderQuickslots === 'function') renderQuickslots();
     if (typeof renderInventory === 'function') renderInventory();
     if (typeof updateUI === 'function') updateUI();
+    if (typeof window._updateSelectedNameLabels === 'function') window._updateSelectedNameLabels();
     return true;
   }
   // Different target: perform the move.
@@ -53,6 +54,7 @@ window.handleStickyTap = function(targetSource, targetIdxOrSlot) {
   if (typeof renderQuickslots === 'function') renderQuickslots();
   if (typeof renderInventory === 'function') renderInventory();
   if (typeof updateUI === 'function') updateUI();
+  if (typeof window._updateSelectedNameLabels === 'function') window._updateSelectedNameLabels();
   return true;
 };
 
@@ -66,6 +68,7 @@ window.startStickyDrag = function(source, idxOrSlot) {
   if (typeof renderQuickslots === 'function') renderQuickslots();
   if (typeof renderInventory === 'function') renderInventory();
   if (typeof updateUI === 'function') updateUI();
+  if (typeof window._updateSelectedNameLabels === 'function') window._updateSelectedNameLabels();
 };
 
 function _equipSlotFits(slot, def) {
@@ -438,6 +441,7 @@ function _performStickyMove(src, targetSource, target) {
         ? (typeof ItemDef !== 'undefined' && ItemDef.iconOf ? ItemDef.iconOf(lh) : lh)
         : '👊';
     }
+    _updateSelectedNameLabels();
   }
 
   // === Save/Load System ===
@@ -952,6 +956,31 @@ function _performStickyMove(src, targetSource, target) {
     }
   });
   document.addEventListener('mouseup', () => { isDragging = false; activeModal = null; });
+
+  // Updates the "selected item" name shown beside each modal's title.
+  // Reads window._stickyDrag and resolves the current ItemDef's displayName.
+  // Both inventory and equip modal headers carry a sibling span; we write
+  // into both so whichever modal is currently visible shows the selection.
+  function _updateSelectedNameLabels() {
+    const invLbl = document.getElementById('inv-selected-name');
+    const eqLbl  = document.getElementById('eq-selected-name');
+    const drag = window._stickyDrag;
+    let name = '';
+    if (drag) {
+      if (drag.source === 'inv') {
+        const stack = inventory[drag.idx];
+        name = stack ? (stack.def?.displayName ?? stack.itemName ?? stack.icon ?? '') : '';
+      } else if (drag.source === 'equip') {
+        const itemName = player.equipped[drag.slot];
+        const def = itemName ? ItemDefs[itemName] : null;
+        name = def?.displayName ?? itemName ?? '';
+      }
+    }
+    const text = name ? `· ${name}` : '';
+    if (invLbl) invLbl.textContent = text;
+    if (eqLbl)  eqLbl.textContent  = text;
+  }
+  window._updateSelectedNameLabels = _updateSelectedNameLabels;
 
   // === Inventory Rendering ===
   window.renderQuickslots = () => {
