@@ -1665,57 +1665,11 @@ function _performStickyMove(src, targetSource, target) {
   };
   window._talentMenuOpen = false;
 
-  // ── Pure model helpers (no DOM) ─────────────────────────────
-  function _meetsPrereq(def) {
-    if (!def || !def.requires) return true;
-    for (const [reqId, reqRank] of Object.entries(def.requires)) {
-      const owned = player.talents && player.talents[reqId];
-      if (!owned || (owned.level || 0) < reqRank) return false;
-    }
-    return true;
-  }
-  function _nextCost(def, ownedLvl) {
-    if (!def || !def.cost) return null;
-    return ownedLvl === 0 ? def.cost.initial : def.cost.improve;
-  }
-  function _isMaxed(def, ownedLvl) {
-    if (!def || ownedLvl === 0) return false;
-    if (def.cost.max === -1) return false;          // unbounded
-    if (def.cost.improve == null) return true;      // single-rank, owned
-    return ownedLvl >= def.cost.max;
-  }
-  // Jack of All Trades lets the player buy (not improve) any
-  // talent without meeting prereqs, at 2× initial cost.
-  function _hasJoaT() {
-    return !!(player.talents && player.talents.jackOfAllTrades);
-  }
-  // Returns { allowed, cost, reason? }. Single source of truth for
-  // both the buy action and the bucket classifier.
-  function _buyVerdict(def, ownedLvl) {
-    if (_isMaxed(def, ownedLvl))    return { allowed: false, reason: 'maxed' };
-    const cost = _nextCost(def, ownedLvl);
-    if (cost == null)               return { allowed: false, reason: 'maxed' };
-    if (ownedLvl === 0) {
-      if (_meetsPrereq(def)) return { allowed: true, cost };
-      if (_hasJoaT())        return { allowed: true, cost: cost * 2 };
-      return { allowed: false, reason: 'prereq' };
-    }
-    // Improving — JoaT does NOT bypass; spec says "gain (but not improve)".
-    if (!_meetsPrereq(def)) return { allowed: false, reason: 'prereq' };
-    return { allowed: true, cost };
-  }
-  function _classifyTalent(id) {
-    const def = TALENT_DEFS[id];
-    if (!def) return null;
-    const ownedLvl = (player.talents[id] && player.talents[id].level) || 0;
-    if (_isMaxed(def, ownedLvl)) return 'maxed';
-    const v = _buyVerdict(def, ownedLvl);
-    if (!v.allowed) {
-      if (v.reason === 'maxed')  return 'maxed';
-      return 'unavailable';
-    }
-    return ((player.talentPoints || 0) >= v.cost) ? 'improvable' : 'needTP';
-  }
+  // ── Model-layer thin shims ─────────────────────────────────
+  // The predicates live on Player (entities.js) so they can be tested
+  // without DOM. These shims keep the call sites below terse.
+  const _buyVerdict     = (id) => player.buyVerdict(id);
+  const _classifyTalent = (id) => player.classifyTalent(id);
 
   // ── Sorting ─────────────────────────────────────────────────
   function _alphaSort(ids) {
@@ -1772,7 +1726,7 @@ function _performStickyMove(src, targetSource, target) {
     const def = TALENT_DEFS[id];
     if (!def) return;
     const ownedLvl = (player.talents[id] && player.talents[id].level) || 0;
-    const v = _buyVerdict(def, ownedLvl);
+    const v = _buyVerdict(id);
     if (!v.allowed) {
       logMsg && logMsg(v.reason === 'maxed' ? `${def.name} is maxed.` : `Prereq not met for ${def.name}.`);
       return;
@@ -1863,12 +1817,12 @@ function _performStickyMove(src, targetSource, target) {
       const rankPart = reqRank > 1 ? ` ×${reqRank}` : '';
       rightCtrl = `<span style="color:#bba88f;">(requires ${reqLabel}${rankPart})</span>`;
     } else {
-      const v = _buyVerdict(def, ownedLvl);
+      const v = _buyVerdict(id);
       const cost = v.cost;
       const action = ownedLvl === 0 ? 'Buy' : 'Improve';
-      // JoaT: when buying without prereq via JoaT, the cost is doubled.
-      // Surface that visually so the player knows why the price is high.
-      const joatNote = (ownedLvl === 0 && !_meetsPrereq(def) && _hasJoaT())
+      // JoaT: the verdict carries a viaJoaT flag when prereq was
+      // bypassed (and cost was doubled). Surface that to the player.
+      const joatNote = v.viaJoaT
         ? ' <span style="color:#dc9; font-size:10px;">(JoaT 2×)</span>' : '';
       if (cls === 'improvable') {
         rightCtrl = `(<button onclick="buyTalent('${id}')" style="background:var(--primary); color:#000; border:none; border-radius:3px; padding:1px 8px; font-size:11px; cursor:pointer; font-weight:bold;">${action}</button> for ${cost} TP${joatNote})`;

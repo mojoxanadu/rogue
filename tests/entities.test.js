@@ -811,6 +811,148 @@ test('takeDamage: zero or negative incoming → returns 0, hp unchanged', () => 
   assert.equal(p.hp, 50);
 });
 
+// ─── Player.buyVerdict / classifyTalent — talent gating ──────
+// These predicates need TALENT_DEFS in the VM context. The talents
+// dict is heavy; for unit tests we install a small fake registry
+// covering the patterns of interest (root, child, single-rank,
+// multi-rank, unbounded, weird-name).
+
+function setupWithTalentDefs(stub) {
+  const ctx = setup();
+  ctx.TALENT_DEFS = stub;
+  return ctx;
+}
+
+const TALENT_FIXTURE = {
+  rogueClass:   { name: 'Rogue Class',   cost: { initial: 4, improve: null, max: 1 }, requires: null,                  flags: [] },
+  fighterClass: { name: 'Fighter Class', cost: { initial: 4, improve: null, max: 1 }, requires: null,                  flags: [] },
+  // Single-rank child of fighter
+  brawler:      { name: 'Brawler',       cost: { initial: 1, improve: 1,    max: 5 }, requires: { fighterClass: 1 },   flags: [] },
+  // Multi-rank child of rogue
+  speed:        { name: 'Speed',         cost: { initial: 4, improve: 2,    max: 3 }, requires: { rogueClass: 1 },     flags: [] },
+  // JoaT itself
+  jackOfAllTrades: { name: 'Jack of All Trades', cost: { initial: 9, improve: null, max: 1 }, requires: { rogueClass: 1 }, flags: [] },
+  // Multi-rank requiring rank ≥ 2
+  level2Spell:  { name: 'Level 2 Spell', cost: { initial: 3, improve: 3,    max: 6 }, requires: { level1Spell: 2 },    flags: [] },
+  level1Spell:  { name: 'Level 1 Spell', cost: { initial: 2, improve: 2,    max: 7 }, requires: null,                  flags: [] },
+};
+
+test('classifyTalent: prereq missing, no JoaT → unavailable', () => {
+  const { Player } = setupWithTalentDefs(TALENT_FIXTURE);
+  const p = new Player({ talentPoints: 99 });
+  // brawler requires fighterClass; player has neither.
+  assert.equal(p.classifyTalent('brawler'), 'unavailable');
+});
+
+test('classifyTalent: prereq missing, JoaT owned → improvable (with TP)', () => {
+  const { Player } = setupWithTalentDefs(TALENT_FIXTURE);
+  const p = new Player({
+    talentPoints: 99,
+    talents: { jackOfAllTrades: { level: 1 } },
+  });
+  // brawler initial 1, doubled by JoaT = 2 TP — affordable.
+  assert.equal(p.classifyTalent('brawler'), 'improvable');
+});
+
+test('classifyTalent: prereq missing, JoaT owned, no TP → needTP (not unavailable)', () => {
+  const { Player } = setupWithTalentDefs(TALENT_FIXTURE);
+  const p = new Player({
+    talentPoints: 0,
+    talents: { jackOfAllTrades: { level: 1 } },
+  });
+  // brawler costs 2 via JoaT; player has 0.
+  assert.equal(p.classifyTalent('brawler'), 'needTP');
+});
+
+test('buyVerdict: JoaT-bypass attaches viaJoaT flag and doubles cost', () => {
+  const { Player } = setupWithTalentDefs(TALENT_FIXTURE);
+  const p = new Player({ talents: { jackOfAllTrades: { level: 1 } } });
+  const v = p.buyVerdict('brawler');  // initial cost 1
+  assert.equal(v.allowed, true);
+  assert.equal(v.cost,    2);
+  assert.equal(v.viaJoaT, true);
+});
+
+test('buyVerdict: JoaT + real prereq → no doubling, no viaJoaT', () => {
+  const { Player } = setupWithTalentDefs(TALENT_FIXTURE);
+  const p = new Player({
+    talents: { fighterClass: { level: 1 }, jackOfAllTrades: { level: 1 } },
+  });
+  const v = p.buyVerdict('brawler');
+  assert.equal(v.allowed, true);
+  assert.equal(v.cost,    1);
+  assert.equal(v.viaJoaT, undefined);
+});
+
+test('buyVerdict: JoaT does NOT bypass improvement', () => {
+  const { Player } = setupWithTalentDefs(TALENT_FIXTURE);
+  // Owns speed at L1 via JoaT (rogueClass missing). Improving needs real prereq.
+  const p = new Player({
+    talents: { jackOfAllTrades: { level: 1 }, speed: { level: 1 } },
+  });
+  const v = p.buyVerdict('speed');
+  assert.equal(v.allowed, false);
+  assert.equal(v.reason,  'prereq');
+});
+
+test('buyVerdict: rank-2 prereq strictly enforced (no JoaT)', () => {
+  const { Player } = setupWithTalentDefs(TALENT_FIXTURE);
+  const p = new Player({ talents: { level1Spell: { level: 1 } } });
+  // level2Spell requires level1Spell rank 2; player has rank 1.
+  assert.equal(p.buyVerdict('level2Spell').reason, 'prereq');
+});
+
+test('buyVerdict: rank-2 prereq satisfied at the threshold', () => {
+  const { Player } = setupWithTalentDefs(TALENT_FIXTURE);
+  const p = new Player({ talents: { level1Spell: { level: 2 } } });
+  assert.equal(p.buyVerdict('level2Spell').allowed, true);
+});
+
+test('classifyTalent: owned single-rank → maxed', () => {
+  const { Player } = setupWithTalentDefs(TALENT_FIXTURE);
+  const p = new Player({ talents: { rogueClass: { level: 1 } } });
+  assert.equal(p.classifyTalent('rogueClass'), 'maxed');
+});
+
+test('classifyTalent: owned multi-rank at max → maxed', () => {
+  const { Player } = setupWithTalentDefs(TALENT_FIXTURE);
+  const p = new Player({
+    talents: { rogueClass: { level: 1 }, speed: { level: 3 } },
+    talentPoints: 99,
+  });
+  assert.equal(p.classifyTalent('speed'), 'maxed');
+});
+
+test('classifyTalent: with JoaT, NO talent classifies as unavailable', () => {
+  const { Player } = setupWithTalentDefs(TALENT_FIXTURE);
+  const p = new Player({
+    talents: { jackOfAllTrades: { level: 1 } },
+    talentPoints: 999,
+  });
+  for (const id of Object.keys(TALENT_FIXTURE)) {
+    const cls = p.classifyTalent(id);
+    assert.notEqual(cls, 'unavailable',
+      `${id} classified as 'unavailable' despite JoaT`);
+  }
+});
+
+test('classifyTalent: unknown talent id → null', () => {
+  const { Player } = setupWithTalentDefs(TALENT_FIXTURE);
+  const p = new Player();
+  assert.equal(p.classifyTalent('nonexistentTalent'), null);
+});
+
+test('hasJoaT: false at level 0, true at level 1', () => {
+  const { Player } = setupWithTalentDefs(TALENT_FIXTURE);
+  const p = new Player();
+  assert.equal(p.hasJoaT(), false);
+  p.talents.jackOfAllTrades = { level: 0 };  // present but not bought
+  assert.equal(p.hasJoaT(), false);
+  p.talents.jackOfAllTrades = { level: 1 };
+  assert.equal(p.hasJoaT(), true);
+});
+
+
 // ─── Player.actionCost — Speed reduces 'move' cost ────────────
 
 test("Player.actionCost('move'): no speed talent → base 1.0", () => {

@@ -339,6 +339,87 @@ class Player extends Sentient {
     return actual;
   }
 
+  // ── Talent gating (model layer) ────────────────────────────
+  /**
+   * Strict prereq check — does the player actually own the required
+   * talent at the required rank? JoaT does NOT factor in here; this
+   * is the underlying truth. Public so the view can ask "was prereq
+   * bypassed?" when deciding whether to show the JoaT 2× annotation.
+   */
+  meetsRealPrereq(def) {
+    if (!def || !def.requires) return true;
+    for (const [reqId, reqRank] of Object.entries(def.requires)) {
+      const owned = this.talents && this.talents[reqId];
+      if (!owned || (owned.level || 0) < reqRank) return false;
+    }
+    return true;
+  }
+
+  /**
+   * True iff the player owns Jack of All Trades (level >= 1). JoaT
+   * universally satisfies every prereq for the *purpose of buying*
+   * (not improving) — paying 2× initial cost for talents the player
+   * wouldn't otherwise be able to acquire.
+   */
+  hasJoaT() {
+    const t = this.talents && this.talents.jackOfAllTrades;
+    return !!(t && (t.level || 0) > 0);
+  }
+
+  /**
+   * Single source of truth for buy/improve eligibility. Used by both
+   * the classifier and the buy action — they cannot drift.
+   *
+   * Returns:
+   *   { allowed: true,  cost: N }                — normal purchase
+   *   { allowed: true,  cost: 2N, viaJoaT: true } — JoaT bypass
+   *   { allowed: false, reason: 'maxed' | 'prereq' | 'unknown' }
+   */
+  buyVerdict(talentId) {
+    const defs = (typeof TALENT_DEFS !== 'undefined') ? TALENT_DEFS : null;
+    const def  = defs ? defs[talentId] : null;
+    if (!def) return { allowed: false, reason: 'unknown' };
+    const ownedLvl = (this.talents[talentId] && this.talents[talentId].level) || 0;
+    // Maxed check (single-rank owned, or rank >= max for capped).
+    if (ownedLvl > 0) {
+      if (def.cost.improve == null && def.cost.max !== -1) {
+        return { allowed: false, reason: 'maxed' };
+      }
+      if (def.cost.max !== -1 && ownedLvl >= def.cost.max) {
+        return { allowed: false, reason: 'maxed' };
+      }
+    }
+    const cost = (ownedLvl === 0) ? def.cost.initial : def.cost.improve;
+    if (cost == null) return { allowed: false, reason: 'maxed' };
+    const meetsReal = this.meetsRealPrereq(def);
+    if (ownedLvl === 0) {
+      if (meetsReal)        return { allowed: true,  cost };
+      if (this.hasJoaT())   return { allowed: true,  cost: cost * 2, viaJoaT: true };
+      return { allowed: false, reason: 'prereq' };
+    }
+    // Improving — JoaT does NOT bypass; spec: "gain but not improve".
+    if (!meetsReal) return { allowed: false, reason: 'prereq' };
+    return { allowed: true, cost };
+  }
+
+  /**
+   * Bucket a talent into one of the four UI categories:
+   *   'maxed' | 'improvable' | 'needTP' | 'unavailable'
+   * Returns null for unknown / malformed talents.
+   */
+  classifyTalent(talentId) {
+    const defs = (typeof TALENT_DEFS !== 'undefined') ? TALENT_DEFS : null;
+    const def  = defs ? defs[talentId] : null;
+    if (!def) return null;
+    const v = this.buyVerdict(talentId);
+    if (!v.allowed) {
+      if (v.reason === 'maxed')  return 'maxed';
+      if (v.reason === 'prereq') return 'unavailable';
+      return null;
+    }
+    return ((this.talentPoints || 0) >= v.cost) ? 'improvable' : 'needTP';
+  }
+
   /**
    * Equip-gate predicate. Pure function of (itemName, this.talents,
    * ItemDefs[itemName].wieldTalent). Returns { ok: true } when the
