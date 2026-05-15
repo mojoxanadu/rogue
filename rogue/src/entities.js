@@ -289,6 +289,32 @@ class Player extends Sentient {
     this.gp    = filled.gp    ?? 0;
     // E8 Weapon-Master training bonus: consumed (zeroed) on next attack.
     this.trainingBonus = filled.trainingBonus ?? 0;
+    // Talents owned: dict keyed by TALENT_DEFS id, value { level: N }.
+    // Default empty; class selection grants the class talent + the
+    // matching wield talent. Engine code may consult this directly,
+    // but equip-time gating should go through canEquip().
+    this.talents = filled.talents ?? {};
+  }
+
+  /**
+   * Equip-gate predicate. Pure function of (itemName, this.talents,
+   * ItemDefs[itemName].wieldTalent). Returns { ok: true } when the
+   * item has no wield gate, or the gate is satisfied. On failure
+   * returns { ok: false, reason: 'lack-talent', talent: '<id>' } so
+   * the caller can build a user-facing message without re-deriving
+   * the missing talent.
+   *
+   * Unknown item / no-def / non-weapon → ok (no gate to enforce).
+   * This is a model-layer rule: no logMsg, no rendering, no mutation.
+   */
+  canEquip(itemName) {
+    if (!itemName) return { ok: true };
+    const defs = (typeof ItemDefs !== 'undefined') ? ItemDefs : null;
+    const def  = defs ? defs[itemName] : null;
+    const need = def && def.wieldTalent;
+    if (!need) return { ok: true };
+    if (this.talents && this.talents[need]) return { ok: true };
+    return { ok: false, reason: 'lack-talent', talent: need };
   }
 
   // ── Equipment helpers ──────────────────────────────────────

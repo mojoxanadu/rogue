@@ -1329,12 +1329,13 @@ const hBtn = document.getElementById('hamburgerBtn');
         player.maxHp += 5;
         player.hp += 5;
         player.equipped.leftHand = 'sword';
-        player.equipped.feet     = 'oldBoot';   // gives +2 defenseBonus per LEGACY_ITEM_DATA
+        player.equipped.feet     = 'fightersBoots';   // +4 defense, +5 evade (class kit)
         if (!player.inventory) player.inventory = [];
-        player.inventory.push(new ItemStack('oldBoot', 1));
         player.talents.fighterClass = { level: 1 };
         player.talents.wieldSwords  = { level: 1 };
-        logMsg && logMsg("You are a Fighter! +5 HP, Sword equipped, Fighter Boots worn.");
+        const swordName = ItemDefs.sword?.displayName ?? 'Sword';
+        const bootsName = ItemDefs.fightersBoots?.displayName ?? "Fighter's Boots";
+        logMsg && logMsg(`You are a Fighter! +5 HP, ${swordName} equipped, ${bootsName} worn.`);
       } else if (selClass === 'spellcaster') {
         player.startingClass = 'spellcaster';
         player.maxMp = 2;

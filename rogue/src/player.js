@@ -118,10 +118,9 @@ function setPlayerDefaults() {
   player._diarrheaUntilMs    = 0;
   player._diarrheaNextFartMs = 0;
   player.spells = {};
-  // Talents: dict keyed by camelCase id (matches TALENT_DEFS), value
-  // { level: N } where N is the rank purchased. Class selection
-  // grants the class talent + class wield talent. Engine code that
-  // depends on a specific talent should consult player.talents[id]?.level.
+  // player.talents is initialized by the Player constructor (entities.js).
+  // Re-reset on each setPlayerDefaults call (game restart) to drop any
+  // talents granted in the previous run.
   player.talents = {};
   // Equipped item slots. VALUES are camelCase item names (matching keys in
   // the ItemDefs registry), NOT emoji icons. Each slot holds at most one
