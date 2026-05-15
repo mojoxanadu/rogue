@@ -1347,16 +1347,10 @@ const hBtn = document.getElementById('hamburgerBtn');
         logMsg && logMsg(`You are a Fighter! +5 HP, ${swordName} equipped, ${bootsName} worn.`);
       } else if (selClass === 'spellcaster') {
         player.startingClass = 'spellcaster';
-        // TEMP-UNLOCK-GRANT: bumped from 2→10 so the freshly-granted
-        // Unlock spell (5 MP) is castable on character creation.
-        player.maxMp = 10;
-        player.mp = 10;
+        player.maxMp = 2;
+        player.mp = 2;
         if (!player.spells) player.spells = {};
         if (!player.spells.illuminate) player.spells.illuminate = { level: 1 };
-        // TEMP-UNLOCK-GRANT: spellcaster starts with the Unlock spell
-        // for Phase 5 popup testing. Remove once a proper Spell Time /
-        // tome reward exists.
-        if (!player.spells.unlock) player.spells.unlock = { level: 1 };
         player.equipped.chest = 'robe';
         if (!player.inventory) player.inventory = [];
         player.inventory.push(new ItemStack('robe', 1));
