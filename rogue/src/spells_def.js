@@ -14,6 +14,7 @@
 
 const SPELL_DEFS = {
   illuminate: { name: 'Illuminate', level: 1 },
+  unlock:     { name: 'Unlock',     level: 1, mpCost: 5 },
 };
 
 if (typeof window !== 'undefined') window.SPELL_DEFS = SPELL_DEFS;
