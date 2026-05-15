@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <!-- Maskable safe zone is the centre 80% — keep important art inside
+       (32, 32) to (224, 224). The 48px corner radius matches Android's
+       adaptive-icon mask reasonably well. -->
+  <rect width="256" height="256" rx="48" fill="#1d1b20"/>
+
+  <!-- Stylized sword: lavender to match the app's --primary color. -->
+  <g fill="#D0BCFF" stroke="#D0BCFF" stroke-linejoin="round" stroke-linecap="round">
+    <!-- Blade -->
+    <polygon points="124,40 132,40 144,160 112,160" stroke-width="4"/>
+    <!-- Crossguard -->
+    <rect x="84" y="156" width="88" height="14" rx="3"/>
+    <!-- Grip -->
+    <rect x="120" y="170" width="16" height="36" rx="3"/>
+    <!-- Pommel -->
+    <circle cx="128" cy="216" r="12"/>
+  </g>
+
+  <!-- Subtle highlight on the blade for a hint of depth at small sizes. -->
+  <line x1="128" y1="44" x2="128" y2="156" stroke="#fff" stroke-width="1" opacity="0.5"/>
+</svg>
