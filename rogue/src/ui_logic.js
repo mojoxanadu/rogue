@@ -1568,6 +1568,7 @@ function _performStickyMove(src, targetSource, target) {
       talentsPanel.style.display = 'block';
       if(btnStats) { btnStats.style.background = 'var(--surface-container)'; btnStats.style.color = '#aaa'; }
       if(btnTalents) { btnTalents.style.background = 'var(--secondary)'; btnTalents.style.color = '#fff'; }
+      showTalents();
     }
   };
 
@@ -1643,11 +1644,57 @@ function _performStickyMove(src, targetSource, target) {
     showStats();
   };
 
+  window.exchangeAPforTP = () => {
+    if ((player.statPoints ?? 0) < 3) return;
+    player.statPoints -= 3;
+    player.talentPoints = (player.talentPoints ?? 0) + 1;
+    logMsg && logMsg(`Exchanged 3 AP for 1 TP. (TP: ${player.talentPoints}, AP: ${player.statPoints})`);
+    showStats(); updateUI();
+  };
+
+  // Talents tab header (+ stub menu button). The vertical scroll
+  // area below stays empty until the talent rendering lands. Called
+  // from showStatsTab whenever the Talents tab is opened.
+  window.showTalents = () => {
+    const body = document.getElementById('talents-body');
+    if (!body) return;
+    // Reset placeholder styling — we own the body now.
+    body.style.padding   = '0';
+    body.style.textAlign = 'left';
+    body.style.color     = '#ccc';
+    body.style.fontSize  = '12px';
+    const tp = player.talentPoints ?? 0;
+    body.innerHTML = `
+      <div style="display:flex; align-items:center; justify-content:space-between;
+                  padding:8px 12px; border-bottom:1px solid #444; background:var(--surface-container);">
+        <div><strong>Talent Points:</strong>
+          <span style="color:var(--warning); margin-left:6px;">${tp}</span>
+        </div>
+        <button onclick="toggleTalentMenu()" title="Talent options"
+          style="background:transparent; color:#ccc; border:1px solid #555;
+                 border-radius:4px; padding:2px 8px; font-size:14px; cursor:pointer;">☰</button>
+      </div>
+      <div id="talents-list" style="padding:8px 12px; max-height:320px; overflow-y:auto;">
+        <em style="color:#888;">Talent list goes here.</em>
+      </div>
+    `;
+  };
+
+  // Stub — menu spec arrives in a follow-up.
+  window.toggleTalentMenu = () => {
+    logMsg && logMsg('Talent menu (TBD).');
+  };
+
   window.showStats = () => {
     const statsBody = document.getElementById('stats-body');
     if(!statsBody) return;
+    const canExchange = (player.statPoints ?? 0) >= 3;
     let html = `<p>Level ${player.level}</p>
-      <p>Points: <span style="color:var(--warning)">${player.statPoints}</span></p>`;
+      <p>Ability Points: <span style="color:var(--warning)">${player.statPoints}</span></p>
+      <p>Talent Points: <span style="color:var(--warning)">${player.talentPoints ?? 0}</span>
+        <button onclick="exchangeAPforTP()" ${canExchange ? '' : 'disabled'} title="Spend 3 AP for 1 TP"
+          style="font-size:10px; padding:2px 6px; margin-left:8px; ${canExchange ? '' : 'opacity:0.4;'}">+1 TP (3 AP)</button>
+      </p>`;
     
     // All 5 stats with full names (no abbreviations), values, and allocate buttons
     for(const [key, info] of Object.entries(STAT_INFO)) {

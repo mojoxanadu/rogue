@@ -294,6 +294,10 @@ class Player extends Sentient {
     // matching wield talent. Engine code may consult this directly,
     // but equip-time gating should go through canEquip().
     this.talents = filled.talents ?? {};
+    // Talent Points — spend to acquire/improve talents. Granted on
+    // level-up (3/level by spec; 4 once Growth Spurt is purchased).
+    // Convertible from ability points at the rate 3 AP → 1 TP.
+    this.talentPoints = filled.talentPoints ?? 0;
   }
 
   /**
