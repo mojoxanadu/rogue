@@ -1984,6 +1984,7 @@ const hBtn = document.getElementById('hamburgerBtn');
     inventory:      ['i'],
     equip:      ['e'],
     stats:      ['c'],
+    talents:    ['t'],
     magic:      ['m'],
     quests:     ['q'],
     achieve:    ['y'],
@@ -2175,6 +2176,12 @@ const hBtn = document.getElementById('hamburgerBtn');
     else if(keyMatches('inventory', key)) toggleModal('inventory-modal');
     else if(keyMatches('equip', key)) toggleModal('equip-modal');
     else if(keyMatches('stats', key)) toggleModal('stats-modal');
+    else if(keyMatches('talents', key)) {
+      const el = document.getElementById('stats-modal');
+      const wasOpen = el && el.style.display === 'flex';
+      toggleModal('stats-modal');
+      if(!wasOpen && typeof showStatsTab === 'function') showStatsTab('talents');
+    }
     else if(keyMatches('magic', key)) toggleModal('magic-modal');
     else if(keyMatches('achieve', key)) toggleModal('achieve-modal');
     else if(keyMatches('quests', key)) toggleModal('quest-modal');
