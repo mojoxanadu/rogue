@@ -650,3 +650,121 @@ test('LocalPlayer.quickslotCount honors spec override', () => {
   const lp = new LocalPlayer({ quickslotCount: 5 });
   assert.equal(lp.quickslotCount, 5);
 });
+
+
+// ─── Player.canEquip — wield-talent gate ──────────────────────
+// Pure model-layer predicate. Reads ItemDefs[name].wieldTalent and
+// player.talents to decide. Returns { ok } or { ok:false, reason, talent }.
+// All tests stub ItemDefs; no engine wire-up needed.
+
+test('Player.talents defaults to empty object', () => {
+  const { Player } = setup();
+  const p = new Player();
+  assert.equal(typeof p.talents, 'object');
+  assert.equal(Object.keys(p.talents).length, 0);
+});
+
+test('Player.talents honors spec override', () => {
+  const { Player } = setup();
+  const p = new Player({ talents: { wieldSwords: { level: 1 } } });
+  assert.equal(p.talents.wieldSwords.level, 1);
+});
+
+test('canEquip: no item name → ok (no-op)', () => {
+  const { Player } = setup();
+  const p = new Player();
+  assert.equal(p.canEquip(null).ok,      true);
+  assert.equal(p.canEquip(undefined).ok, true);
+  assert.equal(p.canEquip('').ok,        true);
+});
+
+test('canEquip: unknown item / no def → ok (nothing to gate)', () => {
+  const { Player } = setupWithItemDefs({});  // empty registry
+  const p = new Player();
+  assert.equal(p.canEquip('mysteryItem').ok, true);
+});
+
+test('canEquip: weapon with no wieldTalent → ok (e.g. Accordion)', () => {
+  const { Player } = setupWithItemDefs({
+    accordion: { type: 'weapon', baseDmg: 0 },  // no wieldTalent field
+  });
+  const p = new Player();
+  assert.equal(p.canEquip('accordion').ok, true);
+});
+
+test('canEquip: gated weapon, player lacks talent → reject with reason+talent', () => {
+  const { Player } = setupWithItemDefs({
+    sword: { type: 'weapon', baseDmg: 8, wieldTalent: 'wieldSwords' },
+  });
+  const p = new Player();  // no talents
+  const verdict = p.canEquip('sword');
+  assert.equal(verdict.ok,     false);
+  assert.equal(verdict.reason, 'lack-talent');
+  assert.equal(verdict.talent, 'wieldSwords');
+});
+
+test('canEquip: gated weapon, player owns talent → ok', () => {
+  const { Player } = setupWithItemDefs({
+    sword: { type: 'weapon', baseDmg: 8, wieldTalent: 'wieldSwords' },
+  });
+  const p = new Player({ talents: { wieldSwords: { level: 1 } } });
+  assert.equal(p.canEquip('sword').ok, true);
+});
+
+test('canEquip: armor never gated (no wieldTalent on the def)', () => {
+  const { Player } = setupWithItemDefs({
+    robe: { type: 'armor', slot: 'chest' },
+  });
+  const p = new Player();
+  assert.equal(p.canEquip('robe').ok, true);
+});
+
+test('canEquip: same gate, different talent ids resolve independently', () => {
+  const { Player } = setupWithItemDefs({
+    bow:   { type: 'weapon', baseDmg: 1, wieldTalent: 'wieldBows'   },
+    staff: { type: 'weapon', baseDmg: 4, wieldTalent: 'wieldStaffs' },
+  });
+  const p = new Player({ talents: { wieldStaffs: { level: 1 } } });
+  assert.equal(p.canEquip('staff').ok, true);
+  const v = p.canEquip('bow');
+  assert.equal(v.ok,     false);
+  assert.equal(v.talent, 'wieldBows');
+});
+
+test('canEquip: ItemDefs absent → ok (no defs, nothing to gate)', () => {
+  const { Player } = setup();  // ItemDefs not installed in this ctx
+  const p = new Player();
+  assert.equal(p.canEquip('anything').ok, true);
+});
+
+
+// ─── LocalPlayer.countSpells — spell-slot tally ───────────────
+
+test('countSpells: no spells → 0', () => {
+  const { LocalPlayer } = setup();
+  const lp = new LocalPlayer();
+  lp.spells = {};
+  assert.equal(lp.countSpells({ level: 1 }), 0);
+});
+
+test('countSpells: tallies only matching tier from SPELL_DEFS', () => {
+  const ctx = setup();
+  ctx.SPELL_DEFS = {
+    illuminate: { name: 'Illuminate', level: 1 },
+    fireball:   { name: 'Fireball',   level: 2 },
+    light2:     { name: 'Light II',   level: 1 },
+  };
+  const lp = new ctx.LocalPlayer();
+  lp.spells = { illuminate: { level: 1 }, fireball: { level: 1 }, light2: { level: 1 } };
+  assert.equal(lp.countSpells({ level: 1 }), 2);
+  assert.equal(lp.countSpells({ level: 2 }), 1);
+  assert.equal(lp.countSpells({ level: 3 }), 0);
+});
+
+test('countSpells: spells absent from SPELL_DEFS are not counted', () => {
+  const ctx = setup();
+  ctx.SPELL_DEFS = { illuminate: { name: 'Illuminate', level: 1 } };
+  const lp = new ctx.LocalPlayer();
+  lp.spells = { illuminate: { level: 1 }, mysterySpell: { level: 1 } };
+  assert.equal(lp.countSpells({ level: 1 }), 1);
+});

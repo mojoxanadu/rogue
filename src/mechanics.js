@@ -1207,17 +1207,17 @@
     // K6: idx === -1 means "just recalculate stats from current equipped state"
     // (used by drag-to-unequip / slot-swap paths that manage inventory themselves)
     if (idx !== -1) {
-      // Wield-talent gate: weapon defs may declare a `wieldTalent`
-      // (camelCase TALENT_DEFS id). If present, the player must own
-      // that talent to equip — carrying is always fine. Class
-      // selection grants the relevant wield talent.
+      // Equip-gate is a model-layer predicate (Player.canEquip). Engine
+      // here only renders the user-facing rejection.
       const stackToEquip = inventory[idx];
-      const equipDef = stackToEquip ? ItemDefs[stackToEquip.itemName] : null;
-      const need = equipDef && equipDef.wieldTalent;
-      if (need && !(player.talents && player.talents[need])) {
-        const talentName = (typeof TALENT_DEFS !== 'undefined' && TALENT_DEFS[need]) ? TALENT_DEFS[need].name : need;
-        logMsg(`<span style='color:var(--error)'>You lack the ${talentName} talent — you can carry it but not wield it.</span>`);
-        return;
+      if (stackToEquip) {
+        const verdict = player.canEquip(stackToEquip.itemName);
+        if (!verdict.ok) {
+          const need = verdict.talent;
+          const talentName = (typeof TALENT_DEFS !== 'undefined' && TALENT_DEFS[need]) ? TALENT_DEFS[need].name : need;
+          logMsg(`<span style='color:var(--error)'>You lack the ${talentName} talent — you can carry it but not wield it.</span>`);
+          return;
+        }
       }
       // Swap one unit from the inventory stack with the equipped slot.
       // Equipped slots are item INSTANCES (single units), inventory slots are

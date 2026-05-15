@@ -552,6 +552,7 @@
     "👑🌿": { name: "Crown of Thorns", type: "armor", slot: "head", stackable: false, evadePercent: 5, thornsDmg: 5, maxGP: 10000 },
     "👺": { name: "Masque of Clavicus Vile", type: "armor", slot: "head", stackable: false, evadePercent: 5, maxGP: 50000 },
     "🥾": { name: "Old Boot", type: "armor", slot: "feet", stackable: false, evadePercent: 0, defenseBonus: 2, maxGP: 2 },
+    "🥾⚔️": { name: "Fighter's Boots", type: "armor", slot: "feet", stackable: false, evadePercent: 5, defenseBonus: 4, maxGP: 75 },
     "👢": { name: "Old Boot", type: "armor", slot: "feet", stackable: false, evadePercent: 0, defenseBonus: 2, maxGP: 2 },
     "💍⚡": { name: "Ring of Evasion", type: "armor", slot: "rightHand", stackable: false, evadePercent: 20, maxGP: 5000 },
     "💍": { name: "Ring of Midas", type: "armor", slot: "rightHand", stackable: false, evadePercent: -20, maxGP: 500 },
