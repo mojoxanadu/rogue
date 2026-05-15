@@ -861,10 +861,6 @@ function spawnNpc(list, x, y, type, opts = {}) {
     }
     const slots = raw.map(_normalizeLootEntry).filter(s => s !== null);
     npc.lootable = new Lootable({ ownerKind: 'npc', slots });
-    // Alias for legacy readers (render.js, expireCorpses, etc.) that
-    // expect an Array. Same reference as lootable.slots — mutations on
-    // one show on the other. Phase 6 cutover removes the alias.
-    npc.loot = npc.lootable.slots;
   }
   list.push(npc);
   return npc;

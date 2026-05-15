@@ -921,9 +921,10 @@
           if(glowColor) drawFootprintGlow((targetCtx, glyphPx, glyphPy) => drawCorpseGlyph(targetCtx, c, glyphPx, glyphPy, true), tilePx, tilePy, glowColor);
           drawCorpseGlyph(ctx, c, tilePx, tilePy, false);
           // Loot count indicator
-          if(c.loot && c.loot.length > 0 && !c.isBones) {
+          const lootCount = (c.lootable && c.lootable.slots) ? c.lootable.slots.length : 0;
+          if(lootCount > 0 && !c.isBones) {
             ctx.fillStyle = '#FFD700'; ctx.font = 'bold 9px sans-serif';
-            ctx.fillText(c.loot.length, vx*TILE_SIZE + TILE_SIZE - 4, vy*TILE_SIZE + 10);
+            ctx.fillText(lootCount, vx*TILE_SIZE + TILE_SIZE - 4, vy*TILE_SIZE + 10);
           }
         }
       });

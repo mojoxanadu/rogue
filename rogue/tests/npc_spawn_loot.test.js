@@ -23,8 +23,9 @@ test('spawnNpc attaches an empty Lootable when no roller is registered', () => {
   assert.ok(npc.lootable, 'npc should have a lootable');
   assert.equal(npc.lootable.ownerKind, 'npc');
   assert.equal(npc.lootable.size(), 0);
-  // Legacy alias points at the same array.
-  assert.equal(npc.loot, npc.lootable.slots);
+  // Phase 6d: npc.loot legacy alias retired — readers go through
+  // npc.lootable.slots directly.
+  assert.equal(npc.loot, undefined);
 });
 
 test('spawnNpc honors explicit spec.loot over the roller', () => {
