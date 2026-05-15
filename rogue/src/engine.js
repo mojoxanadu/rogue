@@ -108,6 +108,74 @@
     return loot;
   }
 
+  // Roll the loot a freshly-spawned monster will carry. Called at SPAWN
+  // time (via the window._npcLootRoller hook) so pickpocket and steal
+  // mechanics can mutate the same list before kill — what the player
+  // gets on death is whatever's left. Returns an Array of ItemStacks.
+  // Thief stolenItems and any other player-state-dependent drops are
+  // appended at death time by the death handler; this function handles
+  // only what's stable across the monster's lifetime.
+  function _rollMonsterLoot(npc) {
+    const type  = npc.type;
+    const stats = npc.stats || {};
+    let loot = [];
+    if (type === 'mouse') {
+      const r = Math.random();
+      if      (r < 0.05) loot.push(new ItemStack('plansForWorldDomination', 1));
+      else if (r < 0.25) loot.push(new ItemStack('cheese', 1));
+      loot.push(new ItemStack('gold', 1 + Math.floor(Math.random() * 3)));
+    } else if (type === 'cockroach') {
+      loot.push(new ItemStack('cockroachLegStale', 1));
+      if (Math.random() < 0.3) loot.push(new ItemStack('gold', 1));
+    } else if (type === 'chicken' || type === 'duck') {
+      const r = Math.random();
+      if      (r < 0.60) loot.push(new ItemStack('duckLeg', 1));
+      else if (r < 0.90) loot.push(new ItemStack('feather', 1));
+      if (Math.random() < 0.15) loot.push(new ItemStack('poop', 1));
+    } else if (type === 'wet_rat') {
+      if (Math.random() < 0.3) loot.push(new ItemStack('wetRatTail', 1));
+      else                     loot.push(new ItemStack('cheese', 1));
+    } else if (type === 'pixie') {
+      loot.push(new ItemStack('resurrectionCrystal', 1));
+      if (Math.random() < 0.35) loot.push(new ItemStack('dirt', 1));
+    } else if (type === 'shark') {
+      const r = Math.random();
+      if      (r < 0.15) loot.push(new ItemStack('sharkskinSuit', 1));
+      else if (r < 0.50) loot.push(new ItemStack('sharkTooth', 1));
+      loot.push(new ItemStack('gold', 25 + Math.floor(Math.random() * 50)));
+      if (Math.random() < 0.4) loot.push(new ItemStack('healthPotion', 2));
+      // Bag of Holding still gated on player level — read at spawn time,
+      // which means leveling up after the shark spawns doesn't change
+      // whether this drop is in the pool. Acceptable per the spawn-time
+      // pre-roll trade-off.
+      if (Math.random() < 0.3 && player.level >= 20) loot.push(new ItemStack('bagOfHolding', 1));
+    } else if (type === 'mimic') {
+      loot.push(new ItemStack('key', 1));
+      loot.push(new ItemStack('gold', 30 + Math.floor(Math.random() * 40)));
+      if (Math.random() < 0.35) loot.push(new ItemStack('ringOfMidas', 1));
+    } else if (type === 'genie') {
+      loot = generateLoot(type, stats);
+      loot.push(new ItemStack('tomeOfTownPortal', 1));
+    } else if (type === 'cow') {
+      loot.push(new ItemStack('meat', 1));
+      if (Math.random() < 0.4)  loot.push(new ItemStack('cheese', 1));
+      if (Math.random() < 0.15) loot.push(new ItemStack('poop', 1));
+    } else if (type === 'pig') {
+      loot.push(new ItemStack('meat', 1));
+      if (Math.random() < 0.15) loot.push(new ItemStack('poop', 1));
+    } else if (type === 'trex') {
+      loot.push(new ItemStack('bone', 1 + Math.floor(Math.random() * 2)));
+      if (Math.random() < 0.3) loot.push(new ItemStack('meat', 1));
+    } else if (type === 'castle_rat' || type === 'thief' || type === 'ifrit') {
+      // No spawn-time loot. thief gets stolenItems at death; ifrit has
+      // its own bespoke ifritLoot path; castle_rat drops nothing.
+    } else {
+      loot = generateLoot(type, stats);
+    }
+    return loot;
+  }
+  window._rollMonsterLoot = _rollMonsterLoot;
+
   function createCorpse(x, y, enemyType, enemyStats, loot) {
     let name = (MONSTER_DEF[enemyType] && MONSTER_DEF[enemyType].name) || enemyType;
     let icon = enemyStats.icon || '💀';
@@ -1255,50 +1323,30 @@
       }
     }
 
-    let corpseLoot = [];
+    // Phase 2: loot is pre-rolled at spawn time and lives on e.lootable.
+    // The branches below now only carry XP, log, sound, and other death
+    // side-effects. Loot items are read out at the end. Thief is the
+    // single exception: stolenItems depend on runtime player state and
+    // are appended after the side-effect block.
 
     if(e.outdoorCritter === 'chipmunk') {
-      corpseLoot.push(new ItemStack('pocketSand', 1));
-      if(Math.random() < 0.35) corpseLoot.push(new ItemStack('feather', 1));
       player.xp += 12;
       logMsg(`<span style='color:#888'>The chipmunk vanishes into the grass, leaving behind a tiny stash of seeds.</span>`);
     } else if(e.outdoorCritter === 'bird') {
-      corpseLoot.push(new ItemStack('feather', 1));
-      if(Math.random() < 0.5) corpseLoot.push(new ItemStack('pocketSand', 1));
       player.xp += 12;
       logMsg(`<span style='color:#888'>A startled burst of feathers and seed husks is all that remains.</span>`);
     } else if(e.type === 'mouse') {
-      let roll = Math.random();
-      if(roll < 0.05) corpseLoot.push(new ItemStack('plansForWorldDomination', 1));
-      else if(roll < 0.25) corpseLoot.push(new ItemStack('cheese', 1));
-      corpseLoot.push(new ItemStack('gold', 1 + Math.floor(Math.random() * 3)));
       player.xp += 10; player.verminKills = (player.verminKills ?? 0) + 1;
       if(player.verminKills >= 10) awardAchievement('vermin_slayer');
     } else if(e.type === 'cockroach') {
-      corpseLoot.push(new ItemStack('cockroachLegStale', 1));
-      if(Math.random() < 0.3) corpseLoot.push(new ItemStack('gold', 1));
       player.xp += 5; player.verminKills = (player.verminKills ?? 0) + 1;
       if(player.verminKills >= 10) awardAchievement('vermin_slayer');
     } else if(e.type === 'chicken') {
       if(typeof Sound !== 'undefined' && Sound.cluck) Sound.cluck();
-      // B4 FIX: Chickens only drop meat or feather — no gold
-      let chickenRoll = Math.random();
-      if(chickenRoll < 0.60) corpseLoot.push(new ItemStack('duckLeg', 1));       // 60% meat
-      else if(chickenRoll < 0.90) corpseLoot.push(new ItemStack('feather', 1));  // 30% feather
-      // 10% nothing
-      // E17: 15% poop drop from chickens
-      if(Math.random() < 0.15) corpseLoot.push(new ItemStack('poop', 1));
       player.xp += 8;
       logMsg(`<span style='color:#888'>The chicken flaps once and goes still.</span>`);
     } else if(e.type === 'duck') {
       Sound.quack();
-      // B4 FIX: Ducks are farm birds — no gold, only meat/feather
-      let duckRoll = Math.random();
-      if(duckRoll < 0.60) corpseLoot.push(new ItemStack('duckLeg', 1));       // 60% meat
-      else if(duckRoll < 0.90) corpseLoot.push(new ItemStack('feather', 1));  // 30% feather
-      // 10% nothing
-      // E17: 15% poop drop from ducks
-      if(Math.random() < 0.15) corpseLoot.push(new ItemStack('poop', 1));
       player.xp += 15;
       player.duckKills = (player.duckKills ?? 0) + 1;
       if(player.duckKills >= 5 && !achievements['duck_hunter']) {
@@ -1307,29 +1355,21 @@
       }
       logMsg(`<span style='color:#888'>The duck lets out a final quack before falling silent.</span>`);
     } else if(e.type === 'wet_rat') {
-      let roll = Math.random();
-      if(roll < 0.3) corpseLoot.push(new ItemStack('wetRatTail', 1));
-      else corpseLoot.push(new ItemStack('cheese', 1));
       player.xp += 20;
       logMsg(`<span style='color:#888'>The wet rat squeaks one last time.</span>`);
     } else if(e.type === 'pixie') {
-      corpseLoot.push(new ItemStack('resurrectionCrystal', 1));
-      if(Math.random() < 0.35) corpseLoot.push(new ItemStack('dirt', 1));
       player.xp += 30;
       logMsg(`<span style='color:#88f'>Pixie dust and a Resurrection Crystal scatter across the ground.</span>`);
     } else if(e.type === 'shark') {
-      let roll = Math.random();
-      if(roll < 0.15) {
-        corpseLoot.push(new ItemStack('sharkskinSuit', 1));
+      // Variant log messages depend on what was pre-rolled. The roller
+      // can't easily emit log lines, so we inspect the pre-rolled drops.
+      const slots = e.lootable ? e.lootable.slots : [];
+      if (slots.some(s => s.itemName === 'sharkskinSuit')) {
         logMsg(`<span style='color:#FFD700'>🦈 The mighty shark drops a pristine Sharkskin Suit!</span>`);
-      } else if(roll < 0.5) {
-        corpseLoot.push(new ItemStack('sharkTooth', 1));
+      } else if (slots.some(s => s.itemName === 'sharkTooth')) {
         logMsg(`<span style='color:#88FF88'>🦷 You claim a shark tooth as a trophy!</span>`);
       }
-      corpseLoot.push(new ItemStack('gold', 25 + Math.floor(Math.random() * 50)));
-      if(Math.random() < 0.4) corpseLoot.push(new ItemStack('healthPotion', 2));
-      if(Math.random() < 0.3 && player.level >= 20) {
-        corpseLoot.push(new ItemStack('bagOfHolding', 1));
+      if (slots.some(s => s.itemName === 'bagOfHolding')) {
         logMsg(`<span style='color:#FFD700'>🦈 A Bag of Holding surfaces from the depths!</span>`);
       }
       player.xp += 100;
@@ -1346,16 +1386,8 @@
       player.xp += 75;
       player.thief_killed = true;
       addFloatingText(e.x, e.y, "+75xp", "#8cf", 14);
-      if(stolenItems.length > 0) {
-        logMsg(`<span style='color:var(--success)'>The thief drops your stolen belongings!</span>`);
-        stolenItems.forEach(item => corpseLoot.push(new ItemStack(item.itemName, 1)));
-        stolenItems.length = 0;
-      }
       changeGold(15 + Math.floor(Math.random() * 30));
     } else if(e.type === 'mimic') {
-      corpseLoot.push(new ItemStack('key', 1));
-      corpseLoot.push(new ItemStack('gold', 30 + Math.floor(Math.random() * 40)));
-      if(Math.random() < 0.35) corpseLoot.push(new ItemStack('ringOfMidas', 1));
       player.xp += 90;
       addFloatingText(e.x, e.y, "+90xp", "#8cf", 14);
       if(typeof Sound !== 'undefined' && Sound.playSample) Sound.playSample('mimic_laugh', 0.5);
@@ -1365,24 +1397,14 @@
       let xpReward = 20 + currentLevel * 10;
       player.xp += xpReward;
       addFloatingText(e.x, e.y, `+${xpReward}xp`, "#8cf", 14);
-      corpseLoot = generateLoot(e.type, e.stats);
-      // Always add Tome of Town Portal
-      corpseLoot.push(new ItemStack('tomeOfTownPortal', 1));
       logMsg("<span style='color:#FFD700'>✨ The Genie's power dissipates! A shimmering tome falls from the swirling smoke...</span>");
       logMsg("<span style='color:#88CCFF'>📖🌀 You find the Tome of Town Portal!</span>");
     } else if(e.type === 'cow') {
       if(typeof Sound !== 'undefined' && Sound.moo) Sound.moo();
-      // E17: Cow loot — meat plus 15% poop, no gold
-      corpseLoot.push(new ItemStack('meat', 1));
-      if(Math.random() < 0.4) corpseLoot.push(new ItemStack('cheese', 1));
-      if(Math.random() < 0.15) corpseLoot.push(new ItemStack('poop', 1)); // E17
       player.xp += 20;
       logMsg(`<span style='color:#888'>The cow moos one last time.</span>`);
     } else if(e.type === 'pig') {
       if(typeof Sound !== 'undefined' && Sound.oink) Sound.oink();
-      // E17: Pig loot — meat plus 15% poop, no gold
-      corpseLoot.push(new ItemStack('meat', 1));
-      if(Math.random() < 0.15) corpseLoot.push(new ItemStack('poop', 1)); // E17
       player.xp += 15;
       logMsg(`<span style='color:#888'>The pig oinks feebly and goes still.</span>`);
     } else if(e.type === 'trex') {
@@ -1393,8 +1415,6 @@
         const angle = (i/6)*Math.PI*2;
         addFloatingText(e.x + Math.cos(angle), e.y + Math.sin(angle), '🩸', '#f00', 18);
       }
-      corpseLoot.push(new ItemStack('bone', 1+Math.floor(Math.random()*2)));
-      if(Math.random() < 0.3) corpseLoot.push(new ItemStack('meat', 1));
       player.xp += 800;
       addFloatingText(e.x, e.y, '+800xp', '#FFD700', 18);
       checkLevelUp();
@@ -1402,7 +1422,18 @@
       let xpReward = 20 + currentLevel * 10;
       player.xp += xpReward;
       addFloatingText(e.x, e.y, `+${xpReward}xp`, "#8cf", 14);
-      corpseLoot = generateLoot(e.type, e.stats);
+    }
+
+    // Read pre-rolled loot off the npc.
+    let corpseLoot = (e.lootable && Array.isArray(e.lootable.slots))
+      ? e.lootable.slots.slice()
+      : [];
+
+    // Thief: stolen items only resolvable at death time. Append.
+    if (e.type === 'thief' && stolenItems.length > 0) {
+      logMsg(`<span style='color:var(--success)'>The thief drops your stolen belongings!</span>`);
+      stolenItems.forEach(item => corpseLoot.push(new ItemStack(item.itemName, 1)));
+      stolenItems.length = 0;
     }
 
     if(corpseLoot.length > 0) {

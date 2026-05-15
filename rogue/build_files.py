@@ -18,6 +18,9 @@ FILES = [
     # state.js's LEGACY_ITEM_DATA table, so it must follow both.
     'items.js',
     'items_registry.js',
+    # World-bound loot abstraction. UX-agnostic; Phases 2-6 will migrate
+    # the legacy itemsOnGround/corpse.loot/CHEST-tile data through this.
+    'loot.js',
     # Entity hierarchy + World/Zone. UX-agnostic model classes; skeleton
     # only at this commit (no instantiation, no global wire-up yet).
     'entities.js',
