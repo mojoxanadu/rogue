@@ -1683,6 +1683,36 @@ const hBtn = document.getElementById('hamburgerBtn');
       if(isDead) return;
       // Yield to targeting handlers above — they consume the click.
       if(window._fireballTargeting || window._rangedTargeting) return;
+      // Sticky-drag → drop on ground at player's tile. Works on both
+      // desktop and touch — tapping the map anywhere with a sticky
+      // selection drops the item on the player's tile.
+      if (window._stickyDrag) {
+        const drag = window._stickyDrag;
+        if (drag.source === 'inv') {
+          const item = inventory[drag.idx];
+          if (item) {
+            itemsOnGround.push({ x: player.x, y: player.y, icon: item.icon });
+            inventory[drag.idx] = null;
+            logMsg(`Dropped ${item.def?.displayName ?? item.icon} on the ground.`);
+          }
+        } else if (drag.source === 'equip') {
+          const itemName = player.equipped[drag.slot];
+          if (itemName) {
+            const def = ItemDefs[itemName];
+            itemsOnGround.push({ x: player.x, y: player.y, icon: def?.icon ?? itemName });
+            logMsg(`Dropped ${def?.displayName ?? itemName} on the ground.`);
+            // Reuse swapEquip(-1, slot) so derived stats recompute.
+            if (typeof swapEquip === 'function') swapEquip(-1, drag.slot);
+            else player.equipped[drag.slot] = null;
+          }
+        }
+        window._stickyDrag = null;
+        if (typeof renderQuickslots === 'function') renderQuickslots();
+        if (typeof renderInventory === 'function') renderInventory();
+        if (typeof updateUI === 'function') updateUI();
+        drawMap();
+        return;
+      }
       // Tap-to-move is a TOUCH-ONLY input affordance. On desktop,
       // clicks on the map are usually misfires while reading; the
       // keyboard owns movement. Gate the dpad behind IS_TOUCH so
