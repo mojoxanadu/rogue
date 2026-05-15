@@ -809,11 +809,29 @@ NPC.fromSpec = function (spec = {}) {
 //  (e.g., assign patrolPath after computing positions).
 // ──────────────────────────────────────────────────────────────
 function spawnNpc(list, x, y, type, opts = {}) {
-  const { stats: explicitStats, ...rest } = opts;
+  const { stats: explicitStats, loot: preRolledLoot, ...rest } = opts;
   const def = (typeof MONSTER_DEF !== 'undefined' && MONSTER_DEF[type]) || {};
   const stats = explicitStats ? explicitStats : { ...def };
   const spec = { x, y, type, stats, actionTimer: 0, ...rest };
   const npc = NPC.fromSpec(spec);
+  // Phase 2: every NPC carries a Lootable at spawn time so pickpocket
+  // (and later steal mechanics) can mutate the same list before death.
+  // Loot precedence: explicit spec.loot > engine-side roller > empty.
+  if (typeof Lootable !== 'undefined') {
+    let slots;
+    if (Array.isArray(preRolledLoot)) {
+      slots = preRolledLoot;
+    } else if (typeof window !== 'undefined' && typeof window._rollMonsterLoot === 'function') {
+      slots = window._rollMonsterLoot(npc);
+    } else {
+      slots = [];
+    }
+    npc.lootable = new Lootable({ ownerKind: 'npc', slots });
+    // Alias for legacy readers (render.js, expireCorpses, etc.) that
+    // expect an Array. Same reference as lootable.slots — mutations on
+    // one show on the other. Phase 6 cutover removes the alias.
+    npc.loot = npc.lootable.slots;
+  }
   list.push(npc);
   return npc;
 }
