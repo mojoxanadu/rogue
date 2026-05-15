@@ -301,6 +301,45 @@ class Player extends Sentient {
   }
 
   /**
+   * Player.actionCost overrides Sentient's lookup to fold in
+   * talent-driven cooldown modifiers. Today only 'move' is affected
+   * (Speed talent: −10% × N). Floored at 10% of base so future
+   * stacked sources can't drive cost to zero / negative.
+   */
+  actionCost(name) {
+    let cost = super.actionCost(name);
+    if (name === 'move') {
+      const speedLvl = (this.talents.speed && this.talents.speed.level) || 0;
+      if (speedLvl > 0) cost *= Math.max(0.1, 1 - 0.10 * speedLvl);
+    }
+    return cost;
+  }
+
+  /**
+   * Apply incoming damage, reduced by talent-driven mitigations.
+   * Returns the actual damage dealt (after reduction). Does not
+   * trigger death — the engine checks hp afterwards.
+   *
+   *   Toughness: -10% × N for "corporal" damage. A `kind` string
+   *   present in Player.NON_CORPORAL_KINDS is exempted; everything
+   *   else (and a null/missing kind) is treated as corporal. The
+   *   exempted set is small on purpose — it's the central list of
+   *   non-physical damage tags as we wire more elemental sources.
+   */
+  takeDamage(dmg, kind = null) {
+    if (!(dmg > 0)) return 0;
+    const corporal = !Player.NON_CORPORAL_KINDS.has(kind);
+    let mult = 1.0;
+    if (corporal) {
+      const toughLvl = (this.talents.toughness && this.talents.toughness.level) || 0;
+      if (toughLvl > 0) mult *= Math.max(0, 1 - 0.10 * toughLvl);
+    }
+    const actual = Math.max(0, Math.floor(dmg * mult));
+    this.hp -= actual;
+    return actual;
+  }
+
+  /**
    * Equip-gate predicate. Pure function of (itemName, this.talents,
    * ItemDefs[itemName].wieldTalent). Returns { ok: true } when the
    * item has no wield gate, or the gate is satisfied. On failure
@@ -384,6 +423,16 @@ class Player extends Sentient {
   }
 }
 Player.DEFAULT_INVENTORY_SIZE = 30;
+
+/**
+ * Damage-kind tags that bypass Toughness (corporal-only).
+ * Add elemental tags here as new spell/effect damage sources land.
+ * Anything not in the set is treated as corporal.
+ */
+Player.NON_CORPORAL_KINDS = new Set([
+  'ifrit_fireball',  // heat
+  'ifrit_aura',      // heat
+]);
 
 /**
  * Starting combat values for a fresh Player. The legacy

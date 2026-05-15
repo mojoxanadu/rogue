@@ -536,12 +536,19 @@
       },
       // Apply HP loss to player + tint + floating text + die() check.
       // Returns true if die() fired so callers can early-return.
+      // Damage flows through Player.takeDamage so talents (Toughness,
+      // future resistances) can reduce it. A fully-absorbed hit shows
+      // "absorb" in place of the negative number.
       damagePlayer(dmg, kind, size, suffix, color) {
-        player.hp -= dmg;
+        const actual = player.takeDamage(dmg, kind);
+        if (actual <= 0) {
+          addFloatingText(player.x, player.y, 'absorb', '#9c9', 14);
+          return false;
+        }
         damageTint = 30;
-        const label = suffix ? `-${dmg}${suffix}` : `-${dmg}`;
+        const label = suffix ? `-${actual}${suffix}` : `-${actual}`;
         addFloatingText(player.x, player.y, label, color || '#f00', size ?? 22);
-        if (window.WebGLFX && WebGLFX.onPlayerDamage) WebGLFX.onPlayerDamage(dmg, kind);
+        if (window.WebGLFX && WebGLFX.onPlayerDamage) WebGLFX.onPlayerDamage(actual, kind);
         if (player.hp <= 0) { die(); return true; }
         return false;
       },
@@ -580,8 +587,18 @@
   }
   window.advanceSceneNPCs = advanceSceneNPCs;
 
-  function advanceTurn(steps = 1) {
+  function advanceTurn(stepsOrAction = 1) {
     if(isDead) return;
+    // Either a numeric cost (legacy) or an action name string (new).
+    // Action names are resolved through localPlayer.actionCost so
+    // talents like Speed (which reduce 'move' cost) take effect at
+    // the only place that matters: how much time the player's action
+    // burns relative to NPCs in the scheduler.
+    const steps = (typeof stepsOrAction === 'number')
+      ? stepsOrAction
+      : (typeof localPlayer !== 'undefined' && typeof localPlayer.actionCost === 'function'
+          ? localPlayer.actionCost(stepsOrAction)
+          : 1);
     advanceSceneNPCs();
     window._turnCount = (window._turnCount ?? 0) + steps;
     
@@ -2113,7 +2130,7 @@
       logMsg("<span style='color:#88CCFF'>You step into the brook, splash once, and instantly remember that you absolutely cannot swim.</span>");
       if(typeof Sound !== 'undefined' && Sound.playVoice) Sound.playVoice('voice_internal_brook');
       logMsg("<span style='color:#888'>You stumble back onto dry land, dripping and embarrassed.</span>");
-      advanceTurn(1);
+      advanceTurn('move');
       return;
     }
 
@@ -2390,7 +2407,7 @@
     }
 
     // No auto-pickup — items require right-click interaction
-    advanceTurn(1);
+    advanceTurn('move');
   }
 
   // E5: Blacksmith Repair service — costs 50g, restores all equipped items
