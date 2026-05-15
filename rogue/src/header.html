@@ -155,6 +155,50 @@
   #magic-quickslots-inline .mq-icon { font-size: 16px; }
 
   /*
+     LOOT POPUP
+     ==========
+     Non-modal panel anchored top-center under the new top bar. Shown
+     when the player stands on a tile with one or more Lootables.
+     Sections per source; "Pick Up All" pinned at top when any unlocked
+     loot is present. Semi-transparent so the world remains visible.
+  */
+  #loot-popup {
+    position: absolute; top: 64px; left: 50%; transform: translateX(-50%);
+    width: calc(100% - 32px); max-width: 360px;
+    background: rgba(20, 18, 24, 0.92); border: 1px solid #555;
+    border-radius: 8px; padding: 6px 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.55);
+    font-size: 12px; z-index: 150;
+  }
+  #loot-popup .lp-section { margin: 4px 0; }
+  #loot-popup .lp-heading {
+    color: var(--secondary); font-weight: bold; font-size: 11px;
+    margin-bottom: 2px;
+  }
+  #loot-popup .lp-heading .lp-lock { margin-right: 4px; }
+  #loot-popup .lp-row {
+    display: flex; align-items: center; gap: 6px;
+    padding: 2px 4px; border-radius: 4px; cursor: pointer;
+  }
+  #loot-popup .lp-row:active { background: rgba(208, 188, 255, 0.18); }
+  #loot-popup .lp-icon { font-size: 16px; min-width: 20px; text-align: center; }
+  #loot-popup .lp-name { flex: 1; color: #ddd; }
+  #loot-popup .lp-qty  { color: #aaa; font-size: 11px; }
+  #loot-popup .lp-locked { color: #b88; font-style: italic; }
+  #loot-popup .lp-allbtn {
+    display: block; width: 100%;
+    background: var(--secondary); color: #fff; border: none;
+    border-radius: 4px; padding: 4px 6px; margin-bottom: 4px;
+    cursor: pointer; font-weight: bold; font-size: 12px;
+  }
+  #loot-popup .lp-hint {
+    color: #888; font-size: 10px; text-align: right; margin-top: 4px;
+  }
+  @media (hover: hover) {
+    body:not(.touch) #loot-popup .lp-row:hover { background: rgba(208, 188, 255, 0.12); }
+  }
+
+  /*
      CIRCULAR MORE-ACTIONS MODAL
      ===========================
      Six buttons arranged on a circle around an empty center. Backdrop click

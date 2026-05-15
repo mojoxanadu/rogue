@@ -10,6 +10,12 @@ function setup() {
   return loadSrc('entities.js', 'world.js');
 }
 
+// Lootable-aware setup. dropAt() and the corpses/lootables tests need
+// the Lootable class loaded into the same context as Zone.
+function setupWithLoot() {
+  return loadSrc('items.js', 'entities.js', 'loot.js', 'world.js');
+}
+
 
 // ─── Zone ─────────────────────────────────────────────────────
 
@@ -279,4 +285,112 @@ test('World.visibleEntities returns empty list when camera misses every zone', (
   // Force camera far from any zone (well past default margin)
   w.camera.x = 100; w.camera.y = 100;
   assert.equal(w.visibleEntities().length, 0);
+});
+
+
+// ─── Zone.corpses ─────────────────────────────────────────────
+
+test('Zone.corpses defaults to empty array', () => {
+  const { Zone } = setup();
+  const z = new Zone({ width: 5, height: 5 });
+  assert.equal(z.corpses.length, 0);
+});
+
+test('Zone.addCorpse / removeCorpse', () => {
+  const { Zone } = setup();
+  const z = new Zone({ width: 5, height: 5 });
+  const c1 = { x: 1, y: 2, name: 'rat' };
+  const c2 = { x: 3, y: 4, name: 'bat' };
+  z.addCorpse(c1);
+  z.addCorpse(c2);
+  assert.equal(z.corpses.length, 2);
+  assert.equal(z.removeCorpse(c1), true);
+  assert.equal(z.corpses.length, 1);
+  assert.equal(z.corpses[0], c2);
+  assert.equal(z.removeCorpse(c1), false, 'removing a corpse not present returns false');
+});
+
+test('Zone.corpsesAt filters by tile', () => {
+  const { Zone } = setup();
+  const z = new Zone({ width: 5, height: 5 });
+  z.addCorpse({ x: 1, y: 2 });
+  z.addCorpse({ x: 1, y: 2 });
+  z.addCorpse({ x: 3, y: 4 });
+  assert.equal(z.corpsesAt(1, 2).length, 2);
+  assert.equal(z.corpsesAt(3, 4).length, 1);
+  assert.equal(z.corpsesAt(0, 0).length, 0);
+});
+
+
+// ─── Zone.lootables ───────────────────────────────────────────
+
+test('Zone.lootables defaults to empty array', () => {
+  const { Zone } = setup();
+  const z = new Zone({ width: 5, height: 5 });
+  assert.equal(z.lootables.length, 0);
+});
+
+test('Zone.addLootable / removeLootable / lootablesAt', () => {
+  const { Zone, Lootable } = setupWithLoot();
+  const z = new Zone({ width: 5, height: 5 });
+  const a = new Lootable({ ownerKind: 'floor',     x: 1, y: 1 });
+  const b = new Lootable({ ownerKind: 'container', x: 2, y: 2 });
+  const c = new Lootable({ ownerKind: 'floor',     x: 1, y: 1 }); // same tile as a
+  z.addLootable(a);
+  z.addLootable(b);
+  z.addLootable(c);
+  assert.equal(z.lootables.length, 3);
+  assert.equal(z.lootablesAt(1, 1).length, 2);
+  assert.equal(z.lootablesAt(2, 2).length, 1);
+  assert.equal(z.lootablesAt(9, 9).length, 0);
+
+  assert.equal(z.removeLootable(a), true);
+  assert.equal(z.lootables.length, 2);
+  assert.equal(z.lootablesAt(1, 1).length, 1);
+  assert.equal(z.removeLootable(a), false, 'removing absent returns false');
+});
+
+test('Zone.dropAt creates a floor Lootable when none exists at that tile', () => {
+  const { Zone, ItemStack, Lootable } = setupWithLoot();
+  const z = new Zone({ width: 5, height: 5 });
+  const stack = new ItemStack('gold', 5);
+  const l = z.dropAt(2, 3, stack);
+  assert.ok(l instanceof Lootable);
+  assert.equal(l.ownerKind, 'floor');
+  assert.equal(l.x, 2);
+  assert.equal(l.y, 3);
+  assert.equal(l.size(), 1);
+  assert.equal(z.lootables.length, 1);
+});
+
+test('Zone.dropAt accumulates into the existing floor Lootable at same tile', () => {
+  const { Zone, ItemStack } = setupWithLoot();
+  const z = new Zone({ width: 5, height: 5 });
+  z.dropAt(2, 3, new ItemStack('gold', 5));
+  z.dropAt(2, 3, new ItemStack('key'));
+  z.dropAt(2, 3, new ItemStack('cheese'));
+  assert.equal(z.lootables.length, 1, 'one floor pile per tile, not three');
+  assert.equal(z.lootables[0].size(), 3);
+});
+
+test('Zone.dropAt: different tiles get separate floor Lootables', () => {
+  const { Zone, ItemStack } = setupWithLoot();
+  const z = new Zone({ width: 5, height: 5 });
+  z.dropAt(1, 1, new ItemStack('gold', 5));
+  z.dropAt(2, 2, new ItemStack('key'));
+  assert.equal(z.lootables.length, 2);
+  assert.equal(z.lootablesAt(1, 1).length, 1);
+  assert.equal(z.lootablesAt(2, 2).length, 1);
+});
+
+test('Zone.dropAt does NOT merge into a non-floor Lootable on same tile', () => {
+  const { Zone, Lootable, ItemStack } = setupWithLoot();
+  const z = new Zone({ width: 5, height: 5 });
+  const chest = new Lootable({ ownerKind: 'container', x: 4, y: 4 });
+  z.addLootable(chest);
+  z.dropAt(4, 4, new ItemStack('gold'));
+  assert.equal(z.lootables.length, 2, 'a chest and a floor pile coexist on the same tile');
+  const floor = z.lootables.find(l => l.ownerKind === 'floor');
+  assert.equal(floor.size(), 1);
+  assert.equal(chest.size(), 0, 'gold did not bleed into the chest');
 });
