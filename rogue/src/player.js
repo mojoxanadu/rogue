@@ -118,6 +118,11 @@ function setPlayerDefaults() {
   player._diarrheaUntilMs    = 0;
   player._diarrheaNextFartMs = 0;
   player.spells = {};
+  // Talents: dict keyed by camelCase id (matches TALENT_DEFS), value
+  // { level: N } where N is the rank purchased. Class selection
+  // grants the class talent + class wield talent. Engine code that
+  // depends on a specific talent should consult player.talents[id]?.level.
+  player.talents = {};
   // Equipped item slots. VALUES are camelCase item names (matching keys in
   // the ItemDefs registry), NOT emoji icons. Each slot holds at most one
   // item — equip slots are item instances, not stacks. Drags between

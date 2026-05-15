@@ -393,6 +393,21 @@ class LocalPlayer extends Player {
     this.quickslotCount = spec.quickslotCount ?? LocalPlayer.DEFAULT_QUICKSLOT_COUNT;
     this.isLocal = true;
   }
+
+  // Count learned spells of a given tier. Used by the Level N Spell
+  // talents to compute used-vs-available slots. Reads SPELL_DEFS to
+  // resolve each learned spell's level; spells with no SPELL_DEFS
+  // entry are skipped (unknown tier).
+  countSpells({ level } = {}) {
+    if (!this.spells) return 0;
+    const defs = (typeof SPELL_DEFS !== 'undefined') ? SPELL_DEFS : {};
+    let n = 0;
+    for (const id of Object.keys(this.spells)) {
+      const def = defs[id];
+      if (def && def.level === level) n++;
+    }
+    return n;
+  }
 }
 LocalPlayer.DEFAULT_QUICKSLOT_COUNT = 6;
 

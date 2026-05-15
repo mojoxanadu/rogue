@@ -1332,6 +1332,8 @@ const hBtn = document.getElementById('hamburgerBtn');
         player.equipped.feet     = 'oldBoot';   // gives +2 defenseBonus per LEGACY_ITEM_DATA
         if (!player.inventory) player.inventory = [];
         player.inventory.push(new ItemStack('oldBoot', 1));
+        player.talents.fighterClass = { level: 1 };
+        player.talents.wieldSwords  = { level: 1 };
         logMsg && logMsg("You are a Fighter! +5 HP, Sword equipped, Fighter Boots worn.");
       } else if (selClass === 'spellcaster') {
         player.startingClass = 'spellcaster';
@@ -1342,9 +1344,16 @@ const hBtn = document.getElementById('hamburgerBtn');
         player.equipped.chest = 'robe';
         if (!player.inventory) player.inventory = [];
         player.inventory.push(new ItemStack('robe', 1));
+        player.talents.spellcasterClass = { level: 1 };
+        player.talents.wieldStaffs      = { level: 1 };
+        // Grant 2 ranks of Level 1 Spell — that's 2 slots; Illuminate
+        // fills one, leaving room to learn one more from a tome.
+        player.talents.level1Spell      = { level: 2 };
         logMsg && logMsg("You are a Spellcaster! 2 MP, Illumination known, Robe equipped.");
       } else if (selClass === 'rogue') {
         player.startingClass = 'rogue';
+        player.talents.rogueClass   = { level: 1 };
+        player.talents.wieldDaggers = { level: 1 };
         if (!player.inventory) player.inventory = [];
         // Place lockpicking tools in first empty inventory slot
         const inventorySlot = player.inventory.findIndex(s => !s || !s.icon);
