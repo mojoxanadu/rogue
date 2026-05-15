@@ -194,10 +194,8 @@
 -->
 <div id="hud">
   
-  <!-- Top‑left stat chips: GP, Hunger, Status. Updated dynamically by ui_logic.js. -->
+  <!-- Top‑left status chip. GP moved to top-bar; hunger moved to bottom bar. -->
   <div id="top-left-stats" class="interactive">
-    <div class="chip" id="gpUI">💰 0</div>
-    <div class="chip" id="hungerUI">Hunger: 0%</div>
     <div class="chip" id="statusUI" style="display:none;"></div>
   </div>
 
@@ -211,40 +209,32 @@
     </div>
     <canvas id="minimap" width="150" height="150"></canvas>
   </div>
-  <!-- Magic quickslots below minimap, separate element -->
-  <div id="magic-quickslots" class="interactive" style="position:absolute; top:216px; right:16px; display:flex; gap:6px; justify-content:center; background:rgba(20,18,24,0.7); border:1px solid #444; border-radius:6px; padding:4px 6px;">
-    <div onclick="castEquippedSpell()" title="Cast Spell (F)" style="width:32px; height:32px; border:1px solid var(--primary); border-radius:6px; display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative; background:rgba(29,27,32,0.9);">
-      <span style="font-size:8px; position:absolute; top:0px; left:2px; color:#aaa;">F</span><span id="spell-icon-1" style="font-size:16px;">🔘</span>
-    </div>
-    <div onclick="castSecondarySpell()" title="Spell 2 (G)" style="width:32px; height:32px; border:1px solid var(--secondary); border-radius:6px; display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative; background:rgba(29,27,32,0.9);">
-      <span style="font-size:8px; position:absolute; top:0px; left:2px; color:#aaa;">G</span><span id="spell-icon-2" style="font-size:16px;">🔘</span>
-    </div>
-  </div>
 
   <!--
-    Left action bar – icon buttons for menus, actions, and spells.
-    Each button includes a hidden keybind hint (shown via CSS class).
+    Top action bar – horizontal strip along the top with hamburger, GP,
+    fight, magic, the "more actions" backpack button, and the two magic
+    quickslots. Replaces the old vertical #left-bar and the floating
+    magic-quickslots panel.
   -->
-  <div id="left-bar" class="interactive">
+  <div id="top-bar" class="interactive">
     <div class="icon-btn" id="menu-toggle-btn" onclick="toggleMenu()" title="Menu (ESC)"><div class="keybind-hint">ESC / ^X</div><span class="sparkle-star">✦</span>&#9776;<div class="badge" id="stat-badge" style="display:none;">0</div></div>
-    <div class="icon-btn" id="inventory-drop-target" onclick="toggleModal('inventory-modal')" title="Inventory (I) — drag items here"
+    <div class="chip" id="gpUI">💰 0</div>
+    <div class="icon-btn" onclick="meleeAttack()" title="Melee Attack (Space)"><div class="keybind-hint">SPC</div><span id="melee-icon">🗡️</span></div>
+    <div class="icon-btn" onclick="toggleModal('magic-modal')" title="Magic (M)"><div class="keybind-hint">M</div>✨</div>
+    <div class="icon-btn" id="more-actions-btn" onclick="toggleMoreActions()" title="More actions — drag items here to send to inventory"
       ondragover="event.preventDefault(); event.dataTransfer.dropEffect='move'; this.style.borderColor='var(--success)'"
       ondragleave="this.style.borderColor=''"
       ondrop="dropToInventory(event); this.style.borderColor=''">
-      <div class="keybind-hint">I</div>🎒<div class="badge" id="inventory-badge" style="display:none;">0</div>
+      🎒<span class="more-dots">…</span><div class="badge" id="inventory-badge" style="display:none;">0</div>
     </div>
-    <div class="icon-btn" onclick="toggleModal('equip-modal')" title="Equipment (E)"><div class="keybind-hint">E</div>🛡️</div>
-    <div class="icon-btn" onclick="toggleModal('magic-modal')" title="Magic (M)"><div class="keybind-hint">M</div>✨</div>
-    
-    <div style="flex-grow:0; height: 10px;"></div>
-    
-    <div class="icon-btn" onclick="listenAction()" title="Listen (L)"><div class="keybind-hint">L</div>👂</div>
-    <div class="icon-btn" onclick="kneelAction()" title="Kneel (K)" id="kneelBtn"><div class="keybind-hint">K</div>🙇</div>
-    <div class="icon-btn" onclick="restPlayer()" title="Sleep (Z)"><div class="keybind-hint">Z</div>💤</div>
-    
-    <div style="flex-grow:0; height: 10px;"></div>
-    
-    <div class="icon-btn" onclick="meleeAttack()" title="Melee Attack (Space)"><div class="keybind-hint">SPC</div><span id="melee-icon">🗡️</span></div>
+    <div id="magic-quickslots-inline">
+      <div class="mq-slot" onclick="castEquippedSpell()" title="Cast Spell (F)">
+        <span class="mq-key">F</span><span id="spell-icon-1" class="mq-icon">🔘</span>
+      </div>
+      <div class="mq-slot" onclick="castSecondarySpell()" title="Spell 2 (G)">
+        <span class="mq-key">G</span><span id="spell-icon-2" class="mq-icon">🔘</span>
+      </div>
+    </div>
   </div>
 
   <!-- Game message log. Entries added via logMsg() in ui_logic.js.
@@ -266,11 +256,17 @@
     The inventory slots are populated by renderQuickslots() in ui_logic.js.
   -->
   <div id="bottom-bar" class="interactive">
-    <div id="xp-container" title="Experience">
-      <div id="xp-bar-fill" style="width: 0%;"></div>
-      <div id="xp-text">Lvl 1 - 0/100 XP</div>
+    <div id="bar-row">
+      <div id="xp-container" title="Experience">
+        <div id="xp-bar-fill" style="width: 0%;"></div>
+        <div id="xp-text">Lvl 1 - 0/100 XP</div>
+      </div>
+      <div id="hunger-container" title="Hunger">
+        <div id="hunger-bar-fill" style="width: 0%;"></div>
+        <div id="hunger-text">Hunger 0%</div>
+      </div>
     </div>
-    
+
     <div id="resource-row">
       <div class="orb" id="hp-orb" title="Health">
         <div class="orb-fill"></div>
@@ -303,6 +299,20 @@
   toggleModal(). Each modal has a header with a close button and a body
   that is filled dynamically by JavaScript.
 -->
+<!-- Circular "more actions" modal. Six buttons arranged on a circle.
+     Outside-click closes; no border around the modal. -->
+<div id="more-actions-modal" onclick="if(event.target===this) toggleMoreActions()"
+     style="display:none; position:fixed; inset:0; z-index:210; background:rgba(0,0,0,0.45);">
+  <div class="circular-modal">
+    <div class="ca-btn" style="--ang:0deg"   onclick="toggleMoreActions(); toggleModal('inventory-modal')" title="Inventory (I)"><div class="keybind-hint">I</div>🎒</div>
+    <div class="ca-btn" style="--ang:60deg"  onclick="toggleMoreActions(); toggleModal('equip-modal')" title="Equipment (E)"><div class="keybind-hint">E</div>🛡️</div>
+    <div class="ca-btn" style="--ang:120deg" onclick="toggleMoreActions(); kneelAction()" title="Kneel (K)" id="kneelBtn"><div class="keybind-hint">K</div>🙇</div>
+    <div class="ca-btn" style="--ang:180deg" onclick="toggleMoreActions(); restPlayer()" title="Sleep (Z)"><div class="keybind-hint">Z</div>💤</div>
+    <div class="ca-btn" style="--ang:240deg" onclick="toggleMoreActions(); listenAction()" title="Listen (L)"><div class="keybind-hint">L</div>👂</div>
+    <div class="ca-btn" style="--ang:300deg" onclick="toggleMoreActions(); quickSave()" title="Quicksave">💾</div>
+  </div>
+</div>
+
 <div id="overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); display:none; justify-content:center; align-items:center; z-index:200;">
   <div class="modal" id="modal-content" style="background:var(--surface); border:2px solid var(--secondary); padding:24px; border-radius:8px; text-align:center;"></div>
 </div>

@@ -183,8 +183,9 @@ function _performStickyMove(src, targetSource, target) {
   }
 
   function updateUI() {
-    player.hp = Math.max(0, Math.min(player.maxHp, player.hp));
-    player.mp = Math.max(0, Math.min(player.maxMp, player.mp));
+    // View must never mutate state. HP/MP can legitimately exceed maxHp/maxMp
+    // (talents grant temporary overflow). Drawing code clamps to 100% locally
+    // for the orb fill height; the player object stays the source of truth.
 
     // Orb renderer health check: do not rely on global WebGL state.
     // We gate CSS fallback strictly by per-orb draw success.
@@ -253,8 +254,11 @@ function _performStickyMove(src, targetSource, target) {
     const gpUI = document.getElementById('gpUI');
     if(gpUI) gpUI.innerText = `💰 ${player.gp}`;
     
-    const hgUI = document.getElementById('hungerUI');
-    if(hgUI) hgUI.innerText = `Hunger: ${Math.floor(player.hunger)}%`;
+    const hungerFill = document.getElementById('hunger-bar-fill');
+    const hungerText = document.getElementById('hunger-text');
+    const hPct = Math.max(0, Math.min(100, player.hunger || 0));
+    if(hungerFill) hungerFill.style.width = hPct + '%';
+    if(hungerText) hungerText.innerText = `Hunger ${Math.floor(hPct)}%`;
 
     const statusUI = document.getElementById('statusUI');
     if(statusUI) {
@@ -859,6 +863,16 @@ function _performStickyMove(src, targetSource, target) {
       if(id === 'quest-modal') showQuestLog();
       if(id === 'debug-modal' && typeof debugShowTiming === 'function') debugShowTiming();
     }
+  };
+
+  window.toggleMoreActions = () => {
+    const el = document.getElementById('more-actions-modal');
+    if(!el) return;
+    el.style.display = (el.style.display === 'block') ? 'none' : 'block';
+  };
+
+  window.quickSave = () => {
+    if(typeof saveGame === 'function') saveGame();
   };
 
   window.hideOverlay = () => {
@@ -2506,6 +2520,9 @@ function _performStickyMove(src, targetSource, target) {
       ['hitRate', 'Hit Rate (0-1)', player.hitRate],
       ['critRate', 'Crit Rate (0-1)', player.critRate],
       ['dodgeRate', 'Dodge Rate (0-1)', player.dodgeRate],
+      ['hunger', 'Hunger (0-100)', player.hunger],
+      ['xp', 'XP', player.xp],
+      ['talentPoints', 'Talent Points', player.talentPoints ?? 0],
     ];
     fields.forEach(([key, label, val]) => {
       html += `<div style="display:flex;gap:8px;align-items:center;margin:4px 0;">
@@ -2524,16 +2541,13 @@ function _performStickyMove(src, targetSource, target) {
   };
 
   window.applyStatEdit = () => {
-    ['maxHp','hp','maxMp','mp','baseDmg','meleeDmgBonus','rangedDmgBonus','spellDmgBonus','hitRate','critRate','dodgeRate'].forEach(key => {
+    ['maxHp','hp','maxMp','mp','baseDmg','meleeDmgBonus','rangedDmgBonus','spellDmgBonus','hitRate','critRate','dodgeRate','hunger','xp','talentPoints'].forEach(key => {
       const el = document.getElementById(`edit-${key}`);
       if(el) {
         const val = parseFloat(el.value);
         if(!isNaN(val)) player[key] = val;
       }
     });
-    // Clamp HP/MP to new max
-    player.hp = Math.min(player.hp, player.maxHp);
-    player.mp = Math.min(player.mp, player.maxMp);
     logMsg('Stats updated.');
     document.getElementById('overlay').style.display = 'none';
     updateUI();
