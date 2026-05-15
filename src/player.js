@@ -122,6 +122,7 @@ function setPlayerDefaults() {
   // Re-reset on each setPlayerDefaults call (game restart) to drop any
   // talents granted in the previous run.
   player.talents = {};
+  player.talentPoints = 0;
   // Equipped item slots. VALUES are camelCase item names (matching keys in
   // the ItemDefs registry), NOT emoji icons. Each slot holds at most one
   // item — equip slots are item instances, not stacks. Drags between

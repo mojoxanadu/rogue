@@ -1144,7 +1144,7 @@
   function checkLevelUp() {
     let req = CONSTANTS.XP_BASE * Math.pow(CONSTANTS.XP_MULT, player.level - 1);
     if (player.xp >= req) {
-      player.xp -= req; player.level++; player.statPoints += 1;
+      player.xp -= req; player.level++; player.statPoints += 1; player.talentPoints += 3;
       player.hp = player.maxHp; player.mp = player.maxMp; logMsg("LEVEL UP!"); triggerLevelUpVisuals();
       // ── QUEST ENGINE EVENT: level_up ──
       if (typeof QuestEngine !== 'undefined') QuestEngine.emit('level_up', { level: player.level });
