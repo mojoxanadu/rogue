@@ -1165,6 +1165,11 @@
       player.hp = player.maxHp; player.mp = player.maxMp; logMsg("LEVEL UP!"); triggerLevelUpVisuals();
       // ── QUEST ENGINE EVENT: level_up ──
       if (typeof QuestEngine !== 'undefined') QuestEngine.emit('level_up', { level: player.level });
+      if (typeof awardAchievement === 'function') {
+        if (player.level >= 5)  awardAchievement('level_5');
+        if (player.level >= 10) awardAchievement('level_10');
+        if (player.level >= 15) awardAchievement('level_15');
+      }
     }
   }
 
@@ -1205,6 +1210,13 @@
     if (typeof QuestEngine !== 'undefined') {
       QuestEngine.emit('kill', { type: e.type });
       QuestEngine._counters['kill_total'] = (QuestEngine._counters['kill_total'] ?? 0) + 1;
+      const kt = QuestEngine._counters['kill_total'];
+      if (typeof awardAchievement === 'function') {
+        if (kt >= 1)   awardAchievement('first_blood');
+        if (kt >= 10)  awardAchievement('kill_10');
+        if (kt >= 50)  awardAchievement('kill_50');
+        if (kt >= 100) awardAchievement('kill_100');
+      }
       if (e.type === 'mouse' || e.type === 'cockroach') {
         QuestEngine._counters['kill_vermin'] = (QuestEngine._counters['kill_vermin'] ?? 0) + 1;
       }
@@ -2222,6 +2234,12 @@
           logMsg(`<span style="color:var(--primary)">Returning to Level ${currentLevel}...</span>`);
         }
         if(typeof QuestEngine !== 'undefined') QuestEngine.emit('enter_level', { level: currentLevel, scene: currentScene });
+        if (typeof awardAchievement === 'function') {
+          if (currentLevel >= 3)  awardAchievement('floor_3');
+          if (currentLevel >= 5)  awardAchievement('floor_5');
+          if (currentLevel >= 10) awardAchievement('floor_10');
+          if (currentLevel >= 15) awardAchievement('floor_15');
+        }
         // B38: Preserve the player's x-offset relative to the gate center so
         //      they arrive at the matching tile in the destination gate (no 6-tile shift).
         const exitGate = isDescend ? window._outworldGates.south : window._outworldGates.north;
@@ -2248,6 +2266,12 @@
       currentLevel++; 
       logMsg(`<span style="color:var(--primary)">Descending to Floor ${currentLevel}...</span>`);
       if (typeof QuestEngine !== 'undefined') QuestEngine.emit('enter_level', { level: currentLevel, scene: currentScene });
+      if (typeof awardAchievement === 'function') {
+        if (currentLevel >= 3)  awardAchievement('floor_3');
+        if (currentLevel >= 5)  awardAchievement('floor_5');
+        if (currentLevel >= 10) awardAchievement('floor_10');
+        if (currentLevel >= 15) awardAchievement('floor_15');
+      }
       // Try to restore cached level; if not cached, generate new
       if(!_restoreLevelFromCache(currentLevel)) {
         initMap(50);
@@ -2264,6 +2288,12 @@
         if(currentLevel === 0) window._cainHealedThisVisit = false; // E6: reset Cain heal on returning to town
         logMsg(`<span style="color:var(--primary)">Ascending to Floor ${currentLevel}...</span>`);
         if (typeof QuestEngine !== 'undefined') QuestEngine.emit('enter_level', { level: currentLevel, scene: currentScene });
+        if (typeof awardAchievement === 'function') {
+          if (currentLevel >= 3)  awardAchievement('floor_3');
+          if (currentLevel >= 5)  awardAchievement('floor_5');
+          if (currentLevel >= 10) awardAchievement('floor_10');
+          if (currentLevel >= 15) awardAchievement('floor_15');
+        }
         if(!_restoreLevelFromCache(currentLevel)) {
           initMap(50);
         }

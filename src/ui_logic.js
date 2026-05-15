@@ -164,14 +164,11 @@ function _performStickyMove(src, targetSource, target) {
         logInfo.count++;
         const escErr = String(text)
           .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        logDiv.innerHTML += '<div class="log-entry"><span class="log-time">#' + logInfo.count + '</span><span class="log-new log-error"><strong>JS Error</strong><pre>' + escErr + '</pre></span></div>';
+        logDiv.innerHTML += '<div class="log-entry"><span class="log-new log-error"><strong>JS Error</strong><pre>' + escErr + '</pre></span></div>';
       });
     }
     logInfo.count++;
-    const now = new Date();
-    const ts = `[${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}]`;
-    const idx = logInfo.count;
-    logDiv.innerHTML += `<div class="log-entry"><span class="log-time">#${idx} ${ts}</span><span class="log-new">${msg}</span></div>`;
+    logDiv.innerHTML += `<div class="log-entry"><span class="log-new">${msg}</span></div>`;
     // Scroll all scrollable containers to bottom
     requestAnimationFrame(() => {
       if(logOverlay) logOverlay.scrollTop = logOverlay.scrollHeight;
@@ -778,7 +775,6 @@ function _performStickyMove(src, targetSource, target) {
       }
     }
 
-    logMsg(`Setting: ${setting} = ${next}`);
   };
 
   function _modeLabel(mode) {
@@ -844,7 +840,6 @@ function _performStickyMove(src, targetSource, target) {
       else if(currentScene === 'castle') Sound.playMusic('lechuck');
       else Sound.playMusic('monkey'); // Default
     }
-    logMsg(`Setting: ${setting} = ${value ? 'ON' : 'OFF'}`);
   };
 
   // === Draggable Modals ===

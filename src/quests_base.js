@@ -91,164 +91,9 @@
 
     quests: [
 
-      // ── COMBAT MILESTONE QUESTS ──
-      // LESSON: These are "background quests" that track cumulative progress.
-      // The player never explicitly accepts them — they advance silently
-      // as the player naturally plays the game. This creates a sense of
-      // hidden depth: "Oh! I didn't know I was working toward something!"
-      {
-        id: "q_first_blood",
-        name: "First Blood",
-        category: "Combat",
-        showInLog: false,  // Silent background quest
-        stages: [
-          {
-            progress: 10,
-            logText: "I killed my first monster.",
-            trigger: {
-              event: "kill",
-              filter: {},           // Any kill
-              requirements: []      // No prereqs
-            },
-            rewards: [{ type: "achievement", id: "first_blood" }],
-            rewardExperience: 10,
-            finishesQuest: true
-          }
-        ]
-      },
-
-      {
-        id: "q_kill_milestones",
-        name: "Monster Slayer",
-        category: "Combat",
-        showInLog: true,
-        stages: [
-          {
-            progress: 10,
-            logText: "I've slain 10 monsters. The dungeon trembles.",
-            trigger: {
-              event: "kill",
-              filter: {},
-              requirements: [{ type: "counter", counter: "kill_total", min: 10 }]
-            },
-            rewards: [{ type: "achievement", id: "kill_10" }],
-            rewardExperience: 50
-          },
-          {
-            progress: 20,
-            logText: "50 monsters have fallen to my blade.",
-            trigger: {
-              event: "kill",
-              filter: {},
-              requirements: [{ type: "counter", counter: "kill_total", min: 50 }]
-            },
-            rewards: [{ type: "achievement", id: "kill_50" }],
-            rewardExperience: 100
-          },
-          {
-            progress: 30,
-            logText: "100 kills. I am become death, destroyer of dungeons.",
-            trigger: {
-              event: "kill",
-              filter: {},
-              requirements: [{ type: "counter", counter: "kill_total", min: 100 }]
-            },
-            rewards: [{ type: "achievement", id: "kill_100" }],
-            rewardExperience: 200,
-            finishesQuest: true
-          }
-        ]
-      },
-
-      // ── EXPLORATION QUESTS ──
-      {
-        id: "q_floor_milestones",
-        name: "Descent",
-        category: "Exploration",
-        showInLog: true,
-        stages: [
-          {
-            progress: 10,
-            logText: "I've reached dungeon floor 3. The air grows cold.",
-            trigger: {
-              event: "enter_level",
-              filter: {},
-              requirements: [{ type: "location", level: 3 }]
-            },
-            rewards: [{ type: "achievement", id: "floor_3" }],
-            rewardExperience: 30
-          },
-          {
-            progress: 20,
-            logText: "Floor 5. I can barely see the sky above.",
-            trigger: {
-              event: "enter_level",
-              filter: {},
-              requirements: [{ type: "location", level: 5 }]
-            },
-            rewards: [{ type: "achievement", id: "floor_5" }],
-            rewardExperience: 50,
-            intHint: "The walls here are older than the upper floors. This dungeon was built in layers, over centuries.",
-            intHintThreshold: 12
-          },
-          {
-            progress: 30,
-            logText: "Floor 10. The deepest part of the dungeon. What horrors await?",
-            trigger: {
-              event: "enter_level",
-              filter: {},
-              requirements: [{ type: "location", level: 10 }]
-            },
-            rewards: [{ type: "achievement", id: "floor_10" }],
-            rewardExperience: 100,
-            intHint: "The stonework here predates all known civilizations. Someone — or something — was here before us.",
-            intHintThreshold: 14,
-            intHintModal: "You notice faint runes carved into the floor. They seem to be a warning... or an invitation. The script is ancient, but your intellect allows you to make out the words: 'BEYOND THIS POINT, THE CAULDRON SLEEPS.'"
-          },
-          {
-            progress: 40,
-            logText: "I've reached the castle. The final challenge awaits.",
-            trigger: {
-              event: "enter_level",
-              filter: {},
-              requirements: [{ type: "location", level: 15 }]
-            },
-            rewards: [{ type: "achievement", id: "floor_15" }],
-            rewardExperience: 200
-          }
-        ]
-      },
-
-      // ── LEVEL-UP QUESTS ──
-      {
-        id: "q_level_milestones",
-        name: "Growing Stronger",
-        category: "General",
-        showInLog: false,
-        stages: [
-          {
-            progress: 10,
-            logText: "Reached level 5.",
-            trigger: { event: "level_up", filter: {}, requirements: [{ type: "playerLevel", min: 5 }] },
-            rewards: [{ type: "achievement", id: "level_5" }],
-            finishesQuest: false
-          },
-          {
-            progress: 20,
-            logText: "Reached level 10.",
-            trigger: { event: "level_up", filter: {}, requirements: [{ type: "playerLevel", min: 10 }] },
-            rewards: [{ type: "achievement", id: "level_10" }],
-            finishesQuest: false
-          },
-          {
-            progress: 30,
-            logText: "Reached level 15. I am a master adventurer.",
-            trigger: { event: "level_up", filter: {}, requirements: [{ type: "playerLevel", min: 15 }] },
-            rewards: [{ type: "achievement", id: "level_15" }],
-            finishesQuest: true
-          }
-        ]
-      },
+      // Kill/floor/level milestones are achievements only — see
+      // engine.js award sites near the corresponding QuestEngine.emit calls.
+      // Quests are reserved for content with a giver, narrative, or player choice.
 
       // ── DUCK HUNT QUEST ──
       // LESSON: This quest demonstrates:
@@ -409,11 +254,11 @@
         stages: [
           {
             progress: 10,
-            logText: "I've started exterminating the vermin near the stores. The shopkeepers will thank me.",
+            logText: "Vermin! No shopkeeper has asked, but if I cull them the merchants will surely thank me.",
             trigger: {
-              event: "kill",
+              event: "saw_vermin",
               filter: {},
-              requirements: [{ type: "counter", counter: "kill_vermin", min: 1 }]
+              requirements: []
             }
           },
           {
