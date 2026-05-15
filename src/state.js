@@ -725,13 +725,17 @@
     "🪙": { name: "Gold", type: "wealth", maxStack: 9999, maxGP: 0, pickupTo: 'gp' },
 
     // ── WEAPON ───────────────────────────────────────
+    // wieldTalent: TALENT_DEFS id required to equip. Omit/null = no
+    // gate (e.g. Accordion is a "weapon" only by typing — has 0 dmg
+    // and a special-case effect, so anyone may equip it). New weapons
+    // should declare a wieldTalent unless they're similarly atypical.
     "🪗": { name: "Accordion", type: "weapon", stackable: false, baseDmg: 0, maxGP: 0, special: 'accordion' },
-    "🏹": { name: "Bow", type: "weapon", stackable: false, baseDmg: 1, maxGP: 25, ranged: true, range: 9, ammoName: 'arrows', rangedDamage: 8 },
-    "🗡️✨": { name: "Excalibur", type: "weapon", stackable: false, baseDmg: 12, maxGP: 12000 },
-    "🦯✨": { name: "Proper Staff", type: "weapon", stackable: false, baseDmg: 5, maxGP: 25000, ranged: true, range: 9, manaCost: 5, rangedDamage: 20, magicScaling: 'int' },
-    "🦯": { name: "Staff", type: "weapon", stackable: false, baseDmg: 4, maxGP: 5 },
-    "🗡️": { name: "Sword", type: "weapon", stackable: false, baseDmg: 8, maxGP: 100 },
-    "🪄": { name: "Wizard's Wand", type: "weapon", stackable: false, baseDmg: 1, maxGP: 25000, ranged: true, range: 8, manaCost: 3, rangedDamage: 15, magicScaling: 'int' },
+    "🏹": { name: "Bow", type: "weapon", stackable: false, baseDmg: 1, maxGP: 25, ranged: true, range: 9, ammoName: 'arrows', rangedDamage: 8, wieldTalent: 'wieldBows' },
+    "🗡️✨": { name: "Excalibur", type: "weapon", stackable: false, baseDmg: 12, maxGP: 12000, wieldTalent: 'wieldSwords' },
+    "🦯✨": { name: "Proper Staff", type: "weapon", stackable: false, baseDmg: 5, maxGP: 25000, ranged: true, range: 9, manaCost: 5, rangedDamage: 20, magicScaling: 'int', wieldTalent: 'wieldStaffs' },
+    "🦯": { name: "Staff", type: "weapon", stackable: false, baseDmg: 4, maxGP: 5, wieldTalent: 'wieldStaffs' },
+    "🗡️": { name: "Sword", type: "weapon", stackable: false, baseDmg: 8, maxGP: 100, wieldTalent: 'wieldSwords' },
+    "🪄": { name: "Wizard's Wand", type: "weapon", stackable: false, baseDmg: 1, maxGP: 25000, ranged: true, range: 8, manaCost: 3, rangedDamage: 15, magicScaling: 'int', wieldTalent: 'wieldStaffs' },
   };
 
   // NPC dialogue lines – used for shopkeeper flavor text.

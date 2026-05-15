@@ -8,6 +8,11 @@ FILES = [
     'audio.js',
     'music_data.js',
     'state.js',
+    # Pure-data registries (no engine logic). Loaded early so
+    # player.js and class-selection code can grant talents and
+    # query spell levels without forward-reference gymnastics.
+    'talents_def.js',
+    'spells_def.js',
     # Item model classes (UX-agnostic). items.js defines the classes;
     # items_registry.js builds the camelCase-name registry from
     # state.js's LEGACY_ITEM_DATA table, so it must follow both.

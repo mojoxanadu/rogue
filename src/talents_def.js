@@ -12,6 +12,9 @@
 //              max = -1 sentinel means "no max" (unbounded).
 //    req     : prerequisite talent name (or class string), or null
 //    flags   : array of strings — currently "toggle", "use"
+//    tbi     : (optional) true = "to be implemented" — engine
+//              has no logic yet; UX hides it from the talent
+//              list. Omit (or set falsy) once wired up.
 //    desc    : free-form description from the spec
 // ============================================================
 
@@ -21,6 +24,7 @@ const TALENT_DEFS = {
     cost:  { initial: 3, improve: null, max: 1 },
     req:   'Beast Shape',
     flags: ['toggle'],
+    tbi:   true,
     desc:  `If enabled when your Beast Shape Talent is used, all armor including shields you have equipped morphs to fit your new shape and provides the same benefits to your beast form. It morphs back when Beast Shape ends. Note you cannot change equipment in beast form.`,
   },
   battleMagic: {
@@ -28,6 +32,7 @@ const TALENT_DEFS = {
     cost:  { initial: 5, improve: null, max: 1 },
     req:   'Spellcaster Class',
     flags: [],
+    tbi:   true,
     desc:  `When you cast a spell while holding a melee weapon, you make a free attack versus a random foe within reach of that weapon.`,
   },
   beastShape: {
@@ -35,6 +40,7 @@ const TALENT_DEFS = {
     cost:  { initial: 6, improve: 6, max: 4 },
     req:   'Spellcaster Class',
     flags: ['use'],
+    tbi:   true,
     desc:  `If you have at least N x 4 MP, spend to use. revert to your old stats when you reach 0 HP or disable this Talent. Any extra damage carries over to your normal form; if your HP reaches 0 you die. You cannot speak, shop, cast spells, or use any items or equipment while in beast form.`,
   },
   beastcaster: {
@@ -42,6 +48,7 @@ const TALENT_DEFS = {
     cost:  { initial: 3, improve: null, max: 1 },
     req:   'Beast Shape',
     flags: [],
+    tbi:   true,
     desc:  `You may cast spells while in beast form.`,
   },
   brawler: {
@@ -56,6 +63,7 @@ const TALENT_DEFS = {
     cost:  { initial: 4, improve: 2, max: 3 },
     req:   'S***kicker',
     flags: [],
+    tbi:   true,
     desc:  `Critical damage increased by 50% x N. Only extra damage due to crit is increased.`,
   },
   calmBeasts: {
@@ -63,6 +71,7 @@ const TALENT_DEFS = {
     cost:  { initial: 3, improve: 2, max: 5 },
     req:   'Sweettalking',
     flags: [],
+    tbi:   true,
     desc:  `Reduces by 10% x N chance each beast encountered will be hostile. Normally beast CR x 20%. The minimum is always 5%.`,
   },
   cleave: {
@@ -70,6 +79,7 @@ const TALENT_DEFS = {
     cost:  { initial: 3, improve: null, max: 1 },
     req:   'Wield Swords',
     flags: [],
+    tbi:   true,
     desc:  `Damage left over after felling a foe with a melee attack can roll over to a different random foe in reach; another to hit check is made, if hit, damage continues, and this repeats until you miss one or damage is used up or there are no more targets.`,
   },
   cooking: {
@@ -77,6 +87,7 @@ const TALENT_DEFS = {
     cost:  { initial: 3, improve: 3, max: 3 },
     req:   'Rogue Class',
     flags: [],
+    tbi:   true,
     desc:  `Sleep removes 33% x N hunger when completed successfully (not interrupted).`,
   },
   counterstrike: {
@@ -84,6 +95,7 @@ const TALENT_DEFS = {
     cost:  { initial: 7, improve: null, max: 1 },
     req:   'Sneak Attack',
     flags: [],
+    tbi:   true,
     desc:  `Get a free automatic melee attack once per turn immediately after adjacent foe does damage.`,
   },
   cuttingWords: {
@@ -91,6 +103,7 @@ const TALENT_DEFS = {
     cost:  { initial: 2, improve: 1, max: 8 },
     req:   'Sweettalking',
     flags: [],
+    tbi:   true,
     desc:  `When a foe misses with an attack that targets only you, your taunts cause 0 to N psychic damage to it. Can trigger once per turn.`,
   },
   darkvision: {
@@ -98,6 +111,7 @@ const TALENT_DEFS = {
     cost:  { initial: 5, improve: 1, max: 2 },
     req:   'Rogue Class',
     flags: [],
+    tbi:   true,
     desc:  `Don't need light to see in the dark. N = 2 , including magical dark rooms.`,
   },
   defensiveFighting: {
@@ -105,6 +119,7 @@ const TALENT_DEFS = {
     cost:  { initial: 2, improve: 1, max: 5 },
     req:   'Dual Wield',
     flags: [],
+    tbi:   true,
     desc:  `Grants +5% x N dodge when 2 weapons equipped.`,
   },
   discipleOfLife: {
@@ -112,6 +127,7 @@ const TALENT_DEFS = {
     cost:  { initial: 6, improve: 6, max: 2 },
     req:   'Life Magic',
     flags: [],
+    tbi:   true,
     desc:  `All healing you receive from any source is 25% x N more effective.`,
   },
   divineAim: {
@@ -119,6 +135,7 @@ const TALENT_DEFS = {
     cost:  { initial: 3, improve: 3, max: -1 },
     req:   'Divine Strike',
     flags: ['toggle'],
+    tbi:   true,
     desc:  `When you miss with an attack that would have done Holy damage, up to N MP are spent to add 5% x N to-hit chance if that results in a hit.`,
   },
   divineChampion: {
@@ -126,6 +143,7 @@ const TALENT_DEFS = {
     cost:  { initial: 3, improve: null, max: 1 },
     req:   'Divine Strike',
     flags: ['toggle'],
+    tbi:   true,
     desc:  `All damage you do with any weapon (not spells) is converted into holy type damage.`,
   },
   divineSlayer: {
@@ -133,6 +151,7 @@ const TALENT_DEFS = {
     cost:  { initial: 3, improve: 3, max: -1 },
     req:   'Divine Strike',
     flags: ['toggle'],
+    tbi:   true,
     desc:  `If you non-lethally strike a foe, and have at least 1 MP, up to N MP is spent to grant you a 5 x N holy damage bonus on that attack if it would finish it off. Any unused bonus decreases by 1 at the beginning of each of your turns until exhausted, and is added only to a hit if it would slay a foe who wouldn't die without the bonus damage.`,
   },
   divineStrike: {
@@ -140,6 +159,7 @@ const TALENT_DEFS = {
     cost:  { initial: 3, improve: null, max: 1 },
     req:   'Fighter Class',
     flags: ['toggle'],
+    tbi:   true,
     desc:  `Your melee corporal damage changes to Holy type.`,
   },
   dualWield: {
@@ -147,6 +167,7 @@ const TALENT_DEFS = {
     cost:  { initial: 4, improve: null, max: 1 },
     req:   'Fighter Class',
     flags: [],
+    tbi:   true,
     desc:  `You can equip a different one-handed weapon in each hand. They are both used (separately but simultaneously) during your Attack action.`,
   },
   dueling: {
@@ -154,6 +175,7 @@ const TALENT_DEFS = {
     cost:  { initial: 4, improve: null, max: 1 },
     req:   'Fighter Class',
     flags: [],
+    tbi:   true,
     desc:  `Grants +2 corporal damage to hits when using a one-handed melee weapon and no other item is equipped in your other hand.`,
   },
   dungeonDelver: {
@@ -161,6 +183,7 @@ const TALENT_DEFS = {
     cost:  { initial: 1, improve: null, max: 1 },
     req:   'Keen Observer',
     flags: [],
+    tbi:   true,
     desc:  `Traps and secret doors are more apparent.`,
   },
   electricResistance: {
@@ -168,6 +191,7 @@ const TALENT_DEFS = {
     cost:  { initial: 6, improve: 4, max: 4 },
     req:   'Level 2 Spell',
     flags: [],
+    tbi:   true,
     desc:  `Electric damage to you is reduced 15% x N.`,
   },
   elvenTrance: {
@@ -175,6 +199,7 @@ const TALENT_DEFS = {
     cost:  { initial: 5, improve: 1, max: 2 },
     req:   'Keen Observer',
     flags: [],
+    tbi:   true,
     desc:  `Trance meditate instead of sleep. Sleep is 25% x N faster. No attack can hit you while asleep (but do still interrupt it).`,
   },
   endurance: {
@@ -182,6 +207,7 @@ const TALENT_DEFS = {
     cost:  { initial: 2, improve: 2, max: 3 },
     req:   'Fighter Class',
     flags: [],
+    tbi:   true,
     desc:  `Hunger increases 25% x N more slowly.`,
   },
   fallTogether: {
@@ -189,6 +215,7 @@ const TALENT_DEFS = {
     cost:  { initial: 3, improve: null, max: 1 },
     req:   'Medic',
     flags: ['use'],
+    tbi:   true,
     desc:  `Share one pool of HP with all allies and summoned creatures; share damage too. Cannot be used unless such creatures are near. Disabled when creatures and allies have left (taking at least 1 HP with them). OK, there are about 81 Talents. I recommend putting them in a vertical list instead of the tree with arrows though I've drawn one and it is cool. It could even be hierarchical because no Talent requires more than one other right now. But for the user, it's easier to navigate a list, and we're hiding by default the ones that are unreachable at the moment. Plus some talents can be turned on and off at will (show a toggle in front of name in list) or "used" (show a Use button in front of name); moving those to the top of the list as they buy them would make it easier on them during game play. They can still be bordered with nice rounded rects. You get 3 talent points (TP) per level after the first (until you get Growth Spurt if you wish). Talents have an initial TP cost and improvable ones have a secondary cost for higher N (the total times improved plus the first); there is typically a max N too. All this shown below as "A/B TP max C", where A is initial cost, B is improvement cost, and C is most times Talent can be bought. If a Talent just says "A TP", the Talent cannot be improved once bought. Fighters start with Fighter Class and Wield Swords. Rogues start with Rogue Class, Wield Daggers, and`,
   },
   ferociousBeast: {
@@ -196,6 +223,7 @@ const TALENT_DEFS = {
     cost:  { initial: 3, improve: null, max: 1 },
     req:   'Armored Beast',
     flags: ['toggle'],
+    tbi:   true,
     desc:  `Any weapons you have equipped when changing into Beast Shape morph to fit your new form and are used instead of your natural attacks. You cannot re-equip while in beast form.`,
   },
   fighterClass: {
@@ -210,6 +238,7 @@ const TALENT_DEFS = {
     cost:  { initial: 8, improve: 2, max: 3 },
     req:   'Level 4 Spell',
     flags: [],
+    tbi:   true,
     desc:  `You can breathe fire. Shorter cooldown for higher N. Enemies in cone in front of you (about 6 tiles total) take 1 to 16 heat damage each.`,
   },
   flameStrike: {
@@ -217,6 +246,7 @@ const TALENT_DEFS = {
     cost:  { initial: 3, improve: null, max: 1 },
     req:   'Battle Magic',
     flags: ['toggle'],
+    tbi:   true,
     desc:  `Corporal melee damage dealt by you changes to Heat type.`,
   },
   foraging: {
@@ -224,6 +254,7 @@ const TALENT_DEFS = {
     cost:  { initial: 1, improve: 1, max: 5 },
     req:   'Rogue Class',
     flags: [],
+    tbi:   true,
     desc:  `More food spawns on newly generated floors and a little more random spawns on old floors too. More for higher N.`,
   },
   greatStealth: {
@@ -231,6 +262,7 @@ const TALENT_DEFS = {
     cost:  { initial: 6, improve: null, max: 1 },
     req:   'Stealth',
     flags: ['toggle'],
+    tbi:   true,
     desc:  `You can attack or cast spells while using Stealth without it ending. Same effect as Great Invisibility spell without the MP cost.`,
   },
   growthSpurt: {
@@ -238,6 +270,7 @@ const TALENT_DEFS = {
     cost:  { initial: 1, improve: null, max: 1 },
     req:   'Toughness',
     flags: [],
+    tbi:   true,
     desc:  `Begin earning 4 ability points per level-up instead of 3. Also start earning only 2 TP. This Talent is permanent once taken.`,
   },
   healer: {
@@ -245,6 +278,7 @@ const TALENT_DEFS = {
     cost:  { initial: 6, improve: 5, max: 3 },
     req:   'Medic',
     flags: [],
+    tbi:   true,
     desc:  `Slowly regenerate lost HP while awake. Faster for higher N.`,
   },
   heatResistance: {
@@ -252,6 +286,7 @@ const TALENT_DEFS = {
     cost:  { initial: 7, improve: 5, max: 4 },
     req:   'Level 3 Spell',
     flags: [],
+    tbi:   true,
     desc:  `Heat damage you sustain reduced 15% x N.`,
   },
   heavySleeper: {
@@ -259,6 +294,7 @@ const TALENT_DEFS = {
     cost:  { initial: 1, improve: 1, max: 3 },
     req:   'Endurance',
     flags: [],
+    tbi:   true,
     desc:  `Sleep is 50% x N more effective at restoring HP (not MP), but it takes two hits to wake you from sleep. Incompatible with Light Sleeper.`,
   },
   holiness: {
@@ -266,6 +302,7 @@ const TALENT_DEFS = {
     cost:  { initial: 7, improve: 2, max: 3 },
     req:   'Level 1 Spell',
     flags: ['use'],
+    tbi:   true,
     desc:  `You restore some MP (like Mana Potion). Higher N, shorter cooldown.`,
   },
   intimidation: {
@@ -287,6 +324,7 @@ const TALENT_DEFS = {
     cost:  { initial: 6, improve: 4, max: 3 },
     req:   'Dueling',
     flags: ['toggle'],
+    tbi:   true,
     desc:  `Grants 19% x N chance to "jump back" into an open tile directly away from the foe who hit you, taking no damage from that hit, while`,
   },
   keenObserver: {
@@ -294,6 +332,7 @@ const TALENT_DEFS = {
     cost:  { initial: 2, improve: 1, max: 3 },
     req:   'Spellcaster Class',
     flags: ['toggle'],
+    tbi:   true,
     desc:  `After observing an enemy or enemies for a time (shorter for higher N) without casting spells, attacking, or being attacked, gain Scan for those enemies (like Scan spell, logs current stats of enemy to transcript).`,
   },
   level1Spell: {
@@ -308,6 +347,7 @@ const TALENT_DEFS = {
     cost:  { initial: 3, improve: 3, max: 6 },
     req:   'Level 1 Spell at least 2 times',
     flags: [],
+    tbi:   true,
     desc:  `See Level 1 Spell.`,
   },
   level3Spell: {
@@ -315,6 +355,7 @@ const TALENT_DEFS = {
     cost:  { initial: 4, improve: 4, max: 5 },
     req:   'Level 2 Spell at least 2 times',
     flags: [],
+    tbi:   true,
     desc:  `See Level 1 Spell.`,
   },
   level4Spell: {
@@ -322,6 +363,7 @@ const TALENT_DEFS = {
     cost:  { initial: 5, improve: 5, max: 4 },
     req:   'Level 3 Spell at least 2 times',
     flags: [],
+    tbi:   true,
     desc:  `See Level 1 Spell.`,
   },
   level5Spell: {
@@ -329,6 +371,7 @@ const TALENT_DEFS = {
     cost:  { initial: 6, improve: 6, max: 3 },
     req:   'Level 4 Spell at least 2 times',
     flags: [],
+    tbi:   true,
     desc:  `See Level 1 Spell.`,
   },
   lifeMagic: {
@@ -336,6 +379,7 @@ const TALENT_DEFS = {
     cost:  { initial: 2, improve: 1, max: -1 },
     req:   'Potent Spells',
     flags: [],
+    tbi:   true,
     desc:  `Magic (including potions but not sleep or Medic) can raise your HP above your max by 5 x N.`,
   },
   lightSleeper: {
@@ -343,6 +387,7 @@ const TALENT_DEFS = {
     cost:  { initial: 1, improve: 1, max: 3 },
     req:   'Uncritical',
     flags: [],
+    tbi:   true,
     desc:  `Sleep is less effective at restoring HP (not MP), but damage done to you while asleep is zeroed (you still wake up), and you can react to it more quickly.`,
   },
   lockpicking: {
@@ -350,6 +395,7 @@ const TALENT_DEFS = {
     cost:  { initial: null, improve: null, max: null },
     req:   null,
     flags: [],
+    tbi:   true,
     desc:  `Spellcasters start with Spellcaster Class, Wield Staffs, and`,
   },
   mageSlayer: {
@@ -357,6 +403,7 @@ const TALENT_DEFS = {
     cost:  { initial: 2, improve: 1, max: 3 },
     req:   'Rogue Class',
     flags: [],
+    tbi:   true,
     desc:  `Auto counterattack (melee) an adjacent foe that casts any spell. Triggers only once per round. Damage from adjacent foe's spells is reduced by 15% x N.`,
   },
   masterChef: {
@@ -364,6 +411,7 @@ const TALENT_DEFS = {
     cost:  { initial: 6, improve: 3, max: 3 },
     req:   'Cooking',
     flags: ['use'],
+    tbi:   true,
     desc:  `You select what to make from a menu when using this Talent: Heal Potion, Mana Potion, Antitoxin, Antibodies, or Great versions of first two. Higher N gives shorter cooldown; base cooldown varies by manufactured item's cost.`,
   },
   medic: {
@@ -371,6 +419,7 @@ const TALENT_DEFS = {
     cost:  { initial: 3, improve: 1, max: 3 },
     req:   'Fighter Class',
     flags: ['use'],
+    tbi:   true,
     desc:  `Heal some of your HP (like Heal Potion). Less cooldown for higher N.`,
   },
   moneyGrubber: {
@@ -378,6 +427,7 @@ const TALENT_DEFS = {
     cost:  { initial: 3, improve: 2, max: 5 },
     req:   'Scavenger',
     flags: [],
+    tbi:   true,
     desc:  `More gold bags spawn on newly generated floors, more drops as loot from foes. Higher frequency for higher N.`,
   },
   necroticHealing: {
@@ -385,6 +435,7 @@ const TALENT_DEFS = {
     cost:  { initial: 7, improve: 3, max: 5 },
     req:   'Life Magic',
     flags: [],
+    tbi:   true,
     desc:  `Gain back 10% x N of corporal damage you deal from your melee attacks as HP; this reduces damage done to foe by half the amount gained, rounded down.`,
   },
   necroticMana: {
@@ -392,6 +443,7 @@ const TALENT_DEFS = {
     cost:  { initial: 2, improve: null, max: 1 },
     req:   'Weave Magic',
     flags: ['use'],
+    tbi:   true,
     desc:  `Sacrifice half your current HP and gain the same in MP (can raise to max MP).`,
   },
   pickpocket: {
@@ -399,6 +451,7 @@ const TALENT_DEFS = {
     cost:  { initial: 3, improve: 2, max: 3 },
     req:   'Stealth',
     flags: ['toggle'],
+    tbi:   true,
     desc:  `Bump foe action is Steal (use Fight command to attack). Base success rate 30% x N, minus 10% x CR, minimum 5%. Ends Stealth/Invisibility if unsuccessful. Otherwise opens loot popup.`,
   },
   poisonTaster: {
@@ -406,6 +459,7 @@ const TALENT_DEFS = {
     cost:  { initial: 4, improve: 3, max: 3 },
     req:   'Medic',
     flags: [],
+    tbi:   true,
     desc:  `Poison damage done to you is reduced by 20% x N.`,
   },
   poisoner: {
@@ -413,6 +467,7 @@ const TALENT_DEFS = {
     cost:  { initial: 2, improve: 1, max: 20 },
     req:   'Cooking',
     flags: [],
+    tbi:   true,
     desc:  `Adds 0 to N poison damage to your wpn attacks.`,
   },
   potentSpells: {
@@ -420,6 +475,7 @@ const TALENT_DEFS = {
     cost:  { initial: 4, improve: 4, max: 5 },
     req:   'Spellcaster Class',
     flags: [],
+    tbi:   true,
     desc:  `Increases some spells' effectiveness and decreases cooldown times.`,
   },
   recklessAttack: {
@@ -427,6 +483,7 @@ const TALENT_DEFS = {
     cost:  { initial: 2, improve: null, max: 1 },
     req:   'Brawler',
     flags: ['toggle'],
+    tbi:   true,
     desc:  `Raises to-hit by 25% but decreases dodge 25% (can be negative) while unarmed.`,
   },
   reject: {
@@ -434,6 +491,7 @@ const TALENT_DEFS = {
     cost:  { initial: 4, improve: 2, max: 5 },
     req:   'Dueling',
     flags: ['toggle'],
+    tbi:   true,
     desc:  `Chance of 19% x N to push foe you damage while`,
   },
   rogueClass: {
@@ -448,6 +506,7 @@ const TALENT_DEFS = {
     cost:  { initial: 2, improve: 2, max: 5 },
     req:   'Brawler',
     flags: [],
+    tbi:   true,
     desc:  `Adds effectiveness to your Kick action used to smash open locked doors and chests. Chance on each kick increased by 10% x N.`,
   },
   scavenger: {
@@ -455,6 +514,7 @@ const TALENT_DEFS = {
     cost:  { initial: 3, improve: null, max: 1 },
     req:   'Foraging',
     flags: ['toggle'],
+    tbi:   true,
     desc:  `Pick up loot you walk over or bump into automatically, even from unlocked containers. Also causes auto-Pickpocket if you have Puckpocketing enabled.`,
   },
   secondWind: {
@@ -462,6 +522,7 @@ const TALENT_DEFS = {
     cost:  { initial: 6, improve: null, max: 1 },
     req:   'Endurance',
     flags: [],
+    tbi:   true,
     desc:  `If you have zero HP at the end of a creature's turn and your hunger is below 50%, gain a percent of your max HP equal to 50% - current hunger, instead of dying, and increase your hunger by 50%.`,
   },
   sleightOfHand: {
@@ -469,6 +530,7 @@ const TALENT_DEFS = {
     cost:  { initial: 6, improve: 3, max: 5 },
     req:   'Scavenger',
     flags: ['toggle'],
+    tbi:   true,
     desc:  `When buying from a shop, gives chance of 40% + 11% x N that the item will instead be free (because you stole it). If this fails, the owner will insist you give him 5 times the item's value before selling anything to you.`,
   },
   sneakAttack: {
@@ -476,6 +538,7 @@ const TALENT_DEFS = {
     cost:  { initial: 2, improve: 2, max: 5 },
     req:   'Stealth',
     flags: [],
+    tbi:   true,
     desc:  `Extra corporal damage from 0 to 3 x N when you attack from Stealth or Invisibility.`,
   },
   speed: {
@@ -490,6 +553,7 @@ const TALENT_DEFS = {
     cost:  { initial: 1, improve: null, max: 1 },
     req:   'Scavenger',
     flags: ['toggle'],
+    tbi:   true,
     desc:  `Automatically attempt to pick any lock you haven't tried (like Scavenger for locks).`,
   },
   spellcasterClass: {
@@ -504,6 +568,7 @@ const TALENT_DEFS = {
     cost:  { initial: 4, improve: null, max: 1 },
     req:   'Rogue Class',
     flags: ['toggle'],
+    tbi:   true,
     desc:  `Can be toggled on only when not seen by any foes (unlike Invisibility spell), and toggled off at will. Otherwise exactly like Invisibility spell: player icon becomes a ghostly outline, foes won't attack but may randomly bump you and end the Stealth, if you attack or cast any spell it ends.`,
   },
   sweettalking: {
@@ -525,6 +590,7 @@ const TALENT_DEFS = {
     cost:  { initial: 3, improve: 1, max: 3 },
     req:   'Foraging',
     flags: ['use'],
+    tbi:   true,
     desc:  `Show a path on the map toward the creature on the current floor that has the highest max HP. Creature can be hiding or invisible. Path disappears as soon as you move. Higher N has much shorter cooldown (N=2 is half, N=3 is a quarter).`,
   },
   turnUndead: {
@@ -532,6 +598,7 @@ const TALENT_DEFS = {
     cost:  { initial: 1, improve: 2, max: 4 },
     req:   'Holiness',
     flags: ['use'],
+    tbi:   true,
     desc:  `Yes the improvement cost is higher than initial cost. Use talent to spend N MP to cause nearby undead to flee for a short time. Only undead of CR <= N are subject to the effect.`,
   },
   uncritical: {
@@ -539,6 +606,7 @@ const TALENT_DEFS = {
     cost:  { initial: 4, improve: 3, max: 5 },
     req:   'Rogue Class',
     flags: [],
+    tbi:   true,
     desc:  `When awake, and player receives extra damage due to a critical hit, there is a 19% x N chance that extra damage is avoided.`,
   },
   vacateTheArea: {
@@ -546,6 +614,7 @@ const TALENT_DEFS = {
     cost:  { initial: 2, improve: 2, max: 3 },
     req:   'Speed',
     flags: ['toggle'],
+    tbi:   true,
     desc:  `When player is caught inside a harmful area effect (like fireball spell), moves player up to N tiles directly away from the effect's center. If this puts the player outside the area, damage from the effect on the player is halved.`,
   },
   weaveMana: {
@@ -553,6 +622,7 @@ const TALENT_DEFS = {
     cost:  { initial: 2, improve: 1, max: -1 },
     req:   'Potent Spells',
     flags: [],
+    tbi:   true,
     desc:  `Magic (like Mana Potion, but not Holiness or sleep) can raise your MP up to 3 x N points above your max MP.`,
   },
   wieldBows: {
