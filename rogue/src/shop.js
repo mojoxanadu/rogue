@@ -1649,9 +1649,9 @@
     if(!consumeBottle(inventory)) {
       // Also check bags
       inventory.forEach(item => {
-        if(item && item.contents) {
-          const bagIdx = item.contents.findIndex(i => i && i.itemName === 'brassBottle');
-          if(bagIdx !== -1) item.contents[bagIdx] = null;
+        if(item && item.slots) {
+          const bagIdx = item.slots.findIndex(i => i && i.itemName === 'brassBottle');
+          if(bagIdx !== -1) item.slots[bagIdx] = null;
         }
       });
     }

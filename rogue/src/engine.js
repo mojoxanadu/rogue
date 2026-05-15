@@ -283,11 +283,11 @@
     for(let i = 0; i < inventory.length; i++) {
       let bag = inventory[i];
       if(bag && bag.def && bag.def.type === 'bag') {
-        if(!bag.contents) bag.contents = new Array(bag.def.bagSlots ?? 3).fill(null);
+        if(!bag.slots) bag.slots = new Array(bag.def.bagSlots ?? 3).fill(null);
         if(def.stackable) {
           const maxStack = def.maxStack ?? 10;
-          for(let bi = 0; bi < bag.contents.length; bi++) {
-            const bs = bag.contents[bi];
+          for(let bi = 0; bi < bag.slots.length; bi++) {
+            const bs = bag.slots[bi];
             if(bs && bs.itemName === item.itemName && (bs.qty ?? 1) < maxStack) {
               const can = maxStack - (bs.qty ?? 1);
               const add = Math.min(can, item.qty ?? 1);
@@ -297,9 +297,9 @@
             }
           }
         }
-        let emptySlot = bag.contents.findIndex(s => s === null);
+        let emptySlot = bag.slots.findIndex(s => s === null);
         if(emptySlot !== -1) {
-          bag.contents[emptySlot] = new ItemStack(item.itemName, item.qty ?? 1);
+          bag.slots[emptySlot] = new ItemStack(item.itemName, item.qty ?? 1);
           return true;
         }
       }
