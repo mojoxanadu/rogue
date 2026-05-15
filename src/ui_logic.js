@@ -1652,9 +1652,258 @@ function _performStickyMove(src, targetSource, target) {
     showStats(); updateUI();
   };
 
-  // Talents tab header (+ stub menu button). The vertical scroll
-  // area below stays empty until the talent rendering lands. Called
-  // from showStatsTab whenever the Talents tab is opened.
+  // ── Talents pane ────────────────────────────────────────────
+  // Filter/sort state survives across re-renders. The menu open
+  // flag is also state (toggled by ☰ click).
+  window._talentFilters = window._talentFilters || {
+    maxed:       true,
+    improvable:  true,
+    needTP:      true,
+    unavailable: false,   // hidden by default per spec
+    sort:        'hier',  // 'hier' | 'alpha'
+    usableTop:   false,
+  };
+  window._talentMenuOpen = false;
+
+  // ── Pure model helpers (no DOM) ─────────────────────────────
+  function _meetsPrereq(def) {
+    if (!def || !def.requires) return true;
+    for (const [reqId, reqRank] of Object.entries(def.requires)) {
+      const owned = player.talents && player.talents[reqId];
+      if (!owned || (owned.level || 0) < reqRank) return false;
+    }
+    return true;
+  }
+  function _nextCost(def, ownedLvl) {
+    if (!def || !def.cost) return null;
+    return ownedLvl === 0 ? def.cost.initial : def.cost.improve;
+  }
+  function _isMaxed(def, ownedLvl) {
+    if (!def || ownedLvl === 0) return false;
+    if (def.cost.max === -1) return false;          // unbounded
+    if (def.cost.improve == null) return true;      // single-rank, owned
+    return ownedLvl >= def.cost.max;
+  }
+  function _classifyTalent(id) {
+    const def = TALENT_DEFS[id];
+    if (!def) return null;
+    const ownedLvl = (player.talents[id] && player.talents[id].level) || 0;
+    if (_isMaxed(def, ownedLvl)) return 'maxed';
+    if (!_meetsPrereq(def)) return 'unavailable';
+    const cost = _nextCost(def, ownedLvl);
+    if (cost == null) return null;                  // malformed entry — skip
+    return ((player.talentPoints || 0) >= cost) ? 'improvable' : 'needTP';
+  }
+
+  // ── Sorting ─────────────────────────────────────────────────
+  function _alphaSort(ids) {
+    return ids.slice().sort((a, b) =>
+      TALENT_DEFS[a].name.localeCompare(TALENT_DEFS[b].name));
+  }
+  function _hierSort(ids) {
+    const set = new Set(ids);
+    const childrenOf = { __root__: [] };
+    for (const id of ids) {
+      const def = TALENT_DEFS[id];
+      const reqId = def.requires ? Object.keys(def.requires)[0] : null;
+      const parent = (reqId && set.has(reqId)) ? reqId : '__root__';
+      (childrenOf[parent] = childrenOf[parent] || []).push(id);
+    }
+    for (const k of Object.keys(childrenOf)) {
+      childrenOf[k].sort((a, b) =>
+        TALENT_DEFS[a].name.localeCompare(TALENT_DEFS[b].name));
+    }
+    const out = [];
+    (function dfs(p) {
+      for (const c of childrenOf[p] || []) { out.push(c); dfs(c); }
+    })('__root__');
+    return out;
+  }
+  function _applyUsableTop(ids) {
+    const u = [], t = [], r = [];
+    for (const id of ids) {
+      const f = TALENT_DEFS[id].flags || [];
+      if      (f.includes('use'))    u.push(id);
+      else if (f.includes('toggle')) t.push(id);
+      else                            r.push(id);
+    }
+    return [...u, ...t, ...r];
+  }
+
+  // ── Filter ──────────────────────────────────────────────────
+  function _selectVisibleTalents() {
+    const f = window._talentFilters;
+    const out = [];
+    for (const id of Object.keys(TALENT_DEFS)) {
+      const def = TALENT_DEFS[id];
+      if (def.tbi) continue;
+      const cls = _classifyTalent(id);
+      if (cls == null) continue;
+      if (!f[cls]) continue;
+      out.push(id);
+    }
+    return out;
+  }
+
+  // ── Action: buy / improve ───────────────────────────────────
+  window.buyTalent = (id) => {
+    const def = TALENT_DEFS[id];
+    if (!def) return;
+    if (!_meetsPrereq(def)) { logMsg && logMsg('Prereq not met.'); return; }
+    const ownedLvl = (player.talents[id] && player.talents[id].level) || 0;
+    if (_isMaxed(def, ownedLvl)) { logMsg && logMsg(`${def.name} is maxed.`); return; }
+    const cost = _nextCost(def, ownedLvl);
+    if (cost == null) return;
+    if ((player.talentPoints || 0) < cost) {
+      logMsg && logMsg(`Need ${cost} TP for ${def.name}.`); return;
+    }
+    player.talentPoints -= cost;
+    if (!player.talents[id]) player.talents[id] = { level: 0 };
+    player.talents[id].level = ownedLvl + 1;
+    logMsg && logMsg(`<span style='color:var(--success)'>Acquired ${def.name} (rank ${player.talents[id].level}). −${cost} TP.</span>`);
+    showTalents(); updateUI();
+  };
+
+  // ── Stubs for use/toggle (engine wiring lands per-talent) ───
+  window.useTalent = (id) => {
+    logMsg && logMsg(`${TALENT_DEFS[id]?.name || id}: use action TBI.`);
+  };
+  window.toggleTalentFlag = (id) => {
+    const owned = player.talents[id];
+    if (!owned) return;
+    owned.on = !owned.on;
+    logMsg && logMsg(`${TALENT_DEFS[id].name}: ${owned.on ? 'on' : 'off'}.`);
+    showTalents();
+  };
+
+  // ── Filter / sort handlers ──────────────────────────────────
+  function _isShowAll() {
+    const f = window._talentFilters;
+    return f.maxed && f.improvable && f.needTP && f.unavailable;
+  }
+  window.toggleTalentFilter = (key) => {
+    const f = window._talentFilters;
+    if (key === 'all') {
+      const on = _isShowAll();
+      f.maxed = f.improvable = f.needTP = f.unavailable = !on;
+    } else {
+      f[key] = !f[key];
+    }
+    showTalents();
+  };
+  window.setTalentSort = (sort) => {
+    window._talentFilters.sort = sort;
+    showTalents();
+  };
+  window.toggleUsableTop = () => {
+    window._talentFilters.usableTop = !window._talentFilters.usableTop;
+    showTalents();
+  };
+  window.toggleTalentMenu = () => {
+    window._talentMenuOpen = !window._talentMenuOpen;
+    showTalents();
+  };
+
+  // ── Rendering ───────────────────────────────────────────────
+  const _BUCKET_BG = {
+    maxed:       '#1d3a1d',
+    improvable:  '#1a3346',
+    needTP:      '#2a2a2a',
+    unavailable: '#3a322a',
+  };
+
+  function _renderTalentRow(id) {
+    const def = TALENT_DEFS[id];
+    const owned = player.talents[id];
+    const ownedLvl = (owned && owned.level) || 0;
+    const cls = _classifyTalent(id);
+    const flags = def.flags || [];
+
+    // Left-side controls — only meaningful once owned.
+    let leftCtrl = '';
+    if (ownedLvl > 0 && flags.includes('use')) {
+      leftCtrl = `<button onclick="useTalent('${id}')" style="background:var(--secondary); color:#fff; border:none; border-radius:3px; padding:2px 8px; font-size:11px; cursor:pointer;">Use</button>`;
+    } else if (ownedLvl > 0 && flags.includes('toggle')) {
+      const on = !!(owned && owned.on);
+      leftCtrl = `<button onclick="toggleTalentFlag('${id}')" title="Toggle ${def.name}" style="background:transparent; color:#ccc; border:1px solid #666; border-radius:3px; padding:2px 6px; font-size:11px; cursor:pointer;">${on ? '☑' : '☐'}</button>`;
+    }
+
+    // Right-side action / cost / prereq parenthetical.
+    let rightCtrl = '';
+    if (cls === 'maxed') {
+      rightCtrl = `<span style="color:#9c9;">(maxed)</span>`;
+    } else if (cls === 'unavailable') {
+      const reqId = Object.keys(def.requires)[0];
+      const reqRank = def.requires[reqId];
+      const reqDef = TALENT_DEFS[reqId];
+      const reqLabel = reqDef ? reqDef.name : reqId;
+      const rankPart = reqRank > 1 ? ` ×${reqRank}` : '';
+      rightCtrl = `<span style="color:#bba88f;">(requires ${reqLabel}${rankPart})</span>`;
+    } else {
+      const cost = _nextCost(def, ownedLvl);
+      const action = ownedLvl === 0 ? 'Buy' : 'Improve';
+      if (cls === 'improvable') {
+        rightCtrl = `(<button onclick="buyTalent('${id}')" style="background:var(--primary); color:#000; border:none; border-radius:3px; padding:1px 8px; font-size:11px; cursor:pointer; font-weight:bold;">${action}</button> for ${cost} TP)`;
+      } else { // needTP
+        rightCtrl = `(<span style="color:#aaa;">${action}</span> for ${cost} TP)`;
+      }
+    }
+
+    // Rank badge for owned (Rank N or N/M).
+    const maxLabel = def.cost.max === -1 ? '∞' : def.cost.max;
+    const rankBadge = ownedLvl > 0
+      ? ` <span style="color:#bbb; font-size:11px;">[${ownedLvl}/${maxLabel}]</span>`
+      : '';
+
+    return `
+      <div style="background:${_BUCKET_BG[cls]}; border-radius:6px; padding:8px 10px; margin-bottom:6px;">
+        <div style="display:flex; align-items:center; gap:8px; font-size:13px;">
+          ${leftCtrl}
+          <strong style="color:#fff;">${def.name}</strong>${rankBadge}
+          <span style="margin-left:auto;">${rightCtrl}</span>
+        </div>
+        <div style="font-size:11px; color:#ccc; margin-top:5px; line-height:1.35;">${def.desc}</div>
+      </div>
+    `;
+  }
+
+  function _renderTalentMenu() {
+    const f = window._talentFilters;
+    const display = window._talentMenuOpen ? 'block' : 'none';
+    const cb = (key, label) => `
+      <label style="display:block; padding:3px 0; cursor:pointer; user-select:none;">
+        <input type="checkbox" ${f[key] ? 'checked' : ''} onchange="toggleTalentFilter('${key}')">
+        ${label}
+      </label>`;
+    const radio = (val, label) => `
+      <label style="display:block; padding:3px 0; cursor:pointer; user-select:none;">
+        <input type="radio" name="talent-sort" ${f.sort === val ? 'checked' : ''} onchange="setTalentSort('${val}')">
+        ${label}
+      </label>`;
+    return `
+      <div id="talent-menu" style="display:${display}; position:absolute; right:8px; top:100%;
+            background:#1a1a1a; border:1px solid #555; border-radius:6px; padding:8px 12px;
+            z-index:1000; min-width:200px; font-size:12px; box-shadow:0 4px 12px rgba(0,0,0,0.6);">
+        ${cb('maxed',       'Show maxed')}
+        ${cb('improvable',  'Show improvable')}
+        ${cb('needTP',      'Show need TP')}
+        ${cb('unavailable', 'Show unavailable')}
+        <label style="display:block; padding:3px 0; cursor:pointer; user-select:none;">
+          <input type="checkbox" ${_isShowAll() ? 'checked' : ''} onchange="toggleTalentFilter('all')">
+          <strong>Show all</strong>
+        </label>
+        <hr style="border-color:#444; margin:6px 0;">
+        ${radio('hier',  'Sort hierarchically')}
+        ${radio('alpha', 'Sort alphabetically')}
+        <hr style="border-color:#444; margin:6px 0;">
+        <label style="display:block; padding:3px 0; cursor:pointer; user-select:none;">
+          <input type="checkbox" ${f.usableTop ? 'checked' : ''} onchange="toggleUsableTop()">
+          Usable at top
+        </label>
+      </div>
+    `;
+  }
+
   window.showTalents = () => {
     const body = document.getElementById('talents-body');
     if (!body) return;
@@ -1663,9 +1912,18 @@ function _performStickyMove(src, targetSource, target) {
     body.style.textAlign = 'left';
     body.style.color     = '#ccc';
     body.style.fontSize  = '12px';
+
     const tp = player.talentPoints ?? 0;
+    let visible = _selectVisibleTalents();
+    visible = (window._talentFilters.sort === 'hier') ? _hierSort(visible) : _alphaSort(visible);
+    if (window._talentFilters.usableTop) visible = _applyUsableTop(visible);
+
+    const listHtml = visible.length
+      ? visible.map(_renderTalentRow).join('')
+      : `<em style="color:#888;">No talents to show. Adjust filters in ☰.</em>`;
+
     body.innerHTML = `
-      <div style="display:flex; align-items:center; justify-content:space-between;
+      <div style="position:relative; display:flex; align-items:center; justify-content:space-between;
                   padding:8px 12px; border-bottom:1px solid #444; background:var(--surface-container);">
         <div><strong>Talent Points:</strong>
           <span style="color:var(--warning); margin-left:6px;">${tp}</span>
@@ -1673,16 +1931,12 @@ function _performStickyMove(src, targetSource, target) {
         <button onclick="toggleTalentMenu()" title="Talent options"
           style="background:transparent; color:#ccc; border:1px solid #555;
                  border-radius:4px; padding:2px 8px; font-size:14px; cursor:pointer;">☰</button>
+        ${_renderTalentMenu()}
       </div>
       <div id="talents-list" style="padding:8px 12px; max-height:320px; overflow-y:auto;">
-        <em style="color:#888;">Talent list goes here.</em>
+        ${listHtml}
       </div>
     `;
-  };
-
-  // Stub — menu spec arrives in a follow-up.
-  window.toggleTalentMenu = () => {
-    logMsg && logMsg('Talent menu (TBD).');
   };
 
   window.showStats = () => {
