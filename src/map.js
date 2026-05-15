@@ -1036,10 +1036,6 @@
       // Phase 5a: place a few world-bound containers (Box, Chest, Safe...)
       // for the player to find. Count scales with floor depth.
       spawnContainers(1 + Math.floor(currentLevel / 3) + Math.floor(Math.random() * 2), currentLevel);
-      // TEMP-CONTAINER-FLOOD: extra +20 containers for popup-empty-state
-      // testing. Random container types; many will spawn locked because
-      // the chest tiers are lockable. Remove this line once verified.
-      spawnContainers(20, currentLevel);
       // Phase 5e: Foraging talent — extra food piles on newly generated
       // floors. Each rank adds one guaranteed food pile.
       const foragingLvl = (player.talents?.foraging?.level) || 0;
