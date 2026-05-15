@@ -202,10 +202,6 @@
       ? new Lootable({ ownerKind: 'corpse', slots: loot || [] })
       : null;
     const corpse = new Corpse({ x, y, name, icon, lootable });
-    // Legacy alias for renderers/loot-window code that reads c.loot
-    // directly. Same Array reference as lootable.slots; Phase 6 cutover
-    // removes the alias.
-    corpse.loot = corpse.lootable ? corpse.lootable.slots : (loot || []);
     zone.addCorpse(corpse);
   }
 
@@ -281,120 +277,13 @@
     return false;
   }
 
-  // Open loot window for a corpse
-  window.openLootWindow = function(corpseIdx) {
-    let c = zone.corpses[corpseIdx];
-    if(!c) return;
-    if(!c.loot || c.loot.length === 0) {
-      logMsg(`The ${c.name} has nothing on it.`);
-      return;
-    }
-
-    let html = `<h2>${c.icon} ${c.name}</h2>`;
-    if(c.buskerJoke) {
-      html += `<p style="color:var(--warning)">There is an accordion here, which would have been more useful before its owner became a dungeon floor ornament.</p>`;
-      html += `<p style="color:#888; font-size:11px;">A dead busker is, to be fair, the ideal customer for a dungeon music career: no complaints, no income, and no encores.</p>`;
-    }
-    // INT > 20 warning
-    if(player.stats.int > 20) {
-      let nearEnemy = enemies.find(e => Math.abs(e.x - c.x) <= 3 && Math.abs(e.y - c.y) <= 3);
-      if(nearEnemy) {
-        html += `<p style="color:var(--warning); font-size:11px;">⚠️ Your keen senses warn you: a ${nearEnemy.type} lurks nearby. Loot carefully!</p>`;
-      }
-    }
-    html += `<p style="color:#888; font-size:11px;">Drag items to inventory or click Loot All (Ctrl+Click for quick loot)</p>`;
-    html += `<div id="loot-grid" style="display:grid; grid-template-columns: repeat(${Math.min(c.loot.length, 6)}, 1fr); gap:4px; margin:10px 0;">`;
-
-    c.loot.forEach((item, idx) => {
-      let def = item.def;
-      let name = def ? def.name : item.icon;
-      let displayQty = (item.itemName === 'gold') ? `${item.qty}g` : (item.qty > 1 ? `x${item.qty}` : '');
-      html += `<div draggable="true" id="loot-item-${idx}"
-        ondragstart="window._lootDrag={corpseIdx:${corpseIdx},itemIdx:${idx}}; window.draggedSource='loot'; window.draggedItemIdx=${idx};"
-        ondragend="window._lootDrag=null; window.draggedSource=null; window.draggedItemIdx=null;"
-        style="background:var(--surface-container); border-radius:6px; padding:8px; text-align:center; cursor:grab; min-width:44px;"
-        title="${name}">
-        <div style="font-size:22px;">${item.icon}</div>
-        <div style="font-size:10px; color:#aaa;">${displayQty}</div>
-        <button onclick="lootItem(${corpseIdx},${idx})" style="font-size:9px; padding:1px 4px; margin-top:2px; width:100%;">Take</button>
-      </div>`;
-    });
-
-    html += `</div>`;
-    html += `<div style="display:flex; gap:8px; margin-top:8px;">
-      <button onclick="lootAll(${corpseIdx})" style="flex:1; background:var(--success); color:#000; font-weight:bold;">Loot All</button>
-      <button onclick="hideOverlay()" style="flex:1;">Leave</button>
-    </div>`;
-
-    document.getElementById('modal-content').innerHTML = html;
-    showOverlay();
-  };
-
-  // Loot all from corpse
-  window.lootAll = function(corpseIdx) {
-    let c = zone.corpses[corpseIdx];
-    if(!c || !c.loot) return;
-    let remaining = [];
-    let didLoot = false;
-    c.loot.forEach(item => {
-      if(item.def?.pickupTo === 'gp') {
-        changeGold(item.qty, { x: c.x, y: c.y, floatText: true });
-        didLoot = true;
-      } else {
-        let slot = inventory.findIndex(s => s === null);
-        if(slot !== -1) {
-          inventory[slot] = new ItemStack(item.itemName, item.qty ?? 1);
-          didLoot = true;
-        } else {
-          let placed = tryPlaceInInventory(item);
-          if(placed) { didLoot = true; }
-          else remaining.push(item);
-        }
-      }
-    });
-    c.loot = remaining;
-    if(didLoot && (!c.loot || !c.loot.some(item => item.itemName === 'gold'))) Sound.clink();
-    if(remaining.length > 0) {
-      logMsg("Inventory full! Some items remain on the corpse.");
-      // Red flash on corpse
-      c._flashRed = Date.now();
-    } else {
-      logMsg(`Looted everything from the ${c.name}.`);
-    }
-    hideOverlay();
-    renderQuickslots(); renderInventory(); updateUI(); drawMap();
-  };
-
-  // Take single item from corpse
-  window.lootItem = function(corpseIdx, itemIdx) {
-    let c = zone.corpses[corpseIdx];
-    if(!c || !c.loot || !c.loot[itemIdx]) return;
-    let item = c.loot[itemIdx];
-    if(item.def?.pickupTo === 'gp') {
-      changeGold(item.qty, { x: c.x, y: c.y, floatText: true });
-      c.loot.splice(itemIdx, 1);
-    } else {
-      let slot = inventory.findIndex(s => s === null);
-      if(slot !== -1) {
-        inventory[slot] = new ItemStack(item.itemName, item.qty ?? 1);
-        c.loot.splice(itemIdx, 1);
-        Sound.clink();
-      } else {
-        let placed = tryPlaceInInventory(item);
-        if(placed) {
-          c.loot.splice(itemIdx, 1);
-          Sound.clink();
-        } else {
-          logMsg("No room!");
-          c._flashRed = Date.now();
-          return;
-        }
-      }
-    }
-    renderQuickslots(); renderInventory(); updateUI();
-    if(c.loot.length > 0) openLootWindow(corpseIdx);
-    else { hideOverlay(); drawMap(); }
-  };
+  // Phase 6a: openLootWindow / lootAll / lootItem retired. Phase 4b's
+  // non-modal loot popup (showLootPopup, pickupLootSlot, pickupAllAtTile
+  // in ui_logic.js) is the single corpse-loot entry point. The popup
+  // auto-opens when the player steps onto a corpse tile and re-renders
+  // as items are taken — including bones-stage corpses, the busker's
+  // accordion (Floor 3), and the high-INT-near-enemy warning, which
+  // moved into the popup's heading text in a follow-up.
 
   // === Level Cache System ===
   // Saves/restores map state so stairs connect properly when backtracking.
@@ -1367,13 +1256,7 @@
     // single exception: stolenItems depend on runtime player state and
     // are appended after the side-effect block.
 
-    if(e.outdoorCritter === 'chipmunk') {
-      player.xp += 12;
-      logMsg(`<span style='color:#888'>The chipmunk vanishes into the grass, leaving behind a tiny stash of seeds.</span>`);
-    } else if(e.outdoorCritter === 'bird') {
-      player.xp += 12;
-      logMsg(`<span style='color:#888'>A startled burst of feathers and seed husks is all that remains.</span>`);
-    } else if(e.type === 'mouse') {
+    if(e.type === 'mouse') {
       player.xp += 10; player.verminKills = (player.verminKills ?? 0) + 1;
       if(player.verminKills >= 10) awardAchievement('vermin_slayer');
     } else if(e.type === 'cockroach') {

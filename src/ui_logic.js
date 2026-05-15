@@ -720,7 +720,6 @@ function _performStickyMove(src, target) {
         isBones: !!spec.isBones, actionCooldown: spec.actionCooldown ?? 0,
         lootable,
       });
-      c.loot = c.lootable ? c.lootable.slots : [];
       zone.addCorpse(c);
     });
     if(data.gameSettings) Object.assign(window.gameSettings, data.gameSettings);
@@ -1260,6 +1259,7 @@ function _performStickyMove(src, target) {
         lootable.remove(slotIdx);
         logMsg(`Picked up ${stack.icon}`);
         Sound.clink && Sound.clink();
+        _onCupcakePickup(stack.icon);
       } else {
         logMsg("Inventory full!");
         return;
@@ -1267,6 +1267,23 @@ function _performStickyMove(src, target) {
     }
     _afterLootMutation(lootable);
   };
+
+  // Grok's "those cupcakes were for Bruce" gag — fired on first/second
+  // cupcake pickup, regardless of which loot path picked it up. Lives
+  // here in ui_logic.js so the loot popup (Phase 4b) AND any future
+  // pickup paths share one point of truth.
+  function _onCupcakePickup(icon) {
+    if (icon !== '🧁') return;
+    if (!window._grokCupcakePickups) window._grokCupcakePickups = 0;
+    window._grokCupcakePickups++;
+    if (window._grokCupcakePickups === 1) {
+      logMsg("<span style='color:#f88'>🧌 Grok: 'Hey!!! I made those cupcakes for Bruce, not for you!!!'</span>");
+      if (typeof playVoiceClip === 'function') playVoiceClip('voice_orc_cupcake_1');
+    } else {
+      logMsg("<span style='color:#f88'>🧌 Grok: 'Hey! Aren't you fat enough already? Leave some for the Grues!'</span>");
+      if (typeof playVoiceClip === 'function') playVoiceClip('voice_orc_cupcake_2');
+    }
+  }
 
   // Pick Up All — iterates every unlocked section at the tile and grabs
   // everything that fits. Items that don't fit stay where they are.
@@ -1289,6 +1306,7 @@ function _performStickyMove(src, target) {
           if (idx !== -1) s.lootable.remove(idx);
           logMsg(`Picked up ${stack.icon}`);
           Sound.clink && Sound.clink();
+          _onCupcakePickup(stack.icon);
         } else {
           logMsg("Inventory full!");
           // Stop trying — re-render shows what's left.
@@ -1744,23 +1762,9 @@ function _performStickyMove(src, target) {
         renderQuickslots(); renderInventory(); updateUI();
       }
     }
-    // From corpse loot drag
-    if(window._lootDrag) {
-      let c = zone.corpses[window._lootDrag.corpseIdx];
-      if(c && c.loot && c.loot[window._lootDrag.itemIdx]) {
-        let lootItem = c.loot[window._lootDrag.itemIdx];
-        let placed = tryPlaceInInventory(lootItem);
-        if(placed) {
-          c.loot.splice(window._lootDrag.itemIdx, 1);
-          logMsg(`${lootItem.icon} stashed in inventory.`);
-          Sound.clink();
-        } else {
-          logMsg("Inventory and all bags are full!");
-        }
-        window._lootDrag = null;
-        renderInventory(); updateUI(); drawMap();
-      }
-    }
+    // Phase 6: corpse-loot drag handler removed. The popup replaced
+    // the drag-from-modal flow; window._lootDrag is no longer set
+    // anywhere.
   };
   window.handleDropItem = (e, targetSource, targetIdx) => {
     e.preventDefault();
@@ -1830,27 +1834,8 @@ function _performStickyMove(src, target) {
       return;
     }
     // Handle loot drag from corpse window → inventory/inventory slot
-    if(window.draggedSource === 'loot' && window._lootDrag) {
-      let c = zone.corpses[window._lootDrag.corpseIdx];
-      if(c && c.loot && c.loot[window._lootDrag.itemIdx]) {
-        let lootItem = c.loot[window._lootDrag.itemIdx];
-        let tgtArr = targetSource === 'inv' ? inventory : inventory;
-        let displaced = tgtArr[targetIdx];
-        tgtArr[targetIdx] = lootItem.itemName ? new ItemStack(lootItem.itemName, lootItem.qty ?? 1) : { icon: lootItem.icon, qty: lootItem.qty ?? 1 };
-        c.loot.splice(window._lootDrag.itemIdx, 1);
-        if(displaced) {
-          // Try to put displaced item back somewhere
-          let freeInv = inventory.findIndex(s => s === null);
-          if(freeInv !== -1) inventory[freeInv] = displaced;
-          else { let fp = inventory.findIndex(s => s === null); if(fp !== -1) inventory[fp] = displaced; else zone.dropAt(player.x, player.y, displaced); }
-        }
-        logMsg(`${lootItem.icon} moved to ${targetSource}.`);
-        Sound.clink();
-      }
-      window._lootDrag = null; window.draggedSource = null; window.draggedItemIdx = null;
-      renderQuickslots(); renderInventory(); updateUI(); drawMap();
-      return;
-    }
+    // Phase 6: corpse-loot drag-onto-inventory-slot retired with the
+    // modal. Popup is the loot entry point.
     if(window.draggedItemIdx !== null && window.draggedSource !== null) {
       let srcArr = window.draggedSource === 'inv' ? inventory : inventory;
       let tgtArr = targetSource === 'inv' ? inventory : inventory;
