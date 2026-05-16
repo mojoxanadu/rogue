@@ -642,8 +642,8 @@
   }
 
   function getEquippedWeaponDef() {
-    let weaponIcon = player.equipped && player.equipped.leftHand;
-    return weaponIcon ? ItemDef.byIcon(weaponIcon) : null;
+    const weaponName = player.equipped && player.equipped.leftHand;
+    return weaponName ? (ItemDefs[weaponName] || null) : null;
   }
 
   // #16: NPCs protected from melee are also protected from ranged and magic
