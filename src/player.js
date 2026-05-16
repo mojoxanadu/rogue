@@ -32,25 +32,19 @@ const localPlayer = new LocalPlayer();
 const player    = localPlayer;
 const inventory = localPlayer.inventory;
 
-// ─── World + active Zone (Option B1) ────────────────────────
+// ─── World + active Zone ────────────────────────────────────
 //
-//  The model layer holds ONE Zone (id 'active') whose tile-grid /
-//  visibility-layer / entity-list fields mirror the legacy bare
-//  globals (theMap, darkMap, explored, visible, enemies + mapW/H).
-//  Nothing currently reads zone.* — game code still reads the bare
-//  globals — but the alias is kept in sync so future commits can
-//  start migrating call sites without staleness bugs.
+//  The model layer holds ONE Zone (id 'active') reused across levels.
+//  Its tile/visibility/entity fields are rebound on each transition
+//  via syncActiveZone(). The bare globals theMap/darkMap/explored/
+//  visible/mapW/mapH still exist alongside the zone for legacy access;
+//  zone.npcs is now the canonical NPC store (the `enemies` global was
+//  retired in Phase 6g).
 //
 //  syncActiveZone() must be called after every reassignment of the
 //  bare globals (level transitions, debug snapshot restore). The
-//  in-place mutations (enemies.length = 0; enemies.push(...)) preserve
-//  the alias without a sync call, but calling sync there is harmless
-//  and keeps the invariant "after any level-state change, call sync."
-//
-//  Minimal least-destructive shape: one Zone reused across levels,
-//  width/height/tiles/etc rebinding per transition. The real "one
-//  Zone per level, retire bare globals" design awaits a future
-//  direction discussion.
+//  in-place NPC mutations (zone.addNpc / zone.removeNpc / etc.) do
+//  not require a sync call.
 const world = new World({ localPlayer });
 const zone  = new Zone({ id: 'active', width: 1, height: 1 });
 world.addZone(zone);
@@ -64,16 +58,12 @@ function syncActiveZone() {
   zone.darkMap  = darkMap;
   zone.explored = explored;
   zone.visible  = visible;
-  // Phase 4a-2.5: zone.entities is NOT aliased to enemies any more.
-  // It holds Corpses + Lootables (anything "drawn on a tile that isn't
-  // a Sentient"); the enemies global keeps holding NPCs until Phase 6
-  // retires it. Schedulers concatenate both lists.
-  //
-  // Re-running syncActiveZone after `enemies = []` reassignments must
-  // NOT wipe zone.entities — corpses and lootables on the current
-  // level survive a reassignment of `enemies`. The only place that
-  // legitimately clears world Lootables is map-gen, which calls
-  // zone.clearCorpses() / zone.clearLootables() explicitly.
+  // zone.entities holds Corpses + Lootables (anything drawn on a tile
+  // that isn't a Sentient). NPCs live on zone._npcs (accessed via
+  // zone.npcs). Schedulers concatenate both lists. syncActiveZone
+  // must NOT wipe either — corpses and lootables on the current level
+  // survive level state changes; map-gen clears them explicitly via
+  // zone.clearCorpses() / zone.clearLootables() / zone.clearNpcs().
 }
 syncActiveZone();
 window.world           = world;

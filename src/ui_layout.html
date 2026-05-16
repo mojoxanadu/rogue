@@ -671,16 +671,20 @@
       cursor: pointer;
       border: 2px solid transparent;
       border-radius: 6px;
-      transition: border-color 0.2s, box-shadow 0.2s;
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
       box-sizing: border-box;
+      /* Soften the default Android cyan tap-flash that drowns out the
+         green selected state for a fraction of a second after tap. */
+      -webkit-tap-highlight-color: rgba(80,220,80,0.25);
     }
     .class-vid-slot:hover {
       border-color: rgba(255,220,100,0.7);
       box-shadow: 0 0 16px rgba(255,220,100,0.4);
     }
     .class-vid-slot.selected {
-      border-color: rgba(80,220,80,0.9);
-      box-shadow: 0 0 20px rgba(80,220,80,0.5);
+      border-color: #7fff7f;
+      background: #2e3a2a;
+      box-shadow: 0 0 24px rgba(80,255,80,0.7);
     }
     #class-portraits-row {
       display: flex;
@@ -798,10 +802,13 @@
    window._selectClass = function(cls) {
      // Clear previous selection highlight
      ['fighter','spellcaster','rogue'].forEach(function(c) {
-       var slot = document.getElementById('slot-' + c);
-       if (slot) slot.classList.remove('selected');
+       var s = document.getElementById('slot-' + c);
+       if (s) s.classList.remove('selected');
      });
-     // Highlight new selection
+     // Highlight new selection — relies on .class-vid-slot.selected CSS,
+     // which uses the same border-color longhand pattern as :hover (the
+     // user confirmed hover styling DOES render on their device, so this
+     // path is known to work without !important hacks).
      var slot = document.getElementById('slot-' + cls);
      if (slot) slot.classList.add('selected');
      window._selectedClass = cls;
@@ -882,7 +889,12 @@
           var card = document.createElement('div');
           card.className = 'class-vid-slot';   // reuse hover/selected styling
           card.id = 'slot-' + cls;
-          card.style.cssText = 'flex:1 1 200px;min-width:180px;max-width:240px;background:#1a1a24;border:2px solid #444;border-radius:8px;padding:18px;text-align:center;color:#ddd;cursor:pointer;';
+          // Border & background intentionally left to CSS — the
+          // `.class-vid-slot` rule supplies the default 2px transparent
+          // border, and `.class-vid-slot.selected` / `:hover` swap the
+          // color. Setting `border` inline would beat both rules on
+          // specificity grounds and the selected state would never paint.
+          card.style.cssText = 'flex:1 1 200px;min-width:180px;max-width:240px;background:#1a1a24;border-radius:8px;padding:18px;text-align:center;color:#ddd;cursor:pointer;';
           card.onmouseenter = function() { _classHover(cls, true); };
           card.onmouseleave = function() { _classHover(cls, false); };
           card.onclick = function() { _selectClass(cls); };

@@ -979,10 +979,14 @@
         if(flipX) ctx.restore();
         ctx.restore();
 
-        // HP Bar
-        ctx.fillStyle = 'red'; ctx.fillRect(vx*TILE_SIZE, vy*TILE_SIZE-4, TILE_SIZE, 3);
-        let maxHp = MONSTER_DEF[e.type]?.hp || e.stats.hp;
-        ctx.fillStyle = 'green'; ctx.fillRect(vx*TILE_SIZE, vy*TILE_SIZE-4, TILE_SIZE * (e.stats.hp / maxHp), 3);
+        // HP Bar — only shown when wounded.
+        // Per-spawn maxHp wins (farmStats overrides MONSTER_DEF defaults,
+        // e.g. cow spawns with maxHp:20 but MONSTER_DEF.cow.hp is 50).
+        let maxHp = e.stats.maxHp ?? MONSTER_DEF[e.type]?.hp ?? e.stats.hp;
+        if(e.stats.hp < maxHp) {
+          ctx.fillStyle = 'red'; ctx.fillRect(vx*TILE_SIZE, vy*TILE_SIZE-4, TILE_SIZE, 3);
+          ctx.fillStyle = 'green'; ctx.fillRect(vx*TILE_SIZE, vy*TILE_SIZE-4, TILE_SIZE * (e.stats.hp / maxHp), 3);
+        }
       }
     });
 

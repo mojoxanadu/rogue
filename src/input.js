@@ -241,7 +241,7 @@ const hBtn = document.getElementById('hamburgerBtn');
       darkMap: _debugDeepClone(darkMap),
       explored: _debugDeepClone(explored),
       visible: _debugDeepClone(visible),
-      enemies: _debugDeepClone(enemies),
+      npcs: _debugDeepClone(zone.npcs),
       lootables: _debugDeepClone(zone.lootables),
       corpses: _debugDeepClone(zone.corpses),
       mapW,
@@ -268,7 +268,7 @@ const hBtn = document.getElementById('hamburgerBtn');
     darkMap = _debugDeepClone(snap.darkMap || []);
     explored = _debugDeepClone(snap.explored || []);
     visible = _debugDeepClone(snap.visible || []);
-    enemies = _debugDeepClone(snap.enemies || []);
+    zone.replaceNpcs(_debugDeepClone(snap.npcs || snap.enemies || []));
     syncActiveZone();
     // Re-hydrate Lootables from the snapshot — JSON.stringify stripped
     // their class identity, so we reconstruct each one.
@@ -834,7 +834,7 @@ const hBtn = document.getElementById('hamburgerBtn');
               break;
             }
             if(!pos) continue;
-            spawnNpc(enemies, pos.x, pos.y, mob, { stats: {...MONSTER_DEF[mob]} });
+            spawnNpc(zone.npcs, pos.x, pos.y, mob, { stats: {...MONSTER_DEF[mob]} });
             spawned++;
           }
           if(typeof drawMap === 'function') drawMap();
@@ -843,27 +843,25 @@ const hBtn = document.getElementById('hamburgerBtn');
           break;
         }
         case '/despawn': {
+          const isQuestNpc = en => en.isQuestNPC || (en.stats && en.stats.quest);
           if(args.length === 0 || args[0].toLowerCase() === 'all') {
-            const before = enemies.length;
-            enemies = enemies.filter(en => en.isQuestNPC || (en.stats && en.stats.quest));
+            const removed = zone.removeNpcs(en => !isQuestNpc(en));
             syncActiveZone();
-            debugLog(`Despawned ${before - enemies.length} non-quest enemies.`);
+            debugLog(`Despawned ${removed} non-quest enemies.`);
           } else if(args[0].toLowerCase() === 'radius') {
             const r = Math.max(1, Math.min(99, parseInt(args[1] || '6', 10) || 6));
-            const before = enemies.length;
-            enemies = enemies.filter(en => {
-              if(en.isQuestNPC || (en.stats && en.stats.quest)) return true;
+            const removed = zone.removeNpcs(en => {
+              if(isQuestNpc(en)) return false;
               const d = Math.abs(en.x - player.x) + Math.abs(en.y - player.y);
-              return d > r;
+              return d <= r;
             });
             syncActiveZone();
-            debugLog(`Despawned ${before - enemies.length} enemies within radius ${r}.`);
+            debugLog(`Despawned ${removed} enemies within radius ${r}.`);
           } else {
             const mob = args[0].toLowerCase();
-            const before = enemies.length;
-            enemies = enemies.filter(en => en.type !== mob || en.isQuestNPC || (en.stats && en.stats.quest));
+            const removed = zone.removeNpcs(en => en.type === mob && !isQuestNpc(en));
             syncActiveZone();
-            debugLog(`Despawned ${before - enemies.length} '${mob}' enemies.`);
+            debugLog(`Despawned ${removed} '${mob}' enemies.`);
           }
           if(typeof drawMap === 'function') drawMap();
           if(typeof updateUI === 'function') updateUI();

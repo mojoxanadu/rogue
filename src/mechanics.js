@@ -3,7 +3,7 @@
   =========================================================
   This module contains the core game mechanics for handling player interactions with inventory items,
   special quest items, and Monty Python‑themed events. It bridges the UI (clicks, keypresses) with
-  the game state (inventory, equipment, enemies, quest flags).
+  the game state (inventory, equipment, zone.npcs, quest flags).
 
   Key responsibilities:
   1. Item click handling – weapon/armor equipping, food/potion consumption, scroll reading
@@ -576,7 +576,7 @@
     Sound.explosion();
     if(player.grenadeCount === 3) {
       logMsg("<span style='color:var(--success)'>The Killer Rabbit is blown to tiny bits!</span>");
-      enemies = enemies.filter(e => e.type !== 'killer_rabbit');
+      zone.removeNpcs(e => e.type === 'killer_rabbit');
       player.xp += 2000; checkLevelUp();
       decrementItem(idx);
     } else {
@@ -809,7 +809,7 @@
         addFloatingText(target.x, target.y, `-${dmg}⚡`, '#9ff', 18 + Math.floor(dmg / 3));
         logMsg(`Lightning hits ${target.type} for ${dmg} shock damage.`);
         if(target.stats.hp <= 0) {
-          const killIdx = enemies.indexOf(target);
+          const killIdx = zone.npcs.indexOf(target);
           if(killIdx !== -1) window.resolveEnemyDefeat(killIdx, { source: 'lightning' });
         }
         sourceX = target.x;
@@ -872,7 +872,7 @@
       Sound.playTone(1200, 'sine', 0.08, 0.12, 2000);
       if(target.stats.hp <= 0) {
         logMsg(`The ${target.type} shatters!`);
-        if(typeof window.resolveEnemyDefeat === 'function') window.resolveEnemyDefeat(enemies.indexOf(target), { source: 'icebolt' });
+        if(typeof window.resolveEnemyDefeat === 'function') window.resolveEnemyDefeat(zone.npcs.indexOf(target), { source: 'icebolt' });
       }
       drawMap(); updateUI(); advanceTurn(1);
       return;
@@ -996,9 +996,9 @@
         return;
       }
       addFloatingText(cx, cy, shotGlyph, weaponDef.manaCost ? '#8cf' : '#ddd', 16);
-        let monsterIdx = enemies.findIndex(m => m.x === cx && m.y === cy);
+        let monsterIdx = zone.npcs.findIndex(m => m.x === cx && m.y === cy);
       if(monsterIdx !== -1) {
-        let enemy = enemies[monsterIdx];
+        let enemy = zone.npcs[monsterIdx];
         // #16: Protected NPCs cannot be hit by ranged attacks
         if(isProtectedNPC(enemy)) {
           logMsg(`${enemy.stats.icon || enemy.type} is protected — you can't attack them.`);
@@ -1019,7 +1019,7 @@
         if(enemy.stats.hp <= 0) {
           logMsg(`The ${enemy.type} collapses under the ranged hit.`);
           if(typeof window.resolveEnemyDefeat === 'function') window.resolveEnemyDefeat(monsterIdx, { source: 'ranged' });
-          else enemies.splice(monsterIdx, 1);
+          else zone.npcs.splice(monsterIdx, 1);
         }
         drawMap();
         updateUI();
@@ -1079,9 +1079,9 @@
       prevX = cx;
       prevY = cy;
       // Check for monster hit
-      let monsterIdx = enemies.findIndex(m => m.x === cx && m.y === cy);
+      let monsterIdx = zone.npcs.findIndex(m => m.x === cx && m.y === cy);
       if(monsterIdx !== -1) {
-        let m = enemies[monsterIdx];
+        let m = zone.npcs[monsterIdx];
         // #16: Protected NPCs cannot be hit by fireball
         if(isProtectedNPC(m)) {
           logMsg(`The fireball fizzles near ${m.stats.icon || m.type}. They seem protected!`);
@@ -1114,7 +1114,7 @@
         if(m.stats.hp <= 0) {
           logMsg(`The ${m.type} is incinerated!`);
           if(typeof window.resolveEnemyDefeat === 'function') window.resolveEnemyDefeat(monsterIdx, { source: 'fireball' });
-          else enemies.splice(monsterIdx, 1);
+          else zone.npcs.splice(monsterIdx, 1);
         }
         hitSomething = true;
         break;

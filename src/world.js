@@ -53,6 +53,13 @@ class Zone {
     // get folded into entities so old saves keep loading.
     if (Array.isArray(spec.corpses))   for (const c of spec.corpses)   this.entities.push(c);
     if (Array.isArray(spec.lootables)) for (const l of spec.lootables) this.entities.push(l);
+    // NPCs live on a dedicated zone-owned array (Phase 6g, commit B).
+    // Kept separate from `entities` because NPCs have a different
+    // lifecycle (turn scheduling, AI ticking, respawn on level change)
+    // and adding them to `entities` would change behaviour in subtle
+    // ways. The `npcs` getter returns this list directly so callers can
+    // push/splice via the same array reference (e.g. spawnNpc).
+    this._npcs     = spec.npcs      ?? [];
     // Visibility layers — undefined means "not yet built"; consumers
     // (FOV code, render) initialize lazily.
     this.darkMap   = spec.darkMap   ?? null;
@@ -177,42 +184,59 @@ class Zone {
     return this.lootables.filter(l => l && l.x === x && l.y === y);
   }
 
-  // ─── NPCs (Phase 6g, commit A: facade over the legacy `enemies`
-  // global) ─────────────────────────────────────────────────────
-  // The new API surface lives here; storage is still the bare global
-  // for now so this commit ships zero behaviour change. Commit B
-  // moves NPCs into this.entities and deletes the global, at which
-  // point every call site already using zone.npcs/addNpc/removeNpc
-  // follows automatically. Until then, callers can freely migrate
-  // one site at a time without coordinating.
+  // ─── NPCs ────────────────────────────────────────────────────
+  // Zone-owned NPC list. Storage is `this._npcs` (see constructor).
+  // The npcs getter returns the live array so call sites can push/
+  // splice directly (e.g. `spawnNpc(zone.npcs, ...)` works because
+  // npcs IS the backing array). Mutating helpers below are the
+  // preferred surface, though.
 
   get npcs() {
-    return (typeof enemies !== 'undefined') ? enemies : [];
+    return this._npcs;
   }
 
   addNpc(npc) {
     if (!npc) return;
-    if (typeof enemies !== 'undefined') enemies.push(npc);
+    this._npcs.push(npc);
   }
 
   removeNpc(npc) {
-    if (typeof enemies === 'undefined') return false;
-    const i = enemies.indexOf(npc);
+    const i = this._npcs.indexOf(npc);
     if (i === -1) return false;
-    enemies.splice(i, 1);
+    this._npcs.splice(i, 1);
     return true;
   }
 
+  /**
+   * Remove every NPC matching the predicate. Returns the count
+   * removed. Replaces the legacy `enemies = enemies.filter(...)`
+   * reassignment pattern, which used to disconnect AI ticks and
+   * scheduler references from the live list.
+   */
+  removeNpcs(pred) {
+    let removed = 0;
+    for (let i = this._npcs.length - 1; i >= 0; i--) {
+      if (pred(this._npcs[i])) { this._npcs.splice(i, 1); removed++; }
+    }
+    return removed;
+  }
+
   clearNpcs() {
-    if (typeof enemies !== 'undefined') enemies.length = 0;
+    this._npcs.length = 0;
+  }
+
+  /** Clear and refill from an array (used by save-restore). */
+  replaceNpcs(arr) {
+    this._npcs.length = 0;
+    if (Array.isArray(arr)) for (const n of arr) this._npcs.push(n);
   }
 
   npcAt(x, y) {
-    return this.npcs.find(n => n && n.x === x && n.y === y) || null;
+    return this._npcs.find(n => n && n.x === x && n.y === y) || null;
   }
 
   findNpc(pred) {
-    return this.npcs.find(pred) || null;
+    return this._npcs.find(pred) || null;
   }
 
   /** The (single) floor pile at (x,y) — null if none. There is at most
