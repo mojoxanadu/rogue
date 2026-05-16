@@ -15,6 +15,31 @@
 
 const ItemDefs = {};
 
+// Normalize an item spec's equip-slot rules into a canonical `equipGroups`:
+// an array of slot-groups where the item, once equipped, fills every slot
+// in exactly one chosen group. Inputs (priority order):
+//   spec.equipTo:     ['leftHand','rightHand']  → one AND-group, fill both.
+//   spec.equipChoice: ['leftHand','rightHand']  → two OR-groups, pick one.
+//   spec.slot:        'chest'                   → one single-slot group.
+//   spec.type='weapon' with none of the above   → defaults to ['leftHand'].
+// Returns null when no equip semantics apply (consumables, ammo, etc.).
+function _normalizeEquipGroups(spec) {
+  const groups = [];
+  if (Array.isArray(spec.equipTo) && spec.equipTo.length > 0) {
+    groups.push(spec.equipTo.slice());
+  }
+  if (Array.isArray(spec.equipChoice) && spec.equipChoice.length > 0) {
+    for (const s of spec.equipChoice) groups.push([s]);
+  }
+  if (groups.length === 0 && typeof spec.slot === 'string' && spec.slot) {
+    groups.push([spec.slot]);
+  }
+  if (groups.length === 0 && spec.type === 'weapon') {
+    groups.push(['leftHand']);
+  }
+  return groups.length > 0 ? groups : null;
+}
+
 // Turn a displayName like "Bag of Holding" into a camelCase identifier
 // like "bagOfHolding". Punctuation and apostrophes are stripped.
 function _toCamelCase(displayName) {
@@ -56,6 +81,7 @@ function _toCamelCase(displayName) {
       name,
       displayName: spec.name,
       icon,
+      equipGroups: _normalizeEquipGroups(spec),
     });
     ItemDefs[name] = def;
     // Reverse map: emoji → def. First-wins, since icons need not be unique

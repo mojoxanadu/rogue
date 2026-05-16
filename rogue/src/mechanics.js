@@ -373,7 +373,7 @@
         return;
       }
       lightTurns = (lightTurns ?? 0) + (def.lightRange ?? 15);
-      logMsg(`<span style='color:var(--success)'>${ItemDef.iconOf('candle')} You light the ${def.name}! (${lightTurns} turns of light)</span>`);
+      logMsg(`<span style='color:var(--success)'>You light the ${def.label()}! (${lightTurns} turns of light)</span>`);
       decrementItem(idx);
       calculateFOV(); drawMap(); updateUI();
       return;
@@ -397,7 +397,7 @@
         logMsg("<span style='color:#888'>You have an earthworm. It wriggles. Your options are limited.</span>");
         return;
       }
-      logMsg(`<span style='color:#888'>I can't use ${def.name} right now...</span>`);
+      logMsg(`<span style='color:#888'>I can't use ${def.label()} right now...</span>`);
       return;
     }
     
@@ -438,9 +438,9 @@
       // B10: Game Log message for consuming food/potion
       if(def.maxHeal >= 0 && itemObj.icon !== '🥤') {
         if(def.type === "potion") {
-          logMsg(`<span style='color:var(--success)'>You drink the ${def.name}.</span>`);
+          logMsg(`<span style='color:var(--success)'>You drink the ${def.label()}.</span>`);
         } else {
-          logMsg(`<span style='color:var(--success)'>You eat the ${def.name}.</span>`);
+          logMsg(`<span style='color:var(--success)'>You eat the ${def.label()}.</span>`);
         }
       }
       // Bug 23: Slurpee Sugar Rush
@@ -497,7 +497,7 @@
     else if(def.type === "spell") {
       // E9: Tome of Town Portal — use directly to cast portal spell, then becomes ash
       if(def.spell === 'portal' && itemObj.itemName === 'tomeOfTownPortal') {
-        logMsg(`<span style='color:var(--success)'>${ItemDef.iconOf('tomeOfTownPortal')} You open the ${def.name} and read from its pages...</span>`);
+        logMsg(`<span style='color:var(--success)'>You open the ${def.label()} and read from its pages...</span>`);
         castSpell('portal', true);
         // Consume the tome (replace with ash)
         inventory[idx] = new ItemStack('spellResidue', 1);
@@ -507,7 +507,7 @@
       // Equip a spellbook as active spell
       player.equippedSpell = def.spell;
       if(!player.spells[def.spell]) player.spells[def.spell] = { level: 1 };
-      logMsg(`<span style='color:var(--success)'>${itemObj.icon} Learned spell: ${def.name}. The tome crumbles to ash!</span>`);
+      logMsg(`<span style='color:var(--success)'>Learned spell: ${def.label()}. The tome crumbles to ash!</span>`);
       Sound.clink();
       // Bug 35: Replace tome with spell residue ash
       inventory[idx] = new ItemStack('spellResidue', 1);
@@ -935,14 +935,13 @@
   };
 
   window.startRangedAttackTargeting = function() {
-    let weaponIcon = player.equipped && player.equipped.leftHand;
-    let weaponDef = getEquippedWeaponDef();
-    if(!weaponIcon || !weaponDef || !weaponDef.ranged) {
+    const weaponDef = getEquippedWeaponDef();
+    if(!weaponDef || !weaponDef.ranged) {
       logMsg("You need a ranged weapon equipped.");
       return false;
     }
     if(weaponDef.ammoName && countItemByName(weaponDef.ammoName) <= 0) {
-      logMsg(`<span style='color:var(--error)'>Out of ${ItemDefs[weaponDef.ammoName]?.displayName ?? 'ammo'}.</span>`);
+      logMsg(`<span style='color:var(--error)'>Out of ${ItemDefs[weaponDef.ammoName]?.label() ?? 'ammo'}.</span>`);
       return false;
     }
     if(weaponDef.manaCost && player.mp < weaponDef.manaCost) {
@@ -950,22 +949,21 @@
       return false;
     }
     window._rangedTargeting = true;
-    logMsg(`<span style='color:var(--primary)'>${weaponIcon} ${weaponDef.name} targeting — click a tile to fire.</span>`);
+    logMsg(`<span style='color:var(--primary)'>${weaponDef.label()} targeting — click a tile to fire.</span>`);
     return true;
   };
 
   window.rangedWeaponTarget = function(tx, ty) {
     window._rangedTargeting = false;
-    let weaponIcon = player.equipped && player.equipped.leftHand;
-    let weaponDef = getEquippedWeaponDef();
-    if(!weaponIcon || !weaponDef || !weaponDef.ranged) return;
+    const weaponDef = getEquippedWeaponDef();
+    if(!weaponDef || !weaponDef.ranged) return;
 
     let dx = tx - player.x, dy = ty - player.y;
     let dist = Math.sqrt(dx * dx + dy * dy);
     if(dist < 1) { logMsg("Aim away from your own face."); return; }
     if(dist > (weaponDef.range ?? 8)) { logMsg(`Too far! (max ${weaponDef.range ?? 8} tiles)`); return; }
     if(weaponDef.ammoName && !consumeItemByName(weaponDef.ammoName, 1)) {
-      logMsg(`<span style='color:var(--error)'>Out of ${ItemDefs[weaponDef.ammoName]?.displayName ?? 'ammo'}.</span>`);
+      logMsg(`<span style='color:var(--error)'>Out of ${ItemDefs[weaponDef.ammoName]?.label() ?? 'ammo'}.</span>`);
       return;
     }
     if(weaponDef.manaCost) {
@@ -991,7 +989,7 @@
       let cy = Math.round(player.y + sy * i);
       if(theMap[cy] && theMap[cy][cx] === TILES.WALL) {
         addFloatingText(cx, cy, '💨', '#888', 18);
-        logMsg(`${weaponDef.name} thunks harmlessly into a wall.`);
+        logMsg(`${weaponDef.label()} thunks harmlessly into a wall.`);
         drawMap();
         updateUI();
         advanceTurn(1);
@@ -1012,7 +1010,7 @@
         if(weaponDef.manaCost) dmg += Math.floor(player.stats.int / 3);
         enemy.stats.hp -= dmg;
         addFloatingText(cx, cy, `-${dmg}`, '#f00', 18 + Math.floor(dmg / 2));
-        logMsg(`${weaponDef.name} hits ${enemy.type} for ${dmg} damage.`);
+        logMsg(`${weaponDef.label()} hits ${enemy.type} for ${dmg} damage.`);
         // Ifrit counterattack on ranged hit
         if(enemy.type === 'ifrit' && enemy.isIfrit && !enemy.provoked) {
           enemy.provoked = true;
@@ -1031,7 +1029,7 @@
     }
 
     addFloatingText(tx, ty, '💨', '#888', 18);
-    logMsg(`${weaponDef.name} misses everything important.`);
+    logMsg(`${weaponDef.label()} misses everything important.`);
     drawMap();
     updateUI();
     advanceTurn(1);
@@ -1138,12 +1136,28 @@
     renderInventory();
   }
 
+  // Slots currently held by the same equipped item (linkage for 2H weapons
+  // and other multi-slot items). Returns [slot] for single-slot items, or
+  // the item's full equip-group for items occupying ≥2 slots. Returns []
+  // when nothing is equipped at `slot`.
+  function linkedSlotsOf(slot) {
+    const name = player.equipped && player.equipped[slot];
+    if (!name) return [];
+    const def = ItemDefs[name];
+    const groups = def && def.equipGroups;
+    if (!groups) return [slot];
+    // The item was equipped via one of its groups — pick the one whose
+    // slots all currently hold this item (handles overlapping groups).
+    for (const g of groups) {
+      if (g.includes(slot) && g.every(s => player.equipped[s] === name)) return g.slice();
+    }
+    return [slot];
+  }
+
   function swapEquip(idx, slot) {
     // K6: idx === -1 means "just recalculate stats from current equipped state"
     // (used by drag-to-unequip / slot-swap paths that manage inventory themselves)
     if (idx !== -1) {
-      // Equip-gate is a model-layer predicate (Player.canEquip). Engine
-      // here only renders the user-facing rejection.
       const stackToEquip = inventory[idx];
       if (stackToEquip) {
         const verdict = player.canEquip(stackToEquip.itemName);
@@ -1154,23 +1168,70 @@
           return;
         }
       }
-      // Swap one unit from the inventory stack with the equipped slot.
-      // Equipped slots are item INSTANCES (single units), inventory slots are
-      // stacks. Equippable items are non-stackable (maxStack=1), so the stack
-      // is always qty=1 — taking one effectively empties the slot. The
-      // previously-equipped item (if any) is placed in the now-empty slot
-      // as a fresh single-unit stack.
-      const stack = inventory[idx];
-      const prevEquipped = player.equipped[slot];   // camelCase name or null
-      player.equipped[slot] = stack ? stack.itemName : null;
-      inventory[idx] = prevEquipped ? new ItemStack(prevEquipped, 1) : null;
+      const incoming = stackToEquip ? stackToEquip.itemName : null;
+      const incomingDef = incoming ? ItemDefs[incoming] : null;
+
+      // Pick which equip-group of the incoming item to fill. Prefer one
+      // containing `slot` (the drop target); fall back to the first group.
+      let targetGroup = null;
+      if (incoming && incomingDef && incomingDef.equipGroups) {
+        targetGroup = incomingDef.equipGroups.find(g => g.includes(slot)) || incomingDef.equipGroups[0];
+      } else if (incoming) {
+        targetGroup = [slot]; // legacy fallback
+      } else {
+        // Unequip path: stack is null, so the "group" is the linkage of
+        // whatever currently occupies `slot` (so a 2H weapon clears both).
+        targetGroup = linkedSlotsOf(slot);
+        if (targetGroup.length === 0) targetGroup = [slot];
+      }
+
+      // Gather displaced item names (dedupe by name — a 2H weapon spans
+      // multiple slots but is one item to return). Also expand to clear
+      // ALL slots linked to each displaced item, so half-equipping a 2H
+      // can never be left behind.
+      const displaced = [];
+      const seen = new Set();
+      const slotsToClear = new Set(targetGroup);
+      for (const s of targetGroup) {
+        const cur = player.equipped[s];
+        if (cur && !seen.has(cur)) {
+          seen.add(cur);
+          displaced.push(cur);
+          linkedSlotsOf(s).forEach(ls => slotsToClear.add(ls));
+        }
+      }
+      slotsToClear.forEach(s => { player.equipped[s] = null; });
+
+      // Write the incoming item to all target-group slots.
+      targetGroup.forEach(s => { player.equipped[s] = incoming; });
+
+      // Pull the incoming stack out of inventory (qty=1; equippables are
+      // non-stackable). Then deposit displaced: first one back into the
+      // source slot (the swap), rest into first-empty inv slot or floor.
+      inventory[idx] = null;
+      if (displaced.length > 0) {
+        inventory[idx] = new ItemStack(displaced[0], 1);
+        for (let i = 1; i < displaced.length; i++) {
+          const empty = inventory.findIndex(s => s === null);
+          if (empty !== -1) {
+            inventory[empty] = new ItemStack(displaced[i], 1);
+          } else {
+            zone.dropAt(player.x, player.y, new ItemStack(displaced[i], 1));
+            const dn = ItemDefs[displaced[i]]?.label() || displaced[i];
+            logMsg(`<span style='color:var(--warning)'>Inventory full — ${dn} dropped at your feet.</span>`);
+          }
+        }
+      }
     }
-    // Recalculate combat stats from all equipment
+    // Recalculate combat stats from all equipment. Dedupe by item name so
+    // a 2H weapon occupying multiple slots isn't counted multiple times.
     let totalDmg = CONSTANTS.PLAYER_UNARMED_BASE_DMG;
     let totalEvade = CONSTANTS.PLAYER_INITIAL_DODGE_RATE;
     let speedBonus = 0;
+    const _seenEquipped = new Set();
     Object.values(player.equipped).forEach(name => {
-      if(name) {
+      if(name && !_seenEquipped.has(name)) {
+        _seenEquipped.add(name);
         let d = ItemDefs[name];
         if(!d) return;
         if(d.type === "weapon") totalDmg = (d.baseDmg ?? 0);
@@ -1196,23 +1257,28 @@
     if (idx !== -1) {
       const equippedName = player.equipped[slot];
       const equippedDef  = equippedName ? ItemDefs[equippedName] : null;
-      if(equippedDef) logMsg(`<span style='color:var(--success)'>Equipped ${equippedDef.displayName} to ${slot}.</span>`);
+      if(equippedDef) logMsg(`<span style='color:var(--success)'>Equipped ${equippedDef.label()}.</span>`);
     }
   }
 
-  // #34: Unequip from equip slot to ground when inventory is full
+  // #34: Unequip from equip slot to ground when inventory is full.
+  // Honors multi-slot linkage: a 2H weapon clears all of its slots and
+  // returns to inventory/floor as a single stack.
   window.unequipToGround = (slot) => {
-    const cur = player.equipped[slot];  // camelCase name
+    const cur = player.equipped[slot];
     if(!cur) return;
     const def = ItemDefs[cur];
+    const group = linkedSlotsOf(slot);
     const freeSlot = inventory.findIndex(s => s === null);
     if(freeSlot !== -1) {
       inventory[freeSlot] = new ItemStack(cur, 1);
-      logMsg(`<span style='color:var(--success)'>Unequipped ${def?.displayName || cur} to inventory.</span>`);
+      logMsg(`<span style='color:var(--success)'>Unequipped ${def?.label() || cur} to inventory.</span>`);
     } else {
       zone.dropAt(player.x, player.y, new ItemStack(cur, 1));
-      logMsg(`<span style='color:var(--warning)'>Inventory full — ${def?.displayName || cur} dropped at your feet.</span>`);
+      logMsg(`<span style='color:var(--warning)'>Inventory full — ${def?.label() || cur} dropped at your feet.</span>`);
     }
-    player.equipped[slot] = null;
+    group.forEach(s => { player.equipped[s] = null; });
     renderQuickslots(); updateUI();
   };
+
+  window.linkedSlotsOf = linkedSlotsOf;

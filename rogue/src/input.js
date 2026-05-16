@@ -1342,9 +1342,9 @@ const hBtn = document.getElementById('hamburgerBtn');
         if (!player.inventory) player.inventory = [];
         player.talents.fighterClass = { level: 1 };
         player.talents.wieldSwords  = { level: 1 };
-        const swordName = ItemDefs.sword?.displayName ?? 'Sword';
-        const bootsName = ItemDefs.fightersBoots?.displayName ?? "Fighter's Boots";
-        logMsg && logMsg(`You are a Fighter! +5 HP, ${swordName} equipped, ${bootsName} worn.`);
+        const swordLabel = ItemDefs.sword?.label() ?? 'Sword';
+        const bootsLabel = ItemDefs.fightersBoots?.label() ?? "Fighter's Boots";
+        logMsg && logMsg(`You are a Fighter! +5 HP, ${swordLabel} equipped, ${bootsLabel} worn.`);
       } else if (selClass === 'spellcaster') {
         player.startingClass = 'spellcaster';
         player.maxMp = 2;
@@ -1359,7 +1359,8 @@ const hBtn = document.getElementById('hamburgerBtn');
         // Grant 2 ranks of Level 1 Spell — that's 2 slots; Illuminate
         // fills one, leaving room to learn one more from a tome.
         player.talents.level1Spell      = { level: 2 };
-        logMsg && logMsg("You are a Spellcaster! 2 MP, Illumination known, Robe equipped.");
+        const robeLabel = ItemDefs.robe?.label() ?? 'Robe';
+        logMsg && logMsg(`You are a Spellcaster! 2 MP, Illumination known, ${robeLabel} equipped.`);
       } else if (selClass === 'rogue') {
         player.startingClass = 'rogue';
         player.talents.rogueClass   = { level: 1 };
@@ -1372,7 +1373,8 @@ const hBtn = document.getElementById('hamburgerBtn');
         } else {
           player.inventory.push(new ItemStack('lockpickingTools', 1));
         }
-        logMsg && logMsg("You are a Rogue! Lockpicking Tools in inventory.");
+        const pickLabel = ItemDefs.lockpickingTools?.label() ?? 'Lockpicking Tools';
+        logMsg && logMsg(`You are a Rogue! ${pickLabel} in inventory.`);
       }
       
       debugLog("Calculating FOV...");
@@ -1702,14 +1704,14 @@ const hBtn = document.getElementById('hamburgerBtn');
           if (item) {
             zone.dropAt(player.x, player.y, new ItemStack(item.itemName, item.qty ?? 1));
             inventory[drag.idx] = null;
-            logMsg(`Dropped ${item.def?.displayName ?? item.icon} on the ground.`);
+            logMsg(`Dropped ${item.def?.label() ?? item.icon} on the ground.`);
           }
         } else if (drag.source === 'equip') {
           const itemName = player.equipped[drag.slot];
           if (itemName) {
             const def = ItemDefs[itemName];
             zone.dropAt(player.x, player.y, new ItemStack(itemName, 1));
-            logMsg(`Dropped ${def?.displayName ?? itemName} on the ground.`);
+            logMsg(`Dropped ${def?.label() ?? itemName} on the ground.`);
             // Reuse swapEquip(-1, slot) so derived stats recompute.
             if (typeof swapEquip === 'function') swapEquip(-1, drag.slot);
             else player.equipped[drag.slot] = null;
@@ -1762,7 +1764,7 @@ const hBtn = document.getElementById('hamburgerBtn');
               zone.dropAt(player.x, player.y, new ItemStack(itemName, 1));
               player.equipped[dragData.slot] = null;
               const def = ItemDefs[itemName];
-              logMsg(`You drop the ${def?.displayName ?? itemName} on the ground.`);
+              logMsg(`You drop the ${def?.label() ?? itemName} on the ground.`);
               swapEquip(-1, dragData.slot);
               updateUI();
               if (typeof renderEquipModal === 'function') renderEquipModal();

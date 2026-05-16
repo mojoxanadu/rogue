@@ -130,9 +130,9 @@ window.startStickyDrag = function(source, idxOrSlot, bagRef) {
 
 function _equipSlotFits(slot, def) {
   if (!def) return false;
-  if (slot === 'leftHand'  && (def.type === 'weapon' || def.slot === 'leftHand'))  return true;
-  if (slot === 'rightHand' && (def.type === 'weapon' || def.slot === 'rightHand')) return true;
-  return def.slot === slot;
+  const groups = def.equipGroups;
+  if (!groups || groups.length === 0) return false;
+  return groups.some(g => g.includes(slot));
 }
 
 // Read the stack at an addr (returns null for empty).
@@ -179,23 +179,35 @@ function _performStickyMove(src, target) {
     return;
   }
 
-  // Equip source going to inv or bag: use existing unequip flow if
-  // target is inv; bag target works the same with swap semantics.
+  // Equip source going to inv or bag.
   if (src.source === 'equip') {
     const equippedName = player.equipped[src.slot];
     if (!equippedName) return;
+    // Inv target: route through swapEquip so multi-slot linkage (2H
+    // weapons clearing all their slots, displacement to source, etc.)
+    // and slot-fit / canEquip gating all happen in one place.
+    if (target.source === 'inv') {
+      if (typeof swapEquip === 'function') swapEquip(target.idx, src.slot);
+      return;
+    }
+    // Bag target: manual swap. Bags aren't equip slots, so the only
+    // linkage concern is clearing all of a 2H weapon's slots when one
+    // is moved out.
     const existing = _readAddr(target);
     if (existing) {
       const existingDef = ItemDefs[existing.itemName];
       if (!_equipSlotFits(src.slot, existingDef)) {
         if (typeof logMsg === 'function') {
-          logMsg(`<span style='color:var(--warning)'>${existingDef?.displayName ?? 'That item'} doesn't fit the ${src.slot} slot.</span>`);
+          logMsg(`<span style='color:var(--warning)'>${existingDef?.label() ?? 'That item'} doesn't fit the ${src.slot} slot.</span>`);
         }
         return;
       }
+      const linked = (typeof linkedSlotsOf === 'function') ? linkedSlotsOf(src.slot) : [src.slot];
+      linked.forEach(s => { player.equipped[s] = null; });
       player.equipped[src.slot] = existing.itemName;
     } else {
-      player.equipped[src.slot] = null;
+      const linked = (typeof linkedSlotsOf === 'function') ? linkedSlotsOf(src.slot) : [src.slot];
+      linked.forEach(s => { player.equipped[s] = null; });
     }
     _writeAddr(target, new ItemStack(equippedName, 1));
     return;
@@ -1787,7 +1799,7 @@ function _performStickyMove(src, target) {
               // Drop to empty slot — unequip (new stack of qty 1)
               tgtArr[targetIdx] = new ItemStack(equippedName, 1);
               player.equipped[slotName] = null;
-              logMsg(`Unequipped ${equippedDef?.displayName || equippedName}.`);
+              logMsg(`Unequipped ${equippedDef?.label() || equippedName}.`);
               swapEquip(-1, slotName);
             } else {
               // Swap — check if target item fits the slot
@@ -1800,7 +1812,7 @@ function _performStickyMove(src, target) {
               if (fitsSlot) {
                 tgtArr[targetIdx] = new ItemStack(equippedName, 1);
                 player.equipped[slotName] = targetItem.itemName;
-                logMsg(`Swapped ${equippedDef?.displayName || equippedName} with ${targetDef?.displayName || targetItem.itemName}.`);
+                logMsg(`Swapped ${equippedDef?.label() || equippedName} with ${targetDef?.label() || targetItem.itemName}.`);
                 swapEquip(-1, slotName);
               } else {
                 logMsg(`${targetDef?.name || targetItem.icon} doesn't fit the ${slotName} slot.`);
@@ -1850,7 +1862,7 @@ function _performStickyMove(src, target) {
         if(freeSlot !== -1) {
           tgtItem.slots[freeSlot] = new ItemStack(srcItem.itemName, srcItem.qty ?? 1);
           srcArr[window.draggedItemIdx] = null;
-          logMsg(`${srcItem.icon} placed into ${bagDef.name}.`);
+          logMsg(`${srcItem.icon} placed into ${bagDef.label()}.`);
           Sound.clink();
           window.draggedItemIdx = null; window.draggedSource = null;
           renderQuickslots(); renderInventory(); updateUI();
@@ -1965,7 +1977,7 @@ function _performStickyMove(src, target) {
     const fits = (slotName === 'leftHand' && (def.type === 'weapon' || def.slot === 'leftHand')) ||
                  (slotName === 'rightHand' && (def.type === 'weapon' || def.slot === 'rightHand')) ||
                  (def.slot === slotName);
-    if (!fits) { logMsg(`${def.name} doesn't fit the ${slotName} slot.`); return; }
+    if (!fits) { logMsg(`${def.label()} doesn't fit the ${slotName} slot.`); return; }
 
     // Swap currently equipped item back into source array slot
     const currentEquipped = player.equipped[slotName];  // camelCase name
@@ -1975,7 +1987,7 @@ function _performStickyMove(src, target) {
       srcArr[fromIdx] = null;
     }
     player.equipped[slotName] = item.itemName;
-    logMsg(`Equipped ${def.name}.`);
+    logMsg(`Equipped ${def.label()}.`);
     swapEquip(-1, slotName);
     window.draggedItemIdx = null; window.draggedSource = null;
     updateUI();
@@ -2460,10 +2472,10 @@ function _performStickyMove(src, target) {
         if(!def) return;
         if(def.type === "weapon" && def.baseDmg && def.baseDmg > currentBaseDmg) {
           if (considerEquip) {
-            meleeDmgMsg += `, or ${def.name} for ${def.baseDmg}`;
+            meleeDmgMsg += `, or ${def.label()} for ${def.baseDmg}`;
           }
           else {
-            meleeDmgMsg += `. Consider equipping ${def.name}, which would give you a higher base damage of ${def.baseDmg}`;
+            meleeDmgMsg += `. Consider equipping ${def.label()}, which would give you a higher base damage of ${def.baseDmg}`;
             considerEquip = true;
           }
           return;
@@ -3008,7 +3020,7 @@ function _performStickyMove(src, target) {
     } else {
       zone.dropAt(player.x, player.y, new ItemStack(name, 1));
     }
-    logMsg(`Added ${def.displayName} to ${slot !== -1 ? 'inventory' : 'ground'}.`);
+    logMsg(`Added ${def.label()} to ${slot !== -1 ? 'inventory' : 'ground'}.`);
     renderQuickslots(); updateUI();
   };
   window.debugEditStats = () => {
