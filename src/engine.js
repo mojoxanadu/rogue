@@ -1029,7 +1029,7 @@
     sleepHealLoop = setInterval(() => {
       if(!player.isSleeping || player.atronach || isDead) { clearInterval(sleepHealLoop); return; }
       // Bug 13: Wake player if a hostile enemy is within 2 tiles
-      let hostileNear = enemies.find(e => e.stats && !e.stats.quest && !e.stats.passive &&
+      let hostileNear = zone.findNpc(e => e.stats && !e.stats.quest && !e.stats.passive &&
         Math.abs(e.x - player.x) <= 2 && Math.abs(e.y - player.y) <= 2);
       if(hostileNear) {
         if(snoreLoop) clearInterval(snoreLoop);
@@ -1080,7 +1080,7 @@
        return;
     }
 
-    let thief = enemies.find(e => e.type === 'thief' && Math.abs(e.x-player.x)+Math.abs(e.y-player.y) <= 2);
+    let thief = zone.findNpc(e => e.type === 'thief' && Math.abs(e.x-player.x)+Math.abs(e.y-player.y) <= 2);
     if (thief && Math.random() < 0.75) {
        setTimeout(() => {
          if (snoreLoop) clearInterval(snoreLoop);

@@ -2849,8 +2849,8 @@ function _performStickyMove(src, target) {
     // Set attacking flag for sprite animation
     player._isAttacking = true;
     setTimeout(() => { player._isAttacking = false; }, 300);
-    let eIdx = enemies.findIndex(e => e.x === nx && e.y === ny);
-    if(eIdx !== -1) {
+    let target = zone.npcAt(nx, ny);
+    if(target) {
       // Enemy found — attack it
       movePlayer(dx, dy);
     } else {

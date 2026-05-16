@@ -1491,7 +1491,7 @@
           for(let x = 0; x < ((theMap[y] || []).length || 0); x++)
             if(theMap[y][x] === TILES.PORTAL) return true;
       }
-      return !!(typeof enemies !== 'undefined' && enemies.some(e => e && e.type === 'ifrit' && e.isIfrit));
+      return !!(typeof zone !== 'undefined' && zone.npcs.some(e => e && e.type === 'ifrit' && e.isIfrit));
     }
 
     // ── Portal Fluid Simulation (Navier-Stokes, ping-pong FBOs) ─────────────
