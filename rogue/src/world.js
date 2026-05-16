@@ -177,6 +177,44 @@ class Zone {
     return this.lootables.filter(l => l && l.x === x && l.y === y);
   }
 
+  // ─── NPCs (Phase 6g, commit A: facade over the legacy `enemies`
+  // global) ─────────────────────────────────────────────────────
+  // The new API surface lives here; storage is still the bare global
+  // for now so this commit ships zero behaviour change. Commit B
+  // moves NPCs into this.entities and deletes the global, at which
+  // point every call site already using zone.npcs/addNpc/removeNpc
+  // follows automatically. Until then, callers can freely migrate
+  // one site at a time without coordinating.
+
+  get npcs() {
+    return (typeof enemies !== 'undefined') ? enemies : [];
+  }
+
+  addNpc(npc) {
+    if (!npc) return;
+    if (typeof enemies !== 'undefined') enemies.push(npc);
+  }
+
+  removeNpc(npc) {
+    if (typeof enemies === 'undefined') return false;
+    const i = enemies.indexOf(npc);
+    if (i === -1) return false;
+    enemies.splice(i, 1);
+    return true;
+  }
+
+  clearNpcs() {
+    if (typeof enemies !== 'undefined') enemies.length = 0;
+  }
+
+  npcAt(x, y) {
+    return this.npcs.find(n => n && n.x === x && n.y === y) || null;
+  }
+
+  findNpc(pred) {
+    return this.npcs.find(pred) || null;
+  }
+
   /** The (single) floor pile at (x,y) — null if none. There is at most
    *  one floor Lootable per tile; multiple items at one tile share its
    *  slots[]. Mirrors the find-or-create rule in dropAt(). */

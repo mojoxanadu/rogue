@@ -314,8 +314,8 @@
   // started by sighting a creature that wouldn't count toward completion.
   function _emitSawVerminIfFirstTime() {
     if(window._sawVerminFired) return;
-    if(typeof QuestEngine === 'undefined' || !enemies || !visible) return;
-    for(const e of enemies) {
+    if(typeof QuestEngine === 'undefined' || !visible) return;
+    for(const e of zone.npcs) {
       if((e.type === 'mouse' || e.type === 'cockroach') &&
          visible[e.y] && visible[e.y][e.x]) {
         window._sawVerminFired = true;
@@ -929,7 +929,7 @@
     }
 
     // Draw Enemies
-    enemies.forEach(e => {
+    zone.npcs.forEach(e => {
       let vx = e.x - player.x + cx, vy = e.y - player.y + cy;
       if(vx >= 0 && vx < VIEW_COLS && vy >= 0 && vy < VIEW_ROWS && visible[e.y][e.x]) {
         let sprite = null;

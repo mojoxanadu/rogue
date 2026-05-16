@@ -43,7 +43,7 @@
     }
   };
   function resolveMacroVars(text) {
-    const enemyCount = (enemies || []).filter(en => en && en.stats && en.stats.hp > 0 && !en.friendly && !en.farmAnimal).length;
+    const enemyCount = zone.npcs.filter(en => en && en.stats && en.stats.hp > 0 && !en.friendly && !en.farmAnimal).length;
     const vars = {
       '$hp': Math.floor(player.hp),
       '$mp': Math.floor(player.mp),
@@ -65,8 +65,8 @@
     if((m = cond.match(/^HP\s*<\s*(\d+)$/i))) return player.hp < parseInt(m[1]);
     if((m = cond.match(/^MP\s*<\s*(\d+)$/i))) return player.mp < parseInt(m[1]);
     if((m = cond.match(/^HUNGER\s*>\s*(\d+)$/i))) return player.hunger > parseInt(m[1]);
-    if((m = cond.match(/^ENEMIES\s*>\s*(\d+)$/i))) return (enemies || []).filter(en => en && en.stats && en.stats.hp > 0 && !en.friendly && !en.farmAnimal).length > parseInt(m[1]);
-    if((m = cond.match(/^ENEMIES\s*<\s*(\d+)$/i))) return (enemies || []).filter(en => en && en.stats && en.stats.hp > 0 && !en.friendly && !en.farmAnimal).length < parseInt(m[1]);
+    if((m = cond.match(/^ENEMIES\s*>\s*(\d+)$/i))) return zone.npcs.filter(en => en && en.stats && en.stats.hp > 0 && !en.friendly && !en.farmAnimal).length > parseInt(m[1]);
+    if((m = cond.match(/^ENEMIES\s*<\s*(\d+)$/i))) return zone.npcs.filter(en => en && en.stats && en.stats.hp > 0 && !en.friendly && !en.farmAnimal).length < parseInt(m[1]);
     if((m = cond.match(/^FLOOR\s*>=\s*(\d+)$/i))) return currentLevel >= parseInt(m[1]);
     if((m = cond.match(/^SCENE\s*=\s*(\w+)$/i))) return String(currentScene) === String(m[1]).toLowerCase();
     if((m = cond.match(/^STATUS\s*=\s*(\w+)$/i))) return player.statusType === m[1].toLowerCase();
@@ -90,7 +90,7 @@
       if(typeof restPlayer === 'function') restPlayer();
     } else if(/^FLEE$/i.test(action)) {
       // Move away from nearest enemy
-      const nearest = enemies.reduce((best, e) => {
+      const nearest = zone.npcs.reduce((best, e) => {
         const d = Math.abs(e.x-player.x)+Math.abs(e.y-player.y);
         return (!best || d < best.d) ? { e, d } : best;
       }, null);
@@ -310,9 +310,8 @@
 
     // B760.RAT_BOOT: old boot can be thrown at nearby cat during rat chase event.
     if(itemObj.itemName === 'oldBoot') {
-      const catIdx = enemies.findIndex(e => e && e.type === 'cat' && Math.abs(e.x - player.x) <= 6 && Math.abs(e.y - player.y) <= 6);
-      if(catIdx !== -1) {
-        const cat = enemies[catIdx];
+      const cat = zone.findNpc(e => e && e.type === 'cat' && Math.abs(e.x - player.x) <= 6 && Math.abs(e.y - player.y) <= 6);
+      if(cat) {
         addFloatingText(cat.x, cat.y, '👢', '#ddd', 20);
         logMsg("<span style='color:var(--success)'>You hurl the old boot at the cat. It yowls and bolts, and the rat escapes!</span>");
         logMsg("<span style='color:#88f'>🐀 The rat squeaks: 'You saved me! Maybe someday I can return the favor.'</span>");
@@ -321,7 +320,7 @@
           if(Sound.thud) Sound.thud();
           if(Sound.playVoice) Sound.playVoice('voice_rat_saved_thanks');
         }
-        enemies.splice(catIdx, 1);
+        zone.removeNpc(cat);
         decrementItem(idx);
         player.xp += 25;
         if(typeof QuestEngine !== 'undefined') QuestEngine.emit('custom', { id: 'rat_saved_with_boot' });
@@ -416,11 +415,11 @@
 
       // Quest Feeding logic — eagle accepts meat, fish, duck leg
       let eagleFood = ['🍖', '🐟', '🍗', '🧀', '🍕'];
-      let nearEagle = enemies.findIndex(e => e.type === 'eagle' && Math.abs(e.x-player.x)<=2 && Math.abs(e.y-player.y)<=2);
-      if(nearEagle !== -1 && eagleFood.includes(itemObj.icon)) {
+      let nearEagle = zone.findNpc(e => e.type === 'eagle' && Math.abs(e.x-player.x)<=2 && Math.abs(e.y-player.y)<=2);
+      if(nearEagle && eagleFood.includes(itemObj.icon)) {
         logMsg("<span style='color:var(--success)'>🦅 You feed the starving eagle! It looks at you gratefully.</span>");
         awardAchievement('eagle_eye');
-        enemies.splice(nearEagle, 1); player.fedEagle = true; player.xp += 500; 
+        zone.removeNpc(nearEagle); player.fedEagle = true; player.xp += 500;
         if(typeof QuestEngine !== 'undefined') QuestEngine.emit('eagle_fed', {});
         else if(typeof emitQuestEvent === 'function') emitQuestEvent('eagle_fed', {});
         logMsg("<span style='color:var(--primary)'>🦅 The eagle spreads its wings and soars away over the mountain sky. Perhaps you'll meet again...</span>");
@@ -752,7 +751,7 @@
     }
     if(spellName === 'lightning') {
       if(player.mp < 6) { logMsg("Not enough mana! (6 MP)"); return; }
-      const visibleTargets = enemies.filter(e => isSpellHostile(e) && visible[e.y] && visible[e.y][e.x]);
+      const visibleTargets = zone.npcs.filter(e => isSpellHostile(e) && visible[e.y] && visible[e.y][e.x]);
       if(visibleTargets.length === 0) {
         logMsg("No hostile target in sight for chain lightning.");
         return;
@@ -855,7 +854,7 @@
     // #28: Icebolt — freeze and damage a visible enemy
     if(spellName === 'icebolt') {
       if(player.mp < 4) { logMsg("Not enough mana! (4 MP)"); return; }
-      const visibleHostiles = enemies.filter(e => isSpellHostile(e) && visible[e.y] && visible[e.y][e.x]);
+      const visibleHostiles = zone.npcs.filter(e => isSpellHostile(e) && visible[e.y] && visible[e.y][e.x]);
       if(visibleHostiles.length === 0) { logMsg("No hostile target in sight for Icebolt."); return; }
       visibleHostiles.sort((a,b) => (Math.abs(a.x-player.x)+Math.abs(a.y-player.y)) - (Math.abs(b.x-player.x)+Math.abs(b.y-player.y)));
       const target = visibleHostiles[0];
@@ -881,7 +880,7 @@
     // #28: Poison — deal ongoing damage to a visible enemy
     if(spellName === 'poison') {
       if(player.mp < 3) { logMsg("Not enough mana! (3 MP)"); return; }
-      const visibleHostiles = enemies.filter(e => isSpellHostile(e) && visible[e.y] && visible[e.y][e.x]);
+      const visibleHostiles = zone.npcs.filter(e => isSpellHostile(e) && visible[e.y] && visible[e.y][e.x]);
       if(visibleHostiles.length === 0) { logMsg("No hostile target in sight for Poison."); return; }
       visibleHostiles.sort((a,b) => (Math.abs(a.x-player.x)+Math.abs(a.y-player.y)) - (Math.abs(b.x-player.x)+Math.abs(b.y-player.y)));
       const target = visibleHostiles[0];

@@ -249,13 +249,12 @@
         },
 
         throw_boot_at_cat: function(data) {
-          const cat = enemies.find(e => e.type === 'cat');
-          const rat = enemies.find(e => e.type === 'rat');
+          const cat = zone.findNpc(e => e.type === 'cat');
+          const rat = zone.findNpc(e => e.type === 'rat');
           if(cat && rat) {
             logMsg('<span style="color:var(--success)">🥾 You throw the Old Boot at the cat! It runs away!</span>');
             Sound.playSample ? Sound.playSample('splash') : Sound.splash();
-            const catIndex = enemies.indexOf(cat);
-            if(catIndex > -1) enemies.splice(catIndex, 1);
+            zone.removeNpc(cat);
             player.savedRat = true;
             rat.stats.icon = '🐀💖';
             if(typeof emitQuestEvent === 'function') emitQuestEvent('rat_saved', {});
@@ -325,7 +324,7 @@
         const y = Math.floor(Math.random() * mapH);
         if(theMap[y] && isTileFloor(theMap[y][x])) {
           if(x !== player.x || y !== player.y) {
-            const occupied = enemies.some(e => e.x === x && e.y === y);
+            const occupied = zone.npcs.some(e => e.x === x && e.y === y);
             if(!occupied) return { x, y };
           }
         }

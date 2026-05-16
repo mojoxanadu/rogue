@@ -1671,8 +1671,8 @@
       logMsg("<span style='color:var(--success)'>🧞 The Genie bows and steps aside. The exit stairs are open.</span>");
       if(typeof Sound !== 'undefined' && Sound.playVoice) Sound.playVoice('voice_genie_wish');
       // Remove genie so it doesn't block again
-      const idx = enemies.findIndex(e => e && e.type === 'genie' && e.isGenieGuardian);
-      if(idx !== -1) enemies.splice(idx, 1);
+      const genie = zone.findNpc(e => e && e.type === 'genie' && e.isGenieGuardian);
+      if(genie) zone.removeNpc(genie);
       if(typeof QuestEngine !== 'undefined') QuestEngine.emit('custom', { id: 'genie_wish_pass' });
     } else if(wish === 'fight') {
       logMsg("<span style='color:var(--error)'>🧞 The Genie roars: 'FOOL! You chose violence!'</span>");

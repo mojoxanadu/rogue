@@ -183,8 +183,8 @@ const hBtn = document.getElementById('hamburgerBtn');
     }
 
     // Nearest enemy type + HP%
-    if(p && typeof enemies !== 'undefined' && enemies.length > 0) {
-      const hostile = enemies.filter(e => e && !e.friendly && !e.farmAnimal && e.stats && e.stats.hp > 0);
+    if(p && zone.npcs.length > 0) {
+      const hostile = zone.npcs.filter(e => e && !e.friendly && !e.farmAnimal && e.stats && e.stats.hp > 0);
       if(hostile.length > 0) {
         const nearest = hostile.reduce((best, e) => {
           const d = Math.hypot(e.x - p.x, e.y - p.y);
@@ -362,7 +362,7 @@ const hBtn = document.getElementById('hamburgerBtn');
   };
 
   const _nearestEnemyToPlayer = (nameLike) => {
-    const list = (enemies || []).filter(en => en && en.stats && en.stats.hp > 0);
+    const list = zone.npcs.filter(en => en && en.stats && en.stats.hp > 0);
     if(list.length === 0) return null;
     const filtered = nameLike ? list.filter(en => en.type && en.type.toLowerCase().includes(nameLike.toLowerCase())) : list;
     if(filtered.length === 0) return null;
@@ -577,14 +577,14 @@ const hBtn = document.getElementById('hamburgerBtn');
         }
         case '/where': {
           const p = player;
-          const hostiles = (typeof enemies !== 'undefined' ? enemies : []).filter(e => e && e.stats && e.stats.hp > 0 && !e.friendly && !e.farmAnimal);
+          const hostiles = zone.npcs.filter(e => e && e.stats && e.stats.hp > 0 && !e.friendly && !e.farmAnimal);
           const nearest = hostiles.reduce((best, e) => {
             const d = Math.abs(e.x - p.x) + Math.abs(e.y - p.y);
             return (!best || d < best.d) ? { e, d } : best;
           }, null);
           debugLog(`Scene: ${currentScene} | Floor: ${currentLevel} | Pos: ${p.x},${p.y}`);
           const groundItemCount = zone.lootables.reduce((n, l) => n + (l.ownerKind === 'floor' ? l.size() : 0), 0);
-          debugLog(`Map: ${mapW}x${mapH} | Enemies: ${(enemies || []).length} | Ground items: ${groundItemCount}`);
+          debugLog(`Map: ${mapW}x${mapH} | Enemies: ${zone.npcs.length} | Ground items: ${groundItemCount}`);
           if(nearest) debugLog(`Nearest hostile: ${nearest.e.type} (${nearest.d} tiles)`);
           else debugLog('Nearest hostile: none');
           break;
@@ -593,7 +593,7 @@ const hBtn = document.getElementById('hamburgerBtn');
           const longMode = (args[0] || '').toLowerCase() === 'long';
           const tile = theMap?.[player.y]?.[player.x];
           debugLog(`You are at ${player.x},${player.y} in ${currentScene}:${currentLevel}. Tile=${tile}`);
-          const nearEnemies = (enemies || []).filter(en => Math.abs(en.x - player.x) <= 2 && Math.abs(en.y - player.y) <= 2 && en.stats && en.stats.hp > 0);
+          const nearEnemies = zone.npcs.filter(en => Math.abs(en.x - player.x) <= 2 && Math.abs(en.y - player.y) <= 2 && en.stats && en.stats.hp > 0);
           const nearPiles = zone.lootables.filter(l => l.ownerKind === 'floor' &&
               Math.abs(l.x - player.x) <= 2 && Math.abs(l.y - player.y) <= 2);
           if(nearEnemies.length) debugLog(`Nearby enemies: ${nearEnemies.map(en => `${en.type}@${en.x},${en.y}`).join(', ')}`);
@@ -743,7 +743,7 @@ const hBtn = document.getElementById('hamburgerBtn');
           if(raw === 'ifrit') {
             currentLevel = 1;
             if(typeof initMap === 'function') initMap(50);
-            const ifrit = (enemies || []).find(en => en.type === 'ifrit');
+            const ifrit = zone.findNpc(en => en.type === 'ifrit');
             if(ifrit) { player.x = Math.max(1, ifrit.x - 1); player.y = ifrit.y; }
             if(typeof calculateFOV === 'function') calculateFOV();
             if(typeof drawMap === 'function') drawMap();
@@ -828,7 +828,7 @@ const hBtn = document.getElementById('hamburgerBtn');
               const y = player.y + Math.floor(Math.random() * 9) - 4;
               if(x < 1 || x >= mapW - 1 || y < 1 || y >= mapH - 1) continue;
               if(!theMap[y] || !isTileFloor(theMap[y][x])) continue;
-              if(enemies.some(en => en.x === x && en.y === y)) continue;
+              if(zone.npcs.some(en => en.x === x && en.y === y)) continue;
               if(x === player.x && y === player.y) continue;
               pos = {x, y};
               break;
@@ -961,7 +961,7 @@ const hBtn = document.getElementById('hamburgerBtn');
           if(!Number.isFinite(player.hp) || !Number.isFinite(player.maxHp)) { errs++; debugLog('ERR HP invalid'); }
           if(player.hp > player.maxHp) { warns++; debugLog('WARN HP above max'); }
           let badEnemies = 0;
-          (enemies || []).forEach((en, i) => {
+          zone.npcs.forEach(en => {
             if(!en || !Number.isFinite(en.x) || !Number.isFinite(en.y) || !en.stats || !Number.isFinite(en.stats.hp)) badEnemies++;
           });
           if(badEnemies > 0) { errs++; debugLog(`ERR invalid enemies: ${badEnemies}`); }
@@ -1146,9 +1146,9 @@ const hBtn = document.getElementById('hamburgerBtn');
         case 'attack':
           if(args.length > 0) {
             let targetName = args.join(' ').toLowerCase();
-            let targetIdx = enemies.findIndex(e => e.type.includes(targetName) && Math.abs(e.x - player.x) <= 1 && Math.abs(e.y - player.y) <= 1);
-            if(targetIdx !== -1) {
-              if(typeof meleeAttack === 'function') { meleeAttack(); debugLog(`Attacking ${enemies[targetIdx].type}...`); }
+            let target = zone.findNpc(e => e.type.includes(targetName) && Math.abs(e.x - player.x) <= 1 && Math.abs(e.y - player.y) <= 1);
+            if(target) {
+              if(typeof meleeAttack === 'function') { meleeAttack(); debugLog(`Attacking ${target.type}...`); }
             } else {
               debugLog(`No nearby enemy matching "${args.join(' ')}".`);
             }
@@ -1164,9 +1164,9 @@ const hBtn = document.getElementById('hamburgerBtn');
             if(atMatch && typeof castSpell === 'function') {
               let spellName = atMatch[1].toLowerCase();
               let targetName = atMatch[2].toLowerCase();
-              let targetIdx = enemies.findIndex(e => e.type.includes(targetName) && Math.abs(e.x - player.x) <= 10 && Math.abs(e.y - player.y) <= 10);
-              if(targetIdx !== -1) {
-                player.facing = { dx: Math.sign(enemies[targetIdx].x - player.x) || 0, dy: Math.sign(enemies[targetIdx].y - player.y) || 1 };
+              let target = zone.findNpc(e => e.type.includes(targetName) && Math.abs(e.x - player.x) <= 10 && Math.abs(e.y - player.y) <= 10);
+              if(target) {
+                player.facing = { dx: Math.sign(target.x - player.x) || 0, dy: Math.sign(target.y - player.y) || 1 };
               }
               castSpell(spellName);
               debugLog(`Casting ${spellName} at ${targetName}...`);
