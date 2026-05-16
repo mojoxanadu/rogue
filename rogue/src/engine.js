@@ -17,7 +17,7 @@
 
   The functions here are called from input.js (movePlayer, restPlayer), from the UI
   (combat clicks), and from the game's own turn‑based clock (advanceTurn). They update
-  the global player, enemies, itemsOnGround, and activeEffects arrays.
+  the global player, zone.npcs, itemsOnGround, and activeEffects arrays.
 */
 // === Core Loops & AI ===
   // Phase 6c: chestStates global retired. Per-chest state (locked,
@@ -216,7 +216,7 @@
     const mimicLootable = zone.lootablesAt(x, y).find(l => l && l._mimic);
     if (!mimicLootable) return false;
     zone.removeLootable(mimicLootable);
-    spawnNpc(enemies, x, y, 'mimic', { stats: { ...MONSTER_DEF['mimic'] }, isMimic: true });
+    spawnNpc(zone.npcs, x, y, 'mimic', { stats: { ...MONSTER_DEF['mimic'] }, isMimic: true });
     logMsg("<span style='color:var(--error)'>📦 The chest SNAPS its lid open and reveals jagged teeth! It's a MIMIC!</span>");
     if (typeof Sound !== 'undefined' && Sound.playSample) {
       Sound.playSample('mimic_reveal', 0.8);
@@ -226,10 +226,10 @@
     drawMap(); updateUI();
     // Mimic attacks first as a surprise (after a brief delay so the
     // reveal sound + animation get a beat).
-    const mIdx = enemies.length - 1;
+    const mIdx = zone.npcs.length - 1;
     if (typeof monsterAttack === 'function') {
       setTimeout(() => {
-        if (enemies[mIdx] && enemies[mIdx].stats?.hp > 0) monsterAttack(mIdx);
+        if (zone.npcs[mIdx] && zone.npcs[mIdx].stats?.hp > 0) monsterAttack(mIdx);
       }, 500);
     }
     return true;
@@ -322,7 +322,7 @@
       theMap: theMap.map(row => row.slice()),
       explored: explored.map(row => row.slice()),
       darkMap: darkMap.map(row => row.slice()),
-      enemies: JSON.parse(JSON.stringify(enemies)),
+      npcs: JSON.parse(JSON.stringify(zone.npcs)),
       lootables: JSON.parse(JSON.stringify(zone.lootables)),
       corpses: JSON.parse(JSON.stringify(zone.corpses)),
       mapW: mapW,
@@ -350,7 +350,7 @@
     explored = cached.explored.map(row => row.slice());
     darkMap = cached.darkMap.map(row => row.slice());
     visible = Array(mapH).fill().map(() => Array(mapW).fill(false));
-    enemies.length = 0;
+    zone.npcs.length = 0;
     // The cache stores JSON-cloned spawn specs (class identity is
     // stripped by JSON.parse(JSON.stringify(...)) in _saveLevelToCache).
     // Re-hydrate each one through NPC.fromSpec so the live array
@@ -359,8 +359,8 @@
     // survive JSON round-trip. No NPCs carry Conditions today; if
     // that changes, add a NPC.toSpec() / fromSpec() pair that
     // re-attaches the right onTick when reading a serialized name.
-    cached.enemies.forEach(spec => {
-      enemies.push(typeof NPC !== 'undefined' && NPC.fromSpec ? NPC.fromSpec(spec) : spec);
+    cached.npcs.forEach(spec => {
+      zone.addNpc(typeof NPC !== 'undefined' && NPC.fromSpec ? NPC.fromSpec(spec) : spec);
     });
     syncActiveZone();
     // Restore floor Lootables. Cache stores plain-object snapshots
@@ -448,14 +448,17 @@
 
   // Restart game without reloading page (preserves loaded assets)
   window.restartGame = function() {
+    // Wipe player state first — initMap does NOT call setPlayerDefaults,
+    // so without this player.hp stays at 0 and every action trips the
+    // "You are dead." guard in mechanics.js.
     setPlayerDefaults();
-    
-    // Reset global state
+
+    // Reset shared state that survives a death overlay
     isDead = false;
     currentLevel = 0;
-    currentScene = 'town'; // Bug 7: start in Tristram
+    currentScene = 'town';
     levelCache = {};
-    enemies.length = 0;
+    zone.clearNpcs();
     zone.clearLootables();
     zone.clearCorpses();
     lightTurns = 0;
@@ -463,35 +466,33 @@
     activeEffects.length = 0;
     damageTint = 0;
     window._sharkBossSpawned = false;
-    window._cainHealedThisVisit = false; // E6: reset Cain heal on new game
-    window._activeBombs = []; // E16: reset active bombs on new game
-    
-    // Reset inventory and inventory
+    window._cainHealedThisVisit = false;
+    window._activeBombs = [];
     for(let i = 0; i < inventory.length; i++) inventory[i] = null;
-    for(let i = 0; i < inventory.length; i++) inventory[i] = null;
-    
-    // Close overlay
+
     hideOverlay();
-    
-    // Re-init quest engine
-    if(typeof _initQuestEngine === 'function') _initQuestEngine();
-    
-    // Generate fresh map
-    initMap(50);
-    calculateFOV();
-    renderQuickslots();
-    renderInventory();
-    drawMap();
-    updateUI();
-    
-    logMsg("<span style='color:var(--success)'>Welcome back, adventurer. A new journey begins...</span>");
+
+    // Re-route through the class-selection gate so the player picks
+    // a class on each restart — _beginAdventure() clicks #startBtn,
+    // which runs setPlayerDefaults via initMap and re-applies the
+    // chosen class's bonuses.
+    window._classChosen = false;
+    window._selectedClass = null;
+    if (typeof showClassModal === 'function') {
+      showClassModal();
+    } else {
+      // Fallback: surface the start screen so the player can click
+      // BEGIN ADVENTURE manually (modal lives on the start screen).
+      const startScreen = document.getElementById('start-screen');
+      if (startScreen) startScreen.style.display = '';
+    }
   };
 
   // (hydrateEnemiesToNPCs retired Iter 3.5 — all entry points into
-  // the live enemies[] now produce NPC instances:
+  // the live zone.npcs[] now produce NPC instances:
   //   - spawnNpc() helpers wrap NPC.fromSpec
   //   - _restoreLevelFromCache re-hydrates JSON-cloned specs via NPC.fromSpec
-  //   - town.enemies[] entries are already instances (built by spawnNpc)
+  //   - town.zone.npcs[] entries are already instances (built by spawnNpc)
   // No lazy promotion needed at dispatch entry anymore.)
 
   // Build the ctx object passed to NPC.takeTurn(). Wires view-layer
@@ -503,7 +504,8 @@
       isScene:      !!opts.isScene,
       nowMs:        opts.nowMs ?? Date.now(),
       steps:        opts.steps ?? 1,
-      player, theMap, mapW, mapH, enemies, zone,
+      player, theMap, mapW, mapH, zone,
+      enemies: zone.npcs,
       TILES, CONSTANTS, currentScene,
       isTileFloor,
       _movedFlag:   false,
@@ -562,17 +564,15 @@
           Sound[method]();
         }
       },
-      // Remove a dead NPC from the live enemies array. Used by NPC.attack
-      // when the attacker dies to a thorns-reflection (Crown of Thorns).
+      // Remove a dead NPC from the zone. Used by NPC.attack when the
+      // attacker dies to a thorns-reflection (Crown of Thorns).
       removeEnemy(npc) {
-        const idx = enemies.indexOf(npc);
-        if (idx >= 0) enemies.splice(idx, 1);
+        zone.removeNpc(npc);
       },
-      // Bridge to legacy thiefSteal which still operates on enemies[]
-      // indices. (monsterAttack passthrough retired Iter 4 — NPCs
-      // call this.attack(target, ctx) directly.)
+      // Bridge to legacy thiefSteal which still operates on a positional
+      // index into the live NPC list.
       thiefSteal(npc) {
-        const idx = enemies.indexOf(npc);
+        const idx = zone.npcs.indexOf(npc);
         if (idx >= 0) thiefSteal(idx);
       },
     };
@@ -581,7 +581,7 @@
 
   function advanceSceneNPCs(nowMs = Date.now()) {
     const ctx = makeNpcCtx({ isScene: true, nowMs });
-    for (const e of enemies) {
+    for (const e of zone.npcs) {
       if (e && typeof e.takeTurn === 'function') e.takeTurn(ctx);
     }
     return ctx._movedFlag;
@@ -641,7 +641,7 @@
         darkMap = Array(mapH).fill().map(() => Array(mapW).fill(false));
         explored = Array(mapH).fill().map(() => Array(mapW).fill(false));
         visible = Array(mapH).fill().map(() => Array(mapW).fill(false));
-         enemies = []; zone.clearLootables();
+         zone.clearNpcs(); zone.clearLootables();
          syncActiveZone();
          currentScene = 'nest';
          // #13: Wire background art scene
@@ -653,7 +653,7 @@
          zone.dropAt(30, 24, ItemStack.fromIcon('🏅'));
          // Eagle is here if player fed it
          if(player.fedEagle) {
-           spawnNpc(enemies, 30, 23, "eagle", { stats: {...MONSTER_DEF["eagle"]} });
+           spawnNpc(zone.npcs, 30, 23, "eagle", { stats: {...MONSTER_DEF["eagle"]} });
            logMsg("<span style='color:var(--success)'>The Eagle you fed is here! Talk to it to escape.</span>");
          }
         startQuestTimer(30, "Roc Nest Escape", () => {
@@ -786,7 +786,7 @@
     }
 
     // Monster healing over time — monsters heal 5% max HP per turn when not in combat
-    enemies.forEach(e => {
+    zone.npcs.forEach(e => {
       if(e.stats && e.stats.hp > 0 && e.stats.hp < e.stats.maxHp) {
         let dist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
         // Only heal if not adjacent to player (not in combat)
@@ -800,7 +800,7 @@
     // AI and NPC Logic
     // ── Per-NPC AI dispatch (moved out of engine into src/npc.js) ──
     //
-    // The old 440-line enemies.forEach switch lives in class methods
+    // The old 440-line zone.npcs.forEach switch lives in class methods
     // on NPC + 8 typed subclasses (Ifrit, FrenchTaunter, Thief, Fence,
     // Mimic, Shark, Zombie, Pixie). The engine now just builds a ctx
     // and dispatches via runScheduler. Tristram boundary push-back
@@ -808,7 +808,7 @@
 
     // Tristram boundary pre-pass — keep wandering NPCs outside town walls.
     if(currentScene === 'town' && window._tristramBounds) {
-      enemies.forEach(e => {
+      zone.npcs.forEach(e => {
         if(!e || !e.stats) return;
         if(e.type !== 'pixie' && e.type !== 'muck_peasant') return;
         const b = window._tristramBounds;
@@ -838,12 +838,12 @@
     // 'brake'/'idle'/'timeout') and we hand control back.
     {
       const ctx = makeNpcCtx({ isScene: false, steps });
-      // Phase 4a-2.5: schedulable list combines the legacy `enemies`
+      // Phase 4a-2.5: schedulable list combines the legacy `zone.npcs`
       // NPC array with zone.entities (which holds Corpses + Lootables
       // and, in Phase 6, will absorb NPCs too). Filter to anything
       // with takeTurn — drops the `e.stats &&` gate so Corpses
       // (no combat stats) get ticked for decay.
-      const live = [...enemies, ...zone.entities].filter(e =>
+      const live = [...zone.npcs, ...zone.entities].filter(e =>
         e && e !== localPlayer && typeof e.takeTurn === 'function'
       );
       if (typeof runScheduler === 'function' && typeof localPlayer !== 'undefined') {
@@ -859,8 +859,8 @@
     // Spawn new monsters over time
     if (currentScene === 'dungeon' && Math.random() < CONSTANTS.SPAWN_RATE * steps) {
         let pos = getRandomFloor();
-        if (pos && !(darkMap[pos.y] && darkMap[pos.y][pos.x]) && !enemies.some(e => e.x === pos.x && e.y === pos.y) && (pos.x !== player.x || pos.y !== player.y)) {
-            spawnNpc(enemies, pos.x, pos.y, "slime", { stats: {...MONSTER_DEF["slime"]} });
+        if (pos && !(darkMap[pos.y] && darkMap[pos.y][pos.x]) && !zone.npcs.some(e => e.x === pos.x && e.y === pos.y) && (pos.x !== player.x || pos.y !== player.y)) {
+            spawnNpc(zone.npcs, pos.x, pos.y, "slime", { stats: {...MONSTER_DEF["slime"]} });
         }
     }
 
@@ -890,17 +890,17 @@
            theMap[sy] && isTileFloor(theMap[sy][sx]) &&
            visible[sy] && visible[sy][sx] &&
            (sx !== player.x || sy !== player.y) &&
-           !enemies.some(e => e.x === sx && e.y === sy)) {
+           !zone.npcs.some(e => e.x === sx && e.y === sy)) {
           spawnTile = {x: sx, y: sy};
           break;
         }
       }
       if(spawnTile) {
         // Spawn the rat — passive, runs away
-        spawnNpc(enemies, spawnTile.x, spawnTile.y, 'wet_rat', { stats: {...MONSTER_DEF['wet_rat'], hp: 6, maxHp: 6, dmg: 0, hit: 0.0, crit: 0.0, passive: true, speed: 1.2} });
+        spawnNpc(zone.npcs, spawnTile.x, spawnTile.y, 'wet_rat', { stats: {...MONSTER_DEF['wet_rat'], hp: 6, maxHp: 6, dmg: 0, hit: 0.0, crit: 0.0, passive: true, speed: 1.2} });
         logMsg("<span style='color:var(--warning)'>🐀 You notice a rat scurrying across the floor, followed by a cat in hot pursuit!</span>");
         // Cat spawns a bit further away, chases the rat
-        spawnNpc(enemies, spawnTile.x + 1, spawnTile.y, 'cat', { stats: {...MONSTER_DEF['cat']} });
+        spawnNpc(zone.npcs, spawnTile.x + 1, spawnTile.y, 'cat', { stats: {...MONSTER_DEF['cat']} });
         // Old boot appears at feet (harmless flavor item)
         zone.dropAt(player.x + 1, player.y, ItemStack.fromIcon('👢'));
         addFloatingText(spawnTile.x, spawnTile.y, '🐀', '#aaa', 14);
@@ -921,7 +921,7 @@
 
     calculateFOV(); drawMap(); updateUI();
     // (Iter 3: runScheduler dispatch moved up to where the per-NPC
-    // AI block lives — single call handles player + all enemies.)
+    // AI block lives — single call handles player + all zone.npcs.)
   }
 
   // E16: Bomb explosion
@@ -965,9 +965,9 @@
       }
     }
 
-    // Damage enemies in blast radius
-    for(let i = enemies.length - 1; i >= 0; i--) {
-      const e = enemies[i];
+    // Damage zone.npcs in blast radius
+    for(let i = zone.npcs.length - 1; i >= 0; i--) {
+      const e = zone.npcs[i];
       if(!e) continue;
       const eDist = Math.hypot(e.x - bomb.x, e.y - bomb.y);
       if(eDist <= maxR) {
@@ -1073,7 +1073,7 @@
          // Bug 13: Show ambush visual feedback before waking
          damageTint = 30;
          addFloatingText(player.x, player.y, '⚔️ AMBUSH!', '#f00', 20);
-         spawnNpc(enemies, player.x+1, player.y, "assassin", { stats: {...MONSTER_DEF["assassin"]} });
+         spawnNpc(zone.npcs, player.x+1, player.y, "assassin", { stats: {...MONSTER_DEF["assassin"]} });
          // Bug 13: Short delay then wake so player sees the ambush notification
          setTimeout(() => { wakeUp(); }, 300);
        }, 1500);
@@ -1213,7 +1213,7 @@
   }
 
   window.resolveEnemyDefeat = function(enemyIndex, options = {}) {
-    let e = enemies[enemyIndex];
+    let e = zone.npcs[enemyIndex];
     if(!e) return;
 
     if(e.type === 'ifrit' && e.isIfrit) {
@@ -1225,7 +1225,7 @@
       createCorpse(e.x, e.y, e.type, e.stats, ifritLoot);
       player.xp += 500;
       checkLevelUp();
-      enemies.splice(enemyIndex, 1);
+      zone.npcs.splice(enemyIndex, 1);
       return;
     }
 
@@ -1389,7 +1389,7 @@
     }
 
     checkLevelUp();
-    enemies.splice(enemyIndex, 1);
+    zone.npcs.splice(enemyIndex, 1);
   };
 
   // Stubs — replaced by player.js functions when loaded
@@ -1406,7 +1406,7 @@
   // player-only assumption baked into the legacy global helper.)
 
   function doCombat(enemyIndex) {
-    let e = enemies[enemyIndex]; if(!e) return;
+    let e = zone.npcs[enemyIndex]; if(!e) return;
     if(e.type === 'master' || e.type === 'pirate') { insultBattle(enemyIndex); return; }
     let dmg = getPlayerDmgVersus(e);
 
@@ -1453,7 +1453,7 @@
         createCorpse(e.x, e.y, e.type, e.stats, ifritLoot);
         player.xp += 500;
         checkLevelUp();
-        enemies.splice(enemyIndex, 1);
+        zone.npcs.splice(enemyIndex, 1);
       } else {
         let hpPct = Math.floor((e.stats.hp / 300) * 100);
         logMsg(`Ifrit crackles with flame! (${hpPct}% HP remaining)`);
@@ -1478,7 +1478,7 @@
         if (e.stats.hp <= 0) {
           logMsg("'Alright, we'll call it a draw!'");
           createCorpse(e.x, e.y, e.type, e.stats, [new ItemStack('severedLeg', 1)]);
-          enemies.splice(enemyIndex, 1); player.xp += 500; checkLevelUp();
+          zone.npcs.splice(enemyIndex, 1); player.xp += 500; checkLevelUp();
         }
       }
       advanceTurn(1);
@@ -1580,7 +1580,7 @@
   // Pride system: winning pirate flees, losing pirate stands ground.
   // No HP loss for either side — just pride.
   window.insultBattle = (enemyIndex) => {
-    let e = enemies[enemyIndex];
+    let e = zone.npcs[enemyIndex];
     if(!e) return;
     let type = e.type;
     let pool = INSULT_BATTLES[type] || INSULT_BATTLES.pirate;
@@ -1609,7 +1609,7 @@
   };
 
   window.beginInsultRound = (enemyIndex) => {
-    let e = enemies[enemyIndex];
+    let e = zone.npcs[enemyIndex];
     if(!e) return;
     hideOverlay();
     let type = e.type;
@@ -1739,13 +1739,13 @@
   };
 
   window.continueInsultRound = (enemyIndex) => {
-    let e = enemies[enemyIndex];
+    let e = zone.npcs[enemyIndex];
     if(e) e._insultPlayerOpened = true;
     beginInsultRound(enemyIndex);
   };
 
   window.playerOpenInsultChoice = (enemyIndex, idx, known) => {
-    const e = enemies[enemyIndex];
+    const e = zone.npcs[enemyIndex];
     if(!e) return;
     const type = e.type;
     const line = (idx >= 0 && INSULT_BATTLES.pirate[idx]) ? INSULT_BATTLES.pirate[idx] : null;
@@ -1767,7 +1767,7 @@
   // #7: Pride system — no HP damage. Pirate flees on loss, stands ground on win.
   window.resolveInsultBattle = (enemyIndex, isCorrect, type) => {
     hideOverlay();
-    let e = enemies[enemyIndex];
+    let e = zone.npcs[enemyIndex];
     if(!e) return;
 
     if(isCorrect) {
@@ -1831,7 +1831,7 @@
 
   // (function monsterAttack(enemyIndex) retired Iter 4 — combat
   // resolution now lives on NPC.attack(target, ctx) in src/npc.js.
-  // Callers used to be all in the legacy enemies.forEach block, now
+  // Callers used to be all in the legacy zone.npcs.forEach block, now
   // gone. The remaining call site was the ctx.monsterAttack bridge
   // in makeNpcCtx — also retired; NPC.takeTurn calls this.attack
   // directly.)
@@ -1860,7 +1860,7 @@
     }
     
     // Bridge Keeper (v7.2.0)
-    let keeperIdx = enemies.findIndex(e => e.type === 'bridge_keeper' && e.x === nx && e.y === ny);
+    let keeperIdx = zone.npcs.findIndex(e => e.type === 'bridge_keeper' && e.x === nx && e.y === ny);
     if (keeperIdx !== -1 && !player.bridgeQuestions) { bridgeTrial(keeperIdx); return; }
 
     if (tile === TILES.LETTER) {
@@ -1868,10 +1868,10 @@
        if ("IEHOVA".indexOf(letter) === -1) { logMsg("Wrong letter!"); isDead = true; die(); return; }
     }
 
-    let eIdx = enemies.findIndex(e => e.x === nx && e.y === ny);
+    let eIdx = zone.npcs.findIndex(e => e.x === nx && e.y === ny);
     if (eIdx !== -1) {
       // Non-hostile NPC interactions
-      let npc = enemies[eIdx];
+      let npc = zone.npcs[eIdx];
       if(npc.type === 'chaplain') {
         openShop('chaplain');
         return;
@@ -2164,7 +2164,7 @@
         }
         Sound.playMusic(nearStore ? 'supercenter' : 'pirate');
       } else if(currentLevel === 1 && currentScene === 'dungeon') {
-        const ifrit = enemies.find(e => e.type === 'ifrit' && e.isIfrit);
+        const ifrit = zone.npcs.find(e => e.type === 'ifrit' && e.isIfrit);
         if(ifrit) {
           const dist = Math.abs(ifrit.x - player.x) + Math.abs(ifrit.y - player.y);
           if(dist <= 8) Sound.playMusic('ifrit_lair');
@@ -2205,7 +2205,7 @@
     if(tile === TILES.WATER || tile === TILES.DEEP_WATER) {
       Sound.splash();
       // Bug 42-43: Shark aggro — immediately provoke any nearby shark when player enters water
-      enemies.forEach(e => {
+      zone.npcs.forEach(e => {
         if(e.type === 'shark' && e.stats && e.stats.stalks) {
           let dist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
           if(dist <= (e.stats.aggro ?? 6)) {
@@ -2512,7 +2512,7 @@
 
   window.bridgeAns3 = (win) => {
     hideOverlay();
-    if(win) { logMsg("Keeper: 'What? I don't know that! AHHHHHHH!'"); enemies = enemies.filter(e => e.type !== 'bridge_keeper'); player.bridgeQuestions = true; }
+    if(win) { logMsg("Keeper: 'What? I don't know that! AHHHHHHH!'"); zone.removeNpcs(e => e.type === 'bridge_keeper'); player.bridgeQuestions = true; }
     else { logMsg("AHHHHHHH!"); isDead = true; die(); }
   };
 

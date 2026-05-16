@@ -123,7 +123,7 @@
   // Global game‑state variables. These are updated as the game progresses.
   let currentLevel = 1, mapW = 0, mapH = 0;
   let currentScene = 'dungeon'; 
-  let theMap = [], explored = [], visible = [], enemies = [], darkMap = [];
+  let theMap = [], explored = [], visible = [], darkMap = [];
   let isDead = false, dropMode = false, isIdentifying = false, damageTint = 0;
   let lightTurns = 0, lastMoveTime = 0;
   let floatingTexts = []; 

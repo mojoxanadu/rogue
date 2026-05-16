@@ -16,7 +16,7 @@
 
   The functions here are called when the player descends/ascends stairs (engine.js),
   from the start button (input.js), and from debug warp commands. They populate the
-  global theMap, darkMap, explored, visible, enemies, and itemsOnGround arrays.
+  global theMap, darkMap, explored, visible, zone.npcs, and itemsOnGround arrays.
 */
 // === Map Generation (v7.2.0) ===
 
@@ -741,7 +741,7 @@
     darkMap = Array(mapH).fill().map(()=>Array(mapW).fill(false));
     explored = Array(mapH).fill().map(()=>Array(mapW).fill(false));
     visible = Array(mapH).fill().map(()=>Array(mapW).fill(false));
-    enemies = []; zone.clearLootables(); lightTurns = 0; zone.clearCorpses();
+    zone.clearNpcs(); zone.clearLootables(); lightTurns = 0; zone.clearCorpses();
     syncActiveZone();
     window._swordmasterMazeActive = false;
     window._swordmasterMazeBounds = null;
@@ -761,7 +761,7 @@
       darkMap = Array(mapH).fill().map(()=>Array(mapW).fill(false));
       explored = Array(mapH).fill().map(()=>Array(mapW).fill(false));
       visible = Array(mapH).fill().map(()=>Array(mapW).fill(false));
-      for (let i = 0; i < town.enemies.length; i++) enemies.push(town.enemies[i]);
+      for (let i = 0; i < town.enemies.length; i++) zone.npcs.push(town.enemies[i]);
       syncActiveZone();
       window._townPortalTile = null;
       for(let y = 0; y < mapH && !window._townPortalTile; y++) {
@@ -861,7 +861,7 @@
         }
         if(!fencePos) fencePos = { x: leftyPos.x + 2, y: leftyPos.y + 1 };
         reserved.add(`${fencePos.x},${fencePos.y}`);
-        spawnNpc(enemies, fencePos.x, fencePos.y, "fence", { stats: {...MONSTER_DEF["fence"]} });
+        spawnNpc(zone.npcs, fencePos.x, fencePos.y, "fence", { stats: {...MONSTER_DEF["fence"]} });
         let corpsePos = findNearbyFloorTile(leftyPos.x, leftyPos.y, 4, reserved);
         if(corpsePos && typeof createCorpse === 'function') {
           createCorpse(corpsePos.x, corpsePos.y, 'busker', { icon: '🧑‍🎤' }, [new ItemStack('accordion', 1), new ItemStack('paperclip', 1)]);
@@ -900,7 +900,7 @@
           }
         }
         // Add thief and loot
-        spawnNpc(enemies, hideoutRoom.cx, hideoutRoom.cy, 'thief', { stats: {...MONSTER_DEF['thief'], patrolling: false, wandering: true} });
+        spawnNpc(zone.npcs, hideoutRoom.cx, hideoutRoom.cy, 'thief', { stats: {...MONSTER_DEF['thief'], patrolling: false, wandering: true} });
         // Add some loot
         zone.dropAt(hideoutRoom.cx + 1, hideoutRoom.cy,     ItemStack.fromIcon('💰'));
         zone.dropAt(hideoutRoom.cx - 1, hideoutRoom.cy,     ItemStack.fromIcon('🗝️'));
@@ -919,7 +919,7 @@
           }
         }
         // Spawn FightingMaster at the center
-        spawnNpc(enemies, yardRoom.cx, yardRoom.cy, 'fighting_master', { stats: { hp: 999, dmg: 0, speed: 0, dodge: 1.0, icon: '🤺', passive: true, quest: true }, isQuestNPC: true });
+        spawnNpc(zone.npcs, yardRoom.cx, yardRoom.cy, 'fighting_master', { stats: { hp: 999, dmg: 0, speed: 0, dodge: 1.0, icon: '🤺', passive: true, quest: true }, isQuestNPC: true });
         if(Math.random() < 0.3) {
           logMsg("<span style='color:#888; font-style:italic;'>You hear the ring of steel on steel somewhere nearby — a Weapon Master trains in a courtyard.</span>");
         }
@@ -963,7 +963,7 @@
       // E.GENIE / KQ5: Big Genie boss guards the dungeon exit on Floor 10.
       // Requires Brass Bottle quest item to pass. Appears at 4x size.
       if(currentScene === 'dungeon' && currentLevel === 10 && MONSTER_DEF && MONSTER_DEF['genie']) {
-        spawnNpc(enemies, Math.max(1, Math.min(mapW - 2, downStairPos.x + 2)), Math.max(1, Math.min(mapH - 2, downStairPos.y + 1)), 'genie', { stats: {...MONSTER_DEF['genie'], renderScale: 4.0}, isBoss: true, isQuestNPC: true, isGenieGuardian: true });
+        spawnNpc(zone.npcs, Math.max(1, Math.min(mapW - 2, downStairPos.x + 2)), Math.max(1, Math.min(mapH - 2, downStairPos.y + 1)), 'genie', { stats: {...MONSTER_DEF['genie'], renderScale: 4.0}, isBoss: true, isQuestNPC: true, isGenieGuardian: true });
         logMsg("<span style='color:var(--warning)'>🧞 A colossal Genie blocks the exit stairs! It demands the Brass Bottle before it will let you pass.</span>");
       }
 
@@ -1000,7 +1000,7 @@
           // The darkness itself is the threat. Players need light to survive.
           // Level 6: pacifist orc NPC in the first dark room
           if(currentLevel === 6 && darkRoomCount === 1) {
-            spawnNpc(enemies, rm.cx + 1, rm.cy, 'pacifist_orc', { stats: {...MONSTER_DEF['orc'], icon: '🧌', hp: 999, dmg: 0, quest: true}, isQuestNPC: true });
+            spawnNpc(zone.npcs, rm.cx + 1, rm.cy, 'pacifist_orc', { stats: {...MONSTER_DEF['orc'], icon: '🧌', hp: 999, dmg: 0, quest: true}, isQuestNPC: true });
             logMsg("<span style='color:#666; font-style:italic;'>You sense something watching from the darkness...</span>");
             // E.753.CUPCAKE: Two cupcakes on the floor near Grok
             zone.dropAt(rm.cx - 1, rm.cy,     ItemStack.fromIcon('🧁'));
@@ -1073,12 +1073,12 @@
         // Spawn 3-4 lowly pirates that roam
         for(let i = 0; i < 3 + Math.floor(Math.random() * 2); i++) {
           let rm = rooms[Math.floor(Math.random() * rooms.length)];
-          spawnNpc(enemies, rm.cx + Math.floor(Math.random() * 3) - 1, rm.cy + Math.floor(Math.random() * 3) - 1, 'pirate', { stats: {...MONSTER_DEF['pirate']} });
+          spawnNpc(zone.npcs, rm.cx + Math.floor(Math.random() * 3) - 1, rm.cy + Math.floor(Math.random() * 3) - 1, 'pirate', { stats: {...MONSTER_DEF['pirate']} });
         }
         // Pirate Chaplain on floor 4 — wanders randomly
         let chapRoom = rooms[rooms.length - 2] || rooms[0];
         carveFloorPad(chapRoom.cx, chapRoom.cy, 1);
-        spawnNpc(enemies, chapRoom.cx, chapRoom.cy, 'chaplain', { stats: { icon: '⛪🏴‍☠️', hp: 30, dmg: 0, hit: 0, crit: 0, dodge: 0, speed: 0, quest: true, wandering: true, wanderTimer: 0 }, isQuestNPC: true });
+        spawnNpc(zone.npcs, chapRoom.cx, chapRoom.cy, 'chaplain', { stats: { icon: '⛪🏴‍☠️', hp: 30, dmg: 0, hit: 0, crit: 0, dodge: 0, speed: 0, quest: true, wandering: true, wanderTimer: 0 }, isQuestNPC: true });
       }
       if(currentLevel === 5 && rooms.length >= 3) {
         // ── SWORDMASTER MAZE: last 3-4 rooms become a dark, confusing maze ──
@@ -1126,12 +1126,12 @@
         let guardCount = 1 + Math.floor(Math.random() * 2);
         for(let i = 0; i < guardCount && i < mazeRooms.length - 1; i++) {
           let guardRoom = mazeRooms[i];
-          spawnNpc(enemies, guardRoom.cx, guardRoom.cy, 'pirate', { stats: {...MONSTER_DEF['pirate']} });
+          spawnNpc(zone.npcs, guardRoom.cx, guardRoom.cy, 'pirate', { stats: {...MONSTER_DEF['pirate']} });
         }
         
         // Swordmaster at the deepest (last) maze room
         let masterRoom = mazeRooms[mazeRooms.length - 1];
-        spawnNpc(enemies, masterRoom.cx, masterRoom.cy, 'master', { stats: {...MONSTER_DEF['master']} });
+        spawnNpc(zone.npcs, masterRoom.cx, masterRoom.cy, 'master', { stats: {...MONSTER_DEF['master']} });
       }
 
       // Floor 1: Hidden passage → Ifrit boss chamber (remote + concealed)
@@ -1178,7 +1178,7 @@
         const ifritX = chamberX + Math.floor(chamberW / 2);
         const ifritY = chamberY + Math.floor(chamberH / 2);
         // Place Ifrit — loot (Tome of Fireball) comes from his corpse via combat
-        spawnNpc(enemies, ifritX, ifritY, 'ifrit', { stats: {...MONSTER_DEF['ifrit'], renderScale: 2.8, speed: 0.9}, isIfrit: true, taunted: false, patrolCenter: { x: ifritX, y: ifritY }, patrolRadius: 3 });
+        spawnNpc(zone.npcs, ifritX, ifritY, 'ifrit', { stats: {...MONSTER_DEF['ifrit'], renderScale: 2.8, speed: 0.9}, isIfrit: true, taunted: false, patrolCenter: { x: ifritX, y: ifritY }, patrolRadius: 3 });
         // Fireproof decor: scatter rocks, mechanical parts, and fire pit markers
         const ifritDecor = [
           { dx: -1, dy: -1, icon: '🪨' },
@@ -1223,7 +1223,7 @@
           let oy = sp.y + Math.floor(Math.random() * 7) - 3;
           if(ox >= 0 && ox < mapW && oy >= 0 && oy < mapH && isTileFloor(theMap[oy][ox])) {
             let type = Math.random() < 0.5 ? 'mouse' : 'cockroach';
-            spawnNpc(enemies, ox, oy, type, { stats: {...MONSTER_DEF[type]}, isVermin: true });
+            spawnNpc(zone.npcs, ox, oy, type, { stats: {...MONSTER_DEF[type]}, isVermin: true });
           }
         }
       }
@@ -1233,10 +1233,10 @@
       for(let i=5; i<15; i++) theMap[10][i] = TILES.LETTER; // IEHOVA name-of-god trial
       theMap[12][10] = TILES.BLADE;                         // Breath-of-god trial (kneel)
       
-      spawnNpc(enemies, 15, 10, "bridge_keeper", { stats: {...MONSTER_DEF["bridge_keeper"]} });
-      spawnNpc(enemies, 20, 20, "black_knight", { stats: {...MONSTER_DEF["black_knight"]} });
-      spawnNpc(enemies, 5, 5, "killer_rabbit", { stats: {...MONSTER_DEF["killer_rabbit"]} });
-      spawnNpc(enemies, 2, 15, "french_taunter", { stats: {...MONSTER_DEF["french_taunter"]} });
+      spawnNpc(zone.npcs, 15, 10, "bridge_keeper", { stats: {...MONSTER_DEF["bridge_keeper"]} });
+      spawnNpc(zone.npcs, 20, 20, "black_knight", { stats: {...MONSTER_DEF["black_knight"]} });
+      spawnNpc(zone.npcs, 5, 5, "killer_rabbit", { stats: {...MONSTER_DEF["killer_rabbit"]} });
+      spawnNpc(zone.npcs, 2, 15, "french_taunter", { stats: {...MONSTER_DEF["french_taunter"]} });
       zone.dropAt(6, 5, ItemStack.fromIcon('💣🌟')); // Holy Hand Grenade
       
       // ── FATE OF ATLANTIS: Orichalcum Beads scattered in the desert ──
@@ -1409,7 +1409,7 @@
       // Beach: add Pirate Chaplain and beach village (Monkey Island theme)
       if(currentScene === 'beach' && rooms.length >= 3) {
         let chRoom = rooms[Math.floor(rooms.length / 2)];
-        spawnNpc(enemies, chRoom.cx, chRoom.cy, 'chaplain', { stats: {...MONSTER_DEF['chaplain']} });
+        spawnNpc(zone.npcs, chRoom.cx, chRoom.cy, 'chaplain', { stats: {...MONSTER_DEF['chaplain']} });
         
         // Beach village with Monkey Island references
         if(rooms.length >= 5) {
@@ -1420,8 +1420,8 @@
           if(villageRoom.w >= 6 && villageRoom.h >= 6) {
             theMap[villageRoom.cy][villageRoom.cx] = TILES.SCUMM_BAR;
             // Add some pirate NPCs around the bar
-            spawnNpc(enemies, villageRoom.cx + 1, villageRoom.cy, 'pirate', { stats: {...MONSTER_DEF['pirate']} });
-            spawnNpc(enemies, villageRoom.cx - 1, villageRoom.cy, 'pirate', { stats: {...MONSTER_DEF['pirate']} });
+            spawnNpc(zone.npcs, villageRoom.cx + 1, villageRoom.cy, 'pirate', { stats: {...MONSTER_DEF['pirate']} });
+            spawnNpc(zone.npcs, villageRoom.cx - 1, villageRoom.cy, 'pirate', { stats: {...MONSTER_DEF['pirate']} });
           }
           
           // Antique shop (with safe cracking quest)
@@ -1430,7 +1430,7 @@
             if(shopRoom.w >= 5 && shopRoom.h >= 5) {
               theMap[shopRoom.cy][shopRoom.cx] = TILES.ANTIQUE_SHOP;
               // Add a hard-of-hearing shopkeeper
-              spawnNpc(enemies, shopRoom.cx, shopRoom.cy, 'fence', { stats: {...MONSTER_DEF['fence']}, isShopkeeper: true, shopType: 'antique' });
+              spawnNpc(zone.npcs, shopRoom.cx, shopRoom.cy, 'fence', { stats: {...MONSTER_DEF['fence']}, isShopkeeper: true, shopType: 'antique' });
             }
           }
           
@@ -1440,7 +1440,7 @@
             if(masterRoom.w >= 5 && masterRoom.h >= 5) {
               theMap[masterRoom.cy][masterRoom.cx] = TILES.HUT;
               // Add swordmaster
-              spawnNpc(enemies, masterRoom.cx, masterRoom.cy, 'master', { stats: {...MONSTER_DEF['master']} });
+              spawnNpc(zone.npcs, masterRoom.cx, masterRoom.cy, 'master', { stats: {...MONSTER_DEF['master']} });
             }
           }
           
@@ -1459,7 +1459,7 @@
             if(dockRoom.w >= 4 && dockRoom.h >= 4) {
               theMap[dockRoom.cy][dockRoom.cx] = TILES.BOAT;
               // Add a pirate near the boat
-              spawnNpc(enemies, dockRoom.cx + 1, dockRoom.cy, 'pirate', { stats: {...MONSTER_DEF['pirate']} });
+              spawnNpc(zone.npcs, dockRoom.cx + 1, dockRoom.cy, 'pirate', { stats: {...MONSTER_DEF['pirate']} });
             }
           }
           
@@ -1529,11 +1529,11 @@
         while(px2 <= coastX - 3) { theMap[py2][px2] = TILES.BRIDGE; px2++; }
 
         // Ensure required shopkeepers/NPC anchors exist near the landmarks.
-        if(!enemies.some(e => e.type === 'chaplain')) {
-          spawnNpc(enemies, coastX - 5, vy - 1, 'chaplain', { stats: {...MONSTER_DEF['chaplain']} });
+        if(!zone.npcs.some(e => e.type === 'chaplain')) {
+          spawnNpc(zone.npcs, coastX - 5, vy - 1, 'chaplain', { stats: {...MONSTER_DEF['chaplain']} });
         }
-        if(!enemies.some(e => e.shopType === 'antique')) {
-          spawnNpc(enemies, coastX - 2, vy + 3, 'fence', { stats: {...MONSTER_DEF['fence']}, isShopkeeper: true, shopType: 'antique' });
+        if(!zone.npcs.some(e => e.shopType === 'antique')) {
+          spawnNpc(zone.npcs, coastX - 2, vy + 3, 'fence', { stats: {...MONSTER_DEF['fence']}, isShopkeeper: true, shopType: 'antique' });
         }
       }
     }
@@ -1563,7 +1563,7 @@
       player.x = 4; player.y = 4; theMap[4][4] = TILES.STAIR_UP;
       theMap[mapH-4][mapW-4] = TILES.STAIR_DOWN;
       // Boss area
-      spawnNpc(enemies, mapW-6, mapH-6, "black_knight", { stats: {...MONSTER_DEF["black_knight"]} });
+      spawnNpc(zone.npcs, mapW-6, mapH-6, "black_knight", { stats: {...MONSTER_DEF["black_knight"]} });
       spawnMonsters(5 + currentLevel);
     }
     else if (window.BOUNDARY_DATA && window.BOUNDARY_DATA[currentScene]) {
@@ -1574,7 +1574,7 @@
       darkMap = Array(mapH).fill().map(() => Array(mapW).fill(false));
       explored = Array(mapH).fill().map(() => Array(mapW).fill(false));
       visible = Array(mapH).fill().map(() => Array(mapW).fill(false));
-      enemies = [];
+      zone.clearNpcs();
       zone.clearLootables();
       syncActiveZone();
 
@@ -1585,7 +1585,7 @@
 
       (sceneData.npcs || []).forEach(npc => {
         const def = MONSTER_DEF[npc.type] || {};
-        spawnNpc(enemies, npc.x, npc.y, npc.type, { stats: {             icon: npc.icon || def.icon || '🙂',             hp: def.hp ?? 999,             maxHp: def.hp ?? 999,             dmg: def.dmg ?? 0,             hit: def.hit ?? 0,             crit: def.crit ?? 0,             dodge: def.dodge != null ? def.dodge : 1,             speed: 0,             throughWalls: false,             passive: true,             quest: true           }, isQuestNPC: true, patrolPath: npc.patrolPath ? npc.patrolPath.map(p => ({ x: p.x, y: p.y })) : [], patrolIndex: 0, isSceneNPC: true });
+        spawnNpc(zone.npcs, npc.x, npc.y, npc.type, { stats: {             icon: npc.icon || def.icon || '🙂',             hp: def.hp ?? 999,             maxHp: def.hp ?? 999,             dmg: def.dmg ?? 0,             hit: def.hit ?? 0,             crit: def.crit ?? 0,             dodge: def.dodge != null ? def.dodge : 1,             speed: 0,             throughWalls: false,             passive: true,             quest: true           }, isQuestNPC: true, patrolPath: npc.patrolPath ? npc.patrolPath.map(p => ({ x: p.x, y: p.y })) : [], patrolIndex: 0, isSceneNPC: true });
       });
     }
     // Regenerate grass height map whenever a new map loads
@@ -1648,7 +1648,7 @@
       }
       let type = availableTypes[Math.floor(Math.random() * availableTypes.length)];
       if(MONSTER_DEF[type]) {
-        spawnNpc(enemies, pos.x, pos.y, type, { stats: {...MONSTER_DEF[type]} });
+        spawnNpc(zone.npcs, pos.x, pos.y, type, { stats: {...MONSTER_DEF[type]} });
       }
     }
     
@@ -1656,7 +1656,7 @@
     // Shark is a single boss — spawned once per game, not per floor
     if(currentScene === 'dungeon') {
       let waterCount = 0;
-      let sharkSpawned = enemies.some(e => e.type === 'shark');
+      let sharkSpawned = zone.npcs.some(e => e.type === 'shark');
       for(let y=1; y<mapH-1; y++) {
         for(let x=1; x<mapW-1; x++) {
           if(theMap[y][x] === TILES.WATER && Math.random() < 0.15) {
@@ -1679,7 +1679,7 @@
                 stats.hp *= 2; stats.maxHp = stats.hp;
                 stats.dmg = Math.floor(stats.dmg * 1.5);
               }
-              spawnNpc(enemies, x, y, aquaticType, { stats: stats });
+              spawnNpc(zone.npcs, x, y, aquaticType, { stats: stats });
               waterCount++;
             }
           }
@@ -1690,7 +1690,7 @@
       }
 
       // E15: T-Rex — rare spawn on floors 8-12, one per floor at most
-      if(currentLevel >= 8 && currentLevel <= 12 && Math.random() < 0.15 && !enemies.some(e => e.type === 'trex')) {
+      if(currentLevel >= 8 && currentLevel <= 12 && Math.random() < 0.15 && !zone.npcs.some(e => e.type === 'trex')) {
         let pos = getRandomFloor();
         let tries = 0;
         while(tries++ < 30 && (Math.abs(pos.x - player.x) + Math.abs(pos.y - player.y) < 10)) {
@@ -1698,7 +1698,7 @@
         }
         let trexStats = {...MONSTER_DEF['trex']};
         trexStats.maxHp = trexStats.hp;
-        spawnNpc(enemies, pos.x, pos.y, 'trex', { stats: trexStats });
+        spawnNpc(zone.npcs, pos.x, pos.y, 'trex', { stats: trexStats });
         logMsg("<span style='color:#f44; font-weight:bold;'>🦖 The ground trembles beneath your feet...</span>");
       }
     }
@@ -1731,7 +1731,7 @@
         let ambushTypes = ['slime', 'skeleton', 'snake', 'bat'];
         let type = ambushTypes[Math.floor(Math.random() * ambushTypes.length)];
         if (MONSTER_DEF[type]) {
-          spawnNpc(enemies, x, y, type, { stats: {...MONSTER_DEF[type]} });
+          spawnNpc(zone.npcs, x, y, type, { stats: {...MONSTER_DEF[type]} });
         }
         return;
       }
@@ -1896,7 +1896,7 @@
   window.spawnChest = spawnChest;
 
   // Place N containers on random floor tiles in the current zone. Picks
-  // floors not already occupied by enemies, the player, or other
+  // floors not already occupied by zone.npcs, the player, or other
   // lootables. Used by initMap for dungeon scenes.
   function spawnContainers(count, playerFloor = 1) {
     for (let i = 0; i < count; i++) {
@@ -1904,7 +1904,7 @@
       let tries = 0;
       while (tries++ < 20 && pos && (
         (player.x === pos.x && player.y === pos.y) ||
-        enemies.some(e => e && e.x === pos.x && e.y === pos.y) ||
+        zone.npcs.some(e => e && e.x === pos.x && e.y === pos.y) ||
         zone.lootablesAt(pos.x, pos.y).length > 0
       )) {
         pos = getRandomFloor();
@@ -1947,8 +1947,8 @@
       if(theMap[ay][ax] === TILES.WALL) continue;
 
       // Check not on player or other enemy
-      if(enemies.some(e => e && e.x === ax && e.y === ay)) continue;
+      if(zone.npcs.some(e => e && e.x === ax && e.y === ay)) continue;
 
-      spawnNpc(enemies, ax, ay, animalType, { icon: def.icon, friendly: def.friendly || false, farmAnimal: def.farmAnimal || false, noGold: def.noGold || false, stats: { hp: def.hp, maxHp: def.maxHp, atk: def.dmg, def: 0,                   hit: def.hit, dodge: def.dodge, xp: 1,                   speed: def.speed, throughWalls: def.throughWalls || false }, renderScale: def.renderScale ?? 1.0, loot: def.loot || [], fleePlayer: def.friendly || false, preferPlants: true });
+      spawnNpc(zone.npcs, ax, ay, animalType, { icon: def.icon, friendly: def.friendly || false, farmAnimal: def.farmAnimal || false, noGold: def.noGold || false, stats: { hp: def.hp, maxHp: def.maxHp, atk: def.dmg, def: 0,                   hit: def.hit, dodge: def.dodge, xp: 1,                   speed: def.speed, throughWalls: def.throughWalls || false }, renderScale: def.renderScale ?? 1.0, loot: def.loot || [], fleePlayer: def.friendly || false, preferPlants: true });
     }
   }

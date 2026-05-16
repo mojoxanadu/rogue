@@ -226,29 +226,39 @@
   };
 
   function addPurchasedItem(icon, qty = 1) {
-    let def = ItemDef.byIcon(icon) || {};
+    const def = ItemDef.byIcon(icon);
+    if(!def) return false;
+    const maxStack = def.maxStack ?? 1;
+    const stackable = maxStack > 1;
     let remaining = qty;
-    let nextInventory = inventory.map(item => item ? { ...item } : null);
-    if(def.stackable) {
-      const maxStack = def.maxStack ?? 10;
-      for(let i = 0; i < nextInventory.length && remaining > 0; i++) {
-        let item = nextInventory[i];
+    // Mutate `inventory` in place — DO NOT spread or clone slots, that
+    // would strip ItemStack instances down to plain objects and break
+    // their `.def` / `.icon` getters (which the rest of the game uses
+    // for equip, tooltips, etc.).
+    if(stackable) {
+      for(let i = 0; i < inventory.length && remaining > 0; i++) {
+        const item = inventory[i];
         if(!item || item.icon !== icon) continue;
-        let room = maxStack - (item.qty ?? 1);
+        const room = maxStack - (item.qty ?? 1);
         if(room <= 0) continue;
-        let moved = Math.min(room, remaining);
-        item.qty = (item.qty ?? 1) + moved;
+        const moved = Math.min(room, remaining);
+        if (typeof item.addQty === 'function') {
+          item.addQty(moved);
+        } else {
+          item.qty = (item.qty ?? 1) + moved;
+        }
         remaining -= moved;
       }
     }
-    for(let i = 0; i < nextInventory.length && remaining > 0; i++) {
-      if(nextInventory[i] !== null) continue;
-      let stackQty = def.stackable ? Math.min(def.maxStack ?? 10, remaining) : 1;
-      nextInventory[i] = { icon, qty: stackQty };
+    for(let i = 0; i < inventory.length && remaining > 0; i++) {
+      if(inventory[i] != null) continue;
+      const stackQty = stackable ? Math.min(maxStack, remaining) : 1;
+      inventory[i] = (typeof ItemStack === 'function')
+        ? new ItemStack(def.name, stackQty)
+        : { icon, qty: stackQty };
       remaining -= stackQty;
     }
     if(remaining > 0) return false;
-    inventory.splice(0, inventory.length, ...nextInventory);
     if(typeof renderQuickslots === 'function') renderQuickslots();
     if(typeof renderInventory === 'function') renderInventory();
     return true;
@@ -1676,9 +1686,9 @@
       if(typeof QuestEngine !== 'undefined') QuestEngine.emit('custom', { id: 'genie_wish_pass' });
     } else if(wish === 'fight') {
       logMsg("<span style='color:var(--error)'>🧞 The Genie roars: 'FOOL! You chose violence!'</span>");
-      const idx = enemies.findIndex(e => e && e.type === 'genie' && e.isGenieGuardian);
+      const idx = zone.npcs.findIndex(e => e && e.type === 'genie' && e.isGenieGuardian);
       if(idx !== -1) {
-        enemies[idx].isGenieGuardian = false;
+        zone.npcs[idx].isGenieGuardian = false;
         doCombat(idx);
       }
       return;

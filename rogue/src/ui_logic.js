@@ -659,7 +659,7 @@ function _performStickyMove(src, target) {
         slots: l.slots.map(s => ({ itemName: s.itemName, qty: s.qty })),
         isLocked: l.isLocked, lockKind: l.lockKind,
       })),
-      enemies,
+      npcs: zone.npcs,
       corpses: zone.corpses.map(c => ({
         x: c.x, y: c.y, name: c.name, icon: c.icon,
         isBones: c.isBones, actionCooldown: c.actionCooldown,
@@ -710,7 +710,7 @@ function _performStickyMove(src, target) {
     else if(!(player.identifiedItems instanceof Set)) player.identifiedItems = new Set();
     currentLevel = data.currentLevel; currentScene = data.currentScene;
     theMap = data.theMap; explored = data.explored;
-    enemies = data.enemies;
+    zone.replaceNpcs(data.npcs || data.enemies || []);
     levelCache = data.levelCache; stolenItems = data.stolenItems || [];
     // Rehydrate Lootables (JSON-cloned in save).
     zone.clearLootables();
@@ -1495,12 +1495,14 @@ function _performStickyMove(src, target) {
       if(item) {
         slot.innerHTML += item.icon;
         if(item.qty > 1) slot.innerHTML += `<span class="qty">${item.qty}</span>`;
-        // E13: Green border glow for items with status effects
+        // E13: Green border glow as a "worth identifying" hint — only
+        // shown while the item is still unidentified. Once the player
+        // knows what it does, drop the cue.
         const hasEffect = itemHasStatusEffect(item.icon);
         const isIdentified = player.identifiedItems && player.identifiedItems.has(item.icon);
-        if(hasEffect) {
+        if(hasEffect && !isIdentified) {
           slot.style.outline = '2px solid #0f8';
-          if(!isIdentified) slot.title = (item.def?.displayName ?? item.icon) + ' [Unidentified effects]';
+          slot.title = (item.def?.displayName ?? item.icon) + ' [Unidentified effects]';
         }
       }
       slot.onclick = () => {
@@ -1691,12 +1693,13 @@ function _performStickyMove(src, target) {
     if (item) {
       slot.innerHTML = item.icon;
       if (item.qty > 1) slot.innerHTML += `<span class="qty">${item.qty}</span>`;
-      // E13: Green glow for items with status effects
+      // E13: Green glow as a "worth identifying" hint — only shown
+      // while still unidentified.
       const hasEffect = itemHasStatusEffect(item.icon);
       const isIdentified = player.identifiedItems && player.identifiedItems.has(item.icon);
-      if (hasEffect) {
+      if (hasEffect && !isIdentified) {
         slot.style.outline = '2px solid #0f8';
-        if (!isIdentified) slot.title = (item.def?.displayName ?? item.icon) + ' [Unidentified effects]';
+        slot.title = (item.def?.displayName ?? item.icon) + ' [Unidentified effects]';
       } else if (item.def?.displayName) {
         slot.title = item.def.displayName;
       }
