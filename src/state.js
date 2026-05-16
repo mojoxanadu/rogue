@@ -759,7 +759,7 @@
     // and a special-case effect, so anyone may equip it). New weapons
     // should declare a wieldTalent unless they're similarly atypical.
     "🪗": { name: "Accordion", type: "weapon", stackable: false, baseDmg: 0, maxGP: 0, special: 'accordion' },
-    "🏹": { name: "Bow", type: "weapon", stackable: false, baseDmg: 1, maxGP: 25, ranged: true, range: 9, ammoName: 'arrows', rangedDamage: 8, wieldTalent: 'wieldBows' },
+    "🏹": { name: "Bow", type: "weapon", stackable: false, baseDmg: 1, maxGP: 25, ranged: true, range: 9, ammoName: 'arrows', rangedDamage: 8, wieldTalent: 'wieldBows', equipTo: ['leftHand', 'rightHand'] },
     "🗡️✨": { name: "Excalibur", type: "weapon", stackable: false, baseDmg: 12, maxGP: 12000, wieldTalent: 'wieldSwords' },
     "🦯✨": { name: "Proper Staff", type: "weapon", stackable: false, baseDmg: 5, maxGP: 25000, ranged: true, range: 9, manaCost: 5, rangedDamage: 20, magicScaling: 'int', wieldTalent: 'wieldStaffs' },
     "🦯": { name: "Staff", type: "weapon", stackable: false, baseDmg: 4, maxGP: 5, wieldTalent: 'wieldStaffs' },

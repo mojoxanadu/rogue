@@ -617,7 +617,7 @@
           let emptySlot = inventory.findIndex(i => i === null);
           if (emptySlot !== -1) {
             inventory[emptySlot] = new ItemStack(reward.item, reward.qty ?? 1);
-            if (def) logMsg(`<span style='color:var(--success)'>Received: ${def.displayName}</span>`);
+            if (def) logMsg(`<span style='color:var(--success)'>Received: ${def.label()}</span>`);
             if (typeof renderQuickslots === 'function') renderQuickslots();
           } else {
             logMsg(`<span style='color:var(--error)'>Inventory full! Item dropped on ground.</span>`);

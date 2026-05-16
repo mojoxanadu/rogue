@@ -79,6 +79,17 @@ class ItemDef {
     return this.bagSlots > 0;
   }
 
+  /**
+   * Canonical user-facing label for log/UI text: "🏹 Bow".
+   * Centralized so a design tweak (e.g. drop the icon, bold the
+   * name) lands in one place instead of every logMsg site.
+   * Never use `def.name` in user-facing strings — that field is
+   * the camelCase id; `displayName` and `icon` are the renderables.
+   */
+  label() {
+    return `${this.icon ?? ''} ${this.displayName ?? this.name}`.trim();
+  }
+
   // ─── Static helpers ────────────────────────────────────────
   //  The class is the front door for catalog operations. Free
   //  functions like a global `iconOf` would pollute the global

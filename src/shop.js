@@ -1188,7 +1188,7 @@
             hasSellable = true;
             let count = inventory.filter(i => i && i.itemName === it.itemName).length;
             let badge = count > 1 ? `<span style="background:var(--warning); color:#000; font-size:9px; padding:0 4px; border-radius:8px; margin-left:4px;">${count}</span>` : '';
-            html += `<div class="shop-item" style="margin:0; padding:4px;"><span>${it.icon} ${def.name} (+${def.maxGP}g)${badge}</span>
+            html += `<div class="shop-item" style="margin:0; padding:4px;"><span>${it.icon} ${def.displayName} (+${def.maxGP}g)${badge}</span>
               <button onclick="sell(${idx}, '${type}')">Sell</button></div>`;
           }
         }
@@ -1394,7 +1394,7 @@
       return;
     }
     changeGold(-cost);
-    logMsg(`<span style='color:var(--warning)'>The wizard sells you ${ItemDef.byIcon(icon)?.displayName ?? icon}. Somewhere, Granny clicks her tongue hard enough to bend iron.</span>`);
+    logMsg(`<span style='color:var(--warning)'>The wizard sells you ${ItemDef.byIcon(icon)?.label() ?? icon}. Somewhere, Granny clicks her tongue hard enough to bend iron.</span>`);
     openStore(type);
     storeTab('buy', type);
   };
@@ -2260,7 +2260,7 @@
     }
     const def = ItemDef.byIcon(lh);
     if(!def) { openShop('fighting_master'); return; }
-    logMsg(`<span style='color:#fd0'>The Weapon Master examines your ${def.name}: Base damage ${def.baseDmg ?? 0}, ${def.ranged ? 'Ranged, ' : ''}${def.magicScaling ? 'Magic scaling: '+def.magicScaling : 'no magic scaling'}. "${(def.baseDmg ?? 0) >= 8 ? 'Now THAT is a weapon.' : (def.baseDmg ?? 0) >= 4 ? 'Serviceable.' : 'You call that a weapon?'}"</span>`);
+    logMsg(`<span style='color:#fd0'>The Weapon Master examines your ${def.label()}: Base damage ${def.baseDmg ?? 0}, ${def.ranged ? 'Ranged, ' : ''}${def.magicScaling ? 'Magic scaling: '+def.magicScaling : 'no magic scaling'}. "${(def.baseDmg ?? 0) >= 8 ? 'Now THAT is a weapon.' : (def.baseDmg ?? 0) >= 4 ? 'Serviceable.' : 'You call that a weapon?'}"</span>`);
     openShop('fighting_master');
   };
 

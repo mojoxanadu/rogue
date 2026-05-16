@@ -220,6 +220,104 @@ test('Lock: map.js items resolve to expected camelCase names', () => {
   }
 });
 
+// ─── equipGroups normalization ───────────────────────────────
+//   The registry derives a canonical `equipGroups` field on every def
+//   from one of four optional inputs in the source spec:
+//     spec.equipTo     — array, AND-group: equipped item fills every listed slot
+//     spec.equipChoice — array, OR-groups: equipped item picks one of the listed slots
+//     spec.slot        — legacy single-slot string (most armor)
+//     spec.type==='weapon' — legacy weapon default (leftHand)
+//   These tests pin every combination so the equip path (which keys off
+//   equipGroups alone, never the raw inputs) has a single stable contract.
+
+test('equipGroups: equipTo only → one AND-group (e.g. 2H bow fills both hands)', () => {
+  const ctx = buildRegistry({
+    '🏹': { name: 'Bow', type: 'weapon', stackable: false,
+            equipTo: ['leftHand', 'rightHand'] },
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(ctx.ItemDefs.bow.equipGroups)),
+                   [['leftHand', 'rightHand']]);
+});
+
+test('equipGroups: equipChoice only → one OR-group per slot (e.g. ring on either hand)', () => {
+  const ctx = buildRegistry({
+    '💍': { name: 'Ring of Midas', type: 'armor', stackable: false,
+            equipChoice: ['leftHand', 'rightHand'] },
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(ctx.ItemDefs.ringOfMidas.equipGroups)),
+    [['leftHand'], ['rightHand']]);
+});
+
+test('equipGroups: equipTo + equipChoice → AND-group first, then per-choice OR-groups', () => {
+  // Contrived but valid: a gauntlet-pair that must fill both wrists AND
+  // optionally also covers one hand-slot of the player's choice.
+  const ctx = buildRegistry({
+    '🥊': { name: 'Linked Gauntlets', type: 'armor', stackable: false,
+            equipTo:     ['leftWrist', 'rightWrist'],
+            equipChoice: ['leftHand', 'rightHand'] },
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(ctx.ItemDefs.linkedGauntlets.equipGroups)), [
+    ['leftWrist', 'rightWrist'],
+    ['leftHand'],
+    ['rightHand'],
+  ]);
+});
+
+test('equipGroups: legacy slot field → single-slot AND-group (most armor)', () => {
+  const ctx = buildRegistry({
+    '🧢': { name: 'Helmet', type: 'armor', slot: 'head', stackable: false },
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(ctx.ItemDefs.helmet.equipGroups)),
+                   [['head']]);
+});
+
+test('equipGroups: weapon with no slot/equipTo/equipChoice defaults to [["leftHand"]]', () => {
+  // Preserves pre-refactor behavior: legacy weapons (no explicit fields)
+  // continue to land in leftHand. Without this default, equipping a sword
+  // from inventory would silently fail.
+  const ctx = buildRegistry({
+    '🗡️': { name: 'Sword', type: 'weapon', stackable: false },
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(ctx.ItemDefs.sword.equipGroups)),
+                   [['leftHand']]);
+});
+
+test('equipGroups: non-equippable items (consumables, ammo, quest) → null', () => {
+  // Items that can't be equipped at all should have no equipGroups, so the
+  // equip-slot-fits predicate (ui_logic._equipSlotFits) rejects them outright.
+  const ctx = buildRegistry({
+    '🧪': { name: 'Health Potion', type: 'potion', maxStack: 99 },
+    '➶':  { name: 'Arrows',        type: 'ammo',   maxStack: 99 },
+    '🦆': { name: 'Rubber Duck',   type: 'quest',  maxStack: 1 },
+  });
+  assert.equal(ctx.ItemDefs.healthPotion.equipGroups, null);
+  assert.equal(ctx.ItemDefs.arrows.equipGroups,       null);
+  assert.equal(ctx.ItemDefs.rubberDuck.equipGroups,   null);
+});
+
+test('equipGroups: equipTo trumps slot when both present', () => {
+  // Defensive: if an entry carries both (e.g. mid-migration data), the
+  // explicit multi-slot spec wins so the new 2H semantics aren't masked.
+  const ctx = buildRegistry({
+    '🏹': { name: 'Bow', type: 'weapon', slot: 'leftHand', stackable: false,
+            equipTo: ['leftHand', 'rightHand'] },
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(ctx.ItemDefs.bow.equipGroups)),
+                   [['leftHand', 'rightHand']]);
+});
+
+test('equipGroups: empty equipTo array falls through to slot/type defaults', () => {
+  // An accidental empty array shouldn't yield a [[]] group (which would
+  // make the item un-equippable in a confusing way).
+  const ctx = buildRegistry({
+    '🧢': { name: 'Helmet', type: 'armor', slot: 'head', stackable: false,
+            equipTo: [] },
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(ctx.ItemDefs.helmet.equipGroups)),
+                   [['head']]);
+});
+
+
 test('Lock: shop.js items resolve to expected camelCase names', () => {
   const ctx = buildRegistry({
     '🧴':   { name: 'Prophylactic',             type: 'useless', maxStack: 1,  maxGP: 0 },

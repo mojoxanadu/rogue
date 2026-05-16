@@ -253,7 +253,7 @@
     // gen bug, corrupted save), refuse to absorb it rather than let
     // the player carry a Safe in their pocket.
     if (def.type === 'container') {
-      logMsg(`<span style='color:var(--warning)'>You can't carry the ${def.displayName || def.name || 'container'}.</span>`);
+      logMsg(`<span style='color:var(--warning)'>You can't carry the ${def.label() || 'container'}.</span>`);
       return false;
     }
 
@@ -994,7 +994,7 @@
       let stolen = inventory[idx];
       stolenItems.push(stolen);
       inventory[idx] = null;
-      logMsg(`<span style='color:var(--error)'>The Thief pickpocketed your ${stolen.def.displayName}!</span>`);
+      logMsg(`<span style='color:var(--error)'>The Thief pickpocketed your ${stolen.def.label()}!</span>`);
       // #13: Play internal dialog voice line on pickpocket
       let stolenVoices = ['voice_internal_stolen_0', 'voice_internal_stolen_1', 'voice_internal_stolen_2'];
       if(typeof Sound !== 'undefined' && Sound.playVoice) {
@@ -1004,7 +1004,7 @@
       if(typeof Sound !== 'undefined' && Sound.playSample) {
         Sound.playSample('yoink', 0.7);
       }
-      document.getElementById('modal-content').innerHTML = `<h2>🧤 PICKPOCKETED</h2>${modalPortraitHTML('npc_thief_modal', '🧤')}<p>The Thief stole your <strong>${stolen.def.displayName}</strong>!</p><button onclick="hideOverlay()">Drat!</button>`;
+      document.getElementById('modal-content').innerHTML = `<h2>🧤 PICKPOCKETED</h2>${modalPortraitHTML('npc_thief_modal', '🧤')}<p>The Thief stole your <strong>${stolen.def.label()}</strong>!</p><button onclick="hideOverlay()">Drat!</button>`;
       showOverlay();
       renderQuickslots(); updateUI();
     }
