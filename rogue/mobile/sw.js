@@ -8,7 +8,7 @@
 // activate handler purges any cache whose name doesn't match the
 // current version.
 
-const CACHE_VERSION = 'rogue-v2';
+const CACHE_VERSION = 'rogue-v3';
 const APP_SHELL = [
   './',
   './index.html',
