@@ -11,7 +11,7 @@
 
 DIST    := dist
 SOURCE  := ../dev_build.html
-ASSETS  := manifest.json sw.js icon.svg
+ASSETS  := manifest.json sw.js icon.svg icon-192.png icon-512.png
 
 # PWA glue injected into the source HTML's <head>:
 #   - link to the manifest

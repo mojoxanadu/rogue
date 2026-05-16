@@ -8,12 +8,14 @@
 // activate handler purges any cache whose name doesn't match the
 // current version.
 
-const CACHE_VERSION = 'rogue-v1';
+const CACHE_VERSION = 'rogue-v2';
 const APP_SHELL = [
   './',
   './index.html',
   './manifest.json',
   './icon.svg',
+  './icon-192.png',
+  './icon-512.png',
 ];
 
 self.addEventListener('install', (event) => {
