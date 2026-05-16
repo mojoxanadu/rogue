@@ -404,7 +404,7 @@ function _performStickyMove(src, target) {
       }
     }
 
-    const totalPts = (player.statPoints ?? 0);
+    const totalPts = (player.statPoints ?? 0) + (player.talentPoints ?? 0);
     const badge = document.getElementById('stat-badge');
     if(badge) {
        badge.innerText = totalPts;
