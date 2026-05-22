@@ -119,9 +119,15 @@
           // future catalog adds icons with apostrophes, switch to HTML
           // entity encoding (&quot;) around a JSON.stringify wrapper.
           const callArgs = `'${item.icon}', ${item.cost}, ${qty}`;
+          // Visible disabled styling for can't-afford items — matches the
+          // Next button treatment in dialog.js so the disabled state is
+          // unmistakable across browsers (default :disabled is too subtle).
+          const btnStyle = affordable
+            ? 'padding:4px 10px;'
+            : 'padding:4px 10px; opacity:0.4; cursor:not-allowed; filter:grayscale(60%);';
           return `<div style="display:flex; justify-content:space-between; align-items:center; padding:6px 8px; background:#2D2B32; border-radius:4px;">
             <span>${this._esc(item.icon)} ${this._esc(item.name)} <span style="color:var(--warning); margin-left:6px;">${item.cost}g</span></span>
-            <button onclick="ShopDialog.buyItem(${callArgs})" ${affordable ? '' : 'disabled'} style="padding:4px 10px;">Buy</button>
+            <button onclick="ShopDialog.buyItem(${callArgs})" ${affordable ? '' : 'disabled'} style="${btnStyle}">Buy</button>
           </div>`;
         }).join('') + '</div>';
     },
