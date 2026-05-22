@@ -90,6 +90,9 @@ class NPC extends Sentient {
       '_sceneNextMoveAt','_sceneMoveCooldown','sceneMoveIntervalMs',
       '_patrolTurnCount','_patrolTarget','_ifritAction','_mimicAwake',
       '_nextPixieVoiceMs','_lastDx','_mimicSpotted',
+      // Dialog system: phraseId opts the NPC into Dialog.startWith on bump.
+      // Without this here, spawnNpc({phraseId:'...'}) silently dropped the field.
+      'phraseId',
     ]) {
       if (spec[k] !== undefined) this[k] = spec[k];
     }

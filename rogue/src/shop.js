@@ -672,25 +672,12 @@
     return ['apu', 'leftys', 'wizard', 'bookstore', 'mended_drum_barman', 'dennis', 'blacksmith', 'forge', 'fence', 'champion'].includes(type);
   }
 
-  window.mendedDrumChat = function(npcType) {
-    const defs = {
-      cohen: { title: '👴 Cohen the Barbarian', icon: '👴⚔️', voicePrefix: 'voice_cohen_' },
-      librarian: { title: '🦧 The Librarian', icon: '🦧', voicePrefix: 'voice_librarian_' },
-      vimes: { title: '👮 Commander Vimes', icon: '👮', voicePrefix: 'voice_vimes_' },
-      bearded_dwarf: { title: '🧔‍♀️ Dorimunde Ironchin', icon: '🧔‍♀️', voicePrefix: 'voice_dorimunde_' }
-    };
-    const cfg = defs[npcType];
-    const def = cfg ? MONSTER_DEF[npcType] : null;
-    if(!cfg || !def || !Array.isArray(def.dialog) || def.dialog.length === 0) return;
-    const idx = Math.floor(Math.random() * def.dialog.length);
-    const m = document.getElementById('modal-content');
-    if(!m) return;
-    m.innerHTML = `<h2>${cfg.title}</h2>
-      ${npcFaceHTML('', cfg.icon, npcType)}
-      <p>"${def.dialog[idx]}"</p>
-      <button onclick="openStore('mended_drum_barman'); storeTab('chat','mended_drum_barman');">Back to The Mended Drum</button>`;
-    setTimeout(() => playVoiceClip(cfg.voicePrefix + idx), 30);
-  };
+  // mendedDrumChat — DELETED. The 4 patrons (Vimes, Cohen, Librarian,
+  // Dorimunde) are now real NPCs on the map (spawned in TRISTRAM_NPCS).
+  // Bumping any of them opens the Dialog system directly via phraseId.
+  // The barman's @shop reply opens ShopDialog (new buy/sell-only UI),
+  // not the legacy openStore. Nothing in the active path calls this
+  // function anymore.
 
    function openStore(type = 'apu') {
     let o = document.getElementById('overlay');

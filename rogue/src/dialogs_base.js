@@ -32,7 +32,14 @@
     // The barman greets, then the @shop sentinel hands off to the existing
     // store UI (with its buy/sell tabs intact). [Leave] closes the dialog.
     'mended_drum_barman_greet': {
-      message: "What'll it be, traveler?",
+      // Multi-paragraph greeting: opener, then the carved-over-the-bar motto,
+      // then a sales pitch for the in-sewer-ants policy. Paragraphs split on
+      // blank lines (\n\n).
+      message:
+        "What'll it be, traveler?\n\n" +
+        "Motto over the bar reads: \"Quanti Canicula Ille In Fenestra.\" Old Latin. " +
+        "Means \"How much is that doggie in the window?\" Long story, don't ask.\n\n" +
+        "We've also got an Inn-Sewer-Ants Policy — 50 quid, covers you for limb loss up to but not including the head. Highly recommended.",
       replies: [
         { text: '[Browse wares]', nextPhrase: '@shop' },
         { text: '[Leave]',        nextPhrase: '@close' },

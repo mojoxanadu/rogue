@@ -101,7 +101,13 @@
       if (phraseId === SENTINELS.SHOP) {
         const type = (this.currentNpc && this.currentNpc.type) || null;
         this._hide();
-        if (type && typeof openShop === 'function') openShop(type);
+        // Prefer the new tab-only ShopDialog; fall back to legacy openShop
+        // for any NPC type that hasn't been migrated to a SHOP_CATALOGS entry yet.
+        if (type && typeof ShopDialog !== 'undefined' && ShopDialog.open) {
+          ShopDialog.open(type);
+        } else if (type && typeof openShop === 'function') {
+          openShop(type);
+        }
         return;
       }
       if (phraseId === SENTINELS.FIGHT) {
@@ -256,9 +262,16 @@
 
     _renderLogEntry(entry) {
       if (entry.kind === 'speaker') {
+        // Multi-paragraph support: split the message on a blank line and
+        // render each paragraph as a separate <p>. First paragraph carries
+        // the speaker prefix "Name: …"; subsequent paragraphs indent under.
+        const paras = String(entry.text || '').split(/\n\s*\n/);
+        const first = paras.shift() || '';
+        const firstHtml = `<p style="margin:0 0 6px;"><strong style="color:#fc9;">${this._escape(entry.name)}:</strong> ${this._escape(first)}</p>`;
+        const restHtml = paras.map(p => `<p style="margin:6px 0 0;">${this._escape(p)}</p>`).join('');
         return `<div style="display:flex; gap:8px; margin:8px 0; align-items:flex-start;">
           <span style="font-size:28px; line-height:1; flex-shrink:0;">${this._escape(entry.icon)}</span>
-          <div style="flex:1;"><strong style="color:#fc9;">${this._escape(entry.name)}:</strong> ${this._escape(entry.text)}</div>
+          <div style="flex:1;">${firstHtml}${restHtml}</div>
         </div>`;
       }
       if (entry.kind === 'self') {

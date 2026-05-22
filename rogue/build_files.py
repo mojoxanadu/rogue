@@ -42,6 +42,7 @@ FILES = [
     # their IIFEs. dialog.js has no deps; dialogs_base.js only needs Dialog.
     'dialog.js',
     'dialogs_base.js',
+    'shop_dialog.js',
     # Quest packs BEFORE quest_engine (registration pattern)
     'quests_base.js',
     'quests_monkey_island.js',
