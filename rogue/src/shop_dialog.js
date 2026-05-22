@@ -111,9 +111,12 @@
         catalog.map(item => {
           const qty = item.qty != null ? item.qty : 1;
           const affordable = (typeof player !== 'undefined' && player.gp >= item.cost);
-          // JSON.stringify gives a properly-quoted JS literal for the icon
-          // arg so embedded chars survive the onclick="" string boundary.
-          const callArgs = `${JSON.stringify(item.icon)}, ${item.cost}, ${qty}`;
+          // Args must be SINGLE-quoted so the onclick attribute's outer
+          // double-quotes survive intact. Matches the legacy shop.js style.
+          // Safe for our emoji icons (none contain a single quote); if a
+          // future catalog adds icons with apostrophes, switch to HTML
+          // entity encoding (&quot;) around a JSON.stringify wrapper.
+          const callArgs = `'${item.icon}', ${item.cost}, ${qty}`;
           return `<div style="display:flex; justify-content:space-between; align-items:center; padding:6px 8px; background:#2D2B32; border-radius:4px;">
             <span>${this._esc(item.icon)} ${this._esc(item.name)} <span style="color:var(--warning); margin-left:6px;">${item.cost}g</span></span>
             <button onclick="ShopDialog.buyItem(${callArgs})" ${affordable ? '' : 'disabled'} style="padding:4px 10px;">Buy</button>
