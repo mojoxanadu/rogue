@@ -1197,6 +1197,21 @@
       inventory[crystalIdx] = null;
       player.hp = player.maxHp; updateUI(); return;
     }
+    // Second Wind talent — intercepts death "at the end of a
+    // creature's turn" (cause 'combat') if hunger leaves room.
+    const swLevel = (player.talents?.secondWind?.level) || 0;
+    if (cause === 'combat' && swLevel > 0 && player.hunger < 50) {
+      const healPct = 50 - player.hunger;
+      const healHP = Math.max(1, Math.round(player.maxHp * healPct / 100));
+      player.hp = healHP;
+      player.hunger = Math.min(100, player.hunger + 50);
+      logMsg("<span style='color:#9f9; font-weight:bold;'>🌬️ You draw a Second Wind!</span>");
+      updateUI(); drawMap();
+      showWorldModal('🌬️ SECOND WIND', `<p>You should be dead — but you draw a second wind.</p>
+        <p style="color:#9f9;">Recovered <strong>${healHP} HP</strong>.</p>
+        <p style="color:#fc8;">Hunger surges +50% — now ${Math.floor(player.hunger)}%.</p>`);
+      return;
+    }
     // B41: Capture the last relevant game log message to display in the death modal
     (function() {
       try {
