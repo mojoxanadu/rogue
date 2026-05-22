@@ -40,6 +40,7 @@
     currentPhrase: null,
     currentPhraseId: null,
     _log: [],            // [{kind:'speaker'|'self'|'system', icon?, name?, text}]
+    _selectedReplyIdx: null,  // index into _visibleReplies(); null = nothing picked yet
 
     // ─── public registration API ──────────────────────────────
     registerPhrases(map) {
@@ -66,25 +67,33 @@
     startWith(npc, phraseId) {
       this.currentNpc = npc;
       this._log = [];
+      this._selectedReplyIdx = null;
       this._goto(phraseId);
       this._show();
     },
 
+    // Two-step selection (Andor's-Trail style): click a reply to MARK it
+    // (checkmark + lighter background), then click the Next button to
+    // commit. Lets the player change their pick before committing.
     selectReply(idx) {
       if (!this.currentPhrase) return;
       const visible = this._visibleReplies();
-      const r = visible[idx];
-      if (!r) return;
-      this._log.push({ kind: 'self', text: r.text });
-      this._applyEffects(r.scriptEffects);
-      this._goto(r.nextPhrase);
+      if (!visible[idx]) return;
+      this._selectedReplyIdx = idx;
       this._render();
     },
 
     next() {
+      // Commits the currently-selected reply. No-op if nothing picked.
+      if (this._selectedReplyIdx == null) return;
       const visible = this._visibleReplies();
-      if (visible.length > 0) this.selectReply(0);
-      else this.leave();
+      const r = visible[this._selectedReplyIdx];
+      if (!r) return;
+      this._selectedReplyIdx = null;
+      this._log.push({ kind: 'self', text: r.text });
+      this._applyEffects(r.scriptEffects);
+      this._goto(r.nextPhrase);
+      this._render();
     },
 
     leave() {
@@ -92,6 +101,7 @@
       this.currentNpc = null;
       this.currentPhrase = null;
       this.currentPhraseId = null;
+      this._selectedReplyIdx = null;
     },
 
     // ─── internals ────────────────────────────────────────────
@@ -137,6 +147,7 @@
       }
       this.currentPhrase = phrase;
       this.currentPhraseId = phraseId;
+      this._selectedReplyIdx = null;  // fresh phrase, no pick yet
       this._applyEffects(phrase.scriptEffects);
       const message = this._resolveMessage(phrase.message);
       if (message) {
@@ -252,11 +263,34 @@
       logEl.scrollTop = logEl.scrollHeight;
       const visible = this._visibleReplies();
       if (visible.length === 0) {
-        repliesEl.innerHTML = '<p style="color:#888; padding:8px; font-style:italic; margin:0;">(no responses available)</p>';
+        // No replies → empty reply area (bottom Leave button still works).
+        repliesEl.innerHTML = '';
       } else {
-        repliesEl.innerHTML = visible.map((r, i) =>
-          `<button onclick="Dialog.selectReply(${i})" style="display:block; width:100%; margin:4px 0; padding:8px; text-align:left; background:#2D2B32; border:1px solid #4A4458; color:#fff; border-radius:4px; cursor:pointer;">${this._escape(r.text)}</button>`
-        ).join('');
+        // Two-step selection: checkmark slot on the left, lighter bg when
+        // selected. The slot is always rendered (placeholder when unpicked)
+        // so text doesn't jump as the user moves between options.
+        repliesEl.innerHTML = visible.map((r, i) => {
+          const picked = (i === this._selectedReplyIdx);
+          const bg = picked ? '#3D3B45' : '#2D2B32';
+          const border = picked ? '#9cf' : '#4A4458';
+          const mark = picked
+            ? '<span style="color:#9cf; font-weight:bold;">✓</span>'
+            : '<span style="color:transparent;">✓</span>';
+          return `<button onclick="Dialog.selectReply(${i})" style="display:flex; align-items:center; gap:8px; width:100%; margin:4px 0; padding:8px; text-align:left; background:${bg}; border:1px solid ${border}; color:#fff; border-radius:4px; cursor:pointer;">${mark}<span style="flex:1;">${this._escape(r.text)}</span></button>`;
+        }).join('');
+      }
+      // Next button: hidden (visibility:hidden, not display:none) when no
+      // replies — preserves layout so Leave stays in the same spot. When
+      // replies exist but none picked yet, Next is visible but disabled.
+      const nextBtn = document.querySelector('#dialog-buttons button[onclick*="Dialog.next"]');
+      if (nextBtn) {
+        if (visible.length === 0) {
+          nextBtn.style.visibility = 'hidden';
+          nextBtn.disabled = true;
+        } else {
+          nextBtn.style.visibility = 'visible';
+          nextBtn.disabled = (this._selectedReplyIdx == null);
+        }
       }
     },
 
