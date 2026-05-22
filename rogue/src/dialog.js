@@ -279,9 +279,10 @@
           return `<button onclick="Dialog.selectReply(${i})" style="display:flex; align-items:center; gap:8px; width:100%; margin:4px 0; padding:8px; text-align:left; background:${bg}; border:1px solid ${border}; color:#fff; border-radius:4px; cursor:pointer;">${mark}<span style="flex:1;">${this._escape(r.text)}</span></button>`;
         }).join('');
       }
-      // Next button: hidden (visibility:hidden, not display:none) when no
-      // replies — preserves layout so Leave stays in the same spot. When
-      // replies exist but none picked yet, Next is visible but disabled.
+      // Next button visibility & enabled-state:
+      //   no replies         → hidden (visibility:hidden so Leave stays put)
+      //   replies, no pick   → visible but FADED + cursor:not-allowed + disabled attr
+      //   replies, picked    → visible, full opacity, normal cursor
       const nextBtn = document.querySelector('#dialog-buttons button[onclick*="Dialog.next"]');
       if (nextBtn) {
         if (visible.length === 0) {
@@ -289,7 +290,13 @@
           nextBtn.disabled = true;
         } else {
           nextBtn.style.visibility = 'visible';
-          nextBtn.disabled = (this._selectedReplyIdx == null);
+          const picked = (this._selectedReplyIdx != null);
+          nextBtn.disabled = !picked;
+          // Inline-style overrides so the change is unmistakable across
+          // browsers (default :disabled styling is too subtle).
+          nextBtn.style.opacity     = picked ? '1'        : '0.4';
+          nextBtn.style.cursor      = picked ? 'pointer'  : 'not-allowed';
+          nextBtn.style.filter      = picked ? 'none'     : 'grayscale(60%)';
         }
       }
     },
