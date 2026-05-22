@@ -1266,7 +1266,10 @@
   };
 
   // === Transaction Handlers ===
-  window.buy = function(icon, cost, type, qty = 1) {
+  // suppressReopen: when truthy, skip the openStore() re-render at the end.
+  // The new ShopDialog (shop_dialog.js) drives its own re-render and would
+  // otherwise see the legacy shop modal pop in on top of/under it.
+  window.buy = function(icon, cost, type, qty = 1, suppressReopen = false) {
     let shopType = type === 'bookstore' ? 'wizard' : type;
     let finalCost = cost;
     if((icon === '🪄' || icon === '🦯✨') && (type === 'wizard' || type === 'bookstore')) {
@@ -1278,17 +1281,17 @@
     if(icon === ItemDef.iconOf('prophylactic')) { larryEasterEgg(0); return; }
     if(!addPurchasedItem(icon, qty)) { logMsg("No room! (Inventory full)"); return; }
     changeGold(-finalCost);
-    openStore(type);
+    if(!suppressReopen) openStore(type);
   };
 
-  window.sell = function(idx, type) {
+  window.sell = function(idx, type, suppressReopen = false) {
     let item = inventory[idx];
     if(!item) return;
     let def = item.def;
     if(def && def.maxGP > 0) {
       changeGold(def.maxGP);
       decrementItem(idx);
-      openStore(type);
+      if(!suppressReopen) openStore(type);
     }
   };
 

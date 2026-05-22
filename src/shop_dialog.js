@@ -62,15 +62,17 @@
       this._npcType = null;
     },
 
-    // Called from button onclick — runs the legacy buy() / sell() and
-    // re-renders so GP and inventory reflect the change immediately.
+    // Called from button onclick — runs the legacy buy() / sell() with the
+    // suppressReopen flag (true) so they DON'T pop the old shop modal at
+    // the end. We re-render the new ShopDialog ourselves to reflect the
+    // change in GP / inventory.
     buyItem(icon, cost, qty) {
-      if (typeof buy === 'function') buy(icon, cost, this._npcType, qty);
+      if (typeof buy === 'function') buy(icon, cost, this._npcType, qty, true);
       this._render();
     },
 
     sellItem(idx) {
-      if (typeof sell === 'function') sell(idx, this._npcType);
+      if (typeof sell === 'function') sell(idx, this._npcType, true);
       this._render();
     },
 
