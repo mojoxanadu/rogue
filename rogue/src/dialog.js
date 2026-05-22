@@ -264,8 +264,15 @@
       const visible = this._visibleReplies();
       if (visible.length === 0) {
         // No replies → empty reply area (bottom Leave button still works).
+        // Collapse the replies div completely so its border-top doesn't
+        // stack against the buttons div's border-top into a double line.
         repliesEl.innerHTML = '';
+        repliesEl.style.borderTop = 'none';
+        repliesEl.style.padding = '0';
       } else {
+        // Restore the divider + padding for the populated state.
+        repliesEl.style.borderTop = '1px solid #4A4458';
+        repliesEl.style.padding = '8px 12px';
         // Two-step selection: checkmark slot on the left, lighter bg when
         // selected. The slot is always rendered (placeholder when unpicked)
         // so text doesn't jump as the user moves between options.
