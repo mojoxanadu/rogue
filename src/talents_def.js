@@ -521,7 +521,6 @@ const TALENT_DEFS = {
     cost:  { initial: 6, improve: null, max: 1 },
     requires: { endurance: 1 },
     flags: [],
-    tbi:   true,
     desc:  `If you have zero HP at the end of a creature's turn and your hunger is below 50%, gain a percent of your max HP equal to 50% - current hunger, instead of dying, and increase your hunger by 50%.`,
   },
   sleightOfHand: {
