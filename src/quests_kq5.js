@@ -287,7 +287,7 @@
         temple_collapse: function(data) {
           if(window._templeActive) {
             logMsg('<span style="color:var(--error)">💥 The temple begins to collapse! Run!</span>');
-            player.hp -= 20;
+            applyPlayerDamage(20, 'collapse', { mitigate: false });
             updateUI();
             window._templeActive = false;
             window._templeCollapsed = true;

@@ -250,25 +250,23 @@
     // E.753.POISON + E.753.MILK: Poisoned food effects
     if(itemObj.itemName === 'oyster') {
       logMsg("<span style='color:#f44'>Maybe I shouldn't have eaten an oyster from a convenience store in a dungeon...</span>");
-      player.hp -= 10; addFloatingText(player.x, player.y, '-10', '#f00', 18);
       if(typeof Sound !== 'undefined') Sound.playTone(80, 'sawtooth', 0.3, 0.1, 40);
       logMsg("<span style='color:#f44'>You feel nauseous! (-10 HP)</span>");
       decrementItem(idx);
-      if(player.hp <= 0) { die(); return; }
+      if(applyPlayerDamage(10, 'poison', { mitigate: false, size: 18 })) return;
       updateUI(); return;
     }
     if(itemObj.itemName === 'peanuts') {
       logMsg("<span style='color:#f44'>I'm allergic to peanuts!</span>");
-      player.hp -= 15; addFloatingText(player.x, player.y, '-15', '#f00', 18);
       if(typeof Sound !== 'undefined') Sound.playTone(100, 'sawtooth', 0.4, 0.1, 30);
       logMsg("<span style='color:#f44'>Your throat swells! (-15 HP)</span>");
       decrementItem(idx);
-      if(player.hp <= 0) { die(); return; }
+      if(applyPlayerDamage(15, 'poison', { mitigate: false, size: 18 })) return;
       updateUI(); return;
     }
     if(itemObj.itemName === 'milk') {
       logMsg("<span style='color:#fa0'>Turns out I'm lactose intolerant.</span>");
-      player.hp -= 5; addFloatingText(player.x, player.y, '-5', '#f00', 16);
+      applyPlayerDamage(5, 'poison', { mitigate: false, size: 16 });
       // Diarrhea: 100-turn Condition (game-time) carries the speed
       // penalty + auto-cleanup; wall-clock fart SFX cadence still lives
       // in engine.js since it's UX timing, not game mechanics.

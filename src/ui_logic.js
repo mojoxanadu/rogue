@@ -1159,9 +1159,9 @@ function _performStickyMove(src, target) {
       const slots = lootable.def?.bagSlots ?? 1;
       const chance = 0.05 + 0.10 * tal('shitKicker');
       const dmg = 1 + Math.floor(Math.random() * slots);
-      if (typeof player.takeDamage === 'function') player.takeDamage(dmg, 'corporal');
-      else player.hp = Math.max(0, player.hp - dmg);
       logMsg(`<span style='color:var(--error)'>You kick the ${containerName} — ${dmg} damage!</span>`);
+      // A lethal kick stops here — no loot off a chest that killed you.
+      if (applyPlayerDamage(dmg, 'kickback', { mitigate: true, kind: 'corporal' })) return;
       if (Math.random() < chance) {
         logMsg(`The ${containerName} splinters open.`);
         unlock();
