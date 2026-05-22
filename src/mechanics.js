@@ -565,7 +565,7 @@
       if(player.grenadeCount === 5) txt = "FIVE!!";
       if(player.grenadeCount > 5) { 
         logMsg("You waited too long! The grenade exploded in your hand.");
-        player.hp = 0; die(); clearInterval(ticker);
+        die('grenade'); clearInterval(ticker);
       }
       document.getElementById('grenade-text').innerText = txt;
     }, 1000);

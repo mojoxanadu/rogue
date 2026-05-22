@@ -662,7 +662,7 @@
             currentLevel = 12; initMap(50); calculateFOV(); drawMap(); updateUI();
           } else {
             logMsg("<span style='color:var(--error)'>The Roc returns... and you are eaten.</span>");
-            isDead = true; die();
+            die('roc');
           }
         });
         calculateFOV(); drawMap(); updateUI();
@@ -723,7 +723,7 @@
           if(Math.random() < deathChance) {
             logMsg("<span style='color:var(--error); font-size:14px; font-weight:bold;'>🌑 The Grue strikes from the darkness! You never even saw it coming.</span>");
             player.hp = 0;
-            die();
+            die('grue');
             return;
           }
           if(danger === 15) msgIdx = 7;
@@ -1930,7 +1930,7 @@
 
     if (tile === TILES.LETTER) {
        let letter = window.letterMap ? window.letterMap[`${nx},${ny}`] : 'A';
-       if ("IEHOVA".indexOf(letter) === -1) { logMsg("Wrong letter!"); isDead = true; die(); return; }
+       if ("IEHOVA".indexOf(letter) === -1) { logMsg("Wrong letter!"); die('jehovah'); return; }
     }
 
     let eIdx = zone.npcs.findIndex(e => e.x === nx && e.y === ny);
@@ -2557,7 +2557,7 @@
   };
 
   window.bridgeAns = (correct) => {
-    if(!correct) { logMsg("AHHHHHHH!"); isDead = true; die(); return; }
+    if(!correct) { logMsg("AHHHHHHH!"); die('bridgekeeper'); return; }
     let m = document.getElementById('modal-content');
     m.innerHTML = `<h2>🧙‍♂️ Bridge of Death</h2>${modalPortraitHTML('npc_bridgekeeper_modal', '🧙‍♂️')}<p>Keeper: "What... is your quest?"</p>
       <button onclick="bridgeAns2(1)">"To seek the Holy Grail."</button>
@@ -2566,7 +2566,7 @@
   };
 
   window.bridgeAns2 = (correct) => {
-    if(!correct) { logMsg("AHHHHHHH!"); isDead = true; die(); return; }
+    if(!correct) { logMsg("AHHHHHHH!"); die('bridgekeeper'); return; }
     let m = document.getElementById('modal-content');
     let highInt = player.stats.int >= 15;
     m.innerHTML = `<h2>🧙‍♂️ Bridge of Death</h2>${modalPortraitHTML('npc_bridgekeeper_modal', '🧙‍♂️')}<p>Keeper: "What... is the airspeed velocity of an unladen swallow?"</p>
@@ -2578,7 +2578,7 @@
   window.bridgeAns3 = (win) => {
     hideOverlay();
     if(win) { logMsg("Keeper: 'What? I don't know that! AHHHHHHH!'"); zone.removeNpcs(e => e.type === 'bridge_keeper'); player.bridgeQuestions = true; }
-    else { logMsg("AHHHHHHH!"); isDead = true; die(); }
+    else { logMsg("AHHHHHHH!"); die('bridgekeeper'); }
   };
 
   // ============================================================================
