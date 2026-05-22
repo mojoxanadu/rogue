@@ -21,6 +21,8 @@ Type: `bug`, `cos` (cosmetic), `enh` (enhancement).
 | new    | 3   | enh  | level1Spell gate    | Wire tome-learning (mechanics.js:497) to gate on `talents.level1Spell.level` — currently unconditional.       |
 | new    | 3.5 | enh  | receiveHealing      | Add Sentient.receiveHealing() — central hook needed for Disciple of Life and similar healing-modifier talents.|
 | new    | 4   | enh  | floor/area split    | Dissociate floor numbers from area ids.                                                                       |
+| new    | 4   | bug  | wall loot pickup    | Wall-tile loot (e.g. ghost killed inside a wall) is unreachable — let the player bump the wall to grab it.     |
+| new    | 4   | enh  | dpad diagonal slide | When a tapped D-pad diagonal is blocked, slide to the open horizontal move, else the vertical one.            |
 | partial| 4   | enh  | foraging re-entry   | Spawn a small foraging-food batch when re-entering an already-cached floor (gen + per-turn paths impl; cache-restore path missing). |
 | new    | 4   | fix  | light levels        | Light levels don't work well; consolidate the various light/dark/visibility issues into one pass.             |
 | new    | 4   | enh  | damage types        | Support multiple damage types (Holy, etc.) end-to-end — prereq for Divine Strike / Divine Champion / Flame Strike. |

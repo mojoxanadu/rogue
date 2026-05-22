@@ -465,6 +465,12 @@
     floatingTexts.length = 0;
     activeEffects.length = 0;
     damageTint = 0;
+    // Reset debug toggles — a fresh game is a clean slate. Mutate the
+    // existing object in place (don't reassign) so state.js's debugFlags
+    // binding and every window.debugFlags reader keep pointing at it.
+    if (window.debugFlags) {
+      for (const k of Object.keys(window.debugFlags)) window.debugFlags[k] = false;
+    }
     window._sharkBossSpawned = false;
     window._cainHealedThisVisit = false;
     window._activeBombs = [];
@@ -887,8 +893,12 @@
         logMsg("<span style='color:var(--warning)'>🐀 You notice a rat scurrying across the floor, followed by a cat in hot pursuit!</span>");
         // Cat spawns a bit further away, chases the rat
         spawnNpc(zone.npcs, spawnTile.x + 1, spawnTile.y, 'cat', { stats: {...MONSTER_DEF['cat']} });
-        // Old boot appears at feet (harmless flavor item)
-        zone.dropAt(player.x + 1, player.y, ItemStack.fromIcon('👢'));
+        // Old boot appears at feet (harmless flavor item).
+        // Construct by name, not icon: the 👢 glyph is an unregistered
+        // duplicate of the oldBoot def (camelCase-collision-skipped in
+        // items_registry.js), so fromIcon('👢') would produce a defless
+        // stack that renders as a "?" named "👢".
+        zone.dropAt(player.x + 1, player.y, new ItemStack('oldBoot', 1));
         addFloatingText(spawnTile.x, spawnTile.y, '🐀', '#aaa', 14);
       }
     }
@@ -1238,7 +1248,7 @@
         ${hint ? `<p id="death-hint" style="color:#9cf; margin:8px 0; font-size:13px; max-width:300px;">💡 ${hint}</p>` : ''}
         <button onclick="loadGame()" style="display:block; margin:12px auto;">Load Game</button>
         <button onclick="restartGame()" style="display:block; margin:12px auto;">Restart (keep assets)</button>
-        <button onclick="location.reload()" style="display:block; margin:12px auto; opacity:0.6;">Full Reload</button>`;
+        <button onclick="location.reload()" style="display:block; margin:12px auto;">Full Reload</button>`;
     }, 600);
   }
 
