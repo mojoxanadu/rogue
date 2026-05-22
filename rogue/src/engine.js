@@ -664,7 +664,7 @@
       player.exhaustion += steps;
       if (player.exhaustion > 10) {
         let drainRate = Math.min(2, (player.exhaustion - 10) * 0.15);
-        player.hp -= (drainRate * steps);
+        applyPlayerDamage(drainRate * steps, 'exhaustion', { mitigate: false });
         player.mp = Math.max(0, player.mp - (drainRate * 0.5 * steps));
       }
     } else { player.exhaustion = Math.max(0, player.exhaustion - steps); }
@@ -727,8 +727,7 @@
     }
     // Hunger damage when starving
     if (player.hunger >= 100) {
-      player.hp -= CONSTANTS.HUNGER_DAMAGE * steps;
-      addFloatingText(player.x, player.y, "🍖 -" + CONSTANTS.HUNGER_DAMAGE.toFixed(1), "#f00");
+      applyPlayerDamage(CONSTANTS.HUNGER_DAMAGE * steps, 'hunger', { mitigate: false, suffix: '🍖' });
     }
     // Hunger heal when well-fed (optional)
     if (player.hunger <= 20) {
@@ -852,7 +851,7 @@
     }
 
     let curTile = theMap[player.y][player.x];
-    if (curTile === TILES.BLADE && !player.isKneeling) { player.hp -= 10; damageTint = 30; }
+    if (curTile === TILES.BLADE && !player.isKneeling) { applyPlayerDamage(10, 'trap', { mitigate: false }); }
 
     // Track player stationaryTurns for thief patrol AI
     if(player._lastX === player.x && player._lastY === player.y) {
@@ -942,13 +941,9 @@
     if(playerDist <= maxR) {
       const dmg = Math.max(0, baseDmg - Math.floor(playerDist) * dmgPerTile);
       if(dmg > 0) {
-        player.hp = Math.max(0, player.hp - dmg);
         logMsg(`<span style='color:#f44'>💥 The explosion catches you for ${dmg} damage!</span>`);
-        addFloatingText(player.x, player.y, `-${dmg}`, '#f00', 20);
-        damageTint = 30;
-        if(window.WebGLFX && WebGLFX.onPlayerDamage) WebGLFX.onPlayerDamage(dmg);
+        applyPlayerDamage(dmg, 'bomb', { mitigate: false, size: 20 });
         updateUI();
-        if(player.hp <= 0) { die(); return; }
       }
     }
 
