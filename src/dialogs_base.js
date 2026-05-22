@@ -40,42 +40,37 @@
         "Motto over the bar reads: \"Quanti Canicula Ille In Fenestra.\" Old Latin. " +
         "Means \"How much is that doggie in the window?\" Long story, don't ask.\n\n" +
         "We've also got an Inn-Sewer-Ants Policy — 50 quid, covers you for limb loss up to but not including the head. Highly recommended.",
+      // No '[Leave]' reply — the bottom Leave button handles closure.
+      // Only meaningful response options live in the replies list.
       replies: [
-        { text: '[Browse wares]', nextPhrase: '@shop' },
-        { text: '[Leave]',        nextPhrase: '@close' },
+        { text: 'Browse your wares.', nextPhrase: '@shop' },
       ],
     },
 
     // ── Vimes ────────────────────────────────────────────────
+    // No replies — pure flavor NPC. Bottom Leave is always there;
+    // Next is hidden when replies is empty.
     'mended_drum_vimes_greet': {
       message: quipsFrom('vimes', "I'm off duty. Which means I'm still on duty."),
-      replies: [
-        { text: '[Leave]', nextPhrase: '@close' },
-      ],
     },
 
     // ── Cohen ────────────────────────────────────────────────
     'mended_drum_cohen_greet': {
       message: quipsFrom('cohen', "Young people today. Always complaining."),
-      replies: [
-        { text: '[Leave]', nextPhrase: '@close' },
-      ],
     },
 
     // ── Librarian ────────────────────────────────────────────
     'mended_drum_librarian_greet': {
       message: quipsFrom('librarian', 'Ook.'),
-      replies: [
-        { text: '[Leave]', nextPhrase: '@close' },
-      ],
     },
 
     // ── Dorimunde Ironchin ───────────────────────────────────
+    // Real response retained ("Sorry, no.") — that's actual content,
+    // distinct from the redundant Leave.
     'mended_drum_dorimunde_greet': {
       message: quipsFrom('bearded_dwarf', 'Excuse me, do you know where The Dirty Rat is?'),
       replies: [
         { text: 'Sorry, no.', nextPhrase: '@close' },
-        { text: '[Leave]',    nextPhrase: '@close' },
       ],
     },
   });
