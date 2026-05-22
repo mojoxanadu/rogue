@@ -1249,12 +1249,12 @@
             : ''}
         </div>`;
       } else if(type === 'mended_drum_barman') {
-        html = `<div style="padding:8px; display:flex; flex-direction:column; gap:6px;">
-          <p style="margin:0;">The barkeep jerks a thumb toward the regulars.</p>
-          <button onclick="mendedDrumChat('vimes')">Chat with Commander Vimes</button>
-          <button onclick="mendedDrumChat('cohen')">Chat with Cohen the Barbarian</button>
-          <button onclick="mendedDrumChat('librarian')">Chat with The Librarian</button>
-          <button onclick="mendedDrumChat('bearded_dwarf')">Chat with Dorimunde Ironchin</button>
+        // The 4 patrons are now real NPCs on the map (Vimes/Cohen/Librarian/
+        // Dorimunde at the perimeter of the Drum). Bump them directly to
+        // chat — handled by the Dialog system. The barman's chat tab is
+        // now just a flavor pointer.
+        html = `<div style="padding:8px;">
+          <p style="margin:0; color:#bbb;">The barkeep jerks a thumb at the regulars scattered around the bar. <em>"Go on, talk to 'em if you must."</em></p>
         </div>`;
       } else {
         html = `<p style="color:#aaa; font-size:12px;">Nothing to discuss.</p>`;
