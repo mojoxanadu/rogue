@@ -37,6 +37,11 @@ FILES = [
     'player.js',
     'limerick_api.js',
     'ui_logic.js',
+    # Dialog system (Andor's-Trail-style conversation trees). Loaded BEFORE
+    # quest packs so packs can call Dialog.registerPhrases / injectReply in
+    # their IIFEs. dialog.js has no deps; dialogs_base.js only needs Dialog.
+    'dialog.js',
+    'dialogs_base.js',
     # Quest packs BEFORE quest_engine (registration pattern)
     'quests_base.js',
     'quests_monkey_island.js',
@@ -49,6 +54,7 @@ FILES = [
     'quests_larry.js',
     'quests_space_quest.js',
     'quests_qfg.js',
+    'quests_monty_python_bridge.js',
     # Quest engine collects all registered packs
     'quest_engine.js',
     'boundary_data.js',

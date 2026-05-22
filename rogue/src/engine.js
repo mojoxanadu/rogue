@@ -1931,9 +1931,10 @@
       }
     }
     
-    // Bridge Keeper (v7.2.0)
-    let keeperIdx = zone.npcs.findIndex(e => e.type === 'bridge_keeper' && e.x === nx && e.y === ny);
-    if (keeperIdx !== -1 && !player.bridgeQuestions) { bridgeTrial(keeperIdx); return; }
+    // Bridge Keeper trigger removed — keeper now opts into the Dialog system
+    // via phraseId. The quests_monty_python_bridge.js pack registers the
+    // 3-question tree (bridge_keeper_q1/q2/q3/win/lose). The general
+    // phraseId branch a few lines below handles the bump.
 
     if (tile === TILES.LETTER) {
        let letter = window.letterMap ? window.letterMap[`${nx},${ny}`] : 'A';
@@ -1944,6 +1945,17 @@
     if (eIdx !== -1) {
       // Non-hostile NPC interactions
       let npc = zone.npcs[eIdx];
+
+      // Andor's-Trail-style dialog: NPCs with a phraseId opt into the new
+      // Dialog system. Everything below this is legacy per-NPC handling
+      // that we'll migrate NPC-by-NPC in tier-2+. Tier-1 migrants today:
+      // mended_drum_barman + 4 patrons (vimes/cohen/librarian/bearded_dwarf),
+      // and bridge_keeper (spawn + tree owned by quests_monty_python_bridge.js).
+      if (npc.phraseId && typeof Dialog !== 'undefined') {
+        Dialog.startWith(npc, npc.phraseId);
+        return;
+      }
+
       if(npc.type === 'chaplain') {
         openShop('chaplain');
         return;
@@ -1983,12 +1995,11 @@
         openShop('town_guard');
         return;
       }
-      // E.TRIST.MENDED_DRUM: Discworld bar NPCs
+      // E.TRIST.MENDED_DRUM (legacy fallback): if the Drum cohort somehow
+      // loses its phraseId (e.g. dialog system disabled), fall back to the
+      // old shared shop. Normally the Dialog branch above intercepts first.
       if(['mended_drum_barman','cohen','librarian','vimes','bearded_dwarf'].includes(npc.type)) {
         openShop('mended_drum_barman');
-        if(npc.type !== 'mended_drum_barman' && typeof storeTab === 'function') {
-          setTimeout(() => storeTab('chat', 'mended_drum_barman'), 10);
-        }
         return;
       }
       if(npc.type === 'dennis_wife') {
@@ -2554,39 +2565,11 @@
     updateUI();
   };
 
-  window.bridgeTrial = (idx) => {
-    let m = document.getElementById('modal-content');
-    m.innerHTML = `<h2>🧙‍♂️ Bridge of Death</h2>${modalPortraitHTML('npc_bridgekeeper_modal', '🧙‍♂️')}<p>Keeper: "What... is your name?"</p>
-      <button onclick="bridgeAns(1)">"Sir Lancelot of Camelot."</button>
-      <button onclick="bridgeAns(0)">"Galahad the... wait!"</button>`;
-    showOverlay();
-    if(typeof Sound !== 'undefined' && Sound.playVoice) setTimeout(() => Sound.playVoice('voice_bridgekeeper_q1'), 30);
-  };
-
-  window.bridgeAns = (correct) => {
-    if(!correct) { logMsg("AHHHHHHH!"); die('bridgekeeper'); return; }
-    let m = document.getElementById('modal-content');
-    m.innerHTML = `<h2>🧙‍♂️ Bridge of Death</h2>${modalPortraitHTML('npc_bridgekeeper_modal', '🧙‍♂️')}<p>Keeper: "What... is your quest?"</p>
-      <button onclick="bridgeAns2(1)">"To seek the Holy Grail."</button>
-      <button onclick="bridgeAns2(0)">"To find a nice shrubbery."</button>`;
-    if(typeof Sound !== 'undefined' && Sound.playVoice) setTimeout(() => Sound.playVoice('voice_bridgekeeper_q2'), 30);
-  };
-
-  window.bridgeAns2 = (correct) => {
-    if(!correct) { logMsg("AHHHHHHH!"); die('bridgekeeper'); return; }
-    let m = document.getElementById('modal-content');
-    let highInt = player.stats.int >= 15;
-    m.innerHTML = `<h2>🧙‍♂️ Bridge of Death</h2>${modalPortraitHTML('npc_bridgekeeper_modal', '🧙‍♂️')}<p>Keeper: "What... is the airspeed velocity of an unladen swallow?"</p>
-      <button onclick="bridgeAns3(0)">"24 miles per hour?"</button>
-      ${highInt ? `<button onclick="bridgeAns3(1)">"What do you mean? African or European swallow?"</button>` : ''}`;
-    if(typeof Sound !== 'undefined' && Sound.playVoice) setTimeout(() => Sound.playVoice('voice_bridgekeeper_q3'), 30);
-  };
-
-  window.bridgeAns3 = (win) => {
-    hideOverlay();
-    if(win) { logMsg("Keeper: 'What? I don't know that! AHHHHHHH!'"); zone.removeNpcs(e => e.type === 'bridge_keeper'); player.bridgeQuestions = true; }
-    else { logMsg("AHHHHHHH!"); die('bridgekeeper'); }
-  };
+  // bridgeTrial / bridgeAns / bridgeAns2 / bridgeAns3 deleted — the bridge
+  // keeper now uses the Dialog system. See quests_monty_python_bridge.js for
+  // the 3-question tree (phrase ids bridge_keeper_q1/q2/q3/win/lose). The
+  // player.bridgeQuestions flag is gone too; the keeper is despawned via the
+  // @remove sentinel on the win phrase.
 
   // ============================================================================
   // ATLANTEAN BEAD MACHINE INTERACTION (Indiana Jones: Fate of Atlantis)

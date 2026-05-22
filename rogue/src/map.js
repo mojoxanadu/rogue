@@ -323,7 +323,16 @@
     window._mendedDrumX = drumX;
     window._mendedDrumY = drumY;
     // Place Mended Drum NPCs
-    spawnNpc(town.enemies, drumX - 1, drumY - 1, "mended_drum_barman", { stats: { icon: '🧔', hp: 999, maxHp: 999, dmg: 0, hit: 0, crit: 0, dodge: 0, speed: 0, throughWalls: false, passive: true, quest: true }, isQuestNPC: true, _stayInShop: true });
+    spawnNpc(town.enemies, drumX - 1, drumY - 1, "mended_drum_barman", { stats: { icon: '🧔', hp: 999, maxHp: 999, dmg: 0, hit: 0, crit: 0, dodge: 0, speed: 0, throughWalls: false, passive: true, quest: true }, isQuestNPC: true, _stayInShop: true, phraseId: 'mended_drum_barman_greet' });
+    // ── Mended Drum patrons — Dialog-system tier-1 cohort ──
+    // Each patron stands on a perimeter floor tile of the 3x3 around the
+    // STORE marker; barman is at (drumX-1, drumY-1). Each carries a phraseId
+    // so the new dialog system handles bumping them instead of the old
+    // mendedDrumChat() modal.
+    spawnNpc(town.enemies, drumX,     drumY - 1, "vimes",         { stats: { ...MONSTER_DEF['vimes'] },         isQuestNPC: true, _stayInShop: true, phraseId: 'mended_drum_vimes_greet' });
+    spawnNpc(town.enemies, drumX + 1, drumY - 1, "cohen",         { stats: { ...MONSTER_DEF['cohen'] },         isQuestNPC: true, _stayInShop: true, phraseId: 'mended_drum_cohen_greet' });
+    spawnNpc(town.enemies, drumX - 1, drumY + 1, "librarian",     { stats: { ...MONSTER_DEF['librarian'] },     isQuestNPC: true, _stayInShop: true, phraseId: 'mended_drum_librarian_greet' });
+    spawnNpc(town.enemies, drumX + 1, drumY + 1, "bearded_dwarf", { stats: { ...MONSTER_DEF['bearded_dwarf'] }, isQuestNPC: true, _stayInShop: true, phraseId: 'mended_drum_dorimunde_greet' });
 
     // Ensure guaranteed clear routes from town gate to key buildings and Mended Drum
     const gateInsideX = absGateX;
@@ -1233,7 +1242,9 @@
       for(let i=5; i<15; i++) theMap[10][i] = TILES.LETTER; // IEHOVA name-of-god trial
       theMap[12][10] = TILES.BLADE;                         // Breath-of-god trial (kneel)
       
-      spawnNpc(zone.npcs, 15, 10, "bridge_keeper", { stats: {...MONSTER_DEF["bridge_keeper"]} });
+      // bridge_keeper now spawned by quests_monty_python_bridge.js (drop-in
+      // quest pack) via an enter_level 'desert' hook. Removing that pack
+      // removes the keeper entirely.
       spawnNpc(zone.npcs, 20, 20, "black_knight", { stats: {...MONSTER_DEF["black_knight"]} });
       spawnNpc(zone.npcs, 5, 5, "killer_rabbit", { stats: {...MONSTER_DEF["killer_rabbit"]} });
       spawnNpc(zone.npcs, 2, 15, "french_taunter", { stats: {...MONSTER_DEF["french_taunter"]} });
