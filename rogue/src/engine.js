@@ -1145,7 +1145,70 @@
     calculateFOV(); drawMap(); updateUI();
   };
 
-  function die() {
+  // Death-cause hint table. die(cause) shows one of these in the
+  // death modal. A situational override (>=2 adjacent hostiles)
+  // takes precedence — see resolveDeathHint.
+  const DEATH_HINTS = {
+    combat:       "Retreat and heal when your HP runs low.",
+    hunger:       "Consider learning the Foraging talent — and eat before you starve.",
+    exhaustion:   "Running drains HP when you're exhausted. Walk it off.",
+    grue:         "Never cross dark tiles without a light source.",
+    bomb:         "Get clear of explosions before they go off.",
+    poison:       "Be wary of dubious food found in dungeons.",
+    trap:         "Kneel to pass blade traps unharmed.",
+    collapse:     "Don't dawdle when the dungeon starts coming down.",
+    kickback:     "Kicking locked containers hurts — mind your HP first.",
+    roc:          "Befriend the Eagle to escape the Roc's nest.",
+    jehovah:      "The name of God begins with an 'I' in the Latin alphabet.",
+    bridgekeeper: "Go watch Monty Python and the Holy Grail.",
+    grenade:      "Three shall be the number thou shalt count.",
+  };
+
+  function countAdjacentHostiles() {
+    if (typeof zone === 'undefined' || !zone.npcs) return 0;
+    return zone.npcs.filter(e => {
+      if (!e || typeof e.x !== 'number') return false;
+      const dx = Math.abs(e.x - player.x), dy = Math.abs(e.y - player.y);
+      if (dx > 1 || dy > 1 || (dx === 0 && dy === 0)) return false;
+      return (typeof e.isHostile === 'function')
+        ? e.isHostile()
+        : !(e.stats && (e.stats.passive || e.stats.quest)) && !e.friendly && !e.farmAnimal;
+    }).length;
+  }
+
+  function resolveDeathHint(cause) {
+    if (countAdjacentHostiles() >= 2)
+      return "Fight one monster at a time — don't let them surround you.";
+    return DEATH_HINTS[cause] || '';
+  }
+
+  // Single funnel for ALL player HP loss. `cause` is a death-cause
+  // tag (see DEATH_HINTS). opts.mitigate=true routes through
+  // player.takeDamage so talents (Toughness) apply — use only for
+  // combat. Returns true if the hit was lethal (die() fired).
+  function applyPlayerDamage(amount, cause = 'unknown', opts = {}) {
+    let actual;
+    if (opts.mitigate && typeof player.takeDamage === 'function') {
+      actual = player.takeDamage(amount, opts.kind || 'corporal');
+    } else {
+      actual = Math.max(0, amount);
+      player.hp -= actual;
+    }
+    if (actual <= 0) {
+      addFloatingText(player.x, player.y, 'absorb', '#9c9', 14);
+      return false;
+    }
+    damageTint = 30;
+    const shown = Number.isInteger(actual) ? actual : Number(actual.toFixed(1));
+    const label = opts.suffix ? `-${shown}${opts.suffix}` : `-${shown}`;
+    addFloatingText(player.x, player.y, label, opts.color || '#f00', opts.size ?? 22);
+    if (window.WebGLFX && WebGLFX.onPlayerDamage) WebGLFX.onPlayerDamage(actual, opts.kind);
+    if (player.hp <= 0) { die(cause); return true; }
+    return false;
+  }
+  window.applyPlayerDamage = applyPlayerDamage;
+
+  function die(cause = 'unknown') {
     let crystalIdx = inventory.findIndex(i => i && i.itemName === 'resurrectionCrystal');
     if (crystalIdx !== -1) {
       logMsg("Crystal Shatters!");
@@ -1170,13 +1233,15 @@
     isDead = true; Sound.scream(); drawMap();
     setTimeout(() => {
       const deathMsg = window._lastDeathMessage || '';
+      const hint = resolveDeathHint(cause);
       showOverlay();
       document.getElementById('modal-content').innerHTML = `<h2>YOU DIED</h2>
         <p style="color:#888;">Floor ${currentLevel} | Level ${player.level} | ${player.gp}g</p>
         ${deathMsg ? `<p id="death-msg" style="color:#f88; font-style:italic; margin:8px 0; font-size:13px; max-width:300px;">${deathMsg}</p>` : ''}
-        <button onclick="loadGame()">Load Game</button>
-        <button onclick="restartGame()">Restart (keep assets)</button>
-        <button onclick="location.reload()" style="margin-left:8px; opacity:0.6;">Full Reload</button>`;
+        ${hint ? `<p id="death-hint" style="color:#9cf; margin:8px 0; font-size:13px; max-width:300px;">💡 ${hint}</p>` : ''}
+        <button onclick="loadGame()" style="display:block; margin:12px auto;">Load Game</button>
+        <button onclick="restartGame()" style="display:block; margin:12px auto;">Restart (keep assets)</button>
+        <button onclick="location.reload()" style="display:block; margin:12px auto; opacity:0.6;">Full Reload</button>`;
     }, 600);
   }
 
