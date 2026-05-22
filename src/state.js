@@ -47,7 +47,7 @@
   */
   // Core game‑balance constants. Adjust these to change the feel of the game.
   const CONSTANTS = {
-    HUNGER_RATE: 0.01,
+    HUNGER_RATE: 0.1,
     HUNGER_DAMAGE: 0.5,
     HUNGER_HEAL: 0.0,
     SPAWN_RATE: 0.02,
@@ -553,7 +553,6 @@
     "👺": { name: "Masque of Clavicus Vile", type: "armor", slot: "head", stackable: false, evadePercent: 5, maxGP: 50000 },
     "🥾": { name: "Old Boot", type: "armor", slot: "feet", stackable: false, evadePercent: 0, defenseBonus: 2, maxGP: 2 },
     "🥾⚔️": { name: "Fighter's Boots", type: "armor", slot: "feet", stackable: false, evadePercent: 5, defenseBonus: 4, maxGP: 75 },
-    "👢": { name: "Old Boot", type: "armor", slot: "feet", stackable: false, evadePercent: 0, defenseBonus: 2, maxGP: 2 },
     "💍⚡": { name: "Ring of Evasion", type: "armor", slot: "rightHand", stackable: false, evadePercent: 20, maxGP: 5000 },
     "💍": { name: "Ring of Midas", type: "armor", slot: "rightHand", stackable: false, evadePercent: -20, maxGP: 500 },
     "🥻": { name: "Robe", type: "armor", slot: "chest", stackable: false, evadePercent: 0, intBonus: 1, maxGP: 30 },

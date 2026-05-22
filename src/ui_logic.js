@@ -319,8 +319,12 @@ function _performStickyMove(src, target) {
           hpFill.style.height = `${hpPct}%`;
         }
         if (hpText) {
-          const hp = isNaN(player.hp) ? 0 : Math.floor(player.hp);
-          const maxHp = isNaN(player.maxHp) ? 16 : Math.floor(player.maxHp);
+          // Ceil, not floor: a living player (hp > 0, e.g. 0.5 from hunger
+          // drain) must never read "0" on the orb while still alive.
+          // Clamp display to >= 0: an overkill hit drives player.hp negative,
+          // but the orb should bottom out at "0", not flash "-3".
+          const hp = isNaN(player.hp) ? 0 : Math.max(0, Math.ceil(player.hp));
+          const maxHp = isNaN(player.maxHp) ? 16 : Math.ceil(player.maxHp);
           hpText.innerText = `${hp}/${maxHp}`;
         }
         // B17 FIX: Draw WebGL fluid effect on hp-wave-canvas inside the orb
@@ -340,8 +344,9 @@ function _performStickyMove(src, target) {
           mpFill.style.height = `${mpPct}%`;
         }
         if (mpText) {
-          const mp = isNaN(player.mp) ? 0 : Math.floor(player.mp);
-          const maxMp = isNaN(player.maxMp) ? 0 : Math.floor(player.maxMp);
+          // Ceil + clamp to >= 0, matching the HP orb.
+          const mp = isNaN(player.mp) ? 0 : Math.max(0, Math.ceil(player.mp));
+          const maxMp = isNaN(player.maxMp) ? 0 : Math.ceil(player.maxMp);
           mpText.innerText = `${mp}/${maxMp}`;
         }
         // B17 FIX: Draw WebGL fluid effect on mp-wave-canvas inside the orb
@@ -2927,6 +2932,16 @@ function _performStickyMove(src, target) {
     logMsg(`<pre style="color:#aef; font-size:10px; margin:0; white-space:pre-wrap;">${JSON.stringify(out, null, 2)}</pre>`);
   };
   window.debugAddStatPoints = (amt) => { player.statPoints += amt; logMsg(`Added ${amt} stat points.`); updateUI(); };
+  // Debug: flood the current floor with 20 containers for kick/loot testing.
+  // One-shot call into the same spawnContainers path initMap uses for normal
+  // placement — containers are passive Lootables (not ticked per turn), so the
+  // only cost is drawing the extra sprites. No engine impact beyond that.
+  window.debugSpawnFloorLoot = () => {
+    if (typeof spawnContainers !== 'function') { logMsg('spawnContainers unavailable in this scene.'); return; }
+    spawnContainers(20, currentLevel);
+    drawMap();
+    logMsg(`<span style="color:var(--success)">📦 Spawned 20 containers on Floor ${currentLevel}.</span>`);
+  };
   // Floor navigation (floor = the current dungeon depth; level = player character level)
   window.debugWarpNextFloor = () => { currentLevel++; levelCache[currentLevel] = null; initMap(50); calculateFOV(); drawMap(); updateUI(); logMsg(`Warped to Floor ${currentLevel}.`); };
   window.debugWarpPrevFloor = () => { if(currentLevel > 0) { currentLevel--; levelCache[currentLevel] = null; initMap(50); calculateFOV(); drawMap(); updateUI(); logMsg(`Warped to Floor ${currentLevel}.`); } };
