@@ -537,23 +537,10 @@
       webglImpact(dmg, x, y) {
         if (window.WebGLFX && WebGLFX.onCombatImpact) WebGLFX.onCombatImpact(dmg, x, y);
       },
-      // Apply HP loss to player + tint + floating text + die() check.
-      // Returns true if die() fired so callers can early-return.
-      // Damage flows through Player.takeDamage so talents (Toughness,
-      // future resistances) can reduce it. A fully-absorbed hit shows
-      // "absorb" in place of the negative number.
+      // Combat/effect damage — delegates to the central funnel with
+      // cause 'combat' so the Second Wind talent can intercept.
       damagePlayer(dmg, kind, size, suffix, color) {
-        const actual = player.takeDamage(dmg, kind);
-        if (actual <= 0) {
-          addFloatingText(player.x, player.y, 'absorb', '#9c9', 14);
-          return false;
-        }
-        damageTint = 30;
-        const label = suffix ? `-${actual}${suffix}` : `-${actual}`;
-        addFloatingText(player.x, player.y, label, color || '#f00', size ?? 22);
-        if (window.WebGLFX && WebGLFX.onPlayerDamage) WebGLFX.onPlayerDamage(actual, kind);
-        if (player.hp <= 0) { die(); return true; }
-        return false;
+        return applyPlayerDamage(dmg, 'combat', { mitigate: true, kind, size, suffix, color });
       },
       // Generic named-event SFX dispatcher. Lets NPC.attack say
       // "play the grunt event" without naming Sound.grunt directly.
