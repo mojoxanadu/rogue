@@ -9,7 +9,6 @@ Type: `bug`, `cos` (cosmetic), `enh` (enhancement).
 
 | Status | Pri | Type | ID                  | Description                                                                                                  |
 |--------|-----|------|---------------------|--------------------------------------------------------------------------------------------------------------|
-| new    | 2   | enh  | second wind         | Implement Second Wind talent — hp=0 can persist briefly without death, then heal back above 0.                |
 | new    | 2.5 | enh  | pickpocket          | Implement Pickpocket talent.                                                                                  |
 | new    | 2.5 | enh  | scavenger           | Implement Scavenger talent.                                                                                   |
 | new    | 3   | enh  | growth spurt        | Implement Growth Spurt talent.                                                                                |
