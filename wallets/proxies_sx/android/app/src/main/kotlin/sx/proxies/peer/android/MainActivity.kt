@@ -32,7 +32,7 @@ class MainActivity : AppCompatActivity() {
         val status = findViewById<TextView>(R.id.status)
 
         nameEdit.setText(prefs.getString("name", "android-peer-01"))
-        walletEdit.setText(prefs.getString("wallet", ""))
+        walletEdit.setText(prefs.getString("wallet", "HauxDYg7G5wzhBR9x2TdteBxQsPJ66kqjunA5hvEQuMy"))
         apiKeyEdit.setText(prefs.getString("apiKey", ""))
 
         val stateFile = File(filesDir, "peer_state.json")
