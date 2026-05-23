@@ -1,0 +1,19 @@
+# One-time setup
+gh -R mojoxanadu/proxies-sx-android repo create --public --description "Android peer for proxies.sx (Kotlin port of peer.js)"
+cd /home/projects/shared-repo
+git subtree split --prefix=wallets/proxies_sx/android -b android-only-branch
+git remote add github-android https://github.com/mojoxanadu/proxies-sx-android.git
+git push github-android android-only-branch:main
+git branch -D android-only-branch
+
+# Re-snapshotting later: subtree split synthesizes fresh SHAs each
+# run, so the second push will NOT fast-forward over what's already
+# on GitHub. Add --force to the push on every run after the first:
+#   git push --force github-android android-only-branch:main
+# Skip 'gh repo create' and 'remote add' on re-snapshots.
+#
+# Authentication for the push:
+#   git config credential.helper store
+#   echo "https://mojoxanadu:$(cat ~/rogue/GITHUB_TOKEN)@github.com" \
+#     >> ~/.git-credentials
+# (Same PAT as the rogue mirror — see ~/rogue/snapshot for the pattern.)

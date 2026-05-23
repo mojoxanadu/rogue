@@ -8,3 +8,10 @@ proxies_sx/node_modules/
 proxies_sx/peer.log
 proxies_sx/peer.log.*
 proxies_sx/peer_pid
+
+# Android project build output + local secrets
+proxies_sx/android/.gradle/
+proxies_sx/android/build/
+proxies_sx/android/*/build/
+proxies_sx/android/local.properties
+proxies_sx/android/**/peer_state.json
