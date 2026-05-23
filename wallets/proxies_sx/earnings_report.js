@@ -10,7 +10,10 @@ const nodemailer = require('nodemailer');
 
 const STATE_FILE   = __dirname + '/register_response.json';
 const API          = 'https://api.proxies.sx';
-const RECIPIENT    = 'jc22q@proton.me';
+// Both recipients in To: (not BCC) — daily report goes to both inboxes.
+// Sender (smtpUser, jc24q@pm.me) is included so that account also keeps
+// a record in its own Inbox, not just in Sent.
+const RECIPIENTS   = ['jc22q@proton.me', 'jc24q@pm.me'];
 const SMTP_HOST    = '127.0.0.1';
 const SMTP_PORT    = 1025;
 const GSM_PROJECT  = 'rosie-portal-2026';
@@ -20,6 +23,22 @@ function gsm(name) {
     'secrets', 'versions', 'access', 'latest',
     `--secret=${name}`, `--project=${GSM_PROJECT}`,
   ], { encoding: 'utf8' }).replace(/\s+$/, '');
+}
+
+async function refreshJwt(state) {
+  // The JWT has a 1-hour lifetime. This script runs once a day, so the
+  // cached value in register_response.json is essentially always stale
+  // by the time we read it — refresh first to avoid 401s.
+  const res = await fetch(`${API}/v1/peer/agents/${state.deviceId}/refresh`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refreshToken: state.refreshToken }),
+  });
+  if (!res.ok) throw new Error(`refresh ${res.status}: ${await res.text()}`);
+  const j = await res.json();
+  state.jwt = j.jwt;
+  if (j.refreshToken) state.refreshToken = j.refreshToken;
+  fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
 }
 
 async function fetchEarnings(jwt, deviceId) {
@@ -61,6 +80,11 @@ function formatBody(e, deviceId) {
 
 (async () => {
   const state = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
+  // Best-effort refresh. The refresh endpoint is rate-limited; if peer.js
+  // has refreshed recently, ours may 429. That's fine — the cached JWT in
+  // register_response.json was just written by peer.js and is fresh.
+  try { await refreshJwt(state); }
+  catch (e) { console.log(new Date().toISOString(), 'refresh skipped:', e.message); }
   const earnings = await fetchEarnings(state.jwt, state.deviceId);
 
   const smtpUser = gsm('rosie-smtp-user');
@@ -80,7 +104,7 @@ function formatBody(e, deviceId) {
 
   const info = await transporter.sendMail({
     from: smtpUser,
-    to: RECIPIENT,
+    to: RECIPIENTS,
     subject,
     text: formatBody(earnings, state.deviceId),
   });

@@ -114,8 +114,6 @@ function connect(relayUrl) {
   log('connecting to', relayUrl);
   const ws = new WebSocket(relayUrl, [`token.${state.jwt}`]);
 
-  let refreshTimer;
-
   ws.on('open', () => {
     log('ws open');
     send(ws, {
@@ -125,10 +123,6 @@ function connect(relayUrl) {
       protocol: 'json-v1',
       version: '1.0.0',
     });
-    // Refresh JWT every 50 minutes (before 60-min expiry).
-    refreshTimer = setInterval(() => {
-      refreshJwt().catch(e => log('refresh error:', e.message));
-    }, 50 * 60 * 1000);
   });
 
   ws.on('message', (raw) => {
@@ -173,7 +167,6 @@ function connect(relayUrl) {
 
   ws.on('close', (code, reason) => {
     log('ws closed', code, reason.toString());
-    clearInterval(refreshTimer);
     for (const s of tunnels.values()) s.destroy();
     tunnels.clear();
     setTimeout(() => connect(state.relay), 5000);
@@ -184,9 +177,16 @@ function connect(relayUrl) {
 
 process.on('SIGINT', () => { log('shutting down'); process.exit(0); });
 
-// Refresh JWT once at startup — the cached token may be expired if the
-// process was stopped longer than the 60-minute JWT lifetime. After this,
-// the in-loop 50-minute timer keeps it fresh.
-refreshJwt()
-  .catch(e => log('startup refresh failed (will try with cached jwt):', e.message))
-  .finally(() => connect(state.relay));
+// Refresh JWT every 50 min on a STANDALONE timer that lives at process
+// scope — independent of WebSocket open/close. Previously this timer was
+// scheduled inside ws.on('open') and cancelled inside ws.on('close'),
+// which meant on cycling networks (or extended idle periods where the
+// relay drops the socket) the timer never fired and the JWT silently
+// aged past its 1h TTL, producing an infinite 4002 reconnect loop.
+// Calling once at startup, then every 50 min thereafter.
+async function refreshLoop() {
+  try { await refreshJwt(); }
+  catch (e) { log('refresh error:', e.message); }
+}
+refreshLoop().finally(() => connect(state.relay));
+setInterval(refreshLoop, 50 * 60 * 1000);
