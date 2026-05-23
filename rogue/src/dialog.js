@@ -155,7 +155,14 @@
         this._log.push({
           kind: 'speaker',
           icon: (npc && npc.stats && npc.stats.icon) || '🗣',
-          name: phrase.speaker || (npc && npc.stats && npc.stats.name) || (npc && npc.type) || 'NPC',
+          // Resolution order: explicit phrase.speaker > NPC stats.name >
+          // prettified npc.type ('mended_drum_barman' → 'Mended Drum Barman')
+          // > 'NPC'. The prettifier exists so a NEW spawn site that forgets
+          // to set a name doesn't leak underscores into the UI.
+          name: phrase.speaker
+            || (npc && npc.stats && npc.stats.name)
+            || (npc && this._prettyType(npc.type))
+            || 'NPC',
           text: message,
         });
       }
@@ -327,6 +334,11 @@
       }
       // system
       return `<div style="margin:6px 0; color:#fc9; text-align:center; font-size:11px; font-style:italic;">${this._escape(entry.text)}</div>`;
+    },
+
+    _prettyType(type) {
+      if (!type) return null;
+      return String(type).split('_').map(w => w ? w[0].toUpperCase() + w.slice(1) : '').join(' ').trim();
     },
 
     _escape(s) {
