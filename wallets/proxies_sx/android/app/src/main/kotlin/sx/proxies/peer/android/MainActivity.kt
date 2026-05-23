@@ -2,6 +2,7 @@ package sx.proxies.peer.android
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Build
@@ -21,6 +22,14 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // If the service is already running, skip the form and go straight
+        // to the status screen — re-launching the app shouldn't ask for
+        // credentials we already have.
+        if (PeerService.isRunning) {
+            startActivity(Intent(this, RunningActivity::class.java))
+            finish()
+            return
+        }
         setContentView(R.layout.activity_main)
         prefs = getSharedPreferences("peer", Context.MODE_PRIVATE)
 
@@ -56,7 +65,10 @@ class MainActivity : AppCompatActivity() {
                 wallet = walletEdit.text.toString().trim(),
                 name = nameEdit.text.toString().trim(),
             )
-            status.text = "Service started — check the notification."
+            // Navigate to the running screen so it's obvious what's happening
+            // — the form vanishes, replaced by live status.
+            startActivity(Intent(this, RunningActivity::class.java))
+            finish()
         }
 
         stopBtn.setOnClickListener {

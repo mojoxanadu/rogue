@@ -20,6 +20,8 @@
             </intent-filter>
         </activity>
 
+        <activity android:name=".RunningActivity" android:exported="false" />
+
         <service
             android:name=".PeerService"
             android:exported="false"

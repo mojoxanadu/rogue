@@ -20,6 +20,12 @@ class PeerService : Service() {
         const val EXTRA_WALLET = "wallet"
         const val EXTRA_NAME = "name"
 
+        // Observed by RunningActivity to render live status without binding.
+        @Volatile var isRunning: Boolean = false; private set
+        @Volatile var isVerified: Boolean = false; private set
+        @Volatile var deviceId: String? = null; private set
+        @Volatile var latestStatus: String = "Stopped"; private set
+
         fun start(ctx: Context, apiKey: String?, wallet: String, name: String) {
             val i = Intent(ctx, PeerService::class.java).apply {
                 putExtra(EXTRA_API_KEY, apiKey)
@@ -36,12 +42,21 @@ class PeerService : Service() {
     }
 
     @Volatile private var client: PeerClient? = null
-    @Volatile private var verified = false
 
     override fun onCreate() {
         super.onCreate()
         createChannel()
+        isRunning = true
+        isVerified = false
+        latestStatus = "Starting…"
         startForeground(NOTIF_ID, buildNotification("Starting…"))
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        isRunning = false
+        isVerified = false
+        latestStatus = "Stopped"
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -62,11 +77,13 @@ class PeerService : Service() {
                 }
                 runCatching { reg.refresh(state); stateFile.writeText(state.toJson()) }
                 updateNotification("Connecting to ${state.relay}")
+                deviceId = state.deviceId
                 val pc = PeerClient(stateFile, state, reg) { line ->
                     Log.i("PeerService", line)
-                    if (!verified && (line.contains("verified") || line.contains("probe_result"))) {
-                        verified = true
+                    if (!isVerified && (line.contains("verified") || line.contains("probe_result"))) {
+                        isVerified = true
                     }
+                    latestStatus = line.take(120)
                     updateNotification(line.take(80))
                 }
                 client = pc
@@ -95,7 +112,7 @@ class PeerService : Service() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         return Notification.Builder(this, CHAN_ID)
-            .setSmallIcon(if (verified) R.drawable.ic_dollar else R.drawable.ic_hourglass)
+            .setSmallIcon(if (isVerified) R.drawable.ic_dollar else R.drawable.ic_hourglass)
             .setContentTitle("Proxies.sx peer")
             .setContentText(text)
             .setContentIntent(tap)
