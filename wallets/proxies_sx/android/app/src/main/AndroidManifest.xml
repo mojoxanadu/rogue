@@ -10,9 +10,7 @@
 
     <application
         android:label="Proxies.sx Peer"
-        android:allowBackup="true"
-        android:fullBackupContent="@xml/backup_rules"
-        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:allowBackup="false"
         android:theme="@style/Theme.AppCompat.DayNight">
 
         <activity android:name=".MainActivity" android:exported="true">
