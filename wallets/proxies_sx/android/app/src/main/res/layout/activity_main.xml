@@ -29,7 +29,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Proxies.sx API key (optional, links to farmer account)"
-        android:inputType="textPassword" />
+        android:inputType="textVisiblePassword" />
 
     <LinearLayout
         android:layout_width="match_parent"

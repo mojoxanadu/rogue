@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Same rules, Android 12+ schema. cloud-backup = restored on app
+     reinstall from Google account. device-transfer = restored when
+     migrating to a new phone via Android's setup wizard. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <include domain="sharedpref" path="peer.xml" />
+        <exclude domain="file" path="peer_state.json" />
+    </cloud-backup>
+    <device-transfer>
+        <include domain="sharedpref" path="peer.xml" />
+        <exclude domain="file" path="peer_state.json" />
+    </device-transfer>
+</data-extraction-rules>

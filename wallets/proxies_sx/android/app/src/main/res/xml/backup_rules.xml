@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Auto Backup rules for Android 11 and below. Backs up the 'peer'
+     SharedPreferences (which holds the user's saved name / wallet /
+     API key inputs) so they survive uninstall+reinstall via Google
+     Drive cloud backup. Excludes peer_state.json — that file contains
+     a device-specific JWT and refresh token; if those got restored to
+     a different phone they'd conflict with the original device. -->
+<full-backup-content>
+    <include domain="sharedpref" path="peer.xml" />
+    <exclude domain="file" path="peer_state.json" />
+</full-backup-content>
