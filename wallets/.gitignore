@@ -1,0 +1,10 @@
+# Secrets — never commit
+proxies_sx/proxies_sx_api_key
+proxies_sx/register_response.json
+proxies_sx/.bridge_smtp
+
+# Generated / local state
+proxies_sx/node_modules/
+proxies_sx/peer.log
+proxies_sx/peer.log.*
+proxies_sx/peer_pid
