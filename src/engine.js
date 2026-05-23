@@ -1985,11 +1985,8 @@
         openShop('dennis');
         return;
       }
-      // #33 FIX: Fence collision opens the stolen goods store
-      if(npc.type === 'fence') {
-        openShop('fence');
-        return;
-      }
+      // fence migrated to Dialog system (phraseId 'fence_greet'). The Dialog
+      // branch above intercepts; this block remains as legacy fallback only.
       // #12: Town guard — discount quest (Bethesda-style civic duty reward)
       if(npc.type === 'town_guard') {
         openShop('town_guard');
@@ -2002,20 +1999,9 @@
         openShop('mended_drum_barman');
         return;
       }
-      if(npc.type === 'dennis_wife') {
-        openShop('dennis_wife');
-        return;
-      }
-      // E.TRIST.5: Muck peasant
-      if(npc.type === 'muck_peasant') {
-        openShop('muck_peasant');
-        return;
-      }
-      // E.TRIST.6: Retired soldier
-      if(npc.type === 'retired_soldier') {
-        openShop('retired_soldier');
-        return;
-      }
+      // dennis_wife / muck_peasant / retired_soldier migrated to Dialog
+      // system. Their phraseIds are set on the spawn sites; the Dialog
+      // branch above intercepts before this point.
       // E.HAMLET: Rosencrantz & Guildenstern
       if(npc.type === 'rosencrantz_guildenstern') {
         openShop('rosencrantz_guildenstern');
@@ -2119,24 +2105,15 @@
       // If player has the Brass Bottle (from safe cracking quest), genie offers a wish.
       // Otherwise, it attacks as a boss fight.
       if(npc.type === 'genie' && npc.isGenieGuardian) {
-        const hasBottle = inventory.some(i => i && i.itemName === 'brassBottle') || inventory.some(i => i && i.itemName === 'brassBottle');
-        if(hasBottle) {
-          // Genie offers a wish instead of fighting
-          let m = document.getElementById('modal-content');
-          m.innerHTML = `<h2>🧞 The Genie of the Dungeon</h2>
-            <p style="font-size:60px; margin:5px 0;">🧞</p>
-            <p><em>"You carry the Brass Bottle! I am bound to its master. Speak your wish, mortal."</em></p>
-            <div style="display:flex; flex-direction:column; gap:6px; margin-top:10px;">
-              <button onclick="genieWish('heal')">💚 'I wish for full health and mana.'</button>
-              <button onclick="genieWish('gold')">💰 'I wish for wealth beyond measure.'</button>
-              <button onclick="genieWish('pass')">🚪 'I wish to pass to the next level.'</button>
-              <button onclick="genieWish('fight')">⚔️ 'I wish to fight you!'</button>
-            </div>`;
-          showOverlay();
+        const hasBottle = inventory.some(i => i && i.itemName === 'brassBottle');
+        if(hasBottle && typeof Dialog !== 'undefined' && Dialog._phrases && Dialog._phrases['kq5_genie_greet']) {
+          // Wish dialog now owned by quests_kq5_genie.js. Dialog tree
+          // delegates to legacy genieWish() via callFn scriptEffects.
           if(typeof Sound !== 'undefined' && Sound.playVoice) Sound.playVoice('voice_genie_greeting');
+          Dialog.startWith(npc, 'kq5_genie_greet');
           return;
         } else {
-          // No bottle — genie attacks
+          // No bottle (or no quest pack loaded) — genie attacks
           logMsg("<span style='color:var(--error)'>🧞 The Genie thunders: 'You do not hold the Brass Bottle! You shall not pass!'</span>");
           if(typeof Sound !== 'undefined' && Sound.playVoice) Sound.playVoice('voice_genie_wish');
           doCombat(eIdx);

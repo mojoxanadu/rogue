@@ -56,6 +56,7 @@ FILES = [
     'quests_space_quest.js',
     'quests_qfg.js',
     'quests_monty_python_bridge.js',
+    'quests_kq5_genie.js',
     # Quest engine collects all registered packs
     'quest_engine.js',
     'boundary_data.js',

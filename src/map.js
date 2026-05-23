@@ -520,6 +520,7 @@
           isQuestNPC: true, isSceneNPC: true,
           patrolPath: [{x:p.x,y:p.y},{x:p.x+1,y:p.y},{x:p.x+1,y:p.y+1},{x:p.x,y:p.y+1}],
           patrolIndex: 0, _sceneMoveCooldown: Math.floor(Math.random() * 5),
+          phraseId: 'muck_peasant_greet',
         });
         livePeasants.push(peasant);
       }
@@ -685,6 +686,7 @@
         x: wifePatrol[0].x, y: wifePatrol[0].y, type: 'dennis_wife',
         isQuestNPC: true, isSceneNPC: true,
         patrolPath: wifePatrol, patrolIndex: 0, _sceneMoveCooldown: 0,
+        phraseId: 'dennis_wife_greet',
       },
       // Sheep follows Dennis's Wife — start near her
       {
@@ -692,7 +694,7 @@
         farmAnimal: true, _followTarget: 'dennis_wife',
       },
       // E.TRIST.6: Retired soldier — stands in front of a house (north area)
-      { x: gateX - 10, y: 5, type: 'retired_soldier', isQuestNPC: true },
+      { x: gateX - 10, y: 5, type: 'retired_soldier', isQuestNPC: true, phraseId: 'retired_soldier_greet' },
     ];
 
     for (const { x, y, type, ...opts } of TRISTRAM_NPCS) {
@@ -1441,7 +1443,7 @@
             if(shopRoom.w >= 5 && shopRoom.h >= 5) {
               theMap[shopRoom.cy][shopRoom.cx] = TILES.ANTIQUE_SHOP;
               // Add a hard-of-hearing shopkeeper
-              spawnNpc(zone.npcs, shopRoom.cx, shopRoom.cy, 'fence', { stats: {...MONSTER_DEF['fence']}, isShopkeeper: true, shopType: 'antique' });
+              spawnNpc(zone.npcs, shopRoom.cx, shopRoom.cy, 'fence', { stats: {...MONSTER_DEF['fence']}, isShopkeeper: true, shopType: 'antique', phraseId: 'fence_greet' });
             }
           }
           
@@ -1544,7 +1546,7 @@
           spawnNpc(zone.npcs, coastX - 5, vy - 1, 'chaplain', { stats: {...MONSTER_DEF['chaplain']} });
         }
         if(!zone.npcs.some(e => e.shopType === 'antique')) {
-          spawnNpc(zone.npcs, coastX - 2, vy + 3, 'fence', { stats: {...MONSTER_DEF['fence']}, isShopkeeper: true, shopType: 'antique' });
+          spawnNpc(zone.npcs, coastX - 2, vy + 3, 'fence', { stats: {...MONSTER_DEF['fence']}, isShopkeeper: true, shopType: 'antique', phraseId: 'fence_greet' });
         }
       }
     }
