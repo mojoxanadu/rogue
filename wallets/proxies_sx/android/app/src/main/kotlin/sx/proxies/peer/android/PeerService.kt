@@ -53,10 +53,21 @@ class PeerService : Service() {
     }
 
     override fun onDestroy() {
-        super.onDestroy()
+        // Stop the PeerClient BEFORE clearing the notification — otherwise
+        // any in-flight log callback from a still-running executor will
+        // immediately re-post the notification we just removed.
+        runCatching { client?.shutdown() }
+        client = null
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        } else {
+            @Suppress("DEPRECATION") stopForeground(true)
+        }
+        getSystemService(NotificationManager::class.java).cancel(NOTIF_ID)
         isRunning = false
         isVerified = false
         latestStatus = "Stopped"
+        super.onDestroy()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

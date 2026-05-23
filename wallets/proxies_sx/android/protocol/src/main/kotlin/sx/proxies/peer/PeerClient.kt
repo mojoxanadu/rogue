@@ -35,8 +35,25 @@ class PeerClient(
     private val b64Dec: Base64.Decoder = Base64.getDecoder()
 
     @Volatile private var ws: WebSocket? = null
+    @Volatile private var stopped = false
 
     fun start() = connect()
+
+    // Tear everything down so stopService() actually stops the work, not
+    // just the Service object. Without this, the executors below are
+    // non-daemon threads that keep the process alive AND keep re-posting
+    // the notification via the log callback, making it look like the
+    // service is still running. Idempotent — safe to call multiple times.
+    fun shutdown() {
+        if (stopped) return
+        stopped = true
+        runCatching { ws?.close(1000, "shutdown") }
+        ws = null
+        tunnels.values.forEach { runCatching { it.close() } }
+        tunnels.clear()
+        sched.shutdownNow()
+        ioExec.shutdownNow()
+    }
 
     private fun persist() = stateFile.writeText(state.toJson())
 
@@ -45,6 +62,7 @@ class PeerClient(
     }
 
     private fun connect() {
+        if (stopped) return
         // Refresh JWT before every connect. The in-loop 50-min refresh timer
         // only runs while the WS is open; on flaky networks (cellular) the
         // socket churns fast enough that the timer never fires, the cached
@@ -101,7 +119,12 @@ class PeerClient(
             refreshFuture?.cancel(false)
             tunnels.values.forEach { runCatching { it.close() } }
             tunnels.clear()
-            sched.schedule({ connect() }, 5, TimeUnit.SECONDS)
+            if (stopped) return
+            try {
+                sched.schedule({ connect() }, 5, TimeUnit.SECONDS)
+            } catch (_: java.util.concurrent.RejectedExecutionException) {
+                // sched was shut down between the stopped check and now.
+            }
         }
     }
 
