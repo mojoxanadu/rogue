@@ -51,7 +51,7 @@ class PeerService : Service() {
         isRunning = true
         isVerified = false
         latestStatus = "Starting…"
-        startForeground(NOTIF_ID, buildNotification("Starting…"))
+        startForeground(NOTIF_ID, buildNotification())
     }
 
     override fun onDestroy() {
@@ -89,21 +89,23 @@ class PeerService : Service() {
                         .also { stateFile.writeText(it.toJson()) }
                 }
                 runCatching { reg.refresh(state); stateFile.writeText(state.toJson()) }
-                updateNotification("Connecting to ${state.relay}")
                 peerDeviceId = state.deviceId
                 val pc = PeerClient(stateFile, state, reg) { line ->
                     Log.i("PeerService", line)
+                    latestStatus = line.take(120)
+                    // Notification text is static (just "Connecting" /
+                    // "Earning") — only re-post on the verified transition,
+                    // not on every log line. Live log lives on RunningActivity.
                     if (!isVerified && (line.contains("verified") || line.contains("probe_result"))) {
                         isVerified = true
+                        updateNotification()
                     }
-                    latestStatus = line.take(120)
-                    updateNotification(line.take(80))
                 }
                 client = pc
                 pc.start()
             } catch (e: Exception) {
                 Log.e("PeerService", "fatal", e)
-                updateNotification("Error: ${e.message}")
+                latestStatus = "Error: ${e.message}"
                 stopSelf()
             }
         }.start()
@@ -119,11 +121,15 @@ class PeerService : Service() {
         }
     }
 
-    private fun buildNotification(text: String): Notification {
+    private fun buildNotification(): Notification {
         val tap = PendingIntent.getActivity(
             this, 0, Intent(this, MainActivity::class.java),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
+        // Static text per state. The live log line is intentionally NOT
+        // surfaced here — too noisy in the status bar. Users tap the
+        // notification to open RunningActivity for details.
+        val text = if (isVerified) "Earning" else "Connecting / warming up"
         return Notification.Builder(this, CHAN_ID)
             .setSmallIcon(if (isVerified) R.drawable.ic_dollar else R.drawable.ic_hourglass)
             .setContentTitle("Proxies.sx peer")
@@ -133,8 +139,8 @@ class PeerService : Service() {
             .build()
     }
 
-    private fun updateNotification(text: String) {
+    private fun updateNotification() {
         getSystemService(NotificationManager::class.java)
-            .notify(NOTIF_ID, buildNotification(text))
+            .notify(NOTIF_ID, buildNotification())
     }
 }

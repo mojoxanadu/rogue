@@ -4,7 +4,9 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.View
 import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 
@@ -22,6 +24,7 @@ class RunningActivity : AppCompatActivity() {
     private lateinit var deviceIdText: TextView
     private lateinit var lastLineText: TextView
     private lateinit var stopBtn: Button
+    private lateinit var tipsBox: LinearLayout
 
     private val refresh = object : Runnable {
         override fun run() {
@@ -38,6 +41,7 @@ class RunningActivity : AppCompatActivity() {
         deviceIdText = findViewById(R.id.deviceId)
         lastLineText = findViewById(R.id.lastLine)
         stopBtn = findViewById(R.id.stop)
+        tipsBox = findViewById(R.id.tips)
 
         stopBtn.setOnClickListener {
             PeerService.stop(this)
@@ -69,5 +73,6 @@ class RunningActivity : AppCompatActivity() {
         verifiedText.text = if (verified) "✓ Verified" else "⏳ Not yet verified"
         deviceIdText.text = "Device: ${PeerService.peerDeviceId ?: "(registering…)"}"
         lastLineText.text = PeerService.latestStatus
+        tipsBox.visibility = if (verified) View.GONE else View.VISIBLE
     }
 }
