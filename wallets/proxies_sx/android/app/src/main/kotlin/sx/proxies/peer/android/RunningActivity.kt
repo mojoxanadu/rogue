@@ -81,10 +81,10 @@ class RunningActivity : AppCompatActivity() {
         // Traffic-light dot + throughput readout. Color reflects whether
         // the current link can sustain the platform's ~4 Mbps probe.
         signalDot.setTextColor(when (PeerService.netSignal) {
-            PeerService.Signal.GREEN   -> 0xFF2ECC40.toInt()
-            PeerService.Signal.YELLOW  -> 0xFFFFB000.toInt()
-            PeerService.Signal.RED     -> 0xFFE74C3C.toInt()
-            PeerService.Signal.UNKNOWN -> 0xFF888888.toInt()
+            Signal.GREEN   -> 0xFF2ECC40.toInt()
+            Signal.YELLOW  -> 0xFFFFB000.toInt()
+            Signal.RED     -> 0xFFE74C3C.toInt()
+            Signal.UNKNOWN -> 0xFF888888.toInt()
         })
         val down = PeerService.netDownKbps
         val up = PeerService.netUpKbps

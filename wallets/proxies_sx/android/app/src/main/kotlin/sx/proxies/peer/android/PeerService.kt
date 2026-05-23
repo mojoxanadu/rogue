@@ -24,6 +24,11 @@ import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 
+// Network signal grading for the RunningActivity traffic-light dot. Top-
+// level (not nested in the companion) so it can be referenced from the
+// Activity as `Signal.GREEN` without going through PeerService.Companion.
+enum class Signal { UNKNOWN, RED, YELLOW, GREEN }
+
 class PeerService : Service() {
 
     companion object {
@@ -51,7 +56,6 @@ class PeerService : Service() {
         // and the throughput readout in RunningActivity. Updated via a
         // NetworkCallback registered in onCreate. The platform's probe
         // threshold is ~500 KB/s = 4 Mbps; we color around that.
-        enum class Signal { UNKNOWN, RED, YELLOW, GREEN }
         @Volatile var netSignal: Signal = Signal.UNKNOWN; private set
         @Volatile var netDownKbps: Int = 0; private set
         @Volatile var netUpKbps: Int = 0; private set
