@@ -67,7 +67,7 @@ class RunningActivity : AppCompatActivity() {
             else -> "Connecting / warming up (verification takes ~15 min)"
         }
         verifiedText.text = if (verified) "✓ Verified" else "⏳ Not yet verified"
-        deviceIdText.text = "Device: ${PeerService.deviceId ?: "(registering…)"}"
+        deviceIdText.text = "Device: ${PeerService.peerDeviceId ?: "(registering…)"}"
         lastLineText.text = PeerService.latestStatus
     }
 }

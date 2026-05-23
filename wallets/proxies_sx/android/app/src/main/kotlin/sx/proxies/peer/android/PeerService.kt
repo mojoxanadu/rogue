@@ -23,7 +23,9 @@ class PeerService : Service() {
         // Observed by RunningActivity to render live status without binding.
         @Volatile var isRunning: Boolean = false; private set
         @Volatile var isVerified: Boolean = false; private set
-        @Volatile var deviceId: String? = null; private set
+        // Named peerDeviceId (not deviceId) to avoid shadowing
+        // Context.getDeviceId(): Int added in API 34.
+        @Volatile var peerDeviceId: String? = null; private set
         @Volatile var latestStatus: String = "Stopped"; private set
 
         fun start(ctx: Context, apiKey: String?, wallet: String, name: String) {
@@ -88,7 +90,7 @@ class PeerService : Service() {
                 }
                 runCatching { reg.refresh(state); stateFile.writeText(state.toJson()) }
                 updateNotification("Connecting to ${state.relay}")
-                deviceId = state.deviceId
+                peerDeviceId = state.deviceId
                 val pc = PeerClient(stateFile, state, reg) { line ->
                     Log.i("PeerService", line)
                     if (!isVerified && (line.contains("verified") || line.contains("probe_result"))) {
