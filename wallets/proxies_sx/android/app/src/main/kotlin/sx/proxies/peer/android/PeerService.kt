@@ -36,6 +36,7 @@ class PeerService : Service() {
     }
 
     @Volatile private var client: PeerClient? = null
+    @Volatile private var verified = false
 
     override fun onCreate() {
         super.onCreate()
@@ -63,6 +64,9 @@ class PeerService : Service() {
                 updateNotification("Connecting to ${state.relay}")
                 val pc = PeerClient(stateFile, state, reg) { line ->
                     Log.i("PeerService", line)
+                    if (!verified && (line.contains("verified") || line.contains("probe_result"))) {
+                        verified = true
+                    }
                     updateNotification(line.take(80))
                 }
                 client = pc
@@ -91,7 +95,7 @@ class PeerService : Service() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         return Notification.Builder(this, CHAN_ID)
-            .setSmallIcon(android.R.drawable.stat_sys_upload)
+            .setSmallIcon(if (verified) R.drawable.ic_dollar else R.drawable.ic_hourglass)
             .setContentTitle("Proxies.sx peer")
             .setContentText(text)
             .setContentIntent(tap)
