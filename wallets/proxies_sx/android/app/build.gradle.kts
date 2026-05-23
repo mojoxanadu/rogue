@@ -15,9 +15,23 @@ android {
         versionName = "0.1.0"
     }
 
+    // Pin the debug signing key to a committed keystore so every CI build
+    // signs with the same certificate. Without this, the runner generates
+    // a fresh ~/.android/debug.keystore each invocation and Android refuses
+    // to install one build over another (different sig = anti-malware
+    // protection). Debug keystores carry no security claim — committing
+    // them is the standard pattern.
+    signingConfigs {
+        getByName("debug") {
+            storeFile = rootProject.file("keystore/debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
         release {
-            // debug-signed release for now; CI will produce an unsigned debug APK.
             isMinifyEnabled = false
         }
     }
