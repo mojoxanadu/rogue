@@ -73,5 +73,33 @@
         { text: 'Sorry, no.', nextPhrase: '@close' },
       ],
     },
+
+    // ── Tier-2 flavor-only Tristram NPCs ─────────────────────
+    // Engine-owned NPCs whose former openShop modal was just a single
+    // greeting + random quip. Pure flavor: no shop, no quest branching.
+    // Their legacy bump-handler blocks in engine.js get deleted.
+
+    'dennis_wife_greet': {
+      message: quipsFrom('dennis_wife', '...'),
+    },
+
+    'muck_peasant_greet': {
+      message: quipsFrom('muck_peasant', 'Lovely muck.'),
+    },
+
+    'retired_soldier_greet': {
+      message: quipsFrom('retired_soldier', 'My sciatica.'),
+    },
+
+    // ── Fence ────────────────────────────────────────────────
+    // Has a real shop (stolen goods) but the catalog logic in shop.js is
+    // dynamic — falls back to legacy openShop on @shop. Dialog wraps it
+    // so bumping fence first opens conversation, matching the AT pattern.
+    'fence_greet': {
+      message: "I got 12 kids to feed. Don't ask questions.",
+      replies: [
+        { text: 'Show me the stolen goods.', nextPhrase: '@shop' },
+      ],
+    },
   });
 })();

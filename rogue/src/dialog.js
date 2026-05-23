@@ -244,6 +244,17 @@
         case 'log':
           if (typeof logMsg === 'function') logMsg(eff.text || '');
           break;
+        case 'callFn':
+          // Escape hatch for migrations: invoke window[eff.fn] with eff.args.
+          // Useful when extracting a legacy modal whose handler logic is
+          // already encapsulated in a function and not worth re-expressing
+          // as discrete scriptEffects (genieWish, awardAchievement, etc.).
+          // Long-term, tier-3 can replace callFn with proper effects.
+          if (eff.fn && typeof window[eff.fn] === 'function') {
+            try { window[eff.fn](...(eff.args || [])); }
+            catch (e) { console.warn(`[Dialog] callFn ${eff.fn} threw`, e); }
+          }
+          break;
         default:
           console.warn(`[Dialog] unsupported effect type "${eff.type}"`);
       }
