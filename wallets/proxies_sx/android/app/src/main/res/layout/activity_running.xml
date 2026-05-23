@@ -37,6 +37,23 @@
             android:fontFamily="monospace"
             android:paddingBottom="16dp" />
 
+        <!-- Earnings summary + payout button. Polled every 60s by
+             PeerService. Button is disabled until canRequestPayout flips
+             true (proxies.sx threshold is $5 USDC). -->
+        <TextView android:id="@+id/earnings"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:paddingBottom="8dp"
+            android:text="Earnings: (fetching…)" />
+
+        <Button android:id="@+id/payout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:enabled="false"
+            android:text="Request payout"
+            android:layout_marginBottom="16dp" />
+
         <!-- Shown only while not yet verified. GONE once verified so the
              screen tightens up. -->
         <LinearLayout android:id="@+id/tips"
@@ -71,11 +88,15 @@
             android:textStyle="bold"
             android:paddingTop="12dp" />
 
+        <!-- Fixed-height log line: caps at 4 lines + ellipsis so a long
+             relay URL or stack trace can't shift the buttons below it. -->
         <TextView android:id="@+id/lastLine"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:fontFamily="monospace"
             android:textSize="12sp"
+            android:maxLines="4"
+            android:ellipsize="end"
             android:paddingBottom="24dp" />
 
         <TextView

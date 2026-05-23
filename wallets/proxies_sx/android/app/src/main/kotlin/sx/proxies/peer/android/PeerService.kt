@@ -4,18 +4,28 @@ import android.app.*
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.util.Log
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONObject
 import sx.proxies.peer.PeerClient
 import sx.proxies.peer.PeerState
 import sx.proxies.peer.Registration
 import java.io.File
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
 
 class PeerService : Service() {
 
     companion object {
         private const val CHAN_ID = "proxies-sx-peer"
         private const val NOTIF_ID = 1
+        private const val API = "https://api.proxies.sx"
         const val EXTRA_API_KEY = "apiKey"
         const val EXTRA_WALLET = "wallet"
         const val EXTRA_NAME = "name"
@@ -27,6 +37,20 @@ class PeerService : Service() {
         // Context.getDeviceId(): Int added in API 34.
         @Volatile var peerDeviceId: String? = null; private set
         @Volatile var latestStatus: String = "Stopped"; private set
+
+        // Earnings, polled every 60 s by the service. earningsLine is a
+        // pre-formatted display string; canPayout gates the payout button.
+        @Volatile var earningsLine: String = "Earnings: (fetching…)"; private set
+        @Volatile var canPayout: Boolean = false; private set
+
+        // Held so the companion's payout helper can read a fresh JWT.
+        // PeerClient mutates this PeerState in place on every refresh, so
+        // the jwt field is always current.
+        @Volatile private var currentState: PeerState? = null
+
+        private val payoutHttp = OkHttpClient()
+        private val payoutExec = Executors.newSingleThreadExecutor()
+        private val mainHandler = Handler(Looper.getMainLooper())
 
         fun start(ctx: Context, apiKey: String?, wallet: String, name: String) {
             val i = Intent(ctx, PeerService::class.java).apply {
@@ -41,9 +65,39 @@ class PeerService : Service() {
         fun stop(ctx: Context) {
             ctx.stopService(Intent(ctx, PeerService::class.java))
         }
+
+        // POST /v1/peer/agents/{id}/withdraw. Result callback runs on the
+        // main thread so the UI can show it directly.
+        fun requestPayout(onResult: (String) -> Unit) {
+            val id = peerDeviceId
+            val jwt = currentState?.jwt
+            if (id == null || jwt == null) {
+                onResult("Not connected — start the service first."); return
+            }
+            payoutExec.submit {
+                val text = try {
+                    val req = Request.Builder()
+                        .url("$API/v1/peer/agents/$id/withdraw")
+                        .post("".toRequestBody(null))
+                        .addHeader("Authorization", "Bearer $jwt")
+                        .build()
+                    payoutHttp.newCall(req).execute().use { res ->
+                        val body = res.body?.string().orEmpty()
+                        if (res.isSuccessful) "Payout requested.\n\n$body"
+                        else "Payout failed (HTTP ${res.code}):\n$body"
+                    }
+                } catch (e: Exception) {
+                    "Payout error: ${e.message}"
+                }
+                mainHandler.post { onResult(text) }
+            }
+        }
     }
 
     @Volatile private var client: PeerClient? = null
+    @Volatile private var state: PeerState? = null
+    private var earningsScheduler: ScheduledExecutorService? = null
+    private val earningsHttp = OkHttpClient()
 
     override fun onCreate() {
         super.onCreate()
@@ -51,15 +105,18 @@ class PeerService : Service() {
         isRunning = true
         isVerified = false
         latestStatus = "Starting…"
+        earningsLine = "Earnings: (fetching…)"
+        canPayout = false
         startForeground(NOTIF_ID, buildNotification())
     }
 
     override fun onDestroy() {
-        // Stop the PeerClient BEFORE clearing the notification — otherwise
-        // any in-flight log callback from a still-running executor will
-        // immediately re-post the notification we just removed.
+        runCatching { earningsScheduler?.shutdownNow() }
+        earningsScheduler = null
         runCatching { client?.shutdown() }
         client = null
+        state = null
+        currentState = null
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             stopForeground(STOP_FOREGROUND_REMOVE)
         } else {
@@ -69,6 +126,8 @@ class PeerService : Service() {
         isRunning = false
         isVerified = false
         latestStatus = "Stopped"
+        earningsLine = "Earnings: (stopped)"
+        canPayout = false
         super.onDestroy()
     }
 
@@ -78,7 +137,7 @@ class PeerService : Service() {
         Thread {
             try {
                 val reg = Registration()
-                val state = if (stateFile.exists()) {
+                val s = if (stateFile.exists()) {
                     PeerState.load(stateFile)
                 } else {
                     val name = intent?.getStringExtra(EXTRA_NAME) ?: "android-peer"
@@ -88,14 +147,13 @@ class PeerService : Service() {
                     reg.register(name = name, type = "claude", walletAddress = wallet, apiKey = apiKey)
                         .also { stateFile.writeText(it.toJson()) }
                 }
-                runCatching { reg.refresh(state); stateFile.writeText(state.toJson()) }
-                peerDeviceId = state.deviceId
-                val pc = PeerClient(stateFile, state, reg) { line ->
+                runCatching { reg.refresh(s); stateFile.writeText(s.toJson()) }
+                state = s
+                currentState = s
+                peerDeviceId = s.deviceId
+                val pc = PeerClient(stateFile, s, reg) { line ->
                     Log.i("PeerService", line)
                     latestStatus = line.take(120)
-                    // Notification text is static (just "Connecting" /
-                    // "Earning") — only re-post on the verified transition,
-                    // not on every log line. Live log lives on RunningActivity.
                     if (!isVerified && (line.contains("verified") || line.contains("probe_result"))) {
                         isVerified = true
                         updateNotification()
@@ -103,6 +161,7 @@ class PeerService : Service() {
                 }
                 client = pc
                 pc.start()
+                startEarningsPolling(s)
             } catch (e: Exception) {
                 Log.e("PeerService", "fatal", e)
                 latestStatus = "Error: ${e.message}"
@@ -113,6 +172,49 @@ class PeerService : Service() {
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
+
+    // Polls GET /v1/peer/agents/{id}/earnings every 60 s on a dedicated
+    // scheduler. Reads jwt fresh from the PeerState each tick (PeerClient
+    // mutates it in place on refresh, so we never use a stale token).
+    private fun startEarningsPolling(s: PeerState) {
+        val sched = Executors.newSingleThreadScheduledExecutor()
+        earningsScheduler = sched
+        sched.scheduleAtFixedRate({
+            val id = s.deviceId
+            try {
+                val req = Request.Builder()
+                    .url("$API/v1/peer/agents/$id/earnings")
+                    .addHeader("Authorization", "Bearer ${s.jwt}")
+                    .build()
+                earningsHttp.newCall(req).execute().use { res ->
+                    val body = res.body?.string().orEmpty()
+                    if (!res.isSuccessful) {
+                        earningsLine = "Earnings: HTTP ${res.code}"
+                        canPayout = false
+                        return@scheduleAtFixedRate
+                    }
+                    val j = JSONObject(body)
+                    // Schema isn't formally documented; pick the most
+                    // likely fields and fall back to raw if missing.
+                    val balance = j.optDouble("pendingUsd",
+                        j.optDouble("balance",
+                            j.optDouble("totalEarnings", Double.NaN)))
+                    val paid = j.optDouble("paidUsd",
+                        j.optDouble("paidTotal", Double.NaN))
+                    canPayout = j.optBoolean("canRequestPayout", false)
+                    earningsLine = buildString {
+                        append("Earnings: ")
+                        if (!balance.isNaN()) append("$%.4f pending".format(balance))
+                        else append("(no balance field)")
+                        if (!paid.isNaN()) append(" · $%.2f paid".format(paid))
+                        if (canPayout) append(" · ready for payout")
+                    }
+                }
+            } catch (e: Exception) {
+                earningsLine = "Earnings: ${e.message?.take(60)}"
+            }
+        }, 5, 60, TimeUnit.SECONDS)
+    }
 
     private fun createChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -126,9 +228,6 @@ class PeerService : Service() {
             this, 0, Intent(this, MainActivity::class.java),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
-        // Static text per state. The live log line is intentionally NOT
-        // surfaced here — too noisy in the status bar. Users tap the
-        // notification to open RunningActivity for details.
         val text = if (isVerified) "Earning" else "Connecting / warming up"
         return Notification.Builder(this, CHAN_ID)
             .setSmallIcon(if (isVerified) R.drawable.ic_dollar else R.drawable.ic_hourglass)

@@ -1,5 +1,6 @@
 package sx.proxies.peer.android
 
+import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
@@ -10,20 +11,16 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 
-// Status screen shown once the user taps Start in MainActivity. It does NOT
-// own the service — PeerService is a Foreground Service that runs whether
-// this activity (or the whole app) is in the foreground or not. This screen
-// just observes PeerService's static state, polls it every second, and
-// renders. Closing the screen has no effect on the service; the persistent
-// notification is what keeps Android from killing it.
 class RunningActivity : AppCompatActivity() {
 
     private val handler = Handler(Looper.getMainLooper())
     private lateinit var stateText: TextView
     private lateinit var verifiedText: TextView
     private lateinit var deviceIdText: TextView
+    private lateinit var earningsText: TextView
     private lateinit var lastLineText: TextView
     private lateinit var stopBtn: Button
+    private lateinit var payoutBtn: Button
     private lateinit var tipsBox: LinearLayout
 
     private val refresh = object : Runnable {
@@ -39,17 +36,20 @@ class RunningActivity : AppCompatActivity() {
         stateText = findViewById(R.id.state)
         verifiedText = findViewById(R.id.verified)
         deviceIdText = findViewById(R.id.deviceId)
+        earningsText = findViewById(R.id.earnings)
         lastLineText = findViewById(R.id.lastLine)
         stopBtn = findViewById(R.id.stop)
+        payoutBtn = findViewById(R.id.payout)
         tipsBox = findViewById(R.id.tips)
 
         stopBtn.setOnClickListener {
             PeerService.stop(this)
-            // Bounce back to the form so the user can restart.
             startActivity(Intent(this, MainActivity::class.java)
                 .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP))
             finish()
         }
+
+        payoutBtn.setOnClickListener { onPayoutTapped() }
     }
 
     override fun onResume() {
@@ -72,7 +72,35 @@ class RunningActivity : AppCompatActivity() {
         }
         verifiedText.text = if (verified) "✓ Verified" else "⏳ Not yet verified"
         deviceIdText.text = "Device: ${PeerService.peerDeviceId ?: "(registering…)"}"
+        earningsText.text = PeerService.earningsLine
         lastLineText.text = PeerService.latestStatus
         tipsBox.visibility = if (verified) View.GONE else View.VISIBLE
+        payoutBtn.isEnabled = PeerService.canPayout
+    }
+
+    // Confirm before firing the withdraw call — payouts cost network fees
+    // platform-side and a misclick should be hard.
+    private fun onPayoutTapped() {
+        AlertDialog.Builder(this)
+            .setTitle("Request payout?")
+            .setMessage(
+                "This will POST /v1/peer/agents/{id}/withdraw and ask " +
+                "proxies.sx to send your pending USDC to the wallet you " +
+                "registered with. The platform's stated minimum is \$5. " +
+                "Proceed?"
+            )
+            .setPositiveButton("Request payout") { _, _ ->
+                payoutBtn.isEnabled = false
+                PeerService.requestPayout { result ->
+                    AlertDialog.Builder(this)
+                        .setTitle("Payout result")
+                        .setMessage(result)
+                        .setPositiveButton("OK", null)
+                        .show()
+                    payoutBtn.isEnabled = PeerService.canPayout
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 }
