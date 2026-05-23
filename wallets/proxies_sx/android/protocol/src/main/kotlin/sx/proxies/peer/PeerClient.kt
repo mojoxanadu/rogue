@@ -45,6 +45,19 @@ class PeerClient(
     }
 
     private fun connect() {
+        // Refresh JWT before every connect. The in-loop 50-min refresh timer
+        // only runs while the WS is open; on flaky networks (cellular) the
+        // socket churns fast enough that the timer never fires, the cached
+        // JWT ages past its 1-hour lifetime, and the relay rejects every
+        // reconnect with close code 4002 "Invalid token" — forever. Doing
+        // a fresh refresh here costs one cheap HTTP call per reconnect and
+        // makes the loop self-healing even after long offline periods.
+        try {
+            registration.refresh(state); persist()
+            log("jwt refreshed pre-connect")
+        } catch (e: Exception) {
+            log("pre-connect refresh failed: ${e.message} — trying cached jwt")
+        }
         log("connecting to ${state.relay}")
         val req = Request.Builder()
             .url(state.relay.replaceFirst("wss://", "https://").replaceFirst("ws://", "http://"))
