@@ -37,7 +37,21 @@ class PeerClient(
     @Volatile private var ws: WebSocket? = null
     @Volatile private var stopped = false
 
-    fun start() = connect()
+    fun start() {
+        // Standalone 50-min JWT refresh loop at client scope — independent
+        // of WS lifecycle. Previously the refresh was either (a) inside
+        // ws.on('open')/onOpen + cancelled in onDown, which never fired on
+        // flaky networks where the socket churns every few seconds, or
+        // (b) called at the top of connect(), which hammered the refresh
+        // endpoint and got us 429-throttled. The standalone interval
+        // sidesteps both failure modes — it refreshes exactly once per
+        // 50 min regardless of how often the WS opens/closes.
+        sched.scheduleAtFixedRate({
+            try { registration.refresh(state); persist(); log("jwt refreshed") }
+            catch (e: Exception) { log("refresh error: ${e.message}") }
+        }, 50, 50, TimeUnit.MINUTES)
+        connect()
+    }
 
     // Tear everything down so stopService() actually stops the work, not
     // just the Service object. Without this, the executors below are
@@ -63,19 +77,10 @@ class PeerClient(
 
     private fun connect() {
         if (stopped) return
-        // Refresh JWT before every connect. The in-loop 50-min refresh timer
-        // only runs while the WS is open; on flaky networks (cellular) the
-        // socket churns fast enough that the timer never fires, the cached
-        // JWT ages past its 1-hour lifetime, and the relay rejects every
-        // reconnect with close code 4002 "Invalid token" — forever. Doing
-        // a fresh refresh here costs one cheap HTTP call per reconnect and
-        // makes the loop self-healing even after long offline periods.
-        try {
-            registration.refresh(state); persist()
-            log("jwt refreshed pre-connect")
-        } catch (e: Exception) {
-            log("pre-connect refresh failed: ${e.message} — trying cached jwt")
-        }
+        // No refresh here — the standalone 50-min interval in start() keeps
+        // the JWT fresh independent of WS reconnects, avoiding both the
+        // stale-JWT loop AND the rate-limit storm a per-connect refresh
+        // would cause on flaky networks.
         log("connecting to ${state.relay}")
         val req = Request.Builder()
             .url(state.relay.replaceFirst("wss://", "https://").replaceFirst("ws://", "http://"))
@@ -85,7 +90,6 @@ class PeerClient(
     }
 
     private val listener = object : WebSocketListener() {
-        private var refreshFuture: java.util.concurrent.ScheduledFuture<*>? = null
 
         override fun onOpen(webSocket: WebSocket, response: Response) {
             log("ws open (subprotocol=${response.header("Sec-WebSocket-Protocol")})")
@@ -96,10 +100,6 @@ class PeerClient(
                 put("protocol", "json-v1")
                 put("version", "1.0.0-kt")
             })
-            refreshFuture = sched.scheduleAtFixedRate({
-                try { registration.refresh(state); persist(); log("jwt refreshed") }
-                catch (e: Exception) { log("refresh error: ${e.message}") }
-            }, 50, 50, TimeUnit.MINUTES)
         }
 
         override fun onMessage(webSocket: WebSocket, text: String) = handle(text)
@@ -116,7 +116,6 @@ class PeerClient(
 
         private fun onDown(code: Int, reason: String) {
             log("ws closed $code $reason")
-            refreshFuture?.cancel(false)
             tunnels.values.forEach { runCatching { it.close() } }
             tunnels.clear()
             if (stopped) return
