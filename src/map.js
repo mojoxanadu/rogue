@@ -323,7 +323,7 @@
     window._mendedDrumX = drumX;
     window._mendedDrumY = drumY;
     // Place Mended Drum NPCs
-    spawnNpc(town.enemies, drumX - 1, drumY - 1, "mended_drum_barman", { stats: { icon: '🧔', hp: 999, maxHp: 999, dmg: 0, hit: 0, crit: 0, dodge: 0, speed: 0, throughWalls: false, passive: true, quest: true }, isQuestNPC: true, _stayInShop: true, phraseId: 'mended_drum_barman_greet' });
+    spawnNpc(town.enemies, drumX - 1, drumY - 1, "mended_drum_barman", { stats: { icon: '🧔', name: 'Barkeep', hp: 999, maxHp: 999, dmg: 0, hit: 0, crit: 0, dodge: 0, speed: 0, throughWalls: false, passive: true, quest: true }, isQuestNPC: true, _stayInShop: true, phraseId: 'mended_drum_barman_greet' });
     // ── Mended Drum patrons — Dialog-system tier-1 cohort ──
     // Each patron stands on a perimeter floor tile of the 3x3 around the
     // STORE marker; barman is at (drumX-1, drumY-1). Each carries a phraseId
