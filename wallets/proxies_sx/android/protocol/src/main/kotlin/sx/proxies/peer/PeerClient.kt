@@ -38,19 +38,35 @@ class PeerClient(
     @Volatile private var stopped = false
 
     fun start() {
-        // Standalone 50-min JWT refresh loop at client scope — independent
-        // of WS lifecycle. Previously the refresh was either (a) inside
-        // ws.on('open')/onOpen + cancelled in onDown, which never fired on
-        // flaky networks where the socket churns every few seconds, or
-        // (b) called at the top of connect(), which hammered the refresh
-        // endpoint and got us 429-throttled. The standalone interval
-        // sidesteps both failure modes — it refreshes exactly once per
-        // 50 min regardless of how often the WS opens/closes.
+        // Refresh-on-need: poll every 5 min and only refresh when the JWT
+        // has <5 min of life left. proxies.sx throttles /refresh per-token
+        // (a refresh of a still-valid token returns 429), so refreshing on
+        // a fixed 50-min cadence collides with their policy. The 4002
+        // recovery path forces a refresh when the server actually rejects
+        // the token, so this lazy approach stays safe even on flaky links.
         sched.scheduleAtFixedRate({
-            try { registration.refresh(state); persist(); log("jwt refreshed") }
-            catch (e: Exception) { log("refresh error: ${e.message}") }
-        }, 50, 50, TimeUnit.MINUTES)
+            try {
+                val left = jwtSecondsLeft()
+                if (left <= 300) {
+                    registration.refresh(state); persist()
+                    log("jwt refreshed (was ${left}s from expiry)")
+                }
+            } catch (e: Exception) { log("refresh error: ${e.message}") }
+        }, 1, 5, TimeUnit.MINUTES)
         connect()
+    }
+
+    // proxies.sx tokens carry iat/exp in the standard JWT middle segment
+    // (base64url JSON). Returns Long.MIN_VALUE on any parse failure so
+    // the caller treats it as "definitely refresh now."
+    private fun jwtSecondsLeft(): Long {
+        return try {
+            val parts = state.jwt.split('.')
+            if (parts.size < 2) return Long.MIN_VALUE
+            val pad = parts[1] + "=".repeat((4 - parts[1].length % 4) % 4)
+            val payload = JSONObject(String(Base64.getUrlDecoder().decode(pad)))
+            payload.optLong("exp") - (System.currentTimeMillis() / 1000)
+        } catch (_: Exception) { Long.MIN_VALUE }
     }
 
     // Tear everything down so stopService() actually stops the work, not
@@ -120,7 +136,18 @@ class PeerClient(
             tunnels.clear()
             if (stopped) return
             try {
-                sched.schedule({ connect() }, 5, TimeUnit.SECONDS)
+                // 4002 = server says the token is invalid. Force a refresh
+                // before reconnecting, otherwise we'd retry every 5 s with
+                // the same dead token until the next 5-min poll.
+                if (code == 4002) {
+                    sched.schedule({
+                        runCatching { registration.refresh(state); persist(); log("forced refresh after 4002") }
+                            .onFailure { log("forced refresh failed: ${it.message}") }
+                        sched.schedule({ connect() }, 5, TimeUnit.SECONDS)
+                    }, 0, TimeUnit.SECONDS)
+                } else {
+                    sched.schedule({ connect() }, 5, TimeUnit.SECONDS)
+                }
             } catch (_: java.util.concurrent.RejectedExecutionException) {
                 // sched was shut down between the stopped check and now.
             }

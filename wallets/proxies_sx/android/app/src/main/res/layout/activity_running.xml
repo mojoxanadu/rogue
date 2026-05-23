@@ -137,6 +137,12 @@
             android:textSize="12sp"
             android:paddingBottom="20dp" />
 
+        <Button android:id="@+id/viewLog"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="View / send full log"
+            android:layout_marginBottom="8dp" />
+
         <Button android:id="@+id/stop"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

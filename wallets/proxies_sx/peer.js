@@ -22,6 +22,16 @@ function log(...a) {
   console.log(new Date().toISOString(), ...a);
 }
 
+function jwtSecondsLeft() {
+  try {
+    const parts = (state.jwt || '').split('.');
+    if (parts.length < 2) return -Infinity;
+    const pad = parts[1] + '='.repeat((4 - parts[1].length % 4) % 4);
+    const payload = JSON.parse(Buffer.from(pad, 'base64').toString('utf8'));
+    return (payload.exp || 0) - Math.floor(Date.now() / 1000);
+  } catch { return -Infinity; }
+}
+
 async function refreshJwt() {
   const res = await fetch(`${API}/v1/peer/agents/${deviceId}/refresh`, {
     method: 'POST',
@@ -169,7 +179,16 @@ function connect(relayUrl) {
     log('ws closed', code, reason.toString());
     for (const s of tunnels.values()) s.destroy();
     tunnels.clear();
-    setTimeout(() => connect(state.relay), 5000);
+    // 4002 = server says our token is invalid. Force a refresh attempt
+    // before reconnecting — otherwise we'd reconnect with the same dead
+    // token every 5 s until the next 5-min poll.
+    if (code === 4002) {
+      refreshJwt()
+        .catch((e) => log('forced refresh after 4002 failed:', e.message))
+        .finally(() => setTimeout(() => connect(state.relay), 5000));
+    } else {
+      setTimeout(() => connect(state.relay), 5000);
+    }
   });
 
   ws.on('error', (e) => log('ws error:', e.message));
@@ -177,16 +196,16 @@ function connect(relayUrl) {
 
 process.on('SIGINT', () => { log('shutting down'); process.exit(0); });
 
-// Refresh JWT every 50 min on a STANDALONE timer that lives at process
-// scope — independent of WebSocket open/close. Previously this timer was
-// scheduled inside ws.on('open') and cancelled inside ws.on('close'),
-// which meant on cycling networks (or extended idle periods where the
-// relay drops the socket) the timer never fired and the JWT silently
-// aged past its 1h TTL, producing an infinite 4002 reconnect loop.
-// Calling once at startup, then every 50 min thereafter.
+// Refresh-on-need: poll every 5 min, but only call /refresh when the
+// JWT has less than 5 min of life left. proxies.sx throttles the refresh
+// endpoint per-token, so refreshing on a fixed 50-min cadence collided
+// with their "you just refreshed, slow down" 429s — and the 4002 storm
+// recovery was the ONLY thing keeping us with a valid token.
 async function refreshLoop() {
+  const left = jwtSecondsLeft();
+  if (left > 300) return;
   try { await refreshJwt(); }
-  catch (e) { log('refresh error:', e.message); }
+  catch (e) { log(`refresh error (jwt has ${left}s left):`, e.message); }
 }
 refreshLoop().finally(() => connect(state.relay));
-setInterval(refreshLoop, 50 * 60 * 1000);
+setInterval(refreshLoop, 5 * 60 * 1000);

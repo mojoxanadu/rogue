@@ -24,6 +24,7 @@ class RunningActivity : AppCompatActivity() {
     private lateinit var lastLineText: TextView
     private lateinit var stopBtn: Button
     private lateinit var payoutBtn: Button
+    private lateinit var viewLogBtn: Button
     private lateinit var tipsBox: LinearLayout
 
     private val refresh = object : Runnable {
@@ -46,6 +47,7 @@ class RunningActivity : AppCompatActivity() {
         lastLineText = findViewById(R.id.lastLine)
         stopBtn = findViewById(R.id.stop)
         payoutBtn = findViewById(R.id.payout)
+        viewLogBtn = findViewById(R.id.viewLog)
         tipsBox = findViewById(R.id.tips)
 
         stopBtn.setOnClickListener {
@@ -56,6 +58,9 @@ class RunningActivity : AppCompatActivity() {
         }
 
         payoutBtn.setOnClickListener { onPayoutTapped() }
+        viewLogBtn.setOnClickListener {
+            startActivity(Intent(this, LogActivity::class.java))
+        }
     }
 
     override fun onResume() {

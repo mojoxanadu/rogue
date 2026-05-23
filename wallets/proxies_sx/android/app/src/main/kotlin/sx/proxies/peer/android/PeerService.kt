@@ -125,16 +125,27 @@ class PeerService : Service() {
         override fun onCapabilitiesChanged(network: Network, caps: NetworkCapabilities) {
             netDownKbps = caps.linkDownstreamBandwidthKbps
             netUpKbps = caps.linkUpstreamBandwidthKbps
-            // Color logic — Wi-Fi often reports upstream as 0/unspecified
-            // because the radio can't sense the carrier behind it, so we
-            // grade primarily on downstream and only use upstream as a
-            // tiebreaker. 4 Mbps ≈ 500 KB/s, the probe threshold.
+            // Grade each direction independently and take the worse one.
+            // proxies.sx pays you to upload customer traffic, so upstream
+            // is the binding constraint — a fat downstream doesn't help
+            // if upload can't sustain the ~4 Mbps probe (≈500 KB/s).
+            // A reported 0 means "unknown" (Wi-Fi often can't see the
+            // upstream carrier behind the AP), so we ignore it instead
+            // of treating it as failure.
+            fun grade(kbps: Int): Signal = when {
+                kbps <= 0      -> Signal.UNKNOWN
+                kbps >= 8_000  -> Signal.GREEN
+                kbps >= 4_000  -> Signal.YELLOW
+                else           -> Signal.RED
+            }
+            val d = grade(netDownKbps)
+            val u = grade(netUpKbps)
+            // Worse-of-two, but UNKNOWN is treated as "no info" not as bad.
             netSignal = when {
-                netDownKbps >= 8_000 -> Signal.GREEN
-                netDownKbps >= 4_000 -> if (netUpKbps in 1..3_999) Signal.YELLOW else Signal.GREEN
-                netDownKbps >= 1_000 -> Signal.YELLOW
-                netDownKbps > 0      -> Signal.RED
-                else                 -> Signal.UNKNOWN
+                d == Signal.UNKNOWN && u == Signal.UNKNOWN -> Signal.UNKNOWN
+                d == Signal.RED || u == Signal.RED         -> Signal.RED
+                d == Signal.YELLOW || u == Signal.YELLOW   -> Signal.YELLOW
+                else                                       -> Signal.GREEN
             }
         }
         override fun onLost(network: Network) {
@@ -144,6 +155,8 @@ class PeerService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        LogStore.init(filesDir)
+        LogStore.append("service onCreate")
         createChannel()
         isRunning = true
         isVerified = false
@@ -163,6 +176,7 @@ class PeerService : Service() {
     }
 
     override fun onDestroy() {
+        LogStore.append("service onDestroy")
         runCatching {
             getSystemService(ConnectivityManager::class.java).unregisterNetworkCallback(netCallback)
         }
@@ -208,6 +222,7 @@ class PeerService : Service() {
                 peerDeviceId = s.deviceId
                 val pc = PeerClient(stateFile, s, reg) { line ->
                     Log.i("PeerService", line)
+                    LogStore.append(line)
                     latestStatus = line.take(120)
                     if (line.contains("probe_result")) probesSeen++
                     if (!isVerified && (line.contains("verified") || line.contains("probe_result"))) {
@@ -247,6 +262,7 @@ class PeerService : Service() {
                     if (!res.isSuccessful) {
                         earningsLine = "Earnings: HTTP ${res.code}"
                         canPayout = false
+                        LogStore.append("earnings poll HTTP ${res.code}: ${body.take(200)}")
                         return@scheduleAtFixedRate
                     }
                     val j = JSONObject(body)

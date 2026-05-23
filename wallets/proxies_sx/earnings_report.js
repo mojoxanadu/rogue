@@ -25,10 +25,20 @@ function gsm(name) {
   ], { encoding: 'utf8' }).replace(/\s+$/, '');
 }
 
+// Returns seconds until the JWT in `state` expires, or -Infinity if we
+// can't decode it. proxies.sx tokens are unsigned-payload JWTs whose
+// middle segment is base64url JSON with iat/exp.
+function jwtSecondsLeft(state) {
+  try {
+    const parts = (state.jwt || '').split('.');
+    if (parts.length < 2) return -Infinity;
+    const pad = parts[1] + '='.repeat((4 - parts[1].length % 4) % 4);
+    const payload = JSON.parse(Buffer.from(pad, 'base64').toString('utf8'));
+    return (payload.exp || 0) - Math.floor(Date.now() / 1000);
+  } catch { return -Infinity; }
+}
+
 async function refreshJwt(state) {
-  // The JWT has a 1-hour lifetime. This script runs once a day, so the
-  // cached value in register_response.json is essentially always stale
-  // by the time we read it — refresh first to avoid 401s.
   const res = await fetch(`${API}/v1/peer/agents/${state.deviceId}/refresh`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -80,11 +90,20 @@ function formatBody(e, deviceId) {
 
 (async () => {
   const state = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
-  // Best-effort refresh. The refresh endpoint is rate-limited; if peer.js
-  // has refreshed recently, ours may 429. That's fine — the cached JWT in
-  // register_response.json was just written by peer.js and is fresh.
-  try { await refreshJwt(state); }
-  catch (e) { console.log(new Date().toISOString(), 'refresh skipped:', e.message); }
+  // proxies.sx throttles /refresh per-token, so we only refresh when the
+  // current JWT is actually near expiry (<5 min left). Otherwise we use
+  // the cached one — it's the same one peer.js is using right now.
+  const secsLeft = jwtSecondsLeft(state);
+  if (secsLeft < 300) {
+    try {
+      await refreshJwt(state);
+      console.log(new Date().toISOString(), `refreshed (was ${secsLeft}s from expiry)`);
+    } catch (e) {
+      console.log(new Date().toISOString(), 'refresh failed, trying cached jwt:', e.message);
+    }
+  } else {
+    console.log(new Date().toISOString(), `using cached jwt (${secsLeft}s left)`);
+  }
   const earnings = await fetchEarnings(state.jwt, state.deviceId);
 
   const smtpUser = gsm('rosie-smtp-user');
