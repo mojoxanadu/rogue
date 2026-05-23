@@ -17,3 +17,13 @@ git branch -D android-only-branch
 #   echo "https://mojoxanadu:$(cat ~/rogue/GITHUB_TOKEN)@github.com" \
 #     >> ~/.git-credentials
 # (Same PAT as the rogue mirror — see ~/rogue/snapshot for the pattern.)
+#
+# GOTCHA: this host has the `gh` CLI logged in as a different user
+# (Joeputin100), registered per-host for github.com as
+#   credential.https://github.com.helper = !/usr/bin/gh auth git-credential
+# That helper INTERCEPTS before our `store` helper runs, so a plain
+# `git push` returns 403 even with the credentials file in place.
+# Override just for the push:
+#   git -c 'credential.https://github.com.helper=' \
+#       -c credential.helper=store \
+#       push --force github-android android-only-branch:main
