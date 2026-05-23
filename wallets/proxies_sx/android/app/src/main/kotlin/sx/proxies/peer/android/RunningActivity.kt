@@ -16,6 +16,9 @@ class RunningActivity : AppCompatActivity() {
     private val handler = Handler(Looper.getMainLooper())
     private lateinit var stateText: TextView
     private lateinit var verifiedText: TextView
+    private lateinit var signalDot: TextView
+    private lateinit var throughputText: TextView
+    private lateinit var probeCountText: TextView
     private lateinit var deviceIdText: TextView
     private lateinit var earningsText: TextView
     private lateinit var lastLineText: TextView
@@ -35,6 +38,9 @@ class RunningActivity : AppCompatActivity() {
         setContentView(R.layout.activity_running)
         stateText = findViewById(R.id.state)
         verifiedText = findViewById(R.id.verified)
+        signalDot = findViewById(R.id.signalDot)
+        throughputText = findViewById(R.id.throughput)
+        probeCountText = findViewById(R.id.probeCount)
         deviceIdText = findViewById(R.id.deviceId)
         earningsText = findViewById(R.id.earnings)
         lastLineText = findViewById(R.id.lastLine)
@@ -71,6 +77,23 @@ class RunningActivity : AppCompatActivity() {
             else -> "Connecting / warming up (verification takes ~15 min)"
         }
         verifiedText.text = if (verified) "✓ Verified" else "⏳ Not yet verified"
+
+        // Traffic-light dot + throughput readout. Color reflects whether
+        // the current link can sustain the platform's ~4 Mbps probe.
+        signalDot.setTextColor(when (PeerService.netSignal) {
+            PeerService.Signal.GREEN   -> 0xFF2ECC40.toInt()
+            PeerService.Signal.YELLOW  -> 0xFFFFB000.toInt()
+            PeerService.Signal.RED     -> 0xFFE74C3C.toInt()
+            PeerService.Signal.UNKNOWN -> 0xFF888888.toInt()
+        })
+        val down = PeerService.netDownKbps
+        val up = PeerService.netUpKbps
+        throughputText.text = if (down <= 0 && up <= 0) "—"
+            else "%.1f↓ %.1f↑ Mbps".format(down / 1000.0, up / 1000.0)
+
+        probeCountText.text = if (verified) "" else
+            "Probes received: ${PeerService.probesSeen} (need ~3 consecutive passes)"
+
         deviceIdText.text = "Device: ${PeerService.peerDeviceId ?: "(registering…)"}"
         earningsText.text = PeerService.earningsLine
         lastLineText.text = PeerService.latestStatus

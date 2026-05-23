@@ -3,6 +3,10 @@ package sx.proxies.peer.android
 import android.app.*
 import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
@@ -42,6 +46,20 @@ class PeerService : Service() {
         // pre-formatted display string; canPayout gates the payout button.
         @Volatile var earningsLine: String = "Earnings: (fetching…)"; private set
         @Volatile var canPayout: Boolean = false; private set
+
+        // Network capability tracking — used for the traffic-light indicator
+        // and the throughput readout in RunningActivity. Updated via a
+        // NetworkCallback registered in onCreate. The platform's probe
+        // threshold is ~500 KB/s = 4 Mbps; we color around that.
+        enum class Signal { UNKNOWN, RED, YELLOW, GREEN }
+        @Volatile var netSignal: Signal = Signal.UNKNOWN; private set
+        @Volatile var netDownKbps: Int = 0; private set
+        @Volatile var netUpKbps: Int = 0; private set
+        // Count of probe_result frames received this session. The relay's
+        // exact schema isn't documented (peer.js logs them opaquely), but
+        // each probe yields one frame, so the count is a reasonable proxy
+        // for "how close are we to the 3-pass verification bar."
+        @Volatile var probesSeen: Int = 0; private set
 
         // Held so the companion's payout helper can read a fresh JWT.
         // PeerClient mutates this PeerState in place on every refresh, so
@@ -99,6 +117,27 @@ class PeerService : Service() {
     private var earningsScheduler: ScheduledExecutorService? = null
     private val earningsHttp = OkHttpClient()
 
+    private val netCallback = object : ConnectivityManager.NetworkCallback() {
+        override fun onCapabilitiesChanged(network: Network, caps: NetworkCapabilities) {
+            netDownKbps = caps.linkDownstreamBandwidthKbps
+            netUpKbps = caps.linkUpstreamBandwidthKbps
+            // Color logic — Wi-Fi often reports upstream as 0/unspecified
+            // because the radio can't sense the carrier behind it, so we
+            // grade primarily on downstream and only use upstream as a
+            // tiebreaker. 4 Mbps ≈ 500 KB/s, the probe threshold.
+            netSignal = when {
+                netDownKbps >= 8_000 -> Signal.GREEN
+                netDownKbps >= 4_000 -> if (netUpKbps in 1..3_999) Signal.YELLOW else Signal.GREEN
+                netDownKbps >= 1_000 -> Signal.YELLOW
+                netDownKbps > 0      -> Signal.RED
+                else                 -> Signal.UNKNOWN
+            }
+        }
+        override fun onLost(network: Network) {
+            netSignal = Signal.RED; netDownKbps = 0; netUpKbps = 0
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
         createChannel()
@@ -107,10 +146,22 @@ class PeerService : Service() {
         latestStatus = "Starting…"
         earningsLine = "Earnings: (fetching…)"
         canPayout = false
+        netSignal = Signal.UNKNOWN; netDownKbps = 0; netUpKbps = 0
+        probesSeen = 0
+        runCatching {
+            val cm = getSystemService(ConnectivityManager::class.java)
+            val req = NetworkRequest.Builder()
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                .build()
+            cm.registerNetworkCallback(req, netCallback)
+        }
         startForeground(NOTIF_ID, buildNotification())
     }
 
     override fun onDestroy() {
+        runCatching {
+            getSystemService(ConnectivityManager::class.java).unregisterNetworkCallback(netCallback)
+        }
         runCatching { earningsScheduler?.shutdownNow() }
         earningsScheduler = null
         runCatching { client?.shutdown() }
@@ -154,6 +205,7 @@ class PeerService : Service() {
                 val pc = PeerClient(stateFile, s, reg) { line ->
                     Log.i("PeerService", line)
                     latestStatus = line.take(120)
+                    if (line.contains("probe_result")) probesSeen++
                     if (!isVerified && (line.contains("verified") || line.contains("probe_result"))) {
                         isVerified = true
                         updateNotification()

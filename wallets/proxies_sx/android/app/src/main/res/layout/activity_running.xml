@@ -23,11 +23,42 @@
             android:textSize="16sp"
             android:paddingBottom="12dp" />
 
-        <TextView android:id="@+id/verified"
+        <!-- Status row: verified state on the left, traffic-light dot
+             and throughput readout on the right. Horizontal so the
+             signal sits to the immediate right of the status text. -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="18sp"
-            android:textStyle="bold"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingBottom="12dp">
+
+            <TextView android:id="@+id/verified"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView android:id="@+id/signalDot"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="22sp"
+                android:text="●"
+                android:textColor="#888888"
+                android:paddingEnd="6dp" />
+
+            <TextView android:id="@+id/throughput"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="12sp"
+                android:fontFamily="monospace" />
+        </LinearLayout>
+
+        <TextView android:id="@+id/probeCount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="13sp"
             android:paddingBottom="12dp" />
 
         <TextView android:id="@+id/deviceId"
