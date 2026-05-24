@@ -872,7 +872,7 @@
         }
         if(!fencePos) fencePos = { x: leftyPos.x + 2, y: leftyPos.y + 1 };
         reserved.add(`${fencePos.x},${fencePos.y}`);
-        spawnNpc(zone.npcs, fencePos.x, fencePos.y, "fence", { stats: {...MONSTER_DEF["fence"]} });
+        spawnNpc(zone.npcs, fencePos.x, fencePos.y, "fence", { stats: {...MONSTER_DEF["fence"]}, phraseId: 'fence_greet' });
         let corpsePos = findNearbyFloorTile(leftyPos.x, leftyPos.y, 4, reserved);
         if(corpsePos && typeof createCorpse === 'function') {
           createCorpse(corpsePos.x, corpsePos.y, 'busker', { icon: '🧑‍🎤' }, [new ItemStack('accordion', 1), new ItemStack('paperclip', 1)]);
@@ -974,7 +974,15 @@
       // E.GENIE / KQ5: Big Genie boss guards the dungeon exit on Floor 10.
       // Requires Brass Bottle quest item to pass. Appears at 4x size.
       if(currentScene === 'dungeon' && currentLevel === 10 && MONSTER_DEF && MONSTER_DEF['genie']) {
-        spawnNpc(zone.npcs, Math.max(1, Math.min(mapW - 2, downStairPos.x + 2)), Math.max(1, Math.min(mapH - 2, downStairPos.y + 1)), 'genie', { stats: {...MONSTER_DEF['genie'], renderScale: 4.0}, isBoss: true, isQuestNPC: true, isGenieGuardian: true });
+        // Find a walkable floor tile near the down-stair. downStairPos sits in a
+        // dead-end wall, so a fixed +2/+1 offset can land inside another wall or
+        // outside the room. Walk outward until we hit floor (max radius 6).
+        let geniePos = null;
+        for(let r = 1; r <= 6 && !geniePos; r++) {
+          geniePos = findNearbyFloorTile(downStairPos.x, downStairPos.y, r);
+        }
+        if(!geniePos) geniePos = { x: Math.max(1, Math.min(mapW - 2, downStairPos.x + 2)), y: Math.max(1, Math.min(mapH - 2, downStairPos.y + 1)) };
+        spawnNpc(zone.npcs, geniePos.x, geniePos.y, 'genie', { stats: {...MONSTER_DEF['genie'], renderScale: 4.0}, isBoss: true, isQuestNPC: true, isGenieGuardian: true });
         logMsg("<span style='color:var(--warning)'>🧞 A colossal Genie blocks the exit stairs! It demands the Brass Bottle before it will let you pass.</span>");
       }
 
