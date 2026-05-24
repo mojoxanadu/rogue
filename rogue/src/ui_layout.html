@@ -566,7 +566,7 @@
        body.touch override switches to flex-direction:column-reverse
        so the primary action (BEGIN ADVENTURE) sits at the top. -->
   <div id="start-action-row" style="display:flex; align-items:center; gap:16px; margin-top:2px;">
-  <div style="margin: 12px; width:200px; padding: 10px; border: 1px solid rgba(204,194,220,0.32); border-radius: 12px; text-align:center; background: rgba(9,9,12,0.72); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);">
+  <div id="asset-loader-box" style="margin: 12px; width:200px; padding: 10px; border: 1px solid rgba(204,194,220,0.32); border-radius: 12px; text-align:center; background: rgba(9,9,12,0.72); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);">
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; color:#b3acbc; font-size:11px; letter-spacing:0.05em; text-transform:uppercase;">
       <span>Load</span>
       <span style="color:#75707d; font-size:9px;">optional</span>
@@ -993,7 +993,7 @@
      they stack above any other fixed UI no matter what. Full viewport
      width to avoid any sizing surprises on narrow mobile screens. -->
 <!-- DEV-ONLY BEGIN: action bar (stripped by build_release.py) -->
-<!-- Hidden by default — _reportError in <script> above unhides on first
+<!-- Hidden by default — _reportError in the script block above unhides on first
      exception. Saves top-of-screen real estate when nothing's wrong.
      The 🧪 Test button is for verifying the capture pipeline; trigger
      it once and the bar stays visible for the rest of the session. -->

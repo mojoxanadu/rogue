@@ -931,7 +931,7 @@
     // Draw Enemies
     zone.npcs.forEach(e => {
       let vx = e.x - player.x + cx, vy = e.y - player.y + cy;
-      if(vx >= 0 && vx < VIEW_COLS && vy >= 0 && vy < VIEW_ROWS && visible[e.y][e.x]) {
+      if(vx >= 0 && vx < VIEW_COLS && vy >= 0 && vy < VIEW_ROWS && visible[e.y] && visible[e.y][e.x]) {
         let sprite = null;
         if(window.useSprites && assets.sprites) {
           if(assets.sprites[e.type]) sprite = assets.sprites[e.type];
