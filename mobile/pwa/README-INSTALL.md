@@ -9,7 +9,7 @@ The Termux path is still documented for hacking or LAN-only setups.
 The `dist/` bundle is published at:
 
 ```
-https://mojoxanadu.github.io/rogue/mobile/dist/
+https://mojoxanadu.github.io/rogue/mobile/pwa/dist/
 ```
 
 1. Open that URL in **Chrome on Android**.
@@ -57,7 +57,7 @@ dist/
 ```sh
 pkg install git python              # one-time
 git clone https://github.com/mojoxanadu/rogue.git
-cd rogue/mobile/dist
+cd rogue/mobile/pwa/dist
 python3 -m http.server 8000
 ```
 
@@ -65,10 +65,10 @@ python3 -m http.server 8000
 
 ```sh
 cd ~/rogue
-make mobile        # produces mobile/dist/
+make mobile        # produces mobile/pwa/dist/
 ```
 
-Copy all six files in `mobile/dist/` to any directory on the Android
+Copy all six files in `mobile/pwa/dist/` to any directory on the Android
 device, then from that directory:
 
 ```sh

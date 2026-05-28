@@ -53,7 +53,7 @@ test:
 # PWA bundle. Ensures dev_build.html is fresh, then delegates to the
 # subdir Makefile that injects manifest+SW glue into dist/.
 mobile: dev
-	$(MAKE) -C mobile
+	$(MAKE) -C mobile/pwa
 
 clean:
 	rm -f dev_build.html assets.json roguelike.html roguelike_build*.html raw/title_rendered.png
