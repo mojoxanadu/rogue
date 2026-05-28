@@ -180,6 +180,10 @@
       this.currentPhrase = phrase;
       this.currentPhraseId = phraseId;
       this._selectedReplyIdx = null;  // fresh phrase, no pick yet
+      // Auto-select the first default reply, if any
+      const visible = this._visibleReplies();
+      const defIdx = visible.findIndex(r => r.default);
+      if (defIdx >= 0) this._selectedReplyIdx = defIdx;
       this._applyEffects(phrase.scriptEffects);
       const message = this._resolveMessage(phrase.message);
       if (message) {
@@ -238,6 +242,8 @@
       } else if (req.type === 'playerStat') {
         const v = (typeof player !== 'undefined' && player.stats && typeof player.stats[req.stat] === 'number') ? player.stats[req.stat] : 0;
         met = v >= (req.min || 0);
+      } else if (req.type === 'talent') {
+        met = !!(typeof player !== 'undefined' && player.talents && player.talents[req.talentId] && player.talents[req.talentId].level > 0);
       } else {
         console.warn(`[Dialog] unsupported requirement type "${req.type}"`);
         met = false;
@@ -259,13 +265,15 @@
           break;
         case 'giveItem':
           if (typeof ItemStack !== 'undefined' && typeof inventory !== 'undefined') {
+            const def = (typeof ItemDefs !== 'undefined') ? ItemDefs[eff.itemName] : null;
+            const label = def ? def.label() : eff.itemName;
             const slot = inventory.findIndex(s => s === null);
             if (slot >= 0) {
               inventory[slot] = new ItemStack(eff.itemName, eff.qty || 1);
-              this._pushLog({ kind: 'system', text: `[Received: ${eff.itemName} ×${eff.qty || 1}]` });
+              this._pushLog({ kind: 'system', text: `[Received: ${label}]` });
               if (typeof renderQuickslots === 'function') renderQuickslots();
             } else {
-              this._pushLog({ kind: 'system', text: `[Inventory full — couldn't accept ${eff.itemName}]` });
+              this._pushLog({ kind: 'system', text: `[Inventory full — couldn't accept ${label}]` });
             }
           }
           break;
@@ -288,6 +296,28 @@
           if (eff.fn && typeof window[eff.fn] === 'function') {
             try { window[eff.fn](...(eff.args || [])); }
             catch (e) { console.warn(`[Dialog] callFn ${eff.fn} threw`, e); }
+          }
+          break;
+        case 'improveTalent':
+          if (typeof player !== 'undefined' && typeof TALENT_DEFS !== 'undefined') {
+            const def = TALENT_DEFS[eff.talentId];
+            if (def) {
+              if (!player.talents) player.talents = {};
+              if (!player.talents[eff.talentId]) player.talents[eff.talentId] = { level: 0 };
+              player.talents[eff.talentId].level += eff.level || 1;
+              this._pushLog({ kind: 'system', text: `[Acquired: ${def.name}]` });
+            }
+          }
+          break;
+        case 'equipItem':
+          if (typeof player !== 'undefined') {
+            if (!player.equipped) player.equipped = {};
+            player.equipped[eff.slot] = eff.itemName;
+          }
+          break;
+        case 'modStat':
+          if (typeof player !== 'undefined' && eff.stat && eff.delta && typeof player[eff.stat] === 'number') {
+            player[eff.stat] += eff.delta;
           }
           break;
         default:

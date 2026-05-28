@@ -1328,52 +1328,16 @@ const hBtn = document.getElementById('hamburgerBtn');
       currentLevel = 0; // Bug 7: always start in Tristram
       initMap(50);
 
-      // Apply selected class bonuses
-      const selClass = window._selectedClass;
-      debugLog("Applying class bonus for: " + selClass);
-      if (selClass === 'fighter') {
-        player.startingClass = 'fighter';
-        player.maxHp += 5;
-        player.hp += 5;
-        player.equipped.leftHand = 'sword';
-        player.equipped.feet     = 'fightersBoots';   // +4 defense, +5 evade (class kit)
-        if (!player.inventory) player.inventory = [];
-        player.talents.fighterClass = { level: 1 };
-        player.talents.wieldSwords  = { level: 1 };
-        const swordLabel = ItemDefs.sword?.label() ?? 'Sword';
-        const bootsLabel = ItemDefs.fightersBoots?.label() ?? "Fighter's Boots";
-        logMsg && logMsg(`You are a Fighter! +5 HP, ${swordLabel} equipped, ${bootsLabel} worn.`);
-      } else if (selClass === 'spellcaster') {
-        player.startingClass = 'spellcaster';
-        player.maxMp = 2;
-        player.mp = 2;
-        if (!player.spells) player.spells = {};
-        if (!player.spells.illuminate) player.spells.illuminate = { level: 1 };
-        player.equipped.chest = 'robe';
-        if (!player.inventory) player.inventory = [];
-        player.inventory.push(new ItemStack('robe', 1));
-        player.talents.spellcasterClass = { level: 1 };
-        player.talents.wieldStaffs      = { level: 1 };
-        // Grant 2 ranks of Level 1 Spell — that's 2 slots; Illuminate
-        // fills one, leaving room to learn one more from a tome.
-        player.talents.level1Spell      = { level: 2 };
-        const robeLabel = ItemDefs.robe?.label() ?? 'Robe';
-        logMsg && logMsg(`You are a Spellcaster! 2 MP, Illumination known, ${robeLabel} equipped.`);
-      } else if (selClass === 'rogue') {
-        player.startingClass = 'rogue';
-        player.talents.rogueClass   = { level: 1 };
-        player.talents.wieldDaggers = { level: 1 };
-        if (!player.inventory) player.inventory = [];
-        // Place lockpicking tools in first empty inventory slot
-        const inventorySlot = player.inventory.findIndex(s => !s || !s.icon);
-        if (inventorySlot >= 0) {
-          player.inventory[inventorySlot] = new ItemStack('lockpickingTools', 1);
-        } else {
-          player.inventory.push(new ItemStack('lockpickingTools', 1));
+      // Class bonuses (talents, items, equipment, stat mods) now come from
+      // the start-of-game dialog — see dialogs_base.js.
+      var startPhrase = 'fighter_start';
+      if (window._selectedClass === 'rogue') startPhrase = 'rogue_start';
+      else if (window._selectedClass === 'spellcaster') startPhrase = 'spellcaster_start';
+      setTimeout(function() {
+        if (typeof Dialog !== 'undefined' && Dialog.startSelf) {
+          Dialog.startSelf(startPhrase);
         }
-        const pickLabel = ItemDefs.lockpickingTools?.label() ?? 'Lockpicking Tools';
-        logMsg && logMsg(`You are a Rogue! ${pickLabel} in inventory.`);
-      }
+      }, 200);
       
       debugLog("Calculating FOV...");
       calculateFOV();
