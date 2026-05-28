@@ -26,7 +26,9 @@ test('Registry builds one ItemDef per LEGACY_ITEM_DATA entry, keyed by camelCase
     '🥾': { name: 'Old Boot',       type: 'armor',  slot: 'feet', stackable: false },
     '🧪': { name: 'Health Potion',  type: 'potion', stackable: true, maxHeal: 25 },
   });
-  assert.equal(Object.keys(ctx.ItemDefs).length, 2);
+  // Baseline: items_registry.js also registers dagger and scumbleMainlyApples
+  // directly (bypassing LEGACY_ITEM_DATA), so total = 2 from data + 2 direct.
+  assert.equal(Object.keys(ctx.ItemDefs).length, 4);
   assert.ok(ctx.ItemDefs.oldBoot);
   assert.ok(ctx.ItemDefs.healthPotion);
   assert.equal(ctx.ItemDefs.oldBoot.icon,         '🥾');
@@ -110,8 +112,9 @@ test('Registry: camelCase collisions keep the first def, warn on the rest', (t) 
     '🥾': { name: 'Old Boot', type: 'armor', stackable: false },
     '👢': { name: 'Old Boot', type: 'armor', stackable: false }, // same displayName
   });
-  // Only one ItemDefs entry, but both icons resolve via _byIcon → first def
-  assert.equal(Object.keys(ctx.ItemDefs).length, 1);
+  // Only one ItemDefs entry from LEGACY_ITEM_DATA (collision kept first);
+  // plus 2 direct registrations (dagger, scumbleMainlyApples) = 3 total.
+  assert.equal(Object.keys(ctx.ItemDefs).length, 3);
   assert.equal(ctx.ItemDef.byIcon('🥾').name, 'oldBoot');
 });
 
