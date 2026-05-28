@@ -34,6 +34,8 @@
     CLOSE: '@close', SHOP: '@shop', FIGHT: '@fight', REMOVE: '@remove', NEXT: '@next',
   };
 
+  const MAX_LOG_LINES = 1000;
+
   const Dialog = {
     _phrases: {},        // id -> Phrase
     currentNpc: null,
@@ -98,7 +100,7 @@
       const r = visible[this._selectedReplyIdx];
       if (!r) return;
       this._selectedReplyIdx = null;
-      this._log.push({ kind: 'self', text: r.text });
+      this._pushLog({ kind: 'self', text: r.text });
       this._applyEffects(r.scriptEffects);
       this._goto(r.nextPhrase);
       this._render();
@@ -113,6 +115,28 @@
     },
 
     // ─── internals ────────────────────────────────────────────
+    _pushLog(entry) {
+      this._log.push(entry);
+      if (typeof logMsg !== 'function') return;
+      let html;
+      if (entry.kind === 'speaker') {
+        const icon = entry.icon || '🗣';
+        const text = this._paragraphs(entry.text);
+        html = `<span style="color:#fc9;">${icon} ${this._escape(entry.name)}:</span> ${text}`;
+      } else if (entry.kind === 'thought') {
+        html = `<span style="color:#b3acbc;">💭 ${this._paragraphs(entry.text)}</span>`;
+      } else if (entry.kind === 'self') {
+        html = `<span style="color:#9cf;">› ${this._paragraphs(entry.text)}</span>`;
+      } else if (entry.kind === 'system') {
+        html = `<span style="color:#fc9; font-style:italic;">${this._escape(entry.text)}</span>`;
+      }
+      if (html) logMsg(html);
+    },
+
+    _paragraphs(text) {
+      return String(text == null ? '' : text).split(/\n\s*\n/).map(p => this._escape(p)).join('<br><br>');
+    },
+
     _goto(phraseId) {
       // Sentinel routing
       if (phraseId === SENTINELS.CLOSE) { this.leave(); return; }
@@ -161,7 +185,7 @@
       if (message) {
         const npc = this.currentNpc;
         if (npc) {
-          this._log.push({
+          this._pushLog({
             kind: 'speaker',
             icon: (npc.stats && npc.stats.icon) || '🗣',
             // Resolution order: explicit phrase.speaker > NPC stats.name >
@@ -175,7 +199,7 @@
             text: message,
           });
         } else {
-          this._log.push({ kind: 'thought', text: message });
+          this._pushLog({ kind: 'thought', text: message });
         }
       }
     },
@@ -231,7 +255,6 @@
         case 'advanceQuest':
           if (typeof QuestEngine !== 'undefined' && QuestEngine.advance) {
             QuestEngine.advance(eff.questId, eff.stage);
-            this._log.push({ kind: 'system', text: `[Quest updated]` });
           }
           break;
         case 'giveItem':
@@ -239,10 +262,10 @@
             const slot = inventory.findIndex(s => s === null);
             if (slot >= 0) {
               inventory[slot] = new ItemStack(eff.itemName, eff.qty || 1);
-              this._log.push({ kind: 'system', text: `[Received: ${eff.itemName} ×${eff.qty || 1}]` });
+              this._pushLog({ kind: 'system', text: `[Received: ${eff.itemName} ×${eff.qty || 1}]` });
               if (typeof renderQuickslots === 'function') renderQuickslots();
             } else {
-              this._log.push({ kind: 'system', text: `[Inventory full — couldn't accept ${eff.itemName}]` });
+              this._pushLog({ kind: 'system', text: `[Inventory full — couldn't accept ${eff.itemName}]` });
             }
           }
           break;
@@ -288,6 +311,10 @@
       const logEl = document.getElementById('dialog-log');
       const repliesEl = document.getElementById('dialog-replies');
       if (!logEl || !repliesEl) return;
+      // Trim oldest entries if the log exceeds the cap.
+      if (this._log.length > MAX_LOG_LINES) {
+        this._log.splice(0, this._log.length - MAX_LOG_LINES);
+      }
       // All dynamic text is funneled through _escape() before interpolation.
       logEl.innerHTML = this._log.map(e => this._renderLogEntry(e)).join('');
       logEl.scrollTop = logEl.scrollHeight;
@@ -355,7 +382,7 @@
       if (entry.kind === 'thought') {
         return `<div style="display:flex; gap:8px; margin:8px 0; align-items:flex-start;">
           <span style="font-size:28px; line-height:1; flex-shrink:0;">💭</span>
-          <div style="flex:1;"><p style="margin:0;"><strong style="color:#b3acbc;">Thought:</strong> ${this._escape(entry.text)}</p></div>
+          <div style="flex:1;"><p style="margin:0;">${this._escape(entry.text)}</p></div>
         </div>`;
       }
       if (entry.kind === 'self') {
