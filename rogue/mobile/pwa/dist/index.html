@@ -1,4 +1,4 @@
-<!-- dev build 762 @ 2026-05-15 16:40:12 — no binary assets -->
+<!-- dev build 762 @ 2026-05-24 00:25:16 — no binary assets -->
 
 <!-- === header.html === -->
 <!DOCTYPE html>
@@ -486,6 +486,7 @@
      primary action lands first). Inline style on the wrapper used
      flex-direction:row by default; !important wins over the inline. */
   body.touch #start-action-row { flex-direction: column-reverse !important; gap: 8px !important; }
+  body.touch #asset-loader-box { display: none; }
 
   body.touch .draggable-modal {
     /* position: fixed anchors to the visual viewport (the area
@@ -928,6 +929,35 @@
   <div class="modal" id="modal-content" style="background:var(--surface); border:2px solid var(--secondary); padding:24px; border-radius:8px; text-align:center;"></div>
 </div>
 
+<!-- Andor's-Trail-style conversation modal. Independent of #modal-content so
+     the dialog system never clobbers (or gets clobbered by) the death modal,
+     world modals, shop, etc. Display toggled by Dialog._show/_hide in dialog.js.
+     No title bar; horizontally constrained; grows vertically up to viewport. -->
+<div id="dialog-modal" style="position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:210; display:none; flex-direction:column; background:var(--surface); border:2px solid var(--secondary); border-radius:8px; width:min(560px, 92vw); max-height:92vh; overflow:hidden; box-shadow:0 8px 32px rgba(0,0,0,0.7);">
+  <div id="dialog-log" style="flex:1 1 auto; overflow-y:auto; padding:12px 16px; min-height:80px; max-height:60vh; background:#1D1B20;"></div>
+  <div id="dialog-replies" style="flex:0 0 auto; padding:8px 12px; border-top:1px solid #4A4458;"></div>
+  <div id="dialog-buttons" style="flex:0 0 auto; padding:8px 12px; border-top:1px solid #4A4458; display:flex; gap:8px; justify-content:flex-end;">
+    <button onclick="Dialog.next()" style="padding:6px 14px;">Next</button>
+    <button onclick="Dialog.leave()" style="padding:6px 14px;">Leave</button>
+  </div>
+</div>
+
+<!-- New shop UI for Dialog-system NPCs. Replaces openShop()/openStore() for
+     migrated shopkeepers. No title bar; only Buy + Sell tabs; total GP
+     bottom-left; Leave button bottom-right. Driven by ShopDialog in
+     shop_dialog.js. The old openShop UI is kept for un-migrated NPCs. -->
+<div id="shop-dialog" style="position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:210; display:none; flex-direction:column; background:var(--surface); border:2px solid var(--secondary); border-radius:8px; width:min(560px, 92vw); max-height:92vh; overflow:hidden; box-shadow:0 8px 32px rgba(0,0,0,0.7);">
+  <div id="shop-dialog-tabs" style="flex:0 0 auto; display:flex; border-bottom:1px solid #4A4458;">
+    <button id="shop-dialog-tab-buy"  onclick="ShopDialog.tab('buy')"  style="flex:1; padding:10px; background:#2D2B32; border:none; color:#fff; cursor:pointer; border-right:1px solid #4A4458;">Buy</button>
+    <button id="shop-dialog-tab-sell" onclick="ShopDialog.tab('sell')" style="flex:1; padding:10px; background:#1D1B20; border:none; color:#aaa; cursor:pointer;">Sell</button>
+  </div>
+  <div id="shop-dialog-content" style="flex:1 1 auto; overflow-y:auto; padding:12px 16px; min-height:120px; max-height:60vh; background:#1D1B20;"></div>
+  <div id="shop-dialog-bottom" style="flex:0 0 auto; padding:8px 12px; border-top:1px solid #4A4458; display:flex; justify-content:space-between; align-items:center;">
+    <span id="shop-dialog-gp" style="color:var(--warning); font-weight:bold;">0g</span>
+    <button onclick="ShopDialog.leave()" style="padding:6px 14px;">Leave</button>
+  </div>
+</div>
+
 <!-- Legacy class-select-modal removed. The video-based class-modal (below
      around line 430) is the active class-selection UI. When no class
      videos are loaded (e.g., dev builds without asset bundles), each
@@ -1038,6 +1068,7 @@
       <button onclick="debugWarpPortal('town')">🌀 Town Portal</button>
       <button onclick="debugWarpPortal('beach')">🏖️ Beach Portal</button>
       <button onclick="toggleModal('asset-viewer-modal')">📂 Asset Viewer</button>
+      <button onclick="debugSpawnFloorLoot()">📦 Spawn 20 Containers</button>
 
       <div style="grid-column:1/-1; color:var(--primary); font-size:11px; font-weight:bold; border-bottom:1px solid #555; padding-bottom:4px; margin-top:6px;">CHARACTER</div>
       <button onclick="debugToggleGodMode()">🌩️😶‍🌫️ Toggle God Mode</button>
@@ -1140,7 +1171,7 @@
        body.touch override switches to flex-direction:column-reverse
        so the primary action (BEGIN ADVENTURE) sits at the top. -->
   <div id="start-action-row" style="display:flex; align-items:center; gap:16px; margin-top:2px;">
-  <div style="margin: 12px; width:200px; padding: 10px; border: 1px solid rgba(204,194,220,0.32); border-radius: 12px; text-align:center; background: rgba(9,9,12,0.72); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);">
+  <div id="asset-loader-box" style="margin: 12px; width:200px; padding: 10px; border: 1px solid rgba(204,194,220,0.32); border-radius: 12px; text-align:center; background: rgba(9,9,12,0.72); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);">
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; color:#b3acbc; font-size:11px; letter-spacing:0.05em; text-transform:uppercase;">
       <span>Load</span>
       <span style="color:#75707d; font-size:9px;">optional</span>
@@ -1275,16 +1306,20 @@
       cursor: pointer;
       border: 2px solid transparent;
       border-radius: 6px;
-      transition: border-color 0.2s, box-shadow 0.2s;
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
       box-sizing: border-box;
+      /* Soften the default Android cyan tap-flash that drowns out the
+         green selected state for a fraction of a second after tap. */
+      -webkit-tap-highlight-color: rgba(80,220,80,0.25);
     }
     .class-vid-slot:hover {
       border-color: rgba(255,220,100,0.7);
       box-shadow: 0 0 16px rgba(255,220,100,0.4);
     }
     .class-vid-slot.selected {
-      border-color: rgba(80,220,80,0.9);
-      box-shadow: 0 0 20px rgba(80,220,80,0.5);
+      border-color: #7fff7f;
+      background: #2e3a2a;
+      box-shadow: 0 0 24px rgba(80,255,80,0.7);
     }
     #class-portraits-row {
       display: flex;
@@ -1402,10 +1437,13 @@
    window._selectClass = function(cls) {
      // Clear previous selection highlight
      ['fighter','spellcaster','rogue'].forEach(function(c) {
-       var slot = document.getElementById('slot-' + c);
-       if (slot) slot.classList.remove('selected');
+       var s = document.getElementById('slot-' + c);
+       if (s) s.classList.remove('selected');
      });
-     // Highlight new selection
+     // Highlight new selection — relies on .class-vid-slot.selected CSS,
+     // which uses the same border-color longhand pattern as :hover (the
+     // user confirmed hover styling DOES render on their device, so this
+     // path is known to work without !important hacks).
      var slot = document.getElementById('slot-' + cls);
      if (slot) slot.classList.add('selected');
      window._selectedClass = cls;
@@ -1486,7 +1524,12 @@
           var card = document.createElement('div');
           card.className = 'class-vid-slot';   // reuse hover/selected styling
           card.id = 'slot-' + cls;
-          card.style.cssText = 'flex:1 1 200px;min-width:180px;max-width:240px;background:#1a1a24;border:2px solid #444;border-radius:8px;padding:18px;text-align:center;color:#ddd;cursor:pointer;';
+          // Border & background intentionally left to CSS — the
+          // `.class-vid-slot` rule supplies the default 2px transparent
+          // border, and `.class-vid-slot.selected` / `:hover` swap the
+          // color. Setting `border` inline would beat both rules on
+          // specificity grounds and the selected state would never paint.
+          card.style.cssText = 'flex:1 1 200px;min-width:180px;max-width:240px;background:#1a1a24;border-radius:8px;padding:18px;text-align:center;color:#ddd;cursor:pointer;';
           card.onmouseenter = function() { _classHover(cls, true); };
           card.onmouseleave = function() { _classHover(cls, false); };
           card.onclick = function() { _selectClass(cls); };
@@ -1555,7 +1598,7 @@
      they stack above any other fixed UI no matter what. Full viewport
      width to avoid any sizing surprises on narrow mobile screens. -->
 <!-- DEV-ONLY BEGIN: action bar (stripped by build_release.py) -->
-<!-- Hidden by default — _reportError in <script> above unhides on first
+<!-- Hidden by default — _reportError in the script block above unhides on first
      exception. Saves top-of-screen real estate when nothing's wrong.
      The 🧪 Test button is for verifying the capture pipeline; trigger
      it once and the bar stays visible for the rest of the session. -->
@@ -2598,7 +2641,7 @@
   */
   // Core game‑balance constants. Adjust these to change the feel of the game.
   const CONSTANTS = {
-    HUNGER_RATE: 0.01,
+    HUNGER_RATE: 0.1,
     HUNGER_DAMAGE: 0.5,
     HUNGER_HEAL: 0.0,
     SPAWN_RATE: 0.02,
@@ -2674,7 +2717,7 @@
   // Global game‑state variables. These are updated as the game progresses.
   let currentLevel = 1, mapW = 0, mapH = 0;
   let currentScene = 'dungeon'; 
-  let theMap = [], explored = [], visible = [], enemies = [], darkMap = [];
+  let theMap = [], explored = [], visible = [], darkMap = [];
   let isDead = false, dropMode = false, isIdentifying = false, damageTint = 0;
   let lightTurns = 0, lastMoveTime = 0;
   let floatingTexts = []; 
@@ -3104,7 +3147,6 @@
     "👺": { name: "Masque of Clavicus Vile", type: "armor", slot: "head", stackable: false, evadePercent: 5, maxGP: 50000 },
     "🥾": { name: "Old Boot", type: "armor", slot: "feet", stackable: false, evadePercent: 0, defenseBonus: 2, maxGP: 2 },
     "🥾⚔️": { name: "Fighter's Boots", type: "armor", slot: "feet", stackable: false, evadePercent: 5, defenseBonus: 4, maxGP: 75 },
-    "👢": { name: "Old Boot", type: "armor", slot: "feet", stackable: false, evadePercent: 0, defenseBonus: 2, maxGP: 2 },
     "💍⚡": { name: "Ring of Evasion", type: "armor", slot: "rightHand", stackable: false, evadePercent: 20, maxGP: 5000 },
     "💍": { name: "Ring of Midas", type: "armor", slot: "rightHand", stackable: false, evadePercent: -20, maxGP: 500 },
     "🥻": { name: "Robe", type: "armor", slot: "chest", stackable: false, evadePercent: 0, intBonus: 1, maxGP: 30 },
@@ -3310,7 +3352,7 @@
     // and a special-case effect, so anyone may equip it). New weapons
     // should declare a wieldTalent unless they're similarly atypical.
     "🪗": { name: "Accordion", type: "weapon", stackable: false, baseDmg: 0, maxGP: 0, special: 'accordion' },
-    "🏹": { name: "Bow", type: "weapon", stackable: false, baseDmg: 1, maxGP: 25, ranged: true, range: 9, ammoName: 'arrows', rangedDamage: 8, wieldTalent: 'wieldBows' },
+    "🏹": { name: "Bow", type: "weapon", stackable: false, baseDmg: 1, maxGP: 25, ranged: true, range: 9, ammoName: 'arrows', rangedDamage: 8, wieldTalent: 'wieldBows', equipTo: ['leftHand', 'rightHand'] },
     "🗡️✨": { name: "Excalibur", type: "weapon", stackable: false, baseDmg: 12, maxGP: 12000, wieldTalent: 'wieldSwords' },
     "🦯✨": { name: "Proper Staff", type: "weapon", stackable: false, baseDmg: 5, maxGP: 25000, ranged: true, range: 9, manaCost: 5, rangedDamage: 20, magicScaling: 'int', wieldTalent: 'wieldStaffs' },
     "🦯": { name: "Staff", type: "weapon", stackable: false, baseDmg: 4, maxGP: 5, wieldTalent: 'wieldStaffs' },
@@ -3856,7 +3898,6 @@ const TALENT_DEFS = {
     cost:  { initial: 6, improve: null, max: 1 },
     requires: { endurance: 1 },
     flags: [],
-    tbi:   true,
     desc:  `If you have zero HP at the end of a creature's turn and your hunger is below 50%, gain a percent of your max HP equal to 50% - current hunger, instead of dying, and increase your hunger by 50%.`,
   },
   sleightOfHand: {
@@ -4096,6 +4137,17 @@ class ItemDef {
     return this.bagSlots > 0;
   }
 
+  /**
+   * Canonical user-facing label for log/UI text: "🏹 Bow".
+   * Centralized so a design tweak (e.g. drop the icon, bold the
+   * name) lands in one place instead of every logMsg site.
+   * Never use `def.name` in user-facing strings — that field is
+   * the camelCase id; `displayName` and `icon` are the renderables.
+   */
+  label() {
+    return `${this.icon ?? ''} ${this.displayName ?? this.name}`.trim();
+  }
+
   // ─── Static helpers ────────────────────────────────────────
   //  The class is the front door for catalog operations. Free
   //  functions like a global `iconOf` would pollute the global
@@ -4292,6 +4344,31 @@ window.ItemStack = ItemStack;
 
 const ItemDefs = {};
 
+// Normalize an item spec's equip-slot rules into a canonical `equipGroups`:
+// an array of slot-groups where the item, once equipped, fills every slot
+// in exactly one chosen group. Inputs (priority order):
+//   spec.equipTo:     ['leftHand','rightHand']  → one AND-group, fill both.
+//   spec.equipChoice: ['leftHand','rightHand']  → two OR-groups, pick one.
+//   spec.slot:        'chest'                   → one single-slot group.
+//   spec.type='weapon' with none of the above   → defaults to ['leftHand'].
+// Returns null when no equip semantics apply (consumables, ammo, etc.).
+function _normalizeEquipGroups(spec) {
+  const groups = [];
+  if (Array.isArray(spec.equipTo) && spec.equipTo.length > 0) {
+    groups.push(spec.equipTo.slice());
+  }
+  if (Array.isArray(spec.equipChoice) && spec.equipChoice.length > 0) {
+    for (const s of spec.equipChoice) groups.push([s]);
+  }
+  if (groups.length === 0 && typeof spec.slot === 'string' && spec.slot) {
+    groups.push([spec.slot]);
+  }
+  if (groups.length === 0 && spec.type === 'weapon') {
+    groups.push(['leftHand']);
+  }
+  return groups.length > 0 ? groups : null;
+}
+
 // Turn a displayName like "Bag of Holding" into a camelCase identifier
 // like "bagOfHolding". Punctuation and apostrophes are stripped.
 function _toCamelCase(displayName) {
@@ -4333,6 +4410,7 @@ function _toCamelCase(displayName) {
       name,
       displayName: spec.name,
       icon,
+      equipGroups: _normalizeEquipGroups(spec),
     });
     ItemDefs[name] = def;
     // Reverse map: emoji → def. First-wins, since icons need not be unique
@@ -5229,6 +5307,9 @@ class NPC extends Sentient {
       '_sceneNextMoveAt','_sceneMoveCooldown','sceneMoveIntervalMs',
       '_patrolTurnCount','_patrolTarget','_ifritAction','_mimicAwake',
       '_nextPixieVoiceMs','_lastDx','_mimicSpotted',
+      // Dialog system: phraseId opts the NPC into Dialog.startWith on bump.
+      // Without this here, spawnNpc({phraseId:'...'}) silently dropped the field.
+      'phraseId',
     ]) {
       if (spec[k] !== undefined) this[k] = spec[k];
     }
@@ -6078,6 +6159,13 @@ class Zone {
     // get folded into entities so old saves keep loading.
     if (Array.isArray(spec.corpses))   for (const c of spec.corpses)   this.entities.push(c);
     if (Array.isArray(spec.lootables)) for (const l of spec.lootables) this.entities.push(l);
+    // NPCs live on a dedicated zone-owned array (Phase 6g, commit B).
+    // Kept separate from `entities` because NPCs have a different
+    // lifecycle (turn scheduling, AI ticking, respawn on level change)
+    // and adding them to `entities` would change behaviour in subtle
+    // ways. The `npcs` getter returns this list directly so callers can
+    // push/splice via the same array reference (e.g. spawnNpc).
+    this._npcs     = spec.npcs      ?? [];
     // Visibility layers — undefined means "not yet built"; consumers
     // (FOV code, render) initialize lazily.
     this.darkMap   = spec.darkMap   ?? null;
@@ -6200,6 +6288,61 @@ class Zone {
 
   lootablesAt(x, y) {
     return this.lootables.filter(l => l && l.x === x && l.y === y);
+  }
+
+  // ─── NPCs ────────────────────────────────────────────────────
+  // Zone-owned NPC list. Storage is `this._npcs` (see constructor).
+  // The npcs getter returns the live array so call sites can push/
+  // splice directly (e.g. `spawnNpc(zone.npcs, ...)` works because
+  // npcs IS the backing array). Mutating helpers below are the
+  // preferred surface, though.
+
+  get npcs() {
+    return this._npcs;
+  }
+
+  addNpc(npc) {
+    if (!npc) return;
+    this._npcs.push(npc);
+  }
+
+  removeNpc(npc) {
+    const i = this._npcs.indexOf(npc);
+    if (i === -1) return false;
+    this._npcs.splice(i, 1);
+    return true;
+  }
+
+  /**
+   * Remove every NPC matching the predicate. Returns the count
+   * removed. Replaces the legacy `enemies = enemies.filter(...)`
+   * reassignment pattern, which used to disconnect AI ticks and
+   * scheduler references from the live list.
+   */
+  removeNpcs(pred) {
+    let removed = 0;
+    for (let i = this._npcs.length - 1; i >= 0; i--) {
+      if (pred(this._npcs[i])) { this._npcs.splice(i, 1); removed++; }
+    }
+    return removed;
+  }
+
+  clearNpcs() {
+    this._npcs.length = 0;
+  }
+
+  /** Clear and refill from an array (used by save-restore). */
+  replaceNpcs(arr) {
+    this._npcs.length = 0;
+    if (Array.isArray(arr)) for (const n of arr) this._npcs.push(n);
+  }
+
+  npcAt(x, y) {
+    return this._npcs.find(n => n && n.x === x && n.y === y) || null;
+  }
+
+  findNpc(pred) {
+    return this._npcs.find(pred) || null;
   }
 
   /** The (single) floor pile at (x,y) — null if none. There is at most
@@ -6527,25 +6670,19 @@ const localPlayer = new LocalPlayer();
 const player    = localPlayer;
 const inventory = localPlayer.inventory;
 
-// ─── World + active Zone (Option B1) ────────────────────────
+// ─── World + active Zone ────────────────────────────────────
 //
-//  The model layer holds ONE Zone (id 'active') whose tile-grid /
-//  visibility-layer / entity-list fields mirror the legacy bare
-//  globals (theMap, darkMap, explored, visible, enemies + mapW/H).
-//  Nothing currently reads zone.* — game code still reads the bare
-//  globals — but the alias is kept in sync so future commits can
-//  start migrating call sites without staleness bugs.
+//  The model layer holds ONE Zone (id 'active') reused across levels.
+//  Its tile/visibility/entity fields are rebound on each transition
+//  via syncActiveZone(). The bare globals theMap/darkMap/explored/
+//  visible/mapW/mapH still exist alongside the zone for legacy access;
+//  zone.npcs is now the canonical NPC store (the `enemies` global was
+//  retired in Phase 6g).
 //
 //  syncActiveZone() must be called after every reassignment of the
 //  bare globals (level transitions, debug snapshot restore). The
-//  in-place mutations (enemies.length = 0; enemies.push(...)) preserve
-//  the alias without a sync call, but calling sync there is harmless
-//  and keeps the invariant "after any level-state change, call sync."
-//
-//  Minimal least-destructive shape: one Zone reused across levels,
-//  width/height/tiles/etc rebinding per transition. The real "one
-//  Zone per level, retire bare globals" design awaits a future
-//  direction discussion.
+//  in-place NPC mutations (zone.addNpc / zone.removeNpc / etc.) do
+//  not require a sync call.
 const world = new World({ localPlayer });
 const zone  = new Zone({ id: 'active', width: 1, height: 1 });
 world.addZone(zone);
@@ -6559,16 +6696,12 @@ function syncActiveZone() {
   zone.darkMap  = darkMap;
   zone.explored = explored;
   zone.visible  = visible;
-  // Phase 4a-2.5: zone.entities is NOT aliased to enemies any more.
-  // It holds Corpses + Lootables (anything "drawn on a tile that isn't
-  // a Sentient"); the enemies global keeps holding NPCs until Phase 6
-  // retires it. Schedulers concatenate both lists.
-  //
-  // Re-running syncActiveZone after `enemies = []` reassignments must
-  // NOT wipe zone.entities — corpses and lootables on the current
-  // level survive a reassignment of `enemies`. The only place that
-  // legitimately clears world Lootables is map-gen, which calls
-  // zone.clearCorpses() / zone.clearLootables() explicitly.
+  // zone.entities holds Corpses + Lootables (anything drawn on a tile
+  // that isn't a Sentient). NPCs live on zone._npcs (accessed via
+  // zone.npcs). Schedulers concatenate both lists. syncActiveZone
+  // must NOT wipe either — corpses and lootables on the current level
+  // survive level state changes; map-gen clears them explicitly via
+  // zone.clearCorpses() / zone.clearLootables() / zone.clearNpcs().
 }
 syncActiveZone();
 window.world           = world;
@@ -7023,9 +7156,9 @@ window.startStickyDrag = function(source, idxOrSlot, bagRef) {
 
 function _equipSlotFits(slot, def) {
   if (!def) return false;
-  if (slot === 'leftHand'  && (def.type === 'weapon' || def.slot === 'leftHand'))  return true;
-  if (slot === 'rightHand' && (def.type === 'weapon' || def.slot === 'rightHand')) return true;
-  return def.slot === slot;
+  const groups = def.equipGroups;
+  if (!groups || groups.length === 0) return false;
+  return groups.some(g => g.includes(slot));
 }
 
 // Read the stack at an addr (returns null for empty).
@@ -7072,23 +7205,35 @@ function _performStickyMove(src, target) {
     return;
   }
 
-  // Equip source going to inv or bag: use existing unequip flow if
-  // target is inv; bag target works the same with swap semantics.
+  // Equip source going to inv or bag.
   if (src.source === 'equip') {
     const equippedName = player.equipped[src.slot];
     if (!equippedName) return;
+    // Inv target: route through swapEquip so multi-slot linkage (2H
+    // weapons clearing all their slots, displacement to source, etc.)
+    // and slot-fit / canEquip gating all happen in one place.
+    if (target.source === 'inv') {
+      if (typeof swapEquip === 'function') swapEquip(target.idx, src.slot);
+      return;
+    }
+    // Bag target: manual swap. Bags aren't equip slots, so the only
+    // linkage concern is clearing all of a 2H weapon's slots when one
+    // is moved out.
     const existing = _readAddr(target);
     if (existing) {
       const existingDef = ItemDefs[existing.itemName];
       if (!_equipSlotFits(src.slot, existingDef)) {
         if (typeof logMsg === 'function') {
-          logMsg(`<span style='color:var(--warning)'>${existingDef?.displayName ?? 'That item'} doesn't fit the ${src.slot} slot.</span>`);
+          logMsg(`<span style='color:var(--warning)'>${existingDef?.label() ?? 'That item'} doesn't fit the ${src.slot} slot.</span>`);
         }
         return;
       }
+      const linked = (typeof linkedSlotsOf === 'function') ? linkedSlotsOf(src.slot) : [src.slot];
+      linked.forEach(s => { player.equipped[s] = null; });
       player.equipped[src.slot] = existing.itemName;
     } else {
-      player.equipped[src.slot] = null;
+      const linked = (typeof linkedSlotsOf === 'function') ? linkedSlotsOf(src.slot) : [src.slot];
+      linked.forEach(s => { player.equipped[s] = null; });
     }
     _writeAddr(target, new ItemStack(equippedName, 1));
     return;
@@ -7200,8 +7345,12 @@ function _performStickyMove(src, target) {
           hpFill.style.height = `${hpPct}%`;
         }
         if (hpText) {
-          const hp = isNaN(player.hp) ? 0 : Math.floor(player.hp);
-          const maxHp = isNaN(player.maxHp) ? 16 : Math.floor(player.maxHp);
+          // Ceil, not floor: a living player (hp > 0, e.g. 0.5 from hunger
+          // drain) must never read "0" on the orb while still alive.
+          // Clamp display to >= 0: an overkill hit drives player.hp negative,
+          // but the orb should bottom out at "0", not flash "-3".
+          const hp = isNaN(player.hp) ? 0 : Math.max(0, Math.ceil(player.hp));
+          const maxHp = isNaN(player.maxHp) ? 16 : Math.ceil(player.maxHp);
           hpText.innerText = `${hp}/${maxHp}`;
         }
         // B17 FIX: Draw WebGL fluid effect on hp-wave-canvas inside the orb
@@ -7221,8 +7370,9 @@ function _performStickyMove(src, target) {
           mpFill.style.height = `${mpPct}%`;
         }
         if (mpText) {
-          const mp = isNaN(player.mp) ? 0 : Math.floor(player.mp);
-          const maxMp = isNaN(player.maxMp) ? 0 : Math.floor(player.maxMp);
+          // Ceil + clamp to >= 0, matching the HP orb.
+          const mp = isNaN(player.mp) ? 0 : Math.max(0, Math.ceil(player.mp));
+          const maxMp = isNaN(player.maxMp) ? 0 : Math.ceil(player.maxMp);
           mpText.innerText = `${mp}/${maxMp}`;
         }
         // B17 FIX: Draw WebGL fluid effect on mp-wave-canvas inside the orb
@@ -7297,7 +7447,7 @@ function _performStickyMove(src, target) {
       }
     }
 
-    const totalPts = (player.statPoints ?? 0);
+    const totalPts = (player.statPoints ?? 0) + (player.talentPoints ?? 0);
     const badge = document.getElementById('stat-badge');
     if(badge) {
        badge.innerText = totalPts;
@@ -7540,7 +7690,7 @@ function _performStickyMove(src, target) {
         slots: l.slots.map(s => ({ itemName: s.itemName, qty: s.qty })),
         isLocked: l.isLocked, lockKind: l.lockKind,
       })),
-      enemies,
+      npcs: zone.npcs,
       corpses: zone.corpses.map(c => ({
         x: c.x, y: c.y, name: c.name, icon: c.icon,
         isBones: c.isBones, actionCooldown: c.actionCooldown,
@@ -7591,7 +7741,7 @@ function _performStickyMove(src, target) {
     else if(!(player.identifiedItems instanceof Set)) player.identifiedItems = new Set();
     currentLevel = data.currentLevel; currentScene = data.currentScene;
     theMap = data.theMap; explored = data.explored;
-    enemies = data.enemies;
+    zone.replaceNpcs(data.npcs || data.enemies || []);
     levelCache = data.levelCache; stolenItems = data.stolenItems || [];
     // Rehydrate Lootables (JSON-cloned in save).
     zone.clearLootables();
@@ -8040,9 +8190,9 @@ function _performStickyMove(src, target) {
       const slots = lootable.def?.bagSlots ?? 1;
       const chance = 0.05 + 0.10 * tal('shitKicker');
       const dmg = 1 + Math.floor(Math.random() * slots);
-      if (typeof player.takeDamage === 'function') player.takeDamage(dmg, 'corporal');
-      else player.hp = Math.max(0, player.hp - dmg);
       logMsg(`<span style='color:var(--error)'>You kick the ${containerName} — ${dmg} damage!</span>`);
+      // A lethal kick stops here — no loot off a chest that killed you.
+      if (applyPlayerDamage(dmg, 'kickback', { mitigate: true, kind: 'corporal' })) return;
       if (Math.random() < chance) {
         logMsg(`The ${containerName} splinters open.`);
         unlock();
@@ -8376,12 +8526,14 @@ function _performStickyMove(src, target) {
       if(item) {
         slot.innerHTML += item.icon;
         if(item.qty > 1) slot.innerHTML += `<span class="qty">${item.qty}</span>`;
-        // E13: Green border glow for items with status effects
+        // E13: Green border glow as a "worth identifying" hint — only
+        // shown while the item is still unidentified. Once the player
+        // knows what it does, drop the cue.
         const hasEffect = itemHasStatusEffect(item.icon);
         const isIdentified = player.identifiedItems && player.identifiedItems.has(item.icon);
-        if(hasEffect) {
+        if(hasEffect && !isIdentified) {
           slot.style.outline = '2px solid #0f8';
-          if(!isIdentified) slot.title = (item.def?.displayName ?? item.icon) + ' [Unidentified effects]';
+          slot.title = (item.def?.displayName ?? item.icon) + ' [Unidentified effects]';
         }
       }
       slot.onclick = () => {
@@ -8572,12 +8724,13 @@ function _performStickyMove(src, target) {
     if (item) {
       slot.innerHTML = item.icon;
       if (item.qty > 1) slot.innerHTML += `<span class="qty">${item.qty}</span>`;
-      // E13: Green glow for items with status effects
+      // E13: Green glow as a "worth identifying" hint — only shown
+      // while still unidentified.
       const hasEffect = itemHasStatusEffect(item.icon);
       const isIdentified = player.identifiedItems && player.identifiedItems.has(item.icon);
-      if (hasEffect) {
+      if (hasEffect && !isIdentified) {
         slot.style.outline = '2px solid #0f8';
-        if (!isIdentified) slot.title = (item.def?.displayName ?? item.icon) + ' [Unidentified effects]';
+        slot.title = (item.def?.displayName ?? item.icon) + ' [Unidentified effects]';
       } else if (item.def?.displayName) {
         slot.title = item.def.displayName;
       }
@@ -8680,7 +8833,7 @@ function _performStickyMove(src, target) {
               // Drop to empty slot — unequip (new stack of qty 1)
               tgtArr[targetIdx] = new ItemStack(equippedName, 1);
               player.equipped[slotName] = null;
-              logMsg(`Unequipped ${equippedDef?.displayName || equippedName}.`);
+              logMsg(`Unequipped ${equippedDef?.label() || equippedName}.`);
               swapEquip(-1, slotName);
             } else {
               // Swap — check if target item fits the slot
@@ -8693,7 +8846,7 @@ function _performStickyMove(src, target) {
               if (fitsSlot) {
                 tgtArr[targetIdx] = new ItemStack(equippedName, 1);
                 player.equipped[slotName] = targetItem.itemName;
-                logMsg(`Swapped ${equippedDef?.displayName || equippedName} with ${targetDef?.displayName || targetItem.itemName}.`);
+                logMsg(`Swapped ${equippedDef?.label() || equippedName} with ${targetDef?.label() || targetItem.itemName}.`);
                 swapEquip(-1, slotName);
               } else {
                 logMsg(`${targetDef?.name || targetItem.icon} doesn't fit the ${slotName} slot.`);
@@ -8743,7 +8896,7 @@ function _performStickyMove(src, target) {
         if(freeSlot !== -1) {
           tgtItem.slots[freeSlot] = new ItemStack(srcItem.itemName, srcItem.qty ?? 1);
           srcArr[window.draggedItemIdx] = null;
-          logMsg(`${srcItem.icon} placed into ${bagDef.name}.`);
+          logMsg(`${srcItem.icon} placed into ${bagDef.label()}.`);
           Sound.clink();
           window.draggedItemIdx = null; window.draggedSource = null;
           renderQuickslots(); renderInventory(); updateUI();
@@ -8858,7 +9011,7 @@ function _performStickyMove(src, target) {
     const fits = (slotName === 'leftHand' && (def.type === 'weapon' || def.slot === 'leftHand')) ||
                  (slotName === 'rightHand' && (def.type === 'weapon' || def.slot === 'rightHand')) ||
                  (def.slot === slotName);
-    if (!fits) { logMsg(`${def.name} doesn't fit the ${slotName} slot.`); return; }
+    if (!fits) { logMsg(`${def.label()} doesn't fit the ${slotName} slot.`); return; }
 
     // Swap currently equipped item back into source array slot
     const currentEquipped = player.equipped[slotName];  // camelCase name
@@ -8868,7 +9021,7 @@ function _performStickyMove(src, target) {
       srcArr[fromIdx] = null;
     }
     player.equipped[slotName] = item.itemName;
-    logMsg(`Equipped ${def.name}.`);
+    logMsg(`Equipped ${def.label()}.`);
     swapEquip(-1, slotName);
     window.draggedItemIdx = null; window.draggedSource = null;
     updateUI();
@@ -9353,10 +9506,10 @@ function _performStickyMove(src, target) {
         if(!def) return;
         if(def.type === "weapon" && def.baseDmg && def.baseDmg > currentBaseDmg) {
           if (considerEquip) {
-            meleeDmgMsg += `, or ${def.name} for ${def.baseDmg}`;
+            meleeDmgMsg += `, or ${def.label()} for ${def.baseDmg}`;
           }
           else {
-            meleeDmgMsg += `. Consider equipping ${def.name}, which would give you a higher base damage of ${def.baseDmg}`;
+            meleeDmgMsg += `. Consider equipping ${def.label()}, which would give you a higher base damage of ${def.baseDmg}`;
             considerEquip = true;
           }
           return;
@@ -9742,8 +9895,8 @@ function _performStickyMove(src, target) {
     // Set attacking flag for sprite animation
     player._isAttacking = true;
     setTimeout(() => { player._isAttacking = false; }, 300);
-    let eIdx = enemies.findIndex(e => e.x === nx && e.y === ny);
-    if(eIdx !== -1) {
+    let target = zone.npcAt(nx, ny);
+    if(target) {
       // Enemy found — attack it
       movePlayer(dx, dy);
     } else {
@@ -9805,6 +9958,16 @@ function _performStickyMove(src, target) {
     logMsg(`<pre style="color:#aef; font-size:10px; margin:0; white-space:pre-wrap;">${JSON.stringify(out, null, 2)}</pre>`);
   };
   window.debugAddStatPoints = (amt) => { player.statPoints += amt; logMsg(`Added ${amt} stat points.`); updateUI(); };
+  // Debug: flood the current floor with 20 containers for kick/loot testing.
+  // One-shot call into the same spawnContainers path initMap uses for normal
+  // placement — containers are passive Lootables (not ticked per turn), so the
+  // only cost is drawing the extra sprites. No engine impact beyond that.
+  window.debugSpawnFloorLoot = () => {
+    if (typeof spawnContainers !== 'function') { logMsg('spawnContainers unavailable in this scene.'); return; }
+    spawnContainers(20, currentLevel);
+    drawMap();
+    logMsg(`<span style="color:var(--success)">📦 Spawned 20 containers on Floor ${currentLevel}.</span>`);
+  };
   // Floor navigation (floor = the current dungeon depth; level = player character level)
   window.debugWarpNextFloor = () => { currentLevel++; levelCache[currentLevel] = null; initMap(50); calculateFOV(); drawMap(); updateUI(); logMsg(`Warped to Floor ${currentLevel}.`); };
   window.debugWarpPrevFloor = () => { if(currentLevel > 0) { currentLevel--; levelCache[currentLevel] = null; initMap(50); calculateFOV(); drawMap(); updateUI(); logMsg(`Warped to Floor ${currentLevel}.`); } };
@@ -9901,7 +10064,7 @@ function _performStickyMove(src, target) {
     } else {
       zone.dropAt(player.x, player.y, new ItemStack(name, 1));
     }
-    logMsg(`Added ${def.displayName} to ${slot !== -1 ? 'inventory' : 'ground'}.`);
+    logMsg(`Added ${def.label()} to ${slot !== -1 ? 'inventory' : 'ground'}.`);
     renderQuickslots(); updateUI();
   };
   window.debugEditStats = () => {
@@ -10518,6 +10681,675 @@ ${html}
   };
 
 
+// === dialog.js ===
+// === dialog.js ===
+/*
+  Dialog engine — Andor's-Trail-style conversation system.
+
+  Data model (mirrors AT's model.conversation package):
+    Phrase   = { message, replies[], scriptEffects[], speaker? }
+               message may be a string, an array (random pick), or a function (called at render time).
+    Reply    = { text, nextPhrase, requires[], scriptEffects[] }
+    Requirement = { type, ...typeSpecificFields, negate? }
+                  Supported in tier-1: 'questStage' {questId, minProgress}, 'playerStat' {stat, min}.
+    ScriptEffect= { type, ... }
+                  Supported in tier-1: 'advanceQuest' {questId, stage}, 'giveItem' {itemName, qty},
+                                       'die' {cause}, 'log' {text}.
+
+  Special nextPhrase sentinels (namespaced, see plan #3):
+    @close   — close the dialog modal
+    @shop    — close dialog, open the existing shop UI for the current NPC's type
+    @fight   — close dialog, flip NPC to hostile (combat resumes on next bump)
+    @remove  — close dialog, despawn the NPC
+    @next    — pick the first selectable reply automatically (auto-advance)
+
+  Coexistence: NPCs opt into this system by carrying a `phraseId` field. The
+  bump handler in engine.js checks for that field; if absent the legacy path runs.
+
+  All user-facing strings (NPC names, messages, reply text) pass through
+  _escape() before being interpolated into innerHTML — see _render and
+  _renderLogEntry. Content origin is the source-controlled dialog packs and
+  MONSTER_DEF.dialog arrays; no runtime/network input ever reaches the DOM.
+*/
+(function() {
+  'use strict';
+
+  const SENTINELS = {
+    CLOSE: '@close', SHOP: '@shop', FIGHT: '@fight', REMOVE: '@remove', NEXT: '@next',
+  };
+
+  const Dialog = {
+    _phrases: {},        // id -> Phrase
+    currentNpc: null,
+    currentPhrase: null,
+    currentPhraseId: null,
+    _log: [],            // [{kind:'speaker'|'self'|'system', icon?, name?, text}]
+    _selectedReplyIdx: null,  // index into _visibleReplies(); null = nothing picked yet
+
+    // ─── public registration API ──────────────────────────────
+    registerPhrases(map) {
+      for (const [id, phrase] of Object.entries(map)) {
+        if (this._phrases[id]) {
+          console.warn(`[Dialog] phrase id collision: "${id}" — first wins`);
+          continue;
+        }
+        this._phrases[id] = phrase;
+      }
+    },
+
+    injectReply(intoPhraseId, reply) {
+      const p = this._phrases[intoPhraseId];
+      if (!p) {
+        console.warn(`[Dialog] injectReply: unknown phrase "${intoPhraseId}"`);
+        return;
+      }
+      if (!p.replies) p.replies = [];
+      p.replies.push(reply);
+    },
+
+    // ─── public flow API ──────────────────────────────────────
+    startWith(npc, phraseId) {
+      this.currentNpc = npc;
+      this._log = [];
+      this._selectedReplyIdx = null;
+      this._goto(phraseId);
+      this._show();
+    },
+
+    startSelf(phraseId) {
+      this.currentNpc = null;
+      this._log = [];
+      this._selectedReplyIdx = null;
+      this._goto(phraseId);
+      this._show();
+    },
+
+    // Two-step selection (Andor's-Trail style): click a reply to MARK it
+    // (checkmark + lighter background), then click the Next button to
+    // commit. Lets the player change their pick before committing.
+    selectReply(idx) {
+      if (!this.currentPhrase) return;
+      const visible = this._visibleReplies();
+      if (!visible[idx]) return;
+      this._selectedReplyIdx = idx;
+      this._render();
+    },
+
+    next() {
+      // Commits the currently-selected reply. No-op if nothing picked.
+      if (this._selectedReplyIdx == null) return;
+      const visible = this._visibleReplies();
+      const r = visible[this._selectedReplyIdx];
+      if (!r) return;
+      this._selectedReplyIdx = null;
+      this._log.push({ kind: 'self', text: r.text });
+      this._applyEffects(r.scriptEffects);
+      this._goto(r.nextPhrase);
+      this._render();
+    },
+
+    leave() {
+      this._hide();
+      this.currentNpc = null;
+      this.currentPhrase = null;
+      this.currentPhraseId = null;
+      this._selectedReplyIdx = null;
+    },
+
+    // ─── internals ────────────────────────────────────────────
+    _goto(phraseId) {
+      // Sentinel routing
+      if (phraseId === SENTINELS.CLOSE) { this.leave(); return; }
+      if (phraseId === SENTINELS.SHOP) {
+        const type = (this.currentNpc && this.currentNpc.type) || null;
+        this._hide();
+        // Prefer the new tab-only ShopDialog; fall back to legacy openShop
+        // for any NPC type that hasn't been migrated to a SHOP_CATALOGS entry yet.
+        if (type && typeof ShopDialog !== 'undefined' && ShopDialog.open) {
+          ShopDialog.open(type);
+        } else if (type && typeof openShop === 'function') {
+          openShop(type);
+        }
+        return;
+      }
+      if (phraseId === SENTINELS.FIGHT) {
+        const npc = this.currentNpc;
+        this._hide();
+        if (npc) {
+          if (npc.stats) { npc.stats.passive = false; npc.stats.quest = false; }
+          npc.isQuestNPC = false;
+          if (typeof NPC_ATTITUDE !== 'undefined' && typeof npc.setAttitude === 'function') {
+            npc.setAttitude(NPC_ATTITUDE.HOSTILE);
+          }
+        }
+        return;
+      }
+      if (phraseId === SENTINELS.REMOVE) {
+        const npc = this.currentNpc;
+        this._hide();
+        if (npc && typeof zone !== 'undefined' && zone.removeNpcs) zone.removeNpcs(e => e === npc);
+        return;
+      }
+      // Real phrase
+      const phrase = this._phrases[phraseId];
+      if (!phrase) {
+        console.warn(`[Dialog] unknown phrase "${phraseId}"`);
+        this.leave();
+        return;
+      }
+      this.currentPhrase = phrase;
+      this.currentPhraseId = phraseId;
+      this._selectedReplyIdx = null;  // fresh phrase, no pick yet
+      this._applyEffects(phrase.scriptEffects);
+      const message = this._resolveMessage(phrase.message);
+      if (message) {
+        const npc = this.currentNpc;
+        if (npc) {
+          this._log.push({
+            kind: 'speaker',
+            icon: (npc.stats && npc.stats.icon) || '🗣',
+            // Resolution order: explicit phrase.speaker > NPC stats.name >
+            // prettified npc.type ('mended_drum_barman' → 'Mended Drum Barman')
+            // > 'NPC'. The prettifier exists so a NEW spawn site that forgets
+            // to set a name doesn't leak underscores into the UI.
+            name: phrase.speaker
+              || (npc.stats && npc.stats.name)
+              || this._prettyType(npc.type)
+              || 'NPC',
+            text: message,
+          });
+        } else {
+          this._log.push({ kind: 'thought', text: message });
+        }
+      }
+    },
+
+    _resolveMessage(raw) {
+      if (raw == null) return null;
+      if (typeof raw === 'function') {
+        try { return String(raw()); } catch (e) { console.warn('[Dialog] message fn threw', e); return null; }
+      }
+      if (Array.isArray(raw)) {
+        if (raw.length === 0) return null;
+        return String(raw[Math.floor(Math.random() * raw.length)]);
+      }
+      return String(raw);
+    },
+
+    _visibleReplies() {
+      if (!this.currentPhrase || !this.currentPhrase.replies) return [];
+      return this.currentPhrase.replies.filter(r => this._canSelectReply(r));
+    },
+
+    _canSelectReply(reply) {
+      if (!reply.requires) return true;
+      for (const req of reply.requires) {
+        if (!this._checkRequirement(req)) return false;
+      }
+      return true;
+    },
+
+    _checkRequirement(req) {
+      let met = false;
+      if (req.type === 'questStage') {
+        const state = (typeof QuestEngine !== 'undefined') && QuestEngine._questState && QuestEngine._questState[req.questId];
+        const current = state ? (state.current || 0) : 0;
+        met = current >= (req.minProgress || 0);
+      } else if (req.type === 'playerStat') {
+        const v = (typeof player !== 'undefined' && player.stats && typeof player.stats[req.stat] === 'number') ? player.stats[req.stat] : 0;
+        met = v >= (req.min || 0);
+      } else {
+        console.warn(`[Dialog] unsupported requirement type "${req.type}"`);
+        met = false;
+      }
+      return req.negate ? !met : met;
+    },
+
+    _applyEffects(effects) {
+      if (!effects) return;
+      for (const eff of effects) this._applyEffect(eff);
+    },
+
+    _applyEffect(eff) {
+      switch (eff.type) {
+        case 'advanceQuest':
+          if (typeof QuestEngine !== 'undefined' && QuestEngine.advance) {
+            QuestEngine.advance(eff.questId, eff.stage);
+            this._log.push({ kind: 'system', text: `[Quest updated]` });
+          }
+          break;
+        case 'giveItem':
+          if (typeof ItemStack !== 'undefined' && typeof inventory !== 'undefined') {
+            const slot = inventory.findIndex(s => s === null);
+            if (slot >= 0) {
+              inventory[slot] = new ItemStack(eff.itemName, eff.qty || 1);
+              this._log.push({ kind: 'system', text: `[Received: ${eff.itemName} ×${eff.qty || 1}]` });
+              if (typeof renderQuickslots === 'function') renderQuickslots();
+            } else {
+              this._log.push({ kind: 'system', text: `[Inventory full — couldn't accept ${eff.itemName}]` });
+            }
+          }
+          break;
+        case 'die':
+          if (typeof die === 'function') {
+            const cause = eff.cause || 'dialogue';
+            this._hide();
+            setTimeout(() => die(cause), 0);
+          }
+          break;
+        case 'log':
+          if (typeof logMsg === 'function') logMsg(eff.text || '');
+          break;
+        case 'callFn':
+          // Escape hatch for migrations: invoke window[eff.fn] with eff.args.
+          // Useful when extracting a legacy modal whose handler logic is
+          // already encapsulated in a function and not worth re-expressing
+          // as discrete scriptEffects (genieWish, awardAchievement, etc.).
+          // Long-term, tier-3 can replace callFn with proper effects.
+          if (eff.fn && typeof window[eff.fn] === 'function') {
+            try { window[eff.fn](...(eff.args || [])); }
+            catch (e) { console.warn(`[Dialog] callFn ${eff.fn} threw`, e); }
+          }
+          break;
+        default:
+          console.warn(`[Dialog] unsupported effect type "${eff.type}"`);
+      }
+    },
+
+    // ─── DOM ──────────────────────────────────────────────────
+    _show() {
+      const el = document.getElementById('dialog-modal');
+      if (el) el.style.display = 'flex';
+      this._render();
+    },
+
+    _hide() {
+      const el = document.getElementById('dialog-modal');
+      if (el) el.style.display = 'none';
+    },
+
+    _render() {
+      const logEl = document.getElementById('dialog-log');
+      const repliesEl = document.getElementById('dialog-replies');
+      if (!logEl || !repliesEl) return;
+      // All dynamic text is funneled through _escape() before interpolation.
+      logEl.innerHTML = this._log.map(e => this._renderLogEntry(e)).join('');
+      logEl.scrollTop = logEl.scrollHeight;
+      const visible = this._visibleReplies();
+      if (visible.length === 0) {
+        // No replies → empty reply area (bottom Leave button still works).
+        // Collapse the replies div completely so its border-top doesn't
+        // stack against the buttons div's border-top into a double line.
+        repliesEl.innerHTML = '';
+        repliesEl.style.borderTop = 'none';
+        repliesEl.style.padding = '0';
+      } else {
+        // Restore the divider + padding for the populated state.
+        repliesEl.style.borderTop = '1px solid #4A4458';
+        repliesEl.style.padding = '8px 12px';
+        // Two-step selection: checkmark slot on the left, lighter bg when
+        // selected. The slot is always rendered (placeholder when unpicked)
+        // so text doesn't jump as the user moves between options.
+        repliesEl.innerHTML = visible.map((r, i) => {
+          const picked = (i === this._selectedReplyIdx);
+          const bg = picked ? '#3D3B45' : '#2D2B32';
+          const border = picked ? '#9cf' : '#4A4458';
+          const mark = picked
+            ? '<span style="color:#9cf; font-weight:bold;">✓</span>'
+            : '<span style="color:transparent;">✓</span>';
+          return `<button onclick="Dialog.selectReply(${i})" style="display:flex; align-items:center; gap:8px; width:100%; margin:4px 0; padding:8px; text-align:left; background:${bg}; border:1px solid ${border}; color:#fff; border-radius:4px; cursor:pointer;">${mark}<span style="flex:1;">${this._escape(r.text)}</span></button>`;
+        }).join('');
+      }
+      // Next button visibility & enabled-state:
+      //   no replies         → hidden (visibility:hidden so Leave stays put)
+      //   replies, no pick   → visible but FADED + cursor:not-allowed + disabled attr
+      //   replies, picked    → visible, full opacity, normal cursor
+      const nextBtn = document.querySelector('#dialog-buttons button[onclick*="Dialog.next"]');
+      if (nextBtn) {
+        if (visible.length === 0) {
+          nextBtn.style.visibility = 'hidden';
+          nextBtn.disabled = true;
+        } else {
+          nextBtn.style.visibility = 'visible';
+          const picked = (this._selectedReplyIdx != null);
+          nextBtn.disabled = !picked;
+          // Inline-style overrides so the change is unmistakable across
+          // browsers (default :disabled styling is too subtle).
+          nextBtn.style.opacity     = picked ? '1'        : '0.4';
+          nextBtn.style.cursor      = picked ? 'pointer'  : 'not-allowed';
+          nextBtn.style.filter      = picked ? 'none'     : 'grayscale(60%)';
+        }
+      }
+    },
+
+    _renderLogEntry(entry) {
+      if (entry.kind === 'speaker') {
+        // Multi-paragraph support: split the message on a blank line and
+        // render each paragraph as a separate <p>. First paragraph carries
+        // the speaker prefix "Name: …"; subsequent paragraphs indent under.
+        const paras = String(entry.text || '').split(/\n\s*\n/);
+        const first = paras.shift() || '';
+        const firstHtml = `<p style="margin:0 0 6px;"><strong style="color:#fc9;">${this._escape(entry.name)}:</strong> ${this._escape(first)}</p>`;
+        const restHtml = paras.map(p => `<p style="margin:6px 0 0;">${this._escape(p)}</p>`).join('');
+        return `<div style="display:flex; gap:8px; margin:8px 0; align-items:flex-start;">
+          <span style="font-size:28px; line-height:1; flex-shrink:0;">${this._escape(entry.icon)}</span>
+          <div style="flex:1;">${firstHtml}${restHtml}</div>
+        </div>`;
+      }
+      if (entry.kind === 'thought') {
+        return `<div style="display:flex; gap:8px; margin:8px 0; align-items:flex-start;">
+          <span style="font-size:28px; line-height:1; flex-shrink:0;">💭</span>
+          <div style="flex:1;"><p style="margin:0;"><strong style="color:#b3acbc;">Thought:</strong> ${this._escape(entry.text)}</p></div>
+        </div>`;
+      }
+      if (entry.kind === 'self') {
+        return `<div style="margin:6px 0 6px 36px; color:#9cf;">› ${this._escape(entry.text)}</div>`;
+      }
+      // system
+      return `<div style="margin:6px 0; color:#fc9; text-align:center; font-size:11px; font-style:italic;">${this._escape(entry.text)}</div>`;
+    },
+
+    _prettyType(type) {
+      if (!type) return null;
+      return String(type).split('_').map(w => w ? w[0].toUpperCase() + w.slice(1) : '').join(' ').trim();
+    },
+
+    _escape(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    },
+  };
+
+  window.Dialog = Dialog;
+})();
+
+
+// === dialogs_base.js ===
+// === dialogs_base.js ===
+/*
+  Base conversation content for engine-owned NPCs.
+
+  Loaded immediately after dialog.js so the registry is populated before any
+  map-init code that might attach phraseIds to spawning NPCs runs.
+
+  Tier-1 cohort: the Mended Drum (barman + 4 patrons). Future engine-owned
+  NPC migrations (Apu, blacksmith, Cain, Dennis, etc.) drop in here.
+
+  Patron quips are pulled live from MONSTER_DEF.<type>.dialog (already
+  authored in state.js) so the same text is reused without duplication.
+  Each bump re-rolls a random quip via the array-as-message support in
+  dialog.js's _resolveMessage.
+*/
+(function() {
+  'use strict';
+  if (typeof Dialog === 'undefined') return;
+
+  // Helper: pull the dialog array from MONSTER_DEF, with a fallback if the
+  // def is missing or its dialog list is empty.
+  function quipsFrom(type, fallback) {
+    return () => {
+      const def = (typeof MONSTER_DEF !== 'undefined') ? MONSTER_DEF[type] : null;
+      const arr = def && Array.isArray(def.dialog) ? def.dialog : null;
+      return (arr && arr.length > 0) ? arr[Math.floor(Math.random() * arr.length)] : fallback;
+    };
+  }
+
+  Dialog.registerPhrases({
+    // ── Barman ────────────────────────────────────────────────
+    // The barman greets, then the @shop sentinel hands off to the existing
+    // store UI (with its buy/sell tabs intact). [Leave] closes the dialog.
+    'mended_drum_barman_greet': {
+      // Multi-paragraph greeting: opener, then the carved-over-the-bar motto,
+      // then a sales pitch for the in-sewer-ants policy. Paragraphs split on
+      // blank lines (\n\n).
+      message:
+        "What'll it be, traveler?\n\n" +
+        "Motto over the bar reads: \"Quanti Canicula Ille In Fenestra.\" Old Latin. " +
+        "Means \"How much is that doggie in the window?\" Long story, don't ask.\n\n" +
+        "We've also got an Inn-Sewer-Ants Policy — 50 quid, covers you for limb loss up to but not including the head. Highly recommended.",
+      // No '[Leave]' reply — the bottom Leave button handles closure.
+      // Only meaningful response options live in the replies list.
+      replies: [
+        { text: 'Browse your wares.', nextPhrase: '@shop' },
+      ],
+    },
+
+    // ── Vimes ────────────────────────────────────────────────
+    // No replies — pure flavor NPC. Bottom Leave is always there;
+    // Next is hidden when replies is empty.
+    'mended_drum_vimes_greet': {
+      message: quipsFrom('vimes', "I'm off duty. Which means I'm still on duty."),
+    },
+
+    // ── Cohen ────────────────────────────────────────────────
+    'mended_drum_cohen_greet': {
+      message: quipsFrom('cohen', "Young people today. Always complaining."),
+    },
+
+    // ── Librarian ────────────────────────────────────────────
+    'mended_drum_librarian_greet': {
+      message: quipsFrom('librarian', 'Ook.'),
+    },
+
+    // ── Dorimunde Ironchin ───────────────────────────────────
+    // Real response retained ("Sorry, no.") — that's actual content,
+    // distinct from the redundant Leave.
+    'mended_drum_dorimunde_greet': {
+      message: quipsFrom('bearded_dwarf', 'Excuse me, do you know where The Dirty Rat is?'),
+      replies: [
+        { text: 'Sorry, no.', nextPhrase: '@close' },
+      ],
+    },
+
+    // ── Tier-2 flavor-only Tristram NPCs ─────────────────────
+    // Engine-owned NPCs whose former openShop modal was just a single
+    // greeting + random quip. Pure flavor: no shop, no quest branching.
+    // Their legacy bump-handler blocks in engine.js get deleted.
+
+    'dennis_wife_greet': {
+      message: quipsFrom('dennis_wife', '...'),
+    },
+
+    'muck_peasant_greet': {
+      message: quipsFrom('muck_peasant', 'Lovely muck.'),
+    },
+
+    'retired_soldier_greet': {
+      message: quipsFrom('retired_soldier', 'My sciatica.'),
+    },
+
+    // ── Fence ────────────────────────────────────────────────
+    // Has a real shop (stolen goods) but the catalog logic in shop.js is
+    // dynamic — falls back to legacy openShop on @shop. Dialog wraps it
+    // so bumping fence first opens conversation, matching the AT pattern.
+    'fence_greet': {
+      message: "I got 12 kids to feed. Don't ask questions.",
+      replies: [
+        { text: 'Show me the stolen goods.', nextPhrase: '@shop' },
+      ],
+    },
+
+    // ── Vermin first sight (self-dialog) ─────────────────────
+    'vermin_first_sight': {
+      message: "Vermin! No shopkeeper has asked, but if I cull them the merchants will surely thank me.",
+      replies: [
+        {
+          text: 'Time to clean house.',
+          nextPhrase: '@close',
+          scriptEffects: [
+            { type: 'advanceQuest', questId: 'q_vermin_slayer', stage: 10 }
+          ]
+        }
+      ]
+    },
+  });
+})();
+
+
+// === shop_dialog.js ===
+// === shop_dialog.js ===
+/*
+  New shop UI for Dialog-system NPCs.
+
+  Replaces openShop()/openStore() for migrated shopkeepers. The Dialog
+  engine's @shop sentinel routes to ShopDialog.open(type) instead of the
+  legacy openShop. Un-migrated shop NPCs (Apu, blacksmith, Cain, etc.)
+  still use the old openShop path — no regression for them.
+
+  UI: no title bar; Buy + Sell tabs only; total GP bottom-left; Leave
+  button bottom-right. Per the tier-1 spec.
+
+  Item catalogs live in SHOP_CATALOGS, keyed by NPC type. Tier-1 ships
+  only the barman; more shopkeepers join in tier-2 as they migrate.
+  buy() and sell() from shop.js are reused as-is.
+
+  All user-facing strings (item names, NPC types) pass through _esc()
+  before innerHTML interpolation; payloads are author-controlled
+  (CATALOG constants + inventory items the player already owns).
+*/
+(function() {
+  'use strict';
+
+  // ─── Per-NPC item catalog ────────────────────────────────────
+  // Each entry mirrors the legacy shop.js items[] shape so the existing
+  // buy(icon, cost, type, qty) function works without modification.
+  const SHOP_CATALOGS = {
+    'mended_drum_barman': [
+      { icon: '🍺', name: 'Scumble (mainly apples)',       cost: 4   },
+      { icon: '🍖', name: 'Dwarf Bread (also a weapon)',   cost: 6   },
+      { icon: '🧀', name: 'Lancre Cheese (legally a weapon)', cost: 5 },
+      { icon: '📜', name: 'Inn-Sewer-Ants Policy',         cost: 50  },
+      { icon: '🗡️', name: 'Perfectly Ordinary Sword',     cost: 120 },
+    ],
+  };
+
+  const ShopDialog = {
+    _npcType: null,
+    _tab: 'buy',
+
+    open(npcType) {
+      if (!SHOP_CATALOGS[npcType]) {
+        console.warn(`[ShopDialog] no catalog for "${npcType}" — falling back to legacy openShop`);
+        if (typeof openShop === 'function') openShop(npcType);
+        return;
+      }
+      this._npcType = npcType;
+      this._tab = 'buy';
+      const el = document.getElementById('shop-dialog');
+      if (el) el.style.display = 'flex';
+      this._render();
+    },
+
+    tab(name) {
+      this._tab = (name === 'sell') ? 'sell' : 'buy';
+      this._render();
+    },
+
+    leave() {
+      const el = document.getElementById('shop-dialog');
+      if (el) el.style.display = 'none';
+      this._npcType = null;
+    },
+
+    // Called from button onclick — runs the legacy buy() / sell() with the
+    // suppressReopen flag (true) so they DON'T pop the old shop modal at
+    // the end. We re-render the new ShopDialog ourselves to reflect the
+    // change in GP / inventory.
+    buyItem(icon, cost, qty) {
+      if (typeof buy === 'function') buy(icon, cost, this._npcType, qty, true);
+      this._render();
+    },
+
+    sellItem(idx) {
+      if (typeof sell === 'function') sell(idx, this._npcType, true);
+      this._render();
+    },
+
+    // ─── internals ─────────────────────────────────────────────
+    // All dynamic content funneled through _esc() before interpolation
+    // — see _renderBuy/_renderSell. No runtime/network input reaches DOM.
+    _render() {
+      this._updateTabs();
+      this._updateBottom();
+      const contentEl = document.getElementById('shop-dialog-content');
+      if (!contentEl) return;
+      contentEl.innerHTML = (this._tab === 'buy') ? this._renderBuy() : this._renderSell();
+    },
+
+    _updateTabs() {
+      const buyEl = document.getElementById('shop-dialog-tab-buy');
+      const sellEl = document.getElementById('shop-dialog-tab-sell');
+      if (buyEl)  buyEl.style.background  = (this._tab === 'buy')  ? '#2D2B32' : '#1D1B20';
+      if (buyEl)  buyEl.style.color       = (this._tab === 'buy')  ? '#fff'    : '#aaa';
+      if (sellEl) sellEl.style.background = (this._tab === 'sell') ? '#2D2B32' : '#1D1B20';
+      if (sellEl) sellEl.style.color      = (this._tab === 'sell') ? '#fff'    : '#aaa';
+    },
+
+    _updateBottom() {
+      const gpEl = document.getElementById('shop-dialog-gp');
+      if (gpEl) {
+        const gp = (typeof player !== 'undefined' && typeof player.gp === 'number') ? player.gp : 0;
+        gpEl.textContent = `${gp}g`;
+      }
+    },
+
+    _renderBuy() {
+      const catalog = SHOP_CATALOGS[this._npcType] || [];
+      if (catalog.length === 0) {
+        return '<p style="color:#aaa; font-style:italic;">Nothing for sale.</p>';
+      }
+      return '<div style="display:flex; flex-direction:column; gap:6px;">' +
+        catalog.map(item => {
+          const qty = item.qty != null ? item.qty : 1;
+          const affordable = (typeof player !== 'undefined' && player.gp >= item.cost);
+          // Args must be SINGLE-quoted so the onclick attribute's outer
+          // double-quotes survive intact. Matches the legacy shop.js style.
+          // Safe for our emoji icons (none contain a single quote); if a
+          // future catalog adds icons with apostrophes, switch to HTML
+          // entity encoding (&quot;) around a JSON.stringify wrapper.
+          const callArgs = `'${item.icon}', ${item.cost}, ${qty}`;
+          // Visible disabled styling for can't-afford items — matches the
+          // Next button treatment in dialog.js so the disabled state is
+          // unmistakable across browsers (default :disabled is too subtle).
+          const btnStyle = affordable
+            ? 'padding:4px 10px;'
+            : 'padding:4px 10px; opacity:0.4; cursor:not-allowed; filter:grayscale(60%);';
+          return `<div style="display:flex; justify-content:space-between; align-items:center; padding:6px 8px; background:#2D2B32; border-radius:4px;">
+            <span>${this._esc(item.icon)} ${this._esc(item.name)} <span style="color:var(--warning); margin-left:6px;">${item.cost}g</span></span>
+            <button onclick="ShopDialog.buyItem(${callArgs})" ${affordable ? '' : 'disabled'} style="${btnStyle}">Buy</button>
+          </div>`;
+        }).join('') + '</div>';
+    },
+
+    _renderSell() {
+      if (typeof inventory === 'undefined') return '<p style="color:#aaa;">No inventory.</p>';
+      const rows = [];
+      for (let idx = 0; idx < inventory.length; idx++) {
+        const it = inventory[idx];
+        if (!it) continue;
+        const def = it.def;
+        if (!def || !def.maxGP || def.maxGP <= 0) continue;
+        const count = inventory.filter(i => i && i.itemName === it.itemName).length;
+        const badge = count > 1 ? `<span style="background:var(--warning); color:#000; font-size:9px; padding:0 4px; border-radius:8px; margin-left:4px;">${count}</span>` : '';
+        rows.push(`<div style="display:flex; justify-content:space-between; align-items:center; padding:6px 8px; background:#2D2B32; border-radius:4px;">
+          <span>${this._esc(it.icon || '?')} ${this._esc(def.displayName || it.itemName)} <span style="color:var(--success); margin-left:6px;">+${def.maxGP}g</span>${badge}</span>
+          <button onclick="ShopDialog.sellItem(${idx})" style="padding:4px 10px;">Sell</button>
+        </div>`);
+      }
+      if (rows.length === 0) {
+        return '<p style="color:#aaa; font-style:italic;">Nothing to sell.</p>';
+      }
+      return '<div style="display:flex; flex-direction:column; gap:6px;">' + rows.join('') + '</div>';
+    },
+
+    _esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    },
+  };
+
+  window.ShopDialog = ShopDialog;
+})();
+
+
 // === quests_base.js ===
   /*
   ╔══════════════════════════════════════════════════════════════════════════════╗
@@ -10775,12 +11607,7 @@ ${html}
         stages: [
           {
             progress: 10,
-            logText: "Vermin! No shopkeeper has asked, but if I cull them the merchants will surely thank me.",
-            trigger: {
-              event: "saw_vermin",
-              filter: {},
-              requirements: []
-            }
+            logText: "Vermin! No shopkeeper has asked, but if I cull them the merchants will surely thank me."
           },
           {
             progress: 20,
@@ -12132,24 +12959,23 @@ ${html}
           if(currentLevel === 2) {
             let catPos = findSpawnPosition();
             if(catPos) {
-              spawnNpc(enemies, catPos.x, catPos.y, 'cat', { stats: { icon: '🐱', hp: 5, maxHp: 5, damage: 2, isBig: false } });
+              spawnNpc(zone.npcs, catPos.x, catPos.y, 'cat', { stats: { icon: '🐱', hp: 5, maxHp: 5, damage: 2, isBig: false } });
             }
             let ratPos = findSpawnPosition();
             if(ratPos) {
-              spawnNpc(enemies, ratPos.x, ratPos.y, 'rat', { stats: { icon: '🐀', hp: 3, maxHp: 3, damage: 0, isBig: false, friendly: true } });
+              spawnNpc(zone.npcs, ratPos.x, ratPos.y, 'rat', { stats: { icon: '🐀', hp: 3, maxHp: 3, damage: 0, isBig: false, friendly: true } });
             }
             logMsg('<span style="color:var(--warning)">🐱 A cat is chasing a helpless rat!</span>');
           }
         },
 
         throw_boot_at_cat: function(data) {
-          const cat = enemies.find(e => e.type === 'cat');
-          const rat = enemies.find(e => e.type === 'rat');
+          const cat = zone.findNpc(e => e.type === 'cat');
+          const rat = zone.findNpc(e => e.type === 'rat');
           if(cat && rat) {
             logMsg('<span style="color:var(--success)">🥾 You throw the Old Boot at the cat! It runs away!</span>');
             Sound.playSample ? Sound.playSample('splash') : Sound.splash();
-            const catIndex = enemies.indexOf(cat);
-            if(catIndex > -1) enemies.splice(catIndex, 1);
+            zone.removeNpc(cat);
             player.savedRat = true;
             rat.stats.icon = '🐀💖';
             if(typeof emitQuestEvent === 'function') emitQuestEvent('rat_saved', {});
@@ -12166,7 +12992,7 @@ ${html}
             if(typeof emitQuestEvent === 'function') emitQuestEvent('rat_helped', {});
             let ratPos = findSpawnPosition();
             if(ratPos) {
-              spawnNpc(enemies, ratPos.x, ratPos.y, 'rat', { stats: { icon: '🐀💖', hp: 10, maxHp: 10, damage: 3, friendly: true } });
+              spawnNpc(zone.npcs, ratPos.x, ratPos.y, 'rat', { stats: { icon: '🐀💖', hp: 10, maxHp: 10, damage: 3, friendly: true } });
             }
           }
         },
@@ -12182,7 +13008,7 @@ ${html}
         temple_collapse: function(data) {
           if(window._templeActive) {
             logMsg('<span style="color:var(--error)">💥 The temple begins to collapse! Run!</span>');
-            player.hp -= 20;
+            applyPlayerDamage(20, 'collapse', { mitigate: false });
             updateUI();
             window._templeActive = false;
             window._templeCollapsed = true;
@@ -12204,7 +13030,7 @@ ${html}
             logMsg('<span style="color:#888">🧞 "You have disturbed my slumber! Prepare to face my wrath!"</span>');
             let geniePos = findSpawnPosition();
             if(geniePos) {
-              spawnNpc(enemies, geniePos.x, geniePos.y, 'genie', { stats: { icon: '🧞', hp: 100, maxHp: 100, damage: 15, isBig: true, name: 'Genie' } });
+              spawnNpc(zone.npcs, geniePos.x, geniePos.y, 'genie', { stats: { icon: '🧞', hp: 100, maxHp: 100, damage: 15, isBig: true, name: 'Genie' } });
             }
           }
         }
@@ -12219,7 +13045,7 @@ ${html}
         const y = Math.floor(Math.random() * mapH);
         if(theMap[y] && isTileFloor(theMap[y][x])) {
           if(x !== player.x || y !== player.y) {
-            const occupied = enemies.some(e => e.x === x && e.y === y);
+            const occupied = zone.npcs.some(e => e.x === x && e.y === y);
             if(!occupied) return { x, y };
           }
         }
@@ -12986,6 +13812,189 @@ ${html}
   })();
 
 
+// === quests_monty_python_bridge.js ===
+// === quests_monty_python_bridge.js ===
+/*
+  Monty Python — The Bridge of Death (drop-in quest pack).
+
+  Owns the bridge keeper end-to-end: spawn site + dialog tree + trial outcomes.
+  Replaces the old engine.js bridgeTrial() + bridgeAns + bridgeAns2 + bridgeAns3
+  chain and the player.bridgeQuestions flag.
+
+  Removing this file from build_files.py removes the keeper entirely — no
+  spawn, no dialog, no orphaned code (per the drop-in contract).
+
+  Spawn mechanism: the pack wraps QuestEngine.emit in its IIFE to hook
+  'enter_level' for the desert scene. Pack handler blocks aren't actually
+  invoked by anything today (verified 2026-05-22) — wrapping emit is the
+  pragmatic tier-1 path until quest_engine.js grows a real .on() API.
+*/
+(function() {
+  'use strict';
+
+  // ─── Dialog tree ─────────────────────────────────────────────
+  if (typeof Dialog !== 'undefined') {
+    Dialog.registerPhrases({
+      'bridge_keeper_q1': {
+        message: 'Stop! Who would cross the Bridge of Death must answer me these questions three, ere the other side he see. What... is your name?',
+        replies: [
+          { text: '"Sir Lancelot of Camelot."', nextPhrase: 'bridge_keeper_q2' },
+          { text: '"Galahad the... wait!"',     nextPhrase: 'bridge_keeper_lose' },
+        ],
+      },
+      'bridge_keeper_q2': {
+        message: 'What... is your quest?',
+        replies: [
+          { text: '"To seek the Holy Grail."',    nextPhrase: 'bridge_keeper_q3' },
+          { text: '"To find a nice shrubbery."',  nextPhrase: 'bridge_keeper_lose' },
+        ],
+      },
+      'bridge_keeper_q3': {
+        message: 'What... is the airspeed velocity of an unladen swallow?',
+        replies: [
+          { text: '"24 miles per hour?"', nextPhrase: 'bridge_keeper_lose' },
+          // Gated on high INT — preserves the existing "smart-player-only" path.
+          {
+            text: '"What do you mean? African or European swallow?"',
+            nextPhrase: 'bridge_keeper_win',
+            requires: [{ type: 'playerStat', stat: 'int', min: 15 }],
+          },
+        ],
+      },
+      'bridge_keeper_win': {
+        message: "What? I don't know that! AHHHHHHH!",
+        replies: [
+          { text: '[Watch him plummet]', nextPhrase: '@remove' },
+        ],
+      },
+      'bridge_keeper_lose': {
+        message: 'AHHHHHHH!',
+        scriptEffects: [{ type: 'die', cause: 'bridgekeeper' }],
+        replies: [],
+      },
+    });
+  }
+
+  // ─── Spawn-on-enter-desert hook ──────────────────────────────
+  // Idempotent: only spawn if no keeper already exists in zone.
+  function spawnKeeper() {
+    if (typeof zone === 'undefined' || typeof MONSTER_DEF === 'undefined' || typeof spawnNpc !== 'function') return;
+    if (zone.npcs.some(e => e.type === 'bridge_keeper')) return;
+    spawnNpc(zone.npcs, 15, 10, 'bridge_keeper', {
+      stats: { ...MONSTER_DEF['bridge_keeper'] },
+      phraseId: 'bridge_keeper_q1',
+      isQuestNPC: true,
+    });
+  }
+
+  // Pack files load BEFORE quest_engine.js (per build_files.py ordering — packs
+  // self-register on window._questPacks, which quest_engine collects during its
+  // own load). So QuestEngine isn't defined yet at this point. Defer the emit
+  // wrap until the next tick when the rest of the scripts have parsed.
+  function installEmitHook() {
+    if (typeof QuestEngine === 'undefined' || typeof QuestEngine.emit !== 'function') return;
+    if (QuestEngine.__bridgeEmitHooked) return;  // idempotent across hot-reload
+    QuestEngine.__bridgeEmitHooked = true;
+    const _orig = QuestEngine.emit.bind(QuestEngine);
+    QuestEngine.emit = function(type, data) {
+      const result = _orig(type, data);
+      if (type === 'enter_level' && data && data.scene === 'desert') {
+        spawnKeeper();
+      }
+      return result;
+    };
+  }
+  if (typeof window !== 'undefined') {
+    // setTimeout(0) waits past current script-eval; works whether quest_engine
+    // loads next or many files later.
+    setTimeout(installEmitHook, 0);
+  }
+
+  // ─── Pack registration (cosmetic — no quest stages used in tier-1) ──
+  window._questPacks = window._questPacks || [];
+  window._questPacks.push({
+    id: 'monty_python_bridge',
+    name: 'The Bridge of Death',
+    quests: [],
+    achievements: [],
+    handlers: {},
+  });
+})();
+
+
+// === quests_kq5_genie.js ===
+// === quests_kq5_genie.js ===
+/*
+  KQ5 — Genie of the Brass Bottle (drop-in quest pack).
+
+  Owns the genie's wish dialog. The genie NPC itself is still spawned by
+  map.js (in the desert/dungeon level 10 path) because the spawn coords
+  are coupled to the level's geometry — extracting that is a separate
+  tier-3 effort. What this pack DOES own:
+    - The dialog tree shown when the player bumps the genie WITH the
+      Brass Bottle in inventory (the wish scene).
+    - The replies that delegate to the legacy window.genieWish() handler
+      in shop.js via the callFn scriptEffect.
+
+  The no-bottle path (genie auto-attacks) remains in engine.js's bump
+  handler — that's pure combat plumbing, not dialog content.
+
+  Drop-in property: removing this file means the wish dialog isn't
+  registered. The bump handler in engine.js checks
+  `typeof Dialog !== 'undefined' && Dialog._phrases['kq5_genie_greet']`
+  before delegating, so without the pack the player falls through to
+  the no-bottle (combat) path — degraded but not broken.
+*/
+(function() {
+  'use strict';
+  if (typeof Dialog === 'undefined') return;
+
+  Dialog.registerPhrases({
+    'kq5_genie_greet': {
+      // Three-paragraph greeting — the original modal's <p>s collapsed
+      // into a single message with blank-line breaks (dialog.js's
+      // multi-paragraph support handles the split).
+      speaker: 'The Genie of the Dungeon',
+      message:
+        "You carry the Brass Bottle!\n\n" +
+        "I am bound to its master.\n\n" +
+        "Speak your wish, mortal.",
+      replies: [
+        {
+          text: "I wish for full health and mana.",
+          nextPhrase: '@close',
+          scriptEffects: [{ type: 'callFn', fn: 'genieWish', args: ['heal'] }],
+        },
+        {
+          text: "I wish for wealth beyond measure.",
+          nextPhrase: '@close',
+          scriptEffects: [{ type: 'callFn', fn: 'genieWish', args: ['gold'] }],
+        },
+        {
+          text: "I wish to pass to the next level.",
+          nextPhrase: '@close',
+          scriptEffects: [{ type: 'callFn', fn: 'genieWish', args: ['pass'] }],
+        },
+        {
+          text: "I wish to fight you!",
+          nextPhrase: '@close',
+          scriptEffects: [{ type: 'callFn', fn: 'genieWish', args: ['fight'] }],
+        },
+      ],
+    },
+  });
+
+  window._questPacks = window._questPacks || [];
+  window._questPacks.push({
+    id: 'kings_quest_v_genie',
+    name: 'KQ5 — Genie of the Brass Bottle',
+    quests: [],
+    achievements: [],
+    handlers: {},
+  });
+})();
+
+
 // === quest_engine.js ===
   /*
   ╔══════════════════════════════════════════════════════════════════════════════╗
@@ -13606,7 +14615,7 @@ ${html}
           let emptySlot = inventory.findIndex(i => i === null);
           if (emptySlot !== -1) {
             inventory[emptySlot] = new ItemStack(reward.item, reward.qty ?? 1);
-            if (def) logMsg(`<span style='color:var(--success)'>Received: ${def.displayName}</span>`);
+            if (def) logMsg(`<span style='color:var(--success)'>Received: ${def.label()}</span>`);
             if (typeof renderQuickslots === 'function') renderQuickslots();
           } else {
             logMsg(`<span style='color:var(--error)'>Inventory full! Item dropped on ground.</span>`);
@@ -14389,7 +15398,7 @@ window.BOUNDARY_DATA = {
 
   The functions here are called when the player descends/ascends stairs (engine.js),
   from the start button (input.js), and from debug warp commands. They populate the
-  global theMap, darkMap, explored, visible, enemies, and itemsOnGround arrays.
+  global theMap, darkMap, explored, visible, zone.npcs, and itemsOnGround arrays.
 */
 // === Map Generation (v7.2.0) ===
 
@@ -14696,7 +15705,16 @@ window.BOUNDARY_DATA = {
     window._mendedDrumX = drumX;
     window._mendedDrumY = drumY;
     // Place Mended Drum NPCs
-    spawnNpc(town.enemies, drumX - 1, drumY - 1, "mended_drum_barman", { stats: { icon: '🧔', hp: 999, maxHp: 999, dmg: 0, hit: 0, crit: 0, dodge: 0, speed: 0, throughWalls: false, passive: true, quest: true }, isQuestNPC: true, _stayInShop: true });
+    spawnNpc(town.enemies, drumX - 1, drumY - 1, "mended_drum_barman", { stats: { icon: '🧔', name: 'Barkeep', hp: 999, maxHp: 999, dmg: 0, hit: 0, crit: 0, dodge: 0, speed: 0, throughWalls: false, passive: true, quest: true }, isQuestNPC: true, _stayInShop: true, phraseId: 'mended_drum_barman_greet' });
+    // ── Mended Drum patrons — Dialog-system tier-1 cohort ──
+    // Each patron stands on a perimeter floor tile of the 3x3 around the
+    // STORE marker; barman is at (drumX-1, drumY-1). Each carries a phraseId
+    // so the new dialog system handles bumping them instead of the old
+    // mendedDrumChat() modal.
+    spawnNpc(town.enemies, drumX,     drumY - 1, "vimes",         { stats: { ...MONSTER_DEF['vimes'] },         isQuestNPC: true, _stayInShop: true, phraseId: 'mended_drum_vimes_greet' });
+    spawnNpc(town.enemies, drumX + 1, drumY - 1, "cohen",         { stats: { ...MONSTER_DEF['cohen'] },         isQuestNPC: true, _stayInShop: true, phraseId: 'mended_drum_cohen_greet' });
+    spawnNpc(town.enemies, drumX - 1, drumY + 1, "librarian",     { stats: { ...MONSTER_DEF['librarian'] },     isQuestNPC: true, _stayInShop: true, phraseId: 'mended_drum_librarian_greet' });
+    spawnNpc(town.enemies, drumX + 1, drumY + 1, "bearded_dwarf", { stats: { ...MONSTER_DEF['bearded_dwarf'] }, isQuestNPC: true, _stayInShop: true, phraseId: 'mended_drum_dorimunde_greet' });
 
     // Ensure guaranteed clear routes from town gate to key buildings and Mended Drum
     const gateInsideX = absGateX;
@@ -14884,6 +15902,7 @@ window.BOUNDARY_DATA = {
           isQuestNPC: true, isSceneNPC: true,
           patrolPath: [{x:p.x,y:p.y},{x:p.x+1,y:p.y},{x:p.x+1,y:p.y+1},{x:p.x,y:p.y+1}],
           patrolIndex: 0, _sceneMoveCooldown: Math.floor(Math.random() * 5),
+          phraseId: 'muck_peasant_greet',
         });
         livePeasants.push(peasant);
       }
@@ -15049,6 +16068,7 @@ window.BOUNDARY_DATA = {
         x: wifePatrol[0].x, y: wifePatrol[0].y, type: 'dennis_wife',
         isQuestNPC: true, isSceneNPC: true,
         patrolPath: wifePatrol, patrolIndex: 0, _sceneMoveCooldown: 0,
+        phraseId: 'dennis_wife_greet',
       },
       // Sheep follows Dennis's Wife — start near her
       {
@@ -15056,7 +16076,7 @@ window.BOUNDARY_DATA = {
         farmAnimal: true, _followTarget: 'dennis_wife',
       },
       // E.TRIST.6: Retired soldier — stands in front of a house (north area)
-      { x: gateX - 10, y: 5, type: 'retired_soldier', isQuestNPC: true },
+      { x: gateX - 10, y: 5, type: 'retired_soldier', isQuestNPC: true, phraseId: 'retired_soldier_greet' },
     ];
 
     for (const { x, y, type, ...opts } of TRISTRAM_NPCS) {
@@ -15114,7 +16134,7 @@ window.BOUNDARY_DATA = {
     darkMap = Array(mapH).fill().map(()=>Array(mapW).fill(false));
     explored = Array(mapH).fill().map(()=>Array(mapW).fill(false));
     visible = Array(mapH).fill().map(()=>Array(mapW).fill(false));
-    enemies = []; zone.clearLootables(); lightTurns = 0; zone.clearCorpses();
+    zone.clearNpcs(); zone.clearLootables(); lightTurns = 0; zone.clearCorpses();
     syncActiveZone();
     window._swordmasterMazeActive = false;
     window._swordmasterMazeBounds = null;
@@ -15134,7 +16154,7 @@ window.BOUNDARY_DATA = {
       darkMap = Array(mapH).fill().map(()=>Array(mapW).fill(false));
       explored = Array(mapH).fill().map(()=>Array(mapW).fill(false));
       visible = Array(mapH).fill().map(()=>Array(mapW).fill(false));
-      for (let i = 0; i < town.enemies.length; i++) enemies.push(town.enemies[i]);
+      for (let i = 0; i < town.enemies.length; i++) zone.npcs.push(town.enemies[i]);
       syncActiveZone();
       window._townPortalTile = null;
       for(let y = 0; y < mapH && !window._townPortalTile; y++) {
@@ -15234,7 +16254,7 @@ window.BOUNDARY_DATA = {
         }
         if(!fencePos) fencePos = { x: leftyPos.x + 2, y: leftyPos.y + 1 };
         reserved.add(`${fencePos.x},${fencePos.y}`);
-        spawnNpc(enemies, fencePos.x, fencePos.y, "fence", { stats: {...MONSTER_DEF["fence"]} });
+        spawnNpc(zone.npcs, fencePos.x, fencePos.y, "fence", { stats: {...MONSTER_DEF["fence"]}, phraseId: 'fence_greet' });
         let corpsePos = findNearbyFloorTile(leftyPos.x, leftyPos.y, 4, reserved);
         if(corpsePos && typeof createCorpse === 'function') {
           createCorpse(corpsePos.x, corpsePos.y, 'busker', { icon: '🧑‍🎤' }, [new ItemStack('accordion', 1), new ItemStack('paperclip', 1)]);
@@ -15273,7 +16293,7 @@ window.BOUNDARY_DATA = {
           }
         }
         // Add thief and loot
-        spawnNpc(enemies, hideoutRoom.cx, hideoutRoom.cy, 'thief', { stats: {...MONSTER_DEF['thief'], patrolling: false, wandering: true} });
+        spawnNpc(zone.npcs, hideoutRoom.cx, hideoutRoom.cy, 'thief', { stats: {...MONSTER_DEF['thief'], patrolling: false, wandering: true} });
         // Add some loot
         zone.dropAt(hideoutRoom.cx + 1, hideoutRoom.cy,     ItemStack.fromIcon('💰'));
         zone.dropAt(hideoutRoom.cx - 1, hideoutRoom.cy,     ItemStack.fromIcon('🗝️'));
@@ -15292,7 +16312,7 @@ window.BOUNDARY_DATA = {
           }
         }
         // Spawn FightingMaster at the center
-        spawnNpc(enemies, yardRoom.cx, yardRoom.cy, 'fighting_master', { stats: { hp: 999, dmg: 0, speed: 0, dodge: 1.0, icon: '🤺', passive: true, quest: true }, isQuestNPC: true });
+        spawnNpc(zone.npcs, yardRoom.cx, yardRoom.cy, 'fighting_master', { stats: { hp: 999, dmg: 0, speed: 0, dodge: 1.0, icon: '🤺', passive: true, quest: true }, isQuestNPC: true });
         if(Math.random() < 0.3) {
           logMsg("<span style='color:#888; font-style:italic;'>You hear the ring of steel on steel somewhere nearby — a Weapon Master trains in a courtyard.</span>");
         }
@@ -15336,7 +16356,15 @@ window.BOUNDARY_DATA = {
       // E.GENIE / KQ5: Big Genie boss guards the dungeon exit on Floor 10.
       // Requires Brass Bottle quest item to pass. Appears at 4x size.
       if(currentScene === 'dungeon' && currentLevel === 10 && MONSTER_DEF && MONSTER_DEF['genie']) {
-        spawnNpc(enemies, Math.max(1, Math.min(mapW - 2, downStairPos.x + 2)), Math.max(1, Math.min(mapH - 2, downStairPos.y + 1)), 'genie', { stats: {...MONSTER_DEF['genie'], renderScale: 4.0}, isBoss: true, isQuestNPC: true, isGenieGuardian: true });
+        // Find a walkable floor tile near the down-stair. downStairPos sits in a
+        // dead-end wall, so a fixed +2/+1 offset can land inside another wall or
+        // outside the room. Walk outward until we hit floor (max radius 6).
+        let geniePos = null;
+        for(let r = 1; r <= 6 && !geniePos; r++) {
+          geniePos = findNearbyFloorTile(downStairPos.x, downStairPos.y, r);
+        }
+        if(!geniePos) geniePos = { x: Math.max(1, Math.min(mapW - 2, downStairPos.x + 2)), y: Math.max(1, Math.min(mapH - 2, downStairPos.y + 1)) };
+        spawnNpc(zone.npcs, geniePos.x, geniePos.y, 'genie', { stats: {...MONSTER_DEF['genie'], renderScale: 4.0}, isBoss: true, isQuestNPC: true, isGenieGuardian: true });
         logMsg("<span style='color:var(--warning)'>🧞 A colossal Genie blocks the exit stairs! It demands the Brass Bottle before it will let you pass.</span>");
       }
 
@@ -15373,7 +16401,7 @@ window.BOUNDARY_DATA = {
           // The darkness itself is the threat. Players need light to survive.
           // Level 6: pacifist orc NPC in the first dark room
           if(currentLevel === 6 && darkRoomCount === 1) {
-            spawnNpc(enemies, rm.cx + 1, rm.cy, 'pacifist_orc', { stats: {...MONSTER_DEF['orc'], icon: '🧌', hp: 999, dmg: 0, quest: true}, isQuestNPC: true });
+            spawnNpc(zone.npcs, rm.cx + 1, rm.cy, 'pacifist_orc', { stats: {...MONSTER_DEF['orc'], icon: '🧌', hp: 999, dmg: 0, quest: true}, isQuestNPC: true });
             logMsg("<span style='color:#666; font-style:italic;'>You sense something watching from the darkness...</span>");
             // E.753.CUPCAKE: Two cupcakes on the floor near Grok
             zone.dropAt(rm.cx - 1, rm.cy,     ItemStack.fromIcon('🧁'));
@@ -15446,12 +16474,12 @@ window.BOUNDARY_DATA = {
         // Spawn 3-4 lowly pirates that roam
         for(let i = 0; i < 3 + Math.floor(Math.random() * 2); i++) {
           let rm = rooms[Math.floor(Math.random() * rooms.length)];
-          spawnNpc(enemies, rm.cx + Math.floor(Math.random() * 3) - 1, rm.cy + Math.floor(Math.random() * 3) - 1, 'pirate', { stats: {...MONSTER_DEF['pirate']} });
+          spawnNpc(zone.npcs, rm.cx + Math.floor(Math.random() * 3) - 1, rm.cy + Math.floor(Math.random() * 3) - 1, 'pirate', { stats: {...MONSTER_DEF['pirate']} });
         }
         // Pirate Chaplain on floor 4 — wanders randomly
         let chapRoom = rooms[rooms.length - 2] || rooms[0];
         carveFloorPad(chapRoom.cx, chapRoom.cy, 1);
-        spawnNpc(enemies, chapRoom.cx, chapRoom.cy, 'chaplain', { stats: { icon: '⛪🏴‍☠️', hp: 30, dmg: 0, hit: 0, crit: 0, dodge: 0, speed: 0, quest: true, wandering: true, wanderTimer: 0 }, isQuestNPC: true });
+        spawnNpc(zone.npcs, chapRoom.cx, chapRoom.cy, 'chaplain', { stats: { icon: '⛪🏴‍☠️', hp: 30, dmg: 0, hit: 0, crit: 0, dodge: 0, speed: 0, quest: true, wandering: true, wanderTimer: 0 }, isQuestNPC: true });
       }
       if(currentLevel === 5 && rooms.length >= 3) {
         // ── SWORDMASTER MAZE: last 3-4 rooms become a dark, confusing maze ──
@@ -15499,12 +16527,12 @@ window.BOUNDARY_DATA = {
         let guardCount = 1 + Math.floor(Math.random() * 2);
         for(let i = 0; i < guardCount && i < mazeRooms.length - 1; i++) {
           let guardRoom = mazeRooms[i];
-          spawnNpc(enemies, guardRoom.cx, guardRoom.cy, 'pirate', { stats: {...MONSTER_DEF['pirate']} });
+          spawnNpc(zone.npcs, guardRoom.cx, guardRoom.cy, 'pirate', { stats: {...MONSTER_DEF['pirate']} });
         }
         
         // Swordmaster at the deepest (last) maze room
         let masterRoom = mazeRooms[mazeRooms.length - 1];
-        spawnNpc(enemies, masterRoom.cx, masterRoom.cy, 'master', { stats: {...MONSTER_DEF['master']} });
+        spawnNpc(zone.npcs, masterRoom.cx, masterRoom.cy, 'master', { stats: {...MONSTER_DEF['master']} });
       }
 
       // Floor 1: Hidden passage → Ifrit boss chamber (remote + concealed)
@@ -15551,7 +16579,7 @@ window.BOUNDARY_DATA = {
         const ifritX = chamberX + Math.floor(chamberW / 2);
         const ifritY = chamberY + Math.floor(chamberH / 2);
         // Place Ifrit — loot (Tome of Fireball) comes from his corpse via combat
-        spawnNpc(enemies, ifritX, ifritY, 'ifrit', { stats: {...MONSTER_DEF['ifrit'], renderScale: 2.8, speed: 0.9}, isIfrit: true, taunted: false, patrolCenter: { x: ifritX, y: ifritY }, patrolRadius: 3 });
+        spawnNpc(zone.npcs, ifritX, ifritY, 'ifrit', { stats: {...MONSTER_DEF['ifrit'], renderScale: 2.8, speed: 0.9}, isIfrit: true, taunted: false, patrolCenter: { x: ifritX, y: ifritY }, patrolRadius: 3 });
         // Fireproof decor: scatter rocks, mechanical parts, and fire pit markers
         const ifritDecor = [
           { dx: -1, dy: -1, icon: '🪨' },
@@ -15596,7 +16624,7 @@ window.BOUNDARY_DATA = {
           let oy = sp.y + Math.floor(Math.random() * 7) - 3;
           if(ox >= 0 && ox < mapW && oy >= 0 && oy < mapH && isTileFloor(theMap[oy][ox])) {
             let type = Math.random() < 0.5 ? 'mouse' : 'cockroach';
-            spawnNpc(enemies, ox, oy, type, { stats: {...MONSTER_DEF[type]}, isVermin: true });
+            spawnNpc(zone.npcs, ox, oy, type, { stats: {...MONSTER_DEF[type]}, isVermin: true });
           }
         }
       }
@@ -15606,10 +16634,12 @@ window.BOUNDARY_DATA = {
       for(let i=5; i<15; i++) theMap[10][i] = TILES.LETTER; // IEHOVA name-of-god trial
       theMap[12][10] = TILES.BLADE;                         // Breath-of-god trial (kneel)
       
-      spawnNpc(enemies, 15, 10, "bridge_keeper", { stats: {...MONSTER_DEF["bridge_keeper"]} });
-      spawnNpc(enemies, 20, 20, "black_knight", { stats: {...MONSTER_DEF["black_knight"]} });
-      spawnNpc(enemies, 5, 5, "killer_rabbit", { stats: {...MONSTER_DEF["killer_rabbit"]} });
-      spawnNpc(enemies, 2, 15, "french_taunter", { stats: {...MONSTER_DEF["french_taunter"]} });
+      // bridge_keeper now spawned by quests_monty_python_bridge.js (drop-in
+      // quest pack) via an enter_level 'desert' hook. Removing that pack
+      // removes the keeper entirely.
+      spawnNpc(zone.npcs, 20, 20, "black_knight", { stats: {...MONSTER_DEF["black_knight"]} });
+      spawnNpc(zone.npcs, 5, 5, "killer_rabbit", { stats: {...MONSTER_DEF["killer_rabbit"]} });
+      spawnNpc(zone.npcs, 2, 15, "french_taunter", { stats: {...MONSTER_DEF["french_taunter"]} });
       zone.dropAt(6, 5, ItemStack.fromIcon('💣🌟')); // Holy Hand Grenade
       
       // ── FATE OF ATLANTIS: Orichalcum Beads scattered in the desert ──
@@ -15782,7 +16812,7 @@ window.BOUNDARY_DATA = {
       // Beach: add Pirate Chaplain and beach village (Monkey Island theme)
       if(currentScene === 'beach' && rooms.length >= 3) {
         let chRoom = rooms[Math.floor(rooms.length / 2)];
-        spawnNpc(enemies, chRoom.cx, chRoom.cy, 'chaplain', { stats: {...MONSTER_DEF['chaplain']} });
+        spawnNpc(zone.npcs, chRoom.cx, chRoom.cy, 'chaplain', { stats: {...MONSTER_DEF['chaplain']} });
         
         // Beach village with Monkey Island references
         if(rooms.length >= 5) {
@@ -15793,8 +16823,8 @@ window.BOUNDARY_DATA = {
           if(villageRoom.w >= 6 && villageRoom.h >= 6) {
             theMap[villageRoom.cy][villageRoom.cx] = TILES.SCUMM_BAR;
             // Add some pirate NPCs around the bar
-            spawnNpc(enemies, villageRoom.cx + 1, villageRoom.cy, 'pirate', { stats: {...MONSTER_DEF['pirate']} });
-            spawnNpc(enemies, villageRoom.cx - 1, villageRoom.cy, 'pirate', { stats: {...MONSTER_DEF['pirate']} });
+            spawnNpc(zone.npcs, villageRoom.cx + 1, villageRoom.cy, 'pirate', { stats: {...MONSTER_DEF['pirate']} });
+            spawnNpc(zone.npcs, villageRoom.cx - 1, villageRoom.cy, 'pirate', { stats: {...MONSTER_DEF['pirate']} });
           }
           
           // Antique shop (with safe cracking quest)
@@ -15803,7 +16833,7 @@ window.BOUNDARY_DATA = {
             if(shopRoom.w >= 5 && shopRoom.h >= 5) {
               theMap[shopRoom.cy][shopRoom.cx] = TILES.ANTIQUE_SHOP;
               // Add a hard-of-hearing shopkeeper
-              spawnNpc(enemies, shopRoom.cx, shopRoom.cy, 'fence', { stats: {...MONSTER_DEF['fence']}, isShopkeeper: true, shopType: 'antique' });
+              spawnNpc(zone.npcs, shopRoom.cx, shopRoom.cy, 'fence', { stats: {...MONSTER_DEF['fence']}, isShopkeeper: true, shopType: 'antique', phraseId: 'fence_greet' });
             }
           }
           
@@ -15813,7 +16843,7 @@ window.BOUNDARY_DATA = {
             if(masterRoom.w >= 5 && masterRoom.h >= 5) {
               theMap[masterRoom.cy][masterRoom.cx] = TILES.HUT;
               // Add swordmaster
-              spawnNpc(enemies, masterRoom.cx, masterRoom.cy, 'master', { stats: {...MONSTER_DEF['master']} });
+              spawnNpc(zone.npcs, masterRoom.cx, masterRoom.cy, 'master', { stats: {...MONSTER_DEF['master']} });
             }
           }
           
@@ -15832,7 +16862,7 @@ window.BOUNDARY_DATA = {
             if(dockRoom.w >= 4 && dockRoom.h >= 4) {
               theMap[dockRoom.cy][dockRoom.cx] = TILES.BOAT;
               // Add a pirate near the boat
-              spawnNpc(enemies, dockRoom.cx + 1, dockRoom.cy, 'pirate', { stats: {...MONSTER_DEF['pirate']} });
+              spawnNpc(zone.npcs, dockRoom.cx + 1, dockRoom.cy, 'pirate', { stats: {...MONSTER_DEF['pirate']} });
             }
           }
           
@@ -15902,11 +16932,11 @@ window.BOUNDARY_DATA = {
         while(px2 <= coastX - 3) { theMap[py2][px2] = TILES.BRIDGE; px2++; }
 
         // Ensure required shopkeepers/NPC anchors exist near the landmarks.
-        if(!enemies.some(e => e.type === 'chaplain')) {
-          spawnNpc(enemies, coastX - 5, vy - 1, 'chaplain', { stats: {...MONSTER_DEF['chaplain']} });
+        if(!zone.npcs.some(e => e.type === 'chaplain')) {
+          spawnNpc(zone.npcs, coastX - 5, vy - 1, 'chaplain', { stats: {...MONSTER_DEF['chaplain']} });
         }
-        if(!enemies.some(e => e.shopType === 'antique')) {
-          spawnNpc(enemies, coastX - 2, vy + 3, 'fence', { stats: {...MONSTER_DEF['fence']}, isShopkeeper: true, shopType: 'antique' });
+        if(!zone.npcs.some(e => e.shopType === 'antique')) {
+          spawnNpc(zone.npcs, coastX - 2, vy + 3, 'fence', { stats: {...MONSTER_DEF['fence']}, isShopkeeper: true, shopType: 'antique', phraseId: 'fence_greet' });
         }
       }
     }
@@ -15936,7 +16966,7 @@ window.BOUNDARY_DATA = {
       player.x = 4; player.y = 4; theMap[4][4] = TILES.STAIR_UP;
       theMap[mapH-4][mapW-4] = TILES.STAIR_DOWN;
       // Boss area
-      spawnNpc(enemies, mapW-6, mapH-6, "black_knight", { stats: {...MONSTER_DEF["black_knight"]} });
+      spawnNpc(zone.npcs, mapW-6, mapH-6, "black_knight", { stats: {...MONSTER_DEF["black_knight"]} });
       spawnMonsters(5 + currentLevel);
     }
     else if (window.BOUNDARY_DATA && window.BOUNDARY_DATA[currentScene]) {
@@ -15947,7 +16977,7 @@ window.BOUNDARY_DATA = {
       darkMap = Array(mapH).fill().map(() => Array(mapW).fill(false));
       explored = Array(mapH).fill().map(() => Array(mapW).fill(false));
       visible = Array(mapH).fill().map(() => Array(mapW).fill(false));
-      enemies = [];
+      zone.clearNpcs();
       zone.clearLootables();
       syncActiveZone();
 
@@ -15958,7 +16988,7 @@ window.BOUNDARY_DATA = {
 
       (sceneData.npcs || []).forEach(npc => {
         const def = MONSTER_DEF[npc.type] || {};
-        spawnNpc(enemies, npc.x, npc.y, npc.type, { stats: {             icon: npc.icon || def.icon || '🙂',             hp: def.hp ?? 999,             maxHp: def.hp ?? 999,             dmg: def.dmg ?? 0,             hit: def.hit ?? 0,             crit: def.crit ?? 0,             dodge: def.dodge != null ? def.dodge : 1,             speed: 0,             throughWalls: false,             passive: true,             quest: true           }, isQuestNPC: true, patrolPath: npc.patrolPath ? npc.patrolPath.map(p => ({ x: p.x, y: p.y })) : [], patrolIndex: 0, isSceneNPC: true });
+        spawnNpc(zone.npcs, npc.x, npc.y, npc.type, { stats: {             icon: npc.icon || def.icon || '🙂',             hp: def.hp ?? 999,             maxHp: def.hp ?? 999,             dmg: def.dmg ?? 0,             hit: def.hit ?? 0,             crit: def.crit ?? 0,             dodge: def.dodge != null ? def.dodge : 1,             speed: 0,             throughWalls: false,             passive: true,             quest: true           }, isQuestNPC: true, patrolPath: npc.patrolPath ? npc.patrolPath.map(p => ({ x: p.x, y: p.y })) : [], patrolIndex: 0, isSceneNPC: true });
       });
     }
     // Regenerate grass height map whenever a new map loads
@@ -16021,7 +17051,7 @@ window.BOUNDARY_DATA = {
       }
       let type = availableTypes[Math.floor(Math.random() * availableTypes.length)];
       if(MONSTER_DEF[type]) {
-        spawnNpc(enemies, pos.x, pos.y, type, { stats: {...MONSTER_DEF[type]} });
+        spawnNpc(zone.npcs, pos.x, pos.y, type, { stats: {...MONSTER_DEF[type]} });
       }
     }
     
@@ -16029,7 +17059,7 @@ window.BOUNDARY_DATA = {
     // Shark is a single boss — spawned once per game, not per floor
     if(currentScene === 'dungeon') {
       let waterCount = 0;
-      let sharkSpawned = enemies.some(e => e.type === 'shark');
+      let sharkSpawned = zone.npcs.some(e => e.type === 'shark');
       for(let y=1; y<mapH-1; y++) {
         for(let x=1; x<mapW-1; x++) {
           if(theMap[y][x] === TILES.WATER && Math.random() < 0.15) {
@@ -16052,7 +17082,7 @@ window.BOUNDARY_DATA = {
                 stats.hp *= 2; stats.maxHp = stats.hp;
                 stats.dmg = Math.floor(stats.dmg * 1.5);
               }
-              spawnNpc(enemies, x, y, aquaticType, { stats: stats });
+              spawnNpc(zone.npcs, x, y, aquaticType, { stats: stats });
               waterCount++;
             }
           }
@@ -16063,7 +17093,7 @@ window.BOUNDARY_DATA = {
       }
 
       // E15: T-Rex — rare spawn on floors 8-12, one per floor at most
-      if(currentLevel >= 8 && currentLevel <= 12 && Math.random() < 0.15 && !enemies.some(e => e.type === 'trex')) {
+      if(currentLevel >= 8 && currentLevel <= 12 && Math.random() < 0.15 && !zone.npcs.some(e => e.type === 'trex')) {
         let pos = getRandomFloor();
         let tries = 0;
         while(tries++ < 30 && (Math.abs(pos.x - player.x) + Math.abs(pos.y - player.y) < 10)) {
@@ -16071,7 +17101,7 @@ window.BOUNDARY_DATA = {
         }
         let trexStats = {...MONSTER_DEF['trex']};
         trexStats.maxHp = trexStats.hp;
-        spawnNpc(enemies, pos.x, pos.y, 'trex', { stats: trexStats });
+        spawnNpc(zone.npcs, pos.x, pos.y, 'trex', { stats: trexStats });
         logMsg("<span style='color:#f44; font-weight:bold;'>🦖 The ground trembles beneath your feet...</span>");
       }
     }
@@ -16104,7 +17134,7 @@ window.BOUNDARY_DATA = {
         let ambushTypes = ['slime', 'skeleton', 'snake', 'bat'];
         let type = ambushTypes[Math.floor(Math.random() * ambushTypes.length)];
         if (MONSTER_DEF[type]) {
-          spawnNpc(enemies, x, y, type, { stats: {...MONSTER_DEF[type]} });
+          spawnNpc(zone.npcs, x, y, type, { stats: {...MONSTER_DEF[type]} });
         }
         return;
       }
@@ -16269,7 +17299,7 @@ window.BOUNDARY_DATA = {
   window.spawnChest = spawnChest;
 
   // Place N containers on random floor tiles in the current zone. Picks
-  // floors not already occupied by enemies, the player, or other
+  // floors not already occupied by zone.npcs, the player, or other
   // lootables. Used by initMap for dungeon scenes.
   function spawnContainers(count, playerFloor = 1) {
     for (let i = 0; i < count; i++) {
@@ -16277,7 +17307,7 @@ window.BOUNDARY_DATA = {
       let tries = 0;
       while (tries++ < 20 && pos && (
         (player.x === pos.x && player.y === pos.y) ||
-        enemies.some(e => e && e.x === pos.x && e.y === pos.y) ||
+        zone.npcs.some(e => e && e.x === pos.x && e.y === pos.y) ||
         zone.lootablesAt(pos.x, pos.y).length > 0
       )) {
         pos = getRandomFloor();
@@ -16320,9 +17350,9 @@ window.BOUNDARY_DATA = {
       if(theMap[ay][ax] === TILES.WALL) continue;
 
       // Check not on player or other enemy
-      if(enemies.some(e => e && e.x === ax && e.y === ay)) continue;
+      if(zone.npcs.some(e => e && e.x === ax && e.y === ay)) continue;
 
-      spawnNpc(enemies, ax, ay, animalType, { icon: def.icon, friendly: def.friendly || false, farmAnimal: def.farmAnimal || false, noGold: def.noGold || false, stats: { hp: def.hp, maxHp: def.maxHp, atk: def.dmg, def: 0,                   hit: def.hit, dodge: def.dodge, xp: 1,                   speed: def.speed, throughWalls: def.throughWalls || false }, renderScale: def.renderScale ?? 1.0, loot: def.loot || [], fleePlayer: def.friendly || false, preferPlants: true });
+      spawnNpc(zone.npcs, ax, ay, animalType, { icon: def.icon, friendly: def.friendly || false, farmAnimal: def.farmAnimal || false, noGold: def.noGold || false, stats: { hp: def.hp, maxHp: def.maxHp, atk: def.dmg, def: 0,                   hit: def.hit, dodge: def.dodge, xp: 1,                   speed: def.speed, throughWalls: def.throughWalls || false }, renderScale: def.renderScale ?? 1.0, loot: def.loot || [], fleePlayer: def.friendly || false, preferPlants: true });
     }
   }
 
@@ -16333,7 +17363,7 @@ window.BOUNDARY_DATA = {
   =========================================================
   This module contains the core game mechanics for handling player interactions with inventory items,
   special quest items, and Monty Python‑themed events. It bridges the UI (clicks, keypresses) with
-  the game state (inventory, equipment, enemies, quest flags).
+  the game state (inventory, equipment, zone.npcs, quest flags).
 
   Key responsibilities:
   1. Item click handling – weapon/armor equipping, food/potion consumption, scroll reading
@@ -16373,7 +17403,7 @@ window.BOUNDARY_DATA = {
     }
   };
   function resolveMacroVars(text) {
-    const enemyCount = (enemies || []).filter(en => en && en.stats && en.stats.hp > 0 && !en.friendly && !en.farmAnimal).length;
+    const enemyCount = zone.npcs.filter(en => en && en.stats && en.stats.hp > 0 && !en.friendly && !en.farmAnimal).length;
     const vars = {
       '$hp': Math.floor(player.hp),
       '$mp': Math.floor(player.mp),
@@ -16395,8 +17425,8 @@ window.BOUNDARY_DATA = {
     if((m = cond.match(/^HP\s*<\s*(\d+)$/i))) return player.hp < parseInt(m[1]);
     if((m = cond.match(/^MP\s*<\s*(\d+)$/i))) return player.mp < parseInt(m[1]);
     if((m = cond.match(/^HUNGER\s*>\s*(\d+)$/i))) return player.hunger > parseInt(m[1]);
-    if((m = cond.match(/^ENEMIES\s*>\s*(\d+)$/i))) return (enemies || []).filter(en => en && en.stats && en.stats.hp > 0 && !en.friendly && !en.farmAnimal).length > parseInt(m[1]);
-    if((m = cond.match(/^ENEMIES\s*<\s*(\d+)$/i))) return (enemies || []).filter(en => en && en.stats && en.stats.hp > 0 && !en.friendly && !en.farmAnimal).length < parseInt(m[1]);
+    if((m = cond.match(/^ENEMIES\s*>\s*(\d+)$/i))) return zone.npcs.filter(en => en && en.stats && en.stats.hp > 0 && !en.friendly && !en.farmAnimal).length > parseInt(m[1]);
+    if((m = cond.match(/^ENEMIES\s*<\s*(\d+)$/i))) return zone.npcs.filter(en => en && en.stats && en.stats.hp > 0 && !en.friendly && !en.farmAnimal).length < parseInt(m[1]);
     if((m = cond.match(/^FLOOR\s*>=\s*(\d+)$/i))) return currentLevel >= parseInt(m[1]);
     if((m = cond.match(/^SCENE\s*=\s*(\w+)$/i))) return String(currentScene) === String(m[1]).toLowerCase();
     if((m = cond.match(/^STATUS\s*=\s*(\w+)$/i))) return player.statusType === m[1].toLowerCase();
@@ -16420,7 +17450,7 @@ window.BOUNDARY_DATA = {
       if(typeof restPlayer === 'function') restPlayer();
     } else if(/^FLEE$/i.test(action)) {
       // Move away from nearest enemy
-      const nearest = enemies.reduce((best, e) => {
+      const nearest = zone.npcs.reduce((best, e) => {
         const d = Math.abs(e.x-player.x)+Math.abs(e.y-player.y);
         return (!best || d < best.d) ? { e, d } : best;
       }, null);
@@ -16580,25 +17610,23 @@ window.BOUNDARY_DATA = {
     // E.753.POISON + E.753.MILK: Poisoned food effects
     if(itemObj.itemName === 'oyster') {
       logMsg("<span style='color:#f44'>Maybe I shouldn't have eaten an oyster from a convenience store in a dungeon...</span>");
-      player.hp -= 10; addFloatingText(player.x, player.y, '-10', '#f00', 18);
       if(typeof Sound !== 'undefined') Sound.playTone(80, 'sawtooth', 0.3, 0.1, 40);
       logMsg("<span style='color:#f44'>You feel nauseous! (-10 HP)</span>");
       decrementItem(idx);
-      if(player.hp <= 0) { die(); return; }
+      if(applyPlayerDamage(10, 'poison', { mitigate: false, size: 18 })) return;
       updateUI(); return;
     }
     if(itemObj.itemName === 'peanuts') {
       logMsg("<span style='color:#f44'>I'm allergic to peanuts!</span>");
-      player.hp -= 15; addFloatingText(player.x, player.y, '-15', '#f00', 18);
       if(typeof Sound !== 'undefined') Sound.playTone(100, 'sawtooth', 0.4, 0.1, 30);
       logMsg("<span style='color:#f44'>Your throat swells! (-15 HP)</span>");
       decrementItem(idx);
-      if(player.hp <= 0) { die(); return; }
+      if(applyPlayerDamage(15, 'poison', { mitigate: false, size: 18 })) return;
       updateUI(); return;
     }
     if(itemObj.itemName === 'milk') {
       logMsg("<span style='color:#fa0'>Turns out I'm lactose intolerant.</span>");
-      player.hp -= 5; addFloatingText(player.x, player.y, '-5', '#f00', 16);
+      applyPlayerDamage(5, 'poison', { mitigate: false, size: 16 });
       // Diarrhea: 100-turn Condition (game-time) carries the speed
       // penalty + auto-cleanup; wall-clock fart SFX cadence still lives
       // in engine.js since it's UX timing, not game mechanics.
@@ -16640,9 +17668,8 @@ window.BOUNDARY_DATA = {
 
     // B760.RAT_BOOT: old boot can be thrown at nearby cat during rat chase event.
     if(itemObj.itemName === 'oldBoot') {
-      const catIdx = enemies.findIndex(e => e && e.type === 'cat' && Math.abs(e.x - player.x) <= 6 && Math.abs(e.y - player.y) <= 6);
-      if(catIdx !== -1) {
-        const cat = enemies[catIdx];
+      const cat = zone.findNpc(e => e && e.type === 'cat' && Math.abs(e.x - player.x) <= 6 && Math.abs(e.y - player.y) <= 6);
+      if(cat) {
         addFloatingText(cat.x, cat.y, '👢', '#ddd', 20);
         logMsg("<span style='color:var(--success)'>You hurl the old boot at the cat. It yowls and bolts, and the rat escapes!</span>");
         logMsg("<span style='color:#88f'>🐀 The rat squeaks: 'You saved me! Maybe someday I can return the favor.'</span>");
@@ -16651,7 +17678,7 @@ window.BOUNDARY_DATA = {
           if(Sound.thud) Sound.thud();
           if(Sound.playVoice) Sound.playVoice('voice_rat_saved_thanks');
         }
-        enemies.splice(catIdx, 1);
+        zone.removeNpc(cat);
         decrementItem(idx);
         player.xp += 25;
         if(typeof QuestEngine !== 'undefined') QuestEngine.emit('custom', { id: 'rat_saved_with_boot' });
@@ -16704,7 +17731,7 @@ window.BOUNDARY_DATA = {
         return;
       }
       lightTurns = (lightTurns ?? 0) + (def.lightRange ?? 15);
-      logMsg(`<span style='color:var(--success)'>${ItemDef.iconOf('candle')} You light the ${def.name}! (${lightTurns} turns of light)</span>`);
+      logMsg(`<span style='color:var(--success)'>You light the ${def.label()}! (${lightTurns} turns of light)</span>`);
       decrementItem(idx);
       calculateFOV(); drawMap(); updateUI();
       return;
@@ -16728,7 +17755,7 @@ window.BOUNDARY_DATA = {
         logMsg("<span style='color:#888'>You have an earthworm. It wriggles. Your options are limited.</span>");
         return;
       }
-      logMsg(`<span style='color:#888'>I can't use ${def.name} right now...</span>`);
+      logMsg(`<span style='color:#888'>I can't use ${def.label()} right now...</span>`);
       return;
     }
     
@@ -16746,11 +17773,11 @@ window.BOUNDARY_DATA = {
 
       // Quest Feeding logic — eagle accepts meat, fish, duck leg
       let eagleFood = ['🍖', '🐟', '🍗', '🧀', '🍕'];
-      let nearEagle = enemies.findIndex(e => e.type === 'eagle' && Math.abs(e.x-player.x)<=2 && Math.abs(e.y-player.y)<=2);
-      if(nearEagle !== -1 && eagleFood.includes(itemObj.icon)) {
+      let nearEagle = zone.findNpc(e => e.type === 'eagle' && Math.abs(e.x-player.x)<=2 && Math.abs(e.y-player.y)<=2);
+      if(nearEagle && eagleFood.includes(itemObj.icon)) {
         logMsg("<span style='color:var(--success)'>🦅 You feed the starving eagle! It looks at you gratefully.</span>");
         awardAchievement('eagle_eye');
-        enemies.splice(nearEagle, 1); player.fedEagle = true; player.xp += 500; 
+        zone.removeNpc(nearEagle); player.fedEagle = true; player.xp += 500;
         if(typeof QuestEngine !== 'undefined') QuestEngine.emit('eagle_fed', {});
         else if(typeof emitQuestEvent === 'function') emitQuestEvent('eagle_fed', {});
         logMsg("<span style='color:var(--primary)'>🦅 The eagle spreads its wings and soars away over the mountain sky. Perhaps you'll meet again...</span>");
@@ -16769,9 +17796,9 @@ window.BOUNDARY_DATA = {
       // B10: Game Log message for consuming food/potion
       if(def.maxHeal >= 0 && itemObj.icon !== '🥤') {
         if(def.type === "potion") {
-          logMsg(`<span style='color:var(--success)'>You drink the ${def.name}.</span>`);
+          logMsg(`<span style='color:var(--success)'>You drink the ${def.label()}.</span>`);
         } else {
-          logMsg(`<span style='color:var(--success)'>You eat the ${def.name}.</span>`);
+          logMsg(`<span style='color:var(--success)'>You eat the ${def.label()}.</span>`);
         }
       }
       // Bug 23: Slurpee Sugar Rush
@@ -16828,7 +17855,7 @@ window.BOUNDARY_DATA = {
     else if(def.type === "spell") {
       // E9: Tome of Town Portal — use directly to cast portal spell, then becomes ash
       if(def.spell === 'portal' && itemObj.itemName === 'tomeOfTownPortal') {
-        logMsg(`<span style='color:var(--success)'>${ItemDef.iconOf('tomeOfTownPortal')} You open the ${def.name} and read from its pages...</span>`);
+        logMsg(`<span style='color:var(--success)'>You open the ${def.label()} and read from its pages...</span>`);
         castSpell('portal', true);
         // Consume the tome (replace with ash)
         inventory[idx] = new ItemStack('spellResidue', 1);
@@ -16838,7 +17865,7 @@ window.BOUNDARY_DATA = {
       // Equip a spellbook as active spell
       player.equippedSpell = def.spell;
       if(!player.spells[def.spell]) player.spells[def.spell] = { level: 1 };
-      logMsg(`<span style='color:var(--success)'>${itemObj.icon} Learned spell: ${def.name}. The tome crumbles to ash!</span>`);
+      logMsg(`<span style='color:var(--success)'>Learned spell: ${def.label()}. The tome crumbles to ash!</span>`);
       Sound.clink();
       // Bug 35: Replace tome with spell residue ash
       inventory[idx] = new ItemStack('spellResidue', 1);
@@ -16896,7 +17923,7 @@ window.BOUNDARY_DATA = {
       if(player.grenadeCount === 5) txt = "FIVE!!";
       if(player.grenadeCount > 5) { 
         logMsg("You waited too long! The grenade exploded in your hand.");
-        player.hp = 0; die(); clearInterval(ticker);
+        die('grenade'); clearInterval(ticker);
       }
       document.getElementById('grenade-text').innerText = txt;
     }, 1000);
@@ -16907,7 +17934,7 @@ window.BOUNDARY_DATA = {
     Sound.explosion();
     if(player.grenadeCount === 3) {
       logMsg("<span style='color:var(--success)'>The Killer Rabbit is blown to tiny bits!</span>");
-      enemies = enemies.filter(e => e.type !== 'killer_rabbit');
+      zone.removeNpcs(e => e.type === 'killer_rabbit');
       player.xp += 2000; checkLevelUp();
       decrementItem(idx);
     } else {
@@ -16973,8 +18000,8 @@ window.BOUNDARY_DATA = {
   }
 
   function getEquippedWeaponDef() {
-    let weaponIcon = player.equipped && player.equipped.leftHand;
-    return weaponIcon ? ItemDef.byIcon(weaponIcon) : null;
+    const weaponName = player.equipped && player.equipped.leftHand;
+    return weaponName ? (ItemDefs[weaponName] || null) : null;
   }
 
   // #16: NPCs protected from melee are also protected from ranged and magic
@@ -17082,7 +18109,7 @@ window.BOUNDARY_DATA = {
     }
     if(spellName === 'lightning') {
       if(player.mp < 6) { logMsg("Not enough mana! (6 MP)"); return; }
-      const visibleTargets = enemies.filter(e => isSpellHostile(e) && visible[e.y] && visible[e.y][e.x]);
+      const visibleTargets = zone.npcs.filter(e => isSpellHostile(e) && visible[e.y] && visible[e.y][e.x]);
       if(visibleTargets.length === 0) {
         logMsg("No hostile target in sight for chain lightning.");
         return;
@@ -17140,7 +18167,7 @@ window.BOUNDARY_DATA = {
         addFloatingText(target.x, target.y, `-${dmg}⚡`, '#9ff', 18 + Math.floor(dmg / 3));
         logMsg(`Lightning hits ${target.type} for ${dmg} shock damage.`);
         if(target.stats.hp <= 0) {
-          const killIdx = enemies.indexOf(target);
+          const killIdx = zone.npcs.indexOf(target);
           if(killIdx !== -1) window.resolveEnemyDefeat(killIdx, { source: 'lightning' });
         }
         sourceX = target.x;
@@ -17185,7 +18212,7 @@ window.BOUNDARY_DATA = {
     // #28: Icebolt — freeze and damage a visible enemy
     if(spellName === 'icebolt') {
       if(player.mp < 4) { logMsg("Not enough mana! (4 MP)"); return; }
-      const visibleHostiles = enemies.filter(e => isSpellHostile(e) && visible[e.y] && visible[e.y][e.x]);
+      const visibleHostiles = zone.npcs.filter(e => isSpellHostile(e) && visible[e.y] && visible[e.y][e.x]);
       if(visibleHostiles.length === 0) { logMsg("No hostile target in sight for Icebolt."); return; }
       visibleHostiles.sort((a,b) => (Math.abs(a.x-player.x)+Math.abs(a.y-player.y)) - (Math.abs(b.x-player.x)+Math.abs(b.y-player.y)));
       const target = visibleHostiles[0];
@@ -17203,7 +18230,7 @@ window.BOUNDARY_DATA = {
       Sound.playTone(1200, 'sine', 0.08, 0.12, 2000);
       if(target.stats.hp <= 0) {
         logMsg(`The ${target.type} shatters!`);
-        if(typeof window.resolveEnemyDefeat === 'function') window.resolveEnemyDefeat(enemies.indexOf(target), { source: 'icebolt' });
+        if(typeof window.resolveEnemyDefeat === 'function') window.resolveEnemyDefeat(zone.npcs.indexOf(target), { source: 'icebolt' });
       }
       drawMap(); updateUI(); advanceTurn(1);
       return;
@@ -17211,7 +18238,7 @@ window.BOUNDARY_DATA = {
     // #28: Poison — deal ongoing damage to a visible enemy
     if(spellName === 'poison') {
       if(player.mp < 3) { logMsg("Not enough mana! (3 MP)"); return; }
-      const visibleHostiles = enemies.filter(e => isSpellHostile(e) && visible[e.y] && visible[e.y][e.x]);
+      const visibleHostiles = zone.npcs.filter(e => isSpellHostile(e) && visible[e.y] && visible[e.y][e.x]);
       if(visibleHostiles.length === 0) { logMsg("No hostile target in sight for Poison."); return; }
       visibleHostiles.sort((a,b) => (Math.abs(a.x-player.x)+Math.abs(a.y-player.y)) - (Math.abs(b.x-player.x)+Math.abs(b.y-player.y)));
       const target = visibleHostiles[0];
@@ -17266,14 +18293,13 @@ window.BOUNDARY_DATA = {
   };
 
   window.startRangedAttackTargeting = function() {
-    let weaponIcon = player.equipped && player.equipped.leftHand;
-    let weaponDef = getEquippedWeaponDef();
-    if(!weaponIcon || !weaponDef || !weaponDef.ranged) {
+    const weaponDef = getEquippedWeaponDef();
+    if(!weaponDef || !weaponDef.ranged) {
       logMsg("You need a ranged weapon equipped.");
       return false;
     }
     if(weaponDef.ammoName && countItemByName(weaponDef.ammoName) <= 0) {
-      logMsg(`<span style='color:var(--error)'>Out of ${ItemDefs[weaponDef.ammoName]?.displayName ?? 'ammo'}.</span>`);
+      logMsg(`<span style='color:var(--error)'>Out of ${ItemDefs[weaponDef.ammoName]?.label() ?? 'ammo'}.</span>`);
       return false;
     }
     if(weaponDef.manaCost && player.mp < weaponDef.manaCost) {
@@ -17281,22 +18307,21 @@ window.BOUNDARY_DATA = {
       return false;
     }
     window._rangedTargeting = true;
-    logMsg(`<span style='color:var(--primary)'>${weaponIcon} ${weaponDef.name} targeting — click a tile to fire.</span>`);
+    logMsg(`<span style='color:var(--primary)'>${weaponDef.label()} targeting — click a tile to fire.</span>`);
     return true;
   };
 
   window.rangedWeaponTarget = function(tx, ty) {
     window._rangedTargeting = false;
-    let weaponIcon = player.equipped && player.equipped.leftHand;
-    let weaponDef = getEquippedWeaponDef();
-    if(!weaponIcon || !weaponDef || !weaponDef.ranged) return;
+    const weaponDef = getEquippedWeaponDef();
+    if(!weaponDef || !weaponDef.ranged) return;
 
     let dx = tx - player.x, dy = ty - player.y;
     let dist = Math.sqrt(dx * dx + dy * dy);
     if(dist < 1) { logMsg("Aim away from your own face."); return; }
     if(dist > (weaponDef.range ?? 8)) { logMsg(`Too far! (max ${weaponDef.range ?? 8} tiles)`); return; }
     if(weaponDef.ammoName && !consumeItemByName(weaponDef.ammoName, 1)) {
-      logMsg(`<span style='color:var(--error)'>Out of ${ItemDefs[weaponDef.ammoName]?.displayName ?? 'ammo'}.</span>`);
+      logMsg(`<span style='color:var(--error)'>Out of ${ItemDefs[weaponDef.ammoName]?.label() ?? 'ammo'}.</span>`);
       return;
     }
     if(weaponDef.manaCost) {
@@ -17322,16 +18347,16 @@ window.BOUNDARY_DATA = {
       let cy = Math.round(player.y + sy * i);
       if(theMap[cy] && theMap[cy][cx] === TILES.WALL) {
         addFloatingText(cx, cy, '💨', '#888', 18);
-        logMsg(`${weaponDef.name} thunks harmlessly into a wall.`);
+        logMsg(`${weaponDef.label()} thunks harmlessly into a wall.`);
         drawMap();
         updateUI();
         advanceTurn(1);
         return;
       }
       addFloatingText(cx, cy, shotGlyph, weaponDef.manaCost ? '#8cf' : '#ddd', 16);
-        let monsterIdx = enemies.findIndex(m => m.x === cx && m.y === cy);
+        let monsterIdx = zone.npcs.findIndex(m => m.x === cx && m.y === cy);
       if(monsterIdx !== -1) {
-        let enemy = enemies[monsterIdx];
+        let enemy = zone.npcs[monsterIdx];
         // #16: Protected NPCs cannot be hit by ranged attacks
         if(isProtectedNPC(enemy)) {
           logMsg(`${enemy.stats.icon || enemy.type} is protected — you can't attack them.`);
@@ -17343,7 +18368,7 @@ window.BOUNDARY_DATA = {
         if(weaponDef.manaCost) dmg += Math.floor(player.stats.int / 3);
         enemy.stats.hp -= dmg;
         addFloatingText(cx, cy, `-${dmg}`, '#f00', 18 + Math.floor(dmg / 2));
-        logMsg(`${weaponDef.name} hits ${enemy.type} for ${dmg} damage.`);
+        logMsg(`${weaponDef.label()} hits ${enemy.type} for ${dmg} damage.`);
         // Ifrit counterattack on ranged hit
         if(enemy.type === 'ifrit' && enemy.isIfrit && !enemy.provoked) {
           enemy.provoked = true;
@@ -17352,7 +18377,7 @@ window.BOUNDARY_DATA = {
         if(enemy.stats.hp <= 0) {
           logMsg(`The ${enemy.type} collapses under the ranged hit.`);
           if(typeof window.resolveEnemyDefeat === 'function') window.resolveEnemyDefeat(monsterIdx, { source: 'ranged' });
-          else enemies.splice(monsterIdx, 1);
+          else zone.npcs.splice(monsterIdx, 1);
         }
         drawMap();
         updateUI();
@@ -17362,7 +18387,7 @@ window.BOUNDARY_DATA = {
     }
 
     addFloatingText(tx, ty, '💨', '#888', 18);
-    logMsg(`${weaponDef.name} misses everything important.`);
+    logMsg(`${weaponDef.label()} misses everything important.`);
     drawMap();
     updateUI();
     advanceTurn(1);
@@ -17412,9 +18437,9 @@ window.BOUNDARY_DATA = {
       prevX = cx;
       prevY = cy;
       // Check for monster hit
-      let monsterIdx = enemies.findIndex(m => m.x === cx && m.y === cy);
+      let monsterIdx = zone.npcs.findIndex(m => m.x === cx && m.y === cy);
       if(monsterIdx !== -1) {
-        let m = enemies[monsterIdx];
+        let m = zone.npcs[monsterIdx];
         // #16: Protected NPCs cannot be hit by fireball
         if(isProtectedNPC(m)) {
           logMsg(`The fireball fizzles near ${m.stats.icon || m.type}. They seem protected!`);
@@ -17447,7 +18472,7 @@ window.BOUNDARY_DATA = {
         if(m.stats.hp <= 0) {
           logMsg(`The ${m.type} is incinerated!`);
           if(typeof window.resolveEnemyDefeat === 'function') window.resolveEnemyDefeat(monsterIdx, { source: 'fireball' });
-          else enemies.splice(monsterIdx, 1);
+          else zone.npcs.splice(monsterIdx, 1);
         }
         hitSomething = true;
         break;
@@ -17469,12 +18494,28 @@ window.BOUNDARY_DATA = {
     renderInventory();
   }
 
+  // Slots currently held by the same equipped item (linkage for 2H weapons
+  // and other multi-slot items). Returns [slot] for single-slot items, or
+  // the item's full equip-group for items occupying ≥2 slots. Returns []
+  // when nothing is equipped at `slot`.
+  function linkedSlotsOf(slot) {
+    const name = player.equipped && player.equipped[slot];
+    if (!name) return [];
+    const def = ItemDefs[name];
+    const groups = def && def.equipGroups;
+    if (!groups) return [slot];
+    // The item was equipped via one of its groups — pick the one whose
+    // slots all currently hold this item (handles overlapping groups).
+    for (const g of groups) {
+      if (g.includes(slot) && g.every(s => player.equipped[s] === name)) return g.slice();
+    }
+    return [slot];
+  }
+
   function swapEquip(idx, slot) {
     // K6: idx === -1 means "just recalculate stats from current equipped state"
     // (used by drag-to-unequip / slot-swap paths that manage inventory themselves)
     if (idx !== -1) {
-      // Equip-gate is a model-layer predicate (Player.canEquip). Engine
-      // here only renders the user-facing rejection.
       const stackToEquip = inventory[idx];
       if (stackToEquip) {
         const verdict = player.canEquip(stackToEquip.itemName);
@@ -17485,23 +18526,70 @@ window.BOUNDARY_DATA = {
           return;
         }
       }
-      // Swap one unit from the inventory stack with the equipped slot.
-      // Equipped slots are item INSTANCES (single units), inventory slots are
-      // stacks. Equippable items are non-stackable (maxStack=1), so the stack
-      // is always qty=1 — taking one effectively empties the slot. The
-      // previously-equipped item (if any) is placed in the now-empty slot
-      // as a fresh single-unit stack.
-      const stack = inventory[idx];
-      const prevEquipped = player.equipped[slot];   // camelCase name or null
-      player.equipped[slot] = stack ? stack.itemName : null;
-      inventory[idx] = prevEquipped ? new ItemStack(prevEquipped, 1) : null;
+      const incoming = stackToEquip ? stackToEquip.itemName : null;
+      const incomingDef = incoming ? ItemDefs[incoming] : null;
+
+      // Pick which equip-group of the incoming item to fill. Prefer one
+      // containing `slot` (the drop target); fall back to the first group.
+      let targetGroup = null;
+      if (incoming && incomingDef && incomingDef.equipGroups) {
+        targetGroup = incomingDef.equipGroups.find(g => g.includes(slot)) || incomingDef.equipGroups[0];
+      } else if (incoming) {
+        targetGroup = [slot]; // legacy fallback
+      } else {
+        // Unequip path: stack is null, so the "group" is the linkage of
+        // whatever currently occupies `slot` (so a 2H weapon clears both).
+        targetGroup = linkedSlotsOf(slot);
+        if (targetGroup.length === 0) targetGroup = [slot];
+      }
+
+      // Gather displaced item names (dedupe by name — a 2H weapon spans
+      // multiple slots but is one item to return). Also expand to clear
+      // ALL slots linked to each displaced item, so half-equipping a 2H
+      // can never be left behind.
+      const displaced = [];
+      const seen = new Set();
+      const slotsToClear = new Set(targetGroup);
+      for (const s of targetGroup) {
+        const cur = player.equipped[s];
+        if (cur && !seen.has(cur)) {
+          seen.add(cur);
+          displaced.push(cur);
+          linkedSlotsOf(s).forEach(ls => slotsToClear.add(ls));
+        }
+      }
+      slotsToClear.forEach(s => { player.equipped[s] = null; });
+
+      // Write the incoming item to all target-group slots.
+      targetGroup.forEach(s => { player.equipped[s] = incoming; });
+
+      // Pull the incoming stack out of inventory (qty=1; equippables are
+      // non-stackable). Then deposit displaced: first one back into the
+      // source slot (the swap), rest into first-empty inv slot or floor.
+      inventory[idx] = null;
+      if (displaced.length > 0) {
+        inventory[idx] = new ItemStack(displaced[0], 1);
+        for (let i = 1; i < displaced.length; i++) {
+          const empty = inventory.findIndex(s => s === null);
+          if (empty !== -1) {
+            inventory[empty] = new ItemStack(displaced[i], 1);
+          } else {
+            zone.dropAt(player.x, player.y, new ItemStack(displaced[i], 1));
+            const dn = ItemDefs[displaced[i]]?.label() || displaced[i];
+            logMsg(`<span style='color:var(--warning)'>Inventory full — ${dn} dropped at your feet.</span>`);
+          }
+        }
+      }
     }
-    // Recalculate combat stats from all equipment
+    // Recalculate combat stats from all equipment. Dedupe by item name so
+    // a 2H weapon occupying multiple slots isn't counted multiple times.
     let totalDmg = CONSTANTS.PLAYER_UNARMED_BASE_DMG;
     let totalEvade = CONSTANTS.PLAYER_INITIAL_DODGE_RATE;
     let speedBonus = 0;
+    const _seenEquipped = new Set();
     Object.values(player.equipped).forEach(name => {
-      if(name) {
+      if(name && !_seenEquipped.has(name)) {
+        _seenEquipped.add(name);
         let d = ItemDefs[name];
         if(!d) return;
         if(d.type === "weapon") totalDmg = (d.baseDmg ?? 0);
@@ -17527,26 +18615,31 @@ window.BOUNDARY_DATA = {
     if (idx !== -1) {
       const equippedName = player.equipped[slot];
       const equippedDef  = equippedName ? ItemDefs[equippedName] : null;
-      if(equippedDef) logMsg(`<span style='color:var(--success)'>Equipped ${equippedDef.displayName} to ${slot}.</span>`);
+      if(equippedDef) logMsg(`<span style='color:var(--success)'>Equipped ${equippedDef.label()}.</span>`);
     }
   }
 
-  // #34: Unequip from equip slot to ground when inventory is full
+  // #34: Unequip from equip slot to ground when inventory is full.
+  // Honors multi-slot linkage: a 2H weapon clears all of its slots and
+  // returns to inventory/floor as a single stack.
   window.unequipToGround = (slot) => {
-    const cur = player.equipped[slot];  // camelCase name
+    const cur = player.equipped[slot];
     if(!cur) return;
     const def = ItemDefs[cur];
+    const group = linkedSlotsOf(slot);
     const freeSlot = inventory.findIndex(s => s === null);
     if(freeSlot !== -1) {
       inventory[freeSlot] = new ItemStack(cur, 1);
-      logMsg(`<span style='color:var(--success)'>Unequipped ${def?.displayName || cur} to inventory.</span>`);
+      logMsg(`<span style='color:var(--success)'>Unequipped ${def?.label() || cur} to inventory.</span>`);
     } else {
       zone.dropAt(player.x, player.y, new ItemStack(cur, 1));
-      logMsg(`<span style='color:var(--warning)'>Inventory full — ${def?.displayName || cur} dropped at your feet.</span>`);
+      logMsg(`<span style='color:var(--warning)'>Inventory full — ${def?.label() || cur} dropped at your feet.</span>`);
     }
-    player.equipped[slot] = null;
+    group.forEach(s => { player.equipped[s] = null; });
     renderQuickslots(); updateUI();
   };
+
+  window.linkedSlotsOf = linkedSlotsOf;
 
 
 // === engine.js ===
@@ -17569,7 +18662,7 @@ window.BOUNDARY_DATA = {
 
   The functions here are called from input.js (movePlayer, restPlayer), from the UI
   (combat clicks), and from the game's own turn‑based clock (advanceTurn). They update
-  the global player, enemies, itemsOnGround, and activeEffects arrays.
+  the global player, zone.npcs, itemsOnGround, and activeEffects arrays.
 */
 // === Core Loops & AI ===
   // Phase 6c: chestStates global retired. Per-chest state (locked,
@@ -17768,7 +18861,7 @@ window.BOUNDARY_DATA = {
     const mimicLootable = zone.lootablesAt(x, y).find(l => l && l._mimic);
     if (!mimicLootable) return false;
     zone.removeLootable(mimicLootable);
-    spawnNpc(enemies, x, y, 'mimic', { stats: { ...MONSTER_DEF['mimic'] }, isMimic: true });
+    spawnNpc(zone.npcs, x, y, 'mimic', { stats: { ...MONSTER_DEF['mimic'] }, isMimic: true });
     logMsg("<span style='color:var(--error)'>📦 The chest SNAPS its lid open and reveals jagged teeth! It's a MIMIC!</span>");
     if (typeof Sound !== 'undefined' && Sound.playSample) {
       Sound.playSample('mimic_reveal', 0.8);
@@ -17778,10 +18871,10 @@ window.BOUNDARY_DATA = {
     drawMap(); updateUI();
     // Mimic attacks first as a surprise (after a brief delay so the
     // reveal sound + animation get a beat).
-    const mIdx = enemies.length - 1;
+    const mIdx = zone.npcs.length - 1;
     if (typeof monsterAttack === 'function') {
       setTimeout(() => {
-        if (enemies[mIdx] && enemies[mIdx].stats?.hp > 0) monsterAttack(mIdx);
+        if (zone.npcs[mIdx] && zone.npcs[mIdx].stats?.hp > 0) monsterAttack(mIdx);
       }, 500);
     }
     return true;
@@ -17805,7 +18898,7 @@ window.BOUNDARY_DATA = {
     // gen bug, corrupted save), refuse to absorb it rather than let
     // the player carry a Safe in their pocket.
     if (def.type === 'container') {
-      logMsg(`<span style='color:var(--warning)'>You can't carry the ${def.displayName || def.name || 'container'}.</span>`);
+      logMsg(`<span style='color:var(--warning)'>You can't carry the ${def.label() || 'container'}.</span>`);
       return false;
     }
 
@@ -17874,7 +18967,7 @@ window.BOUNDARY_DATA = {
       theMap: theMap.map(row => row.slice()),
       explored: explored.map(row => row.slice()),
       darkMap: darkMap.map(row => row.slice()),
-      enemies: JSON.parse(JSON.stringify(enemies)),
+      npcs: JSON.parse(JSON.stringify(zone.npcs)),
       lootables: JSON.parse(JSON.stringify(zone.lootables)),
       corpses: JSON.parse(JSON.stringify(zone.corpses)),
       mapW: mapW,
@@ -17902,7 +18995,7 @@ window.BOUNDARY_DATA = {
     explored = cached.explored.map(row => row.slice());
     darkMap = cached.darkMap.map(row => row.slice());
     visible = Array(mapH).fill().map(() => Array(mapW).fill(false));
-    enemies.length = 0;
+    zone.npcs.length = 0;
     // The cache stores JSON-cloned spawn specs (class identity is
     // stripped by JSON.parse(JSON.stringify(...)) in _saveLevelToCache).
     // Re-hydrate each one through NPC.fromSpec so the live array
@@ -17911,8 +19004,8 @@ window.BOUNDARY_DATA = {
     // survive JSON round-trip. No NPCs carry Conditions today; if
     // that changes, add a NPC.toSpec() / fromSpec() pair that
     // re-attaches the right onTick when reading a serialized name.
-    cached.enemies.forEach(spec => {
-      enemies.push(typeof NPC !== 'undefined' && NPC.fromSpec ? NPC.fromSpec(spec) : spec);
+    cached.npcs.forEach(spec => {
+      zone.addNpc(typeof NPC !== 'undefined' && NPC.fromSpec ? NPC.fromSpec(spec) : spec);
     });
     syncActiveZone();
     // Restore floor Lootables. Cache stores plain-object snapshots
@@ -18000,50 +19093,57 @@ window.BOUNDARY_DATA = {
 
   // Restart game without reloading page (preserves loaded assets)
   window.restartGame = function() {
+    // Wipe player state first — initMap does NOT call setPlayerDefaults,
+    // so without this player.hp stays at 0 and every action trips the
+    // "You are dead." guard in mechanics.js.
     setPlayerDefaults();
-    
-    // Reset global state
+
+    // Reset shared state that survives a death overlay
     isDead = false;
     currentLevel = 0;
-    currentScene = 'town'; // Bug 7: start in Tristram
+    currentScene = 'town';
     levelCache = {};
-    enemies.length = 0;
+    zone.clearNpcs();
     zone.clearLootables();
     zone.clearCorpses();
     lightTurns = 0;
     floatingTexts.length = 0;
     activeEffects.length = 0;
     damageTint = 0;
+    // Reset debug toggles — a fresh game is a clean slate. Mutate the
+    // existing object in place (don't reassign) so state.js's debugFlags
+    // binding and every window.debugFlags reader keep pointing at it.
+    if (window.debugFlags) {
+      for (const k of Object.keys(window.debugFlags)) window.debugFlags[k] = false;
+    }
     window._sharkBossSpawned = false;
-    window._cainHealedThisVisit = false; // E6: reset Cain heal on new game
-    window._activeBombs = []; // E16: reset active bombs on new game
-    
-    // Reset inventory and inventory
+    window._cainHealedThisVisit = false;
+    window._activeBombs = [];
     for(let i = 0; i < inventory.length; i++) inventory[i] = null;
-    for(let i = 0; i < inventory.length; i++) inventory[i] = null;
-    
-    // Close overlay
+
     hideOverlay();
-    
-    // Re-init quest engine
-    if(typeof _initQuestEngine === 'function') _initQuestEngine();
-    
-    // Generate fresh map
-    initMap(50);
-    calculateFOV();
-    renderQuickslots();
-    renderInventory();
-    drawMap();
-    updateUI();
-    
-    logMsg("<span style='color:var(--success)'>Welcome back, adventurer. A new journey begins...</span>");
+
+    // Re-route through the class-selection gate so the player picks
+    // a class on each restart — _beginAdventure() clicks #startBtn,
+    // which runs setPlayerDefaults via initMap and re-applies the
+    // chosen class's bonuses.
+    window._classChosen = false;
+    window._selectedClass = null;
+    if (typeof showClassModal === 'function') {
+      showClassModal();
+    } else {
+      // Fallback: surface the start screen so the player can click
+      // BEGIN ADVENTURE manually (modal lives on the start screen).
+      const startScreen = document.getElementById('start-screen');
+      if (startScreen) startScreen.style.display = '';
+    }
   };
 
   // (hydrateEnemiesToNPCs retired Iter 3.5 — all entry points into
-  // the live enemies[] now produce NPC instances:
+  // the live zone.npcs[] now produce NPC instances:
   //   - spawnNpc() helpers wrap NPC.fromSpec
   //   - _restoreLevelFromCache re-hydrates JSON-cloned specs via NPC.fromSpec
-  //   - town.enemies[] entries are already instances (built by spawnNpc)
+  //   - town.zone.npcs[] entries are already instances (built by spawnNpc)
   // No lazy promotion needed at dispatch entry anymore.)
 
   // Build the ctx object passed to NPC.takeTurn(). Wires view-layer
@@ -18055,7 +19155,8 @@ window.BOUNDARY_DATA = {
       isScene:      !!opts.isScene,
       nowMs:        opts.nowMs ?? Date.now(),
       steps:        opts.steps ?? 1,
-      player, theMap, mapW, mapH, enemies, zone,
+      player, theMap, mapW, mapH, zone,
+      enemies: zone.npcs,
       TILES, CONSTANTS, currentScene,
       isTileFloor,
       _movedFlag:   false,
@@ -18087,23 +19188,10 @@ window.BOUNDARY_DATA = {
       webglImpact(dmg, x, y) {
         if (window.WebGLFX && WebGLFX.onCombatImpact) WebGLFX.onCombatImpact(dmg, x, y);
       },
-      // Apply HP loss to player + tint + floating text + die() check.
-      // Returns true if die() fired so callers can early-return.
-      // Damage flows through Player.takeDamage so talents (Toughness,
-      // future resistances) can reduce it. A fully-absorbed hit shows
-      // "absorb" in place of the negative number.
+      // Combat/effect damage — delegates to the central funnel with
+      // cause 'combat' so the Second Wind talent can intercept.
       damagePlayer(dmg, kind, size, suffix, color) {
-        const actual = player.takeDamage(dmg, kind);
-        if (actual <= 0) {
-          addFloatingText(player.x, player.y, 'absorb', '#9c9', 14);
-          return false;
-        }
-        damageTint = 30;
-        const label = suffix ? `-${actual}${suffix}` : `-${actual}`;
-        addFloatingText(player.x, player.y, label, color || '#f00', size ?? 22);
-        if (window.WebGLFX && WebGLFX.onPlayerDamage) WebGLFX.onPlayerDamage(actual, kind);
-        if (player.hp <= 0) { die(); return true; }
-        return false;
+        return applyPlayerDamage(dmg, 'combat', { mitigate: true, kind, size, suffix, color });
       },
       // Generic named-event SFX dispatcher. Lets NPC.attack say
       // "play the grunt event" without naming Sound.grunt directly.
@@ -18114,17 +19202,15 @@ window.BOUNDARY_DATA = {
           Sound[method]();
         }
       },
-      // Remove a dead NPC from the live enemies array. Used by NPC.attack
-      // when the attacker dies to a thorns-reflection (Crown of Thorns).
+      // Remove a dead NPC from the zone. Used by NPC.attack when the
+      // attacker dies to a thorns-reflection (Crown of Thorns).
       removeEnemy(npc) {
-        const idx = enemies.indexOf(npc);
-        if (idx >= 0) enemies.splice(idx, 1);
+        zone.removeNpc(npc);
       },
-      // Bridge to legacy thiefSteal which still operates on enemies[]
-      // indices. (monsterAttack passthrough retired Iter 4 — NPCs
-      // call this.attack(target, ctx) directly.)
+      // Bridge to legacy thiefSteal which still operates on a positional
+      // index into the live NPC list.
       thiefSteal(npc) {
-        const idx = enemies.indexOf(npc);
+        const idx = zone.npcs.indexOf(npc);
         if (idx >= 0) thiefSteal(idx);
       },
     };
@@ -18133,7 +19219,7 @@ window.BOUNDARY_DATA = {
 
   function advanceSceneNPCs(nowMs = Date.now()) {
     const ctx = makeNpcCtx({ isScene: true, nowMs });
-    for (const e of enemies) {
+    for (const e of zone.npcs) {
       if (e && typeof e.takeTurn === 'function') e.takeTurn(ctx);
     }
     return ctx._movedFlag;
@@ -18193,7 +19279,7 @@ window.BOUNDARY_DATA = {
         darkMap = Array(mapH).fill().map(() => Array(mapW).fill(false));
         explored = Array(mapH).fill().map(() => Array(mapW).fill(false));
         visible = Array(mapH).fill().map(() => Array(mapW).fill(false));
-         enemies = []; zone.clearLootables();
+         zone.clearNpcs(); zone.clearLootables();
          syncActiveZone();
          currentScene = 'nest';
          // #13: Wire background art scene
@@ -18205,7 +19291,7 @@ window.BOUNDARY_DATA = {
          zone.dropAt(30, 24, ItemStack.fromIcon('🏅'));
          // Eagle is here if player fed it
          if(player.fedEagle) {
-           spawnNpc(enemies, 30, 23, "eagle", { stats: {...MONSTER_DEF["eagle"]} });
+           spawnNpc(zone.npcs, 30, 23, "eagle", { stats: {...MONSTER_DEF["eagle"]} });
            logMsg("<span style='color:var(--success)'>The Eagle you fed is here! Talk to it to escape.</span>");
          }
         startQuestTimer(30, "Roc Nest Escape", () => {
@@ -18214,7 +19300,7 @@ window.BOUNDARY_DATA = {
             currentLevel = 12; initMap(50); calculateFOV(); drawMap(); updateUI();
           } else {
             logMsg("<span style='color:var(--error)'>The Roc returns... and you are eaten.</span>");
-            isDead = true; die();
+            die('roc');
           }
         });
         calculateFOV(); drawMap(); updateUI();
@@ -18229,7 +19315,7 @@ window.BOUNDARY_DATA = {
       player.exhaustion += steps;
       if (player.exhaustion > 10) {
         let drainRate = Math.min(2, (player.exhaustion - 10) * 0.15);
-        player.hp -= (drainRate * steps);
+        applyPlayerDamage(drainRate * steps, 'exhaustion', { mitigate: false });
         player.mp = Math.max(0, player.mp - (drainRate * 0.5 * steps));
       }
     } else { player.exhaustion = Math.max(0, player.exhaustion - steps); }
@@ -18275,7 +19361,7 @@ window.BOUNDARY_DATA = {
           if(Math.random() < deathChance) {
             logMsg("<span style='color:var(--error); font-size:14px; font-weight:bold;'>🌑 The Grue strikes from the darkness! You never even saw it coming.</span>");
             player.hp = 0;
-            die();
+            die('grue');
             return;
           }
           if(danger === 15) msgIdx = 7;
@@ -18292,8 +19378,7 @@ window.BOUNDARY_DATA = {
     }
     // Hunger damage when starving
     if (player.hunger >= 100) {
-      player.hp -= CONSTANTS.HUNGER_DAMAGE * steps;
-      addFloatingText(player.x, player.y, "🍖 -" + CONSTANTS.HUNGER_DAMAGE.toFixed(1), "#f00");
+      applyPlayerDamage(CONSTANTS.HUNGER_DAMAGE * steps, 'hunger', { mitigate: false, suffix: '🍖' });
     }
     // Hunger heal when well-fed (optional)
     if (player.hunger <= 20) {
@@ -18338,7 +19423,7 @@ window.BOUNDARY_DATA = {
     }
 
     // Monster healing over time — monsters heal 5% max HP per turn when not in combat
-    enemies.forEach(e => {
+    zone.npcs.forEach(e => {
       if(e.stats && e.stats.hp > 0 && e.stats.hp < e.stats.maxHp) {
         let dist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
         // Only heal if not adjacent to player (not in combat)
@@ -18352,7 +19437,7 @@ window.BOUNDARY_DATA = {
     // AI and NPC Logic
     // ── Per-NPC AI dispatch (moved out of engine into src/npc.js) ──
     //
-    // The old 440-line enemies.forEach switch lives in class methods
+    // The old 440-line zone.npcs.forEach switch lives in class methods
     // on NPC + 8 typed subclasses (Ifrit, FrenchTaunter, Thief, Fence,
     // Mimic, Shark, Zombie, Pixie). The engine now just builds a ctx
     // and dispatches via runScheduler. Tristram boundary push-back
@@ -18360,7 +19445,7 @@ window.BOUNDARY_DATA = {
 
     // Tristram boundary pre-pass — keep wandering NPCs outside town walls.
     if(currentScene === 'town' && window._tristramBounds) {
-      enemies.forEach(e => {
+      zone.npcs.forEach(e => {
         if(!e || !e.stats) return;
         if(e.type !== 'pixie' && e.type !== 'muck_peasant') return;
         const b = window._tristramBounds;
@@ -18390,12 +19475,12 @@ window.BOUNDARY_DATA = {
     // 'brake'/'idle'/'timeout') and we hand control back.
     {
       const ctx = makeNpcCtx({ isScene: false, steps });
-      // Phase 4a-2.5: schedulable list combines the legacy `enemies`
+      // Phase 4a-2.5: schedulable list combines the legacy `zone.npcs`
       // NPC array with zone.entities (which holds Corpses + Lootables
       // and, in Phase 6, will absorb NPCs too). Filter to anything
       // with takeTurn — drops the `e.stats &&` gate so Corpses
       // (no combat stats) get ticked for decay.
-      const live = [...enemies, ...zone.entities].filter(e =>
+      const live = [...zone.npcs, ...zone.entities].filter(e =>
         e && e !== localPlayer && typeof e.takeTurn === 'function'
       );
       if (typeof runScheduler === 'function' && typeof localPlayer !== 'undefined') {
@@ -18411,13 +19496,13 @@ window.BOUNDARY_DATA = {
     // Spawn new monsters over time
     if (currentScene === 'dungeon' && Math.random() < CONSTANTS.SPAWN_RATE * steps) {
         let pos = getRandomFloor();
-        if (pos && !(darkMap[pos.y] && darkMap[pos.y][pos.x]) && !enemies.some(e => e.x === pos.x && e.y === pos.y) && (pos.x !== player.x || pos.y !== player.y)) {
-            spawnNpc(enemies, pos.x, pos.y, "slime", { stats: {...MONSTER_DEF["slime"]} });
+        if (pos && !(darkMap[pos.y] && darkMap[pos.y][pos.x]) && !zone.npcs.some(e => e.x === pos.x && e.y === pos.y) && (pos.x !== player.x || pos.y !== player.y)) {
+            spawnNpc(zone.npcs, pos.x, pos.y, "slime", { stats: {...MONSTER_DEF["slime"]} });
         }
     }
 
     let curTile = theMap[player.y][player.x];
-    if (curTile === TILES.BLADE && !player.isKneeling) { player.hp -= 10; damageTint = 30; }
+    if (curTile === TILES.BLADE && !player.isKneeling) { applyPlayerDamage(10, 'trap', { mitigate: false }); }
 
     // Track player stationaryTurns for thief patrol AI
     if(player._lastX === player.x && player._lastY === player.y) {
@@ -18442,19 +19527,23 @@ window.BOUNDARY_DATA = {
            theMap[sy] && isTileFloor(theMap[sy][sx]) &&
            visible[sy] && visible[sy][sx] &&
            (sx !== player.x || sy !== player.y) &&
-           !enemies.some(e => e.x === sx && e.y === sy)) {
+           !zone.npcs.some(e => e.x === sx && e.y === sy)) {
           spawnTile = {x: sx, y: sy};
           break;
         }
       }
       if(spawnTile) {
         // Spawn the rat — passive, runs away
-        spawnNpc(enemies, spawnTile.x, spawnTile.y, 'wet_rat', { stats: {...MONSTER_DEF['wet_rat'], hp: 6, maxHp: 6, dmg: 0, hit: 0.0, crit: 0.0, passive: true, speed: 1.2} });
+        spawnNpc(zone.npcs, spawnTile.x, spawnTile.y, 'wet_rat', { stats: {...MONSTER_DEF['wet_rat'], hp: 6, maxHp: 6, dmg: 0, hit: 0.0, crit: 0.0, passive: true, speed: 1.2} });
         logMsg("<span style='color:var(--warning)'>🐀 You notice a rat scurrying across the floor, followed by a cat in hot pursuit!</span>");
         // Cat spawns a bit further away, chases the rat
-        spawnNpc(enemies, spawnTile.x + 1, spawnTile.y, 'cat', { stats: {...MONSTER_DEF['cat']} });
-        // Old boot appears at feet (harmless flavor item)
-        zone.dropAt(player.x + 1, player.y, ItemStack.fromIcon('👢'));
+        spawnNpc(zone.npcs, spawnTile.x + 1, spawnTile.y, 'cat', { stats: {...MONSTER_DEF['cat']} });
+        // Old boot appears at feet (harmless flavor item).
+        // Construct by name, not icon: the 👢 glyph is an unregistered
+        // duplicate of the oldBoot def (camelCase-collision-skipped in
+        // items_registry.js), so fromIcon('👢') would produce a defless
+        // stack that renders as a "?" named "👢".
+        zone.dropAt(player.x + 1, player.y, new ItemStack('oldBoot', 1));
         addFloatingText(spawnTile.x, spawnTile.y, '🐀', '#aaa', 14);
       }
     }
@@ -18473,7 +19562,7 @@ window.BOUNDARY_DATA = {
 
     calculateFOV(); drawMap(); updateUI();
     // (Iter 3: runScheduler dispatch moved up to where the per-NPC
-    // AI block lives — single call handles player + all enemies.)
+    // AI block lives — single call handles player + all zone.npcs.)
   }
 
   // E16: Bomb explosion
@@ -18507,19 +19596,15 @@ window.BOUNDARY_DATA = {
     if(playerDist <= maxR) {
       const dmg = Math.max(0, baseDmg - Math.floor(playerDist) * dmgPerTile);
       if(dmg > 0) {
-        player.hp = Math.max(0, player.hp - dmg);
         logMsg(`<span style='color:#f44'>💥 The explosion catches you for ${dmg} damage!</span>`);
-        addFloatingText(player.x, player.y, `-${dmg}`, '#f00', 20);
-        damageTint = 30;
-        if(window.WebGLFX && WebGLFX.onPlayerDamage) WebGLFX.onPlayerDamage(dmg);
+        applyPlayerDamage(dmg, 'bomb', { mitigate: false, size: 20 });
         updateUI();
-        if(player.hp <= 0) { die(); return; }
       }
     }
 
-    // Damage enemies in blast radius
-    for(let i = enemies.length - 1; i >= 0; i--) {
-      const e = enemies[i];
+    // Damage zone.npcs in blast radius
+    for(let i = zone.npcs.length - 1; i >= 0; i--) {
+      const e = zone.npcs[i];
       if(!e) continue;
       const eDist = Math.hypot(e.x - bomb.x, e.y - bomb.y);
       if(eDist <= maxR) {
@@ -18546,7 +19631,7 @@ window.BOUNDARY_DATA = {
       let stolen = inventory[idx];
       stolenItems.push(stolen);
       inventory[idx] = null;
-      logMsg(`<span style='color:var(--error)'>The Thief pickpocketed your ${stolen.def.displayName}!</span>`);
+      logMsg(`<span style='color:var(--error)'>The Thief pickpocketed your ${stolen.def.label()}!</span>`);
       // #13: Play internal dialog voice line on pickpocket
       let stolenVoices = ['voice_internal_stolen_0', 'voice_internal_stolen_1', 'voice_internal_stolen_2'];
       if(typeof Sound !== 'undefined' && Sound.playVoice) {
@@ -18556,7 +19641,7 @@ window.BOUNDARY_DATA = {
       if(typeof Sound !== 'undefined' && Sound.playSample) {
         Sound.playSample('yoink', 0.7);
       }
-      document.getElementById('modal-content').innerHTML = `<h2>🧤 PICKPOCKETED</h2>${modalPortraitHTML('npc_thief_modal', '🧤')}<p>The Thief stole your <strong>${stolen.def.displayName}</strong>!</p><button onclick="hideOverlay()">Drat!</button>`;
+      document.getElementById('modal-content').innerHTML = `<h2>🧤 PICKPOCKETED</h2>${modalPortraitHTML('npc_thief_modal', '🧤')}<p>The Thief stole your <strong>${stolen.def.label()}</strong>!</p><button onclick="hideOverlay()">Drat!</button>`;
       showOverlay();
       renderQuickslots(); updateUI();
     }
@@ -18581,7 +19666,7 @@ window.BOUNDARY_DATA = {
     sleepHealLoop = setInterval(() => {
       if(!player.isSleeping || player.atronach || isDead) { clearInterval(sleepHealLoop); return; }
       // Bug 13: Wake player if a hostile enemy is within 2 tiles
-      let hostileNear = enemies.find(e => e.stats && !e.stats.quest && !e.stats.passive &&
+      let hostileNear = zone.findNpc(e => e.stats && !e.stats.quest && !e.stats.passive &&
         Math.abs(e.x - player.x) <= 2 && Math.abs(e.y - player.y) <= 2);
       if(hostileNear) {
         if(snoreLoop) clearInterval(snoreLoop);
@@ -18625,14 +19710,14 @@ window.BOUNDARY_DATA = {
          // Bug 13: Show ambush visual feedback before waking
          damageTint = 30;
          addFloatingText(player.x, player.y, '⚔️ AMBUSH!', '#f00', 20);
-         spawnNpc(enemies, player.x+1, player.y, "assassin", { stats: {...MONSTER_DEF["assassin"]} });
+         spawnNpc(zone.npcs, player.x+1, player.y, "assassin", { stats: {...MONSTER_DEF["assassin"]} });
          // Bug 13: Short delay then wake so player sees the ambush notification
          setTimeout(() => { wakeUp(); }, 300);
        }, 1500);
        return;
     }
 
-    let thief = enemies.find(e => e.type === 'thief' && Math.abs(e.x-player.x)+Math.abs(e.y-player.y) <= 2);
+    let thief = zone.findNpc(e => e.type === 'thief' && Math.abs(e.x-player.x)+Math.abs(e.y-player.y) <= 2);
     if (thief && Math.random() < 0.75) {
        setTimeout(() => {
          if (snoreLoop) clearInterval(snoreLoop);
@@ -18697,12 +19782,90 @@ window.BOUNDARY_DATA = {
     calculateFOV(); drawMap(); updateUI();
   };
 
-  function die() {
+  // Death-cause hint table. die(cause) shows one of these in the
+  // death modal. A situational override (>=2 adjacent hostiles)
+  // takes precedence — see resolveDeathHint.
+  const DEATH_HINTS = {
+    combat:       "Retreat and heal when your HP runs low.",
+    hunger:       "Consider learning the Foraging talent — and eat before you starve.",
+    exhaustion:   "Running drains HP when you're exhausted. Walk it off.",
+    grue:         "Never cross dark tiles without a light source.",
+    bomb:         "Get clear of explosions before they go off.",
+    poison:       "Be wary of dubious food found in dungeons.",
+    trap:         "Kneel to pass blade traps unharmed.",
+    collapse:     "Don't dawdle when the dungeon starts coming down.",
+    kickback:     "Kicking locked containers hurts — mind your HP first.",
+    roc:          "Befriend the Eagle to escape the Roc's nest.",
+    jehovah:      "The name of God begins with an 'I' in the Latin alphabet.",
+    bridgekeeper: "Go watch Monty Python and the Holy Grail.",
+    grenade:      "Three shall be the number thou shalt count.",
+  };
+
+  function countAdjacentHostiles() {
+    if (typeof zone === 'undefined' || !zone.npcs) return 0;
+    return zone.npcs.filter(e => {
+      if (!e || typeof e.x !== 'number') return false;
+      const dx = Math.abs(e.x - player.x), dy = Math.abs(e.y - player.y);
+      if (dx > 1 || dy > 1 || (dx === 0 && dy === 0)) return false;
+      return (typeof e.isHostile === 'function')
+        ? e.isHostile()
+        : !(e.stats && (e.stats.passive || e.stats.quest)) && !e.friendly && !e.farmAnimal;
+    }).length;
+  }
+
+  function resolveDeathHint(cause) {
+    if (countAdjacentHostiles() >= 2)
+      return "Fight one monster at a time — don't let them surround you.";
+    return DEATH_HINTS[cause] || '';
+  }
+
+  // Single funnel for ALL player HP loss. `cause` is a death-cause
+  // tag (see DEATH_HINTS). opts.mitigate=true routes through
+  // player.takeDamage so talents (Toughness) apply — use only for
+  // combat. Returns true if the hit was lethal (die() fired).
+  function applyPlayerDamage(amount, cause = 'unknown', opts = {}) {
+    let actual;
+    if (opts.mitigate && typeof player.takeDamage === 'function') {
+      actual = player.takeDamage(amount, opts.kind || 'corporal');
+    } else {
+      actual = Math.max(0, amount);
+      player.hp -= actual;
+    }
+    if (actual <= 0) {
+      addFloatingText(player.x, player.y, 'absorb', '#9c9', 14);
+      return false;
+    }
+    damageTint = 30;
+    const shown = Number.isInteger(actual) ? actual : Number(actual.toFixed(1));
+    const label = opts.suffix ? `-${shown}${opts.suffix}` : `-${shown}`;
+    addFloatingText(player.x, player.y, label, opts.color || '#f00', opts.size ?? 22);
+    if (window.WebGLFX && WebGLFX.onPlayerDamage) WebGLFX.onPlayerDamage(actual, opts.kind);
+    if (player.hp <= 0) { die(cause); return true; }
+    return false;
+  }
+  window.applyPlayerDamage = applyPlayerDamage;
+
+  function die(cause = 'unknown') {
     let crystalIdx = inventory.findIndex(i => i && i.itemName === 'resurrectionCrystal');
     if (crystalIdx !== -1) {
       logMsg("Crystal Shatters!");
       inventory[crystalIdx] = null;
       player.hp = player.maxHp; updateUI(); return;
+    }
+    // Second Wind talent — intercepts death "at the end of a
+    // creature's turn" (cause 'combat') if hunger leaves room.
+    const swLevel = (player.talents?.secondWind?.level) || 0;
+    if (cause === 'combat' && swLevel > 0 && player.hunger < 50) {
+      const healPct = 50 - player.hunger;
+      const healHP = Math.max(1, Math.round(player.maxHp * healPct / 100));
+      player.hp = healHP;
+      player.hunger = Math.min(100, player.hunger + 50);
+      logMsg("<span style='color:#9f9; font-weight:bold;'>🌬️ You draw a Second Wind!</span>");
+      updateUI(); drawMap();
+      showWorldModal('🌬️ SECOND WIND', `<p>You should be dead — but you draw a second wind.</p>
+        <p style="color:#9f9;">Recovered <strong>${healHP} HP</strong>.</p>
+        <p style="color:#fc8;">Hunger surges +50% — now ${Math.floor(player.hunger)}%.</p>`);
+      return;
     }
     // B41: Capture the last relevant game log message to display in the death modal
     (function() {
@@ -18722,13 +19885,15 @@ window.BOUNDARY_DATA = {
     isDead = true; Sound.scream(); drawMap();
     setTimeout(() => {
       const deathMsg = window._lastDeathMessage || '';
+      const hint = resolveDeathHint(cause);
       showOverlay();
       document.getElementById('modal-content').innerHTML = `<h2>YOU DIED</h2>
         <p style="color:#888;">Floor ${currentLevel} | Level ${player.level} | ${player.gp}g</p>
         ${deathMsg ? `<p id="death-msg" style="color:#f88; font-style:italic; margin:8px 0; font-size:13px; max-width:300px;">${deathMsg}</p>` : ''}
-        <button onclick="loadGame()">Load Game</button>
-        <button onclick="restartGame()">Restart (keep assets)</button>
-        <button onclick="location.reload()" style="margin-left:8px; opacity:0.6;">Full Reload</button>`;
+        ${hint ? `<p id="death-hint" style="color:#9cf; margin:8px 0; font-size:13px; max-width:300px;">💡 ${hint}</p>` : ''}
+        <button onclick="loadGame()" style="display:block; margin:12px auto;">Load Game</button>
+        <button onclick="restartGame()" style="display:block; margin:12px auto;">Restart (keep assets)</button>
+        <button onclick="location.reload()" style="display:block; margin:12px auto;">Full Reload</button>`;
     }, 600);
   }
 
@@ -18765,7 +19930,7 @@ window.BOUNDARY_DATA = {
   }
 
   window.resolveEnemyDefeat = function(enemyIndex, options = {}) {
-    let e = enemies[enemyIndex];
+    let e = zone.npcs[enemyIndex];
     if(!e) return;
 
     if(e.type === 'ifrit' && e.isIfrit) {
@@ -18777,7 +19942,7 @@ window.BOUNDARY_DATA = {
       createCorpse(e.x, e.y, e.type, e.stats, ifritLoot);
       player.xp += 500;
       checkLevelUp();
-      enemies.splice(enemyIndex, 1);
+      zone.npcs.splice(enemyIndex, 1);
       return;
     }
 
@@ -18941,7 +20106,7 @@ window.BOUNDARY_DATA = {
     }
 
     checkLevelUp();
-    enemies.splice(enemyIndex, 1);
+    zone.npcs.splice(enemyIndex, 1);
   };
 
   // Stubs — replaced by player.js functions when loaded
@@ -18958,7 +20123,7 @@ window.BOUNDARY_DATA = {
   // player-only assumption baked into the legacy global helper.)
 
   function doCombat(enemyIndex) {
-    let e = enemies[enemyIndex]; if(!e) return;
+    let e = zone.npcs[enemyIndex]; if(!e) return;
     if(e.type === 'master' || e.type === 'pirate') { insultBattle(enemyIndex); return; }
     let dmg = getPlayerDmgVersus(e);
 
@@ -19005,7 +20170,7 @@ window.BOUNDARY_DATA = {
         createCorpse(e.x, e.y, e.type, e.stats, ifritLoot);
         player.xp += 500;
         checkLevelUp();
-        enemies.splice(enemyIndex, 1);
+        zone.npcs.splice(enemyIndex, 1);
       } else {
         let hpPct = Math.floor((e.stats.hp / 300) * 100);
         logMsg(`Ifrit crackles with flame! (${hpPct}% HP remaining)`);
@@ -19030,7 +20195,7 @@ window.BOUNDARY_DATA = {
         if (e.stats.hp <= 0) {
           logMsg("'Alright, we'll call it a draw!'");
           createCorpse(e.x, e.y, e.type, e.stats, [new ItemStack('severedLeg', 1)]);
-          enemies.splice(enemyIndex, 1); player.xp += 500; checkLevelUp();
+          zone.npcs.splice(enemyIndex, 1); player.xp += 500; checkLevelUp();
         }
       }
       advanceTurn(1);
@@ -19132,7 +20297,7 @@ window.BOUNDARY_DATA = {
   // Pride system: winning pirate flees, losing pirate stands ground.
   // No HP loss for either side — just pride.
   window.insultBattle = (enemyIndex) => {
-    let e = enemies[enemyIndex];
+    let e = zone.npcs[enemyIndex];
     if(!e) return;
     let type = e.type;
     let pool = INSULT_BATTLES[type] || INSULT_BATTLES.pirate;
@@ -19161,7 +20326,7 @@ window.BOUNDARY_DATA = {
   };
 
   window.beginInsultRound = (enemyIndex) => {
-    let e = enemies[enemyIndex];
+    let e = zone.npcs[enemyIndex];
     if(!e) return;
     hideOverlay();
     let type = e.type;
@@ -19291,13 +20456,13 @@ window.BOUNDARY_DATA = {
   };
 
   window.continueInsultRound = (enemyIndex) => {
-    let e = enemies[enemyIndex];
+    let e = zone.npcs[enemyIndex];
     if(e) e._insultPlayerOpened = true;
     beginInsultRound(enemyIndex);
   };
 
   window.playerOpenInsultChoice = (enemyIndex, idx, known) => {
-    const e = enemies[enemyIndex];
+    const e = zone.npcs[enemyIndex];
     if(!e) return;
     const type = e.type;
     const line = (idx >= 0 && INSULT_BATTLES.pirate[idx]) ? INSULT_BATTLES.pirate[idx] : null;
@@ -19319,7 +20484,7 @@ window.BOUNDARY_DATA = {
   // #7: Pride system — no HP damage. Pirate flees on loss, stands ground on win.
   window.resolveInsultBattle = (enemyIndex, isCorrect, type) => {
     hideOverlay();
-    let e = enemies[enemyIndex];
+    let e = zone.npcs[enemyIndex];
     if(!e) return;
 
     if(isCorrect) {
@@ -19383,7 +20548,7 @@ window.BOUNDARY_DATA = {
 
   // (function monsterAttack(enemyIndex) retired Iter 4 — combat
   // resolution now lives on NPC.attack(target, ctx) in src/npc.js.
-  // Callers used to be all in the legacy enemies.forEach block, now
+  // Callers used to be all in the legacy zone.npcs.forEach block, now
   // gone. The remaining call site was the ctx.monsterAttack bridge
   // in makeNpcCtx — also retired; NPC.takeTurn calls this.attack
   // directly.)
@@ -19411,19 +20576,31 @@ window.BOUNDARY_DATA = {
       }
     }
     
-    // Bridge Keeper (v7.2.0)
-    let keeperIdx = enemies.findIndex(e => e.type === 'bridge_keeper' && e.x === nx && e.y === ny);
-    if (keeperIdx !== -1 && !player.bridgeQuestions) { bridgeTrial(keeperIdx); return; }
+    // Bridge Keeper trigger removed — keeper now opts into the Dialog system
+    // via phraseId. The quests_monty_python_bridge.js pack registers the
+    // 3-question tree (bridge_keeper_q1/q2/q3/win/lose). The general
+    // phraseId branch a few lines below handles the bump.
 
     if (tile === TILES.LETTER) {
        let letter = window.letterMap ? window.letterMap[`${nx},${ny}`] : 'A';
-       if ("IEHOVA".indexOf(letter) === -1) { logMsg("Wrong letter!"); isDead = true; die(); return; }
+       if ("IEHOVA".indexOf(letter) === -1) { logMsg("Wrong letter!"); die('jehovah'); return; }
     }
 
-    let eIdx = enemies.findIndex(e => e.x === nx && e.y === ny);
+    let eIdx = zone.npcs.findIndex(e => e.x === nx && e.y === ny);
     if (eIdx !== -1) {
       // Non-hostile NPC interactions
-      let npc = enemies[eIdx];
+      let npc = zone.npcs[eIdx];
+
+      // Andor's-Trail-style dialog: NPCs with a phraseId opt into the new
+      // Dialog system. Everything below this is legacy per-NPC handling
+      // that we'll migrate NPC-by-NPC in tier-2+. Tier-1 migrants today:
+      // mended_drum_barman + 4 patrons (vimes/cohen/librarian/bearded_dwarf),
+      // and bridge_keeper (spawn + tree owned by quests_monty_python_bridge.js).
+      if (npc.phraseId && typeof Dialog !== 'undefined') {
+        Dialog.startWith(npc, npc.phraseId);
+        return;
+      }
+
       if(npc.type === 'chaplain') {
         openShop('chaplain');
         return;
@@ -19453,38 +20630,23 @@ window.BOUNDARY_DATA = {
         openShop('dennis');
         return;
       }
-      // #33 FIX: Fence collision opens the stolen goods store
-      if(npc.type === 'fence') {
-        openShop('fence');
-        return;
-      }
+      // fence migrated to Dialog system (phraseId 'fence_greet'). The Dialog
+      // branch above intercepts; this block remains as legacy fallback only.
       // #12: Town guard — discount quest (Bethesda-style civic duty reward)
       if(npc.type === 'town_guard') {
         openShop('town_guard');
         return;
       }
-      // E.TRIST.MENDED_DRUM: Discworld bar NPCs
+      // E.TRIST.MENDED_DRUM (legacy fallback): if the Drum cohort somehow
+      // loses its phraseId (e.g. dialog system disabled), fall back to the
+      // old shared shop. Normally the Dialog branch above intercepts first.
       if(['mended_drum_barman','cohen','librarian','vimes','bearded_dwarf'].includes(npc.type)) {
         openShop('mended_drum_barman');
-        if(npc.type !== 'mended_drum_barman' && typeof storeTab === 'function') {
-          setTimeout(() => storeTab('chat', 'mended_drum_barman'), 10);
-        }
         return;
       }
-      if(npc.type === 'dennis_wife') {
-        openShop('dennis_wife');
-        return;
-      }
-      // E.TRIST.5: Muck peasant
-      if(npc.type === 'muck_peasant') {
-        openShop('muck_peasant');
-        return;
-      }
-      // E.TRIST.6: Retired soldier
-      if(npc.type === 'retired_soldier') {
-        openShop('retired_soldier');
-        return;
-      }
+      // dennis_wife / muck_peasant / retired_soldier migrated to Dialog
+      // system. Their phraseIds are set on the spawn sites; the Dialog
+      // branch above intercepts before this point.
       // E.HAMLET: Rosencrantz & Guildenstern
       if(npc.type === 'rosencrantz_guildenstern') {
         openShop('rosencrantz_guildenstern');
@@ -19588,24 +20750,15 @@ window.BOUNDARY_DATA = {
       // If player has the Brass Bottle (from safe cracking quest), genie offers a wish.
       // Otherwise, it attacks as a boss fight.
       if(npc.type === 'genie' && npc.isGenieGuardian) {
-        const hasBottle = inventory.some(i => i && i.itemName === 'brassBottle') || inventory.some(i => i && i.itemName === 'brassBottle');
-        if(hasBottle) {
-          // Genie offers a wish instead of fighting
-          let m = document.getElementById('modal-content');
-          m.innerHTML = `<h2>🧞 The Genie of the Dungeon</h2>
-            <p style="font-size:60px; margin:5px 0;">🧞</p>
-            <p><em>"You carry the Brass Bottle! I am bound to its master. Speak your wish, mortal."</em></p>
-            <div style="display:flex; flex-direction:column; gap:6px; margin-top:10px;">
-              <button onclick="genieWish('heal')">💚 'I wish for full health and mana.'</button>
-              <button onclick="genieWish('gold')">💰 'I wish for wealth beyond measure.'</button>
-              <button onclick="genieWish('pass')">🚪 'I wish to pass to the next level.'</button>
-              <button onclick="genieWish('fight')">⚔️ 'I wish to fight you!'</button>
-            </div>`;
-          showOverlay();
+        const hasBottle = inventory.some(i => i && i.itemName === 'brassBottle');
+        if(hasBottle && typeof Dialog !== 'undefined' && Dialog._phrases && Dialog._phrases['kq5_genie_greet']) {
+          // Wish dialog now owned by quests_kq5_genie.js. Dialog tree
+          // delegates to legacy genieWish() via callFn scriptEffects.
           if(typeof Sound !== 'undefined' && Sound.playVoice) Sound.playVoice('voice_genie_greeting');
+          Dialog.startWith(npc, 'kq5_genie_greet');
           return;
         } else {
-          // No bottle — genie attacks
+          // No bottle (or no quest pack loaded) — genie attacks
           logMsg("<span style='color:var(--error)'>🧞 The Genie thunders: 'You do not hold the Brass Bottle! You shall not pass!'</span>");
           if(typeof Sound !== 'undefined' && Sound.playVoice) Sound.playVoice('voice_genie_wish');
           doCombat(eIdx);
@@ -19716,7 +20869,7 @@ window.BOUNDARY_DATA = {
         }
         Sound.playMusic(nearStore ? 'supercenter' : 'pirate');
       } else if(currentLevel === 1 && currentScene === 'dungeon') {
-        const ifrit = enemies.find(e => e.type === 'ifrit' && e.isIfrit);
+        const ifrit = zone.npcs.find(e => e.type === 'ifrit' && e.isIfrit);
         if(ifrit) {
           const dist = Math.abs(ifrit.x - player.x) + Math.abs(ifrit.y - player.y);
           if(dist <= 8) Sound.playMusic('ifrit_lair');
@@ -19757,7 +20910,7 @@ window.BOUNDARY_DATA = {
     if(tile === TILES.WATER || tile === TILES.DEEP_WATER) {
       Sound.splash();
       // Bug 42-43: Shark aggro — immediately provoke any nearby shark when player enters water
-      enemies.forEach(e => {
+      zone.npcs.forEach(e => {
         if(e.type === 'shark' && e.stats && e.stats.stalks) {
           let dist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
           if(dist <= (e.stats.aggro ?? 6)) {
@@ -20034,39 +21187,11 @@ window.BOUNDARY_DATA = {
     updateUI();
   };
 
-  window.bridgeTrial = (idx) => {
-    let m = document.getElementById('modal-content');
-    m.innerHTML = `<h2>🧙‍♂️ Bridge of Death</h2>${modalPortraitHTML('npc_bridgekeeper_modal', '🧙‍♂️')}<p>Keeper: "What... is your name?"</p>
-      <button onclick="bridgeAns(1)">"Sir Lancelot of Camelot."</button>
-      <button onclick="bridgeAns(0)">"Galahad the... wait!"</button>`;
-    showOverlay();
-    if(typeof Sound !== 'undefined' && Sound.playVoice) setTimeout(() => Sound.playVoice('voice_bridgekeeper_q1'), 30);
-  };
-
-  window.bridgeAns = (correct) => {
-    if(!correct) { logMsg("AHHHHHHH!"); isDead = true; die(); return; }
-    let m = document.getElementById('modal-content');
-    m.innerHTML = `<h2>🧙‍♂️ Bridge of Death</h2>${modalPortraitHTML('npc_bridgekeeper_modal', '🧙‍♂️')}<p>Keeper: "What... is your quest?"</p>
-      <button onclick="bridgeAns2(1)">"To seek the Holy Grail."</button>
-      <button onclick="bridgeAns2(0)">"To find a nice shrubbery."</button>`;
-    if(typeof Sound !== 'undefined' && Sound.playVoice) setTimeout(() => Sound.playVoice('voice_bridgekeeper_q2'), 30);
-  };
-
-  window.bridgeAns2 = (correct) => {
-    if(!correct) { logMsg("AHHHHHHH!"); isDead = true; die(); return; }
-    let m = document.getElementById('modal-content');
-    let highInt = player.stats.int >= 15;
-    m.innerHTML = `<h2>🧙‍♂️ Bridge of Death</h2>${modalPortraitHTML('npc_bridgekeeper_modal', '🧙‍♂️')}<p>Keeper: "What... is the airspeed velocity of an unladen swallow?"</p>
-      <button onclick="bridgeAns3(0)">"24 miles per hour?"</button>
-      ${highInt ? `<button onclick="bridgeAns3(1)">"What do you mean? African or European swallow?"</button>` : ''}`;
-    if(typeof Sound !== 'undefined' && Sound.playVoice) setTimeout(() => Sound.playVoice('voice_bridgekeeper_q3'), 30);
-  };
-
-  window.bridgeAns3 = (win) => {
-    hideOverlay();
-    if(win) { logMsg("Keeper: 'What? I don't know that! AHHHHHHH!'"); enemies = enemies.filter(e => e.type !== 'bridge_keeper'); player.bridgeQuestions = true; }
-    else { logMsg("AHHHHHHH!"); isDead = true; die(); }
-  };
+  // bridgeTrial / bridgeAns / bridgeAns2 / bridgeAns3 deleted — the bridge
+  // keeper now uses the Dialog system. See quests_monty_python_bridge.js for
+  // the 3-question tree (phrase ids bridge_keeper_q1/q2/q3/win/lose). The
+  // player.bridgeQuestions flag is gone too; the keeper is despawned via the
+  // @remove sentinel on the win phrase.
 
   // ============================================================================
   // ATLANTEAN BEAD MACHINE INTERACTION (Indiana Jones: Fate of Atlantis)
@@ -20523,29 +21648,39 @@ window.BOUNDARY_DATA = {
   };
 
   function addPurchasedItem(icon, qty = 1) {
-    let def = ItemDef.byIcon(icon) || {};
+    const def = ItemDef.byIcon(icon);
+    if(!def) return false;
+    const maxStack = def.maxStack ?? 1;
+    const stackable = maxStack > 1;
     let remaining = qty;
-    let nextInventory = inventory.map(item => item ? { ...item } : null);
-    if(def.stackable) {
-      const maxStack = def.maxStack ?? 10;
-      for(let i = 0; i < nextInventory.length && remaining > 0; i++) {
-        let item = nextInventory[i];
+    // Mutate `inventory` in place — DO NOT spread or clone slots, that
+    // would strip ItemStack instances down to plain objects and break
+    // their `.def` / `.icon` getters (which the rest of the game uses
+    // for equip, tooltips, etc.).
+    if(stackable) {
+      for(let i = 0; i < inventory.length && remaining > 0; i++) {
+        const item = inventory[i];
         if(!item || item.icon !== icon) continue;
-        let room = maxStack - (item.qty ?? 1);
+        const room = maxStack - (item.qty ?? 1);
         if(room <= 0) continue;
-        let moved = Math.min(room, remaining);
-        item.qty = (item.qty ?? 1) + moved;
+        const moved = Math.min(room, remaining);
+        if (typeof item.addQty === 'function') {
+          item.addQty(moved);
+        } else {
+          item.qty = (item.qty ?? 1) + moved;
+        }
         remaining -= moved;
       }
     }
-    for(let i = 0; i < nextInventory.length && remaining > 0; i++) {
-      if(nextInventory[i] !== null) continue;
-      let stackQty = def.stackable ? Math.min(def.maxStack ?? 10, remaining) : 1;
-      nextInventory[i] = { icon, qty: stackQty };
+    for(let i = 0; i < inventory.length && remaining > 0; i++) {
+      if(inventory[i] != null) continue;
+      const stackQty = stackable ? Math.min(maxStack, remaining) : 1;
+      inventory[i] = (typeof ItemStack === 'function')
+        ? new ItemStack(def.name, stackQty)
+        : { icon, qty: stackQty };
       remaining -= stackQty;
     }
     if(remaining > 0) return false;
-    inventory.splice(0, inventory.length, ...nextInventory);
     if(typeof renderQuickslots === 'function') renderQuickslots();
     if(typeof renderInventory === 'function') renderInventory();
     return true;
@@ -20959,25 +22094,12 @@ window.BOUNDARY_DATA = {
     return ['apu', 'leftys', 'wizard', 'bookstore', 'mended_drum_barman', 'dennis', 'blacksmith', 'forge', 'fence', 'champion'].includes(type);
   }
 
-  window.mendedDrumChat = function(npcType) {
-    const defs = {
-      cohen: { title: '👴 Cohen the Barbarian', icon: '👴⚔️', voicePrefix: 'voice_cohen_' },
-      librarian: { title: '🦧 The Librarian', icon: '🦧', voicePrefix: 'voice_librarian_' },
-      vimes: { title: '👮 Commander Vimes', icon: '👮', voicePrefix: 'voice_vimes_' },
-      bearded_dwarf: { title: '🧔‍♀️ Dorimunde Ironchin', icon: '🧔‍♀️', voicePrefix: 'voice_dorimunde_' }
-    };
-    const cfg = defs[npcType];
-    const def = cfg ? MONSTER_DEF[npcType] : null;
-    if(!cfg || !def || !Array.isArray(def.dialog) || def.dialog.length === 0) return;
-    const idx = Math.floor(Math.random() * def.dialog.length);
-    const m = document.getElementById('modal-content');
-    if(!m) return;
-    m.innerHTML = `<h2>${cfg.title}</h2>
-      ${npcFaceHTML('', cfg.icon, npcType)}
-      <p>"${def.dialog[idx]}"</p>
-      <button onclick="openStore('mended_drum_barman'); storeTab('chat','mended_drum_barman');">Back to The Mended Drum</button>`;
-    setTimeout(() => playVoiceClip(cfg.voicePrefix + idx), 30);
-  };
+  // mendedDrumChat — DELETED. The 4 patrons (Vimes, Cohen, Librarian,
+  // Dorimunde) are now real NPCs on the map (spawned in TRISTRAM_NPCS).
+  // Bumping any of them opens the Dialog system directly via phraseId.
+  // The barman's @shop reply opens ShopDialog (new buy/sell-only UI),
+  // not the legacy openStore. Nothing in the active path calls this
+  // function anymore.
 
    function openStore(type = 'apu') {
     let o = document.getElementById('overlay');
@@ -21485,7 +22607,7 @@ window.BOUNDARY_DATA = {
             hasSellable = true;
             let count = inventory.filter(i => i && i.itemName === it.itemName).length;
             let badge = count > 1 ? `<span style="background:var(--warning); color:#000; font-size:9px; padding:0 4px; border-radius:8px; margin-left:4px;">${count}</span>` : '';
-            html += `<div class="shop-item" style="margin:0; padding:4px;"><span>${it.icon} ${def.name} (+${def.maxGP}g)${badge}</span>
+            html += `<div class="shop-item" style="margin:0; padding:4px;"><span>${it.icon} ${def.displayName} (+${def.maxGP}g)${badge}</span>
               <button onclick="sell(${idx}, '${type}')">Sell</button></div>`;
           }
         }
@@ -21536,12 +22658,12 @@ window.BOUNDARY_DATA = {
             : ''}
         </div>`;
       } else if(type === 'mended_drum_barman') {
-        html = `<div style="padding:8px; display:flex; flex-direction:column; gap:6px;">
-          <p style="margin:0;">The barkeep jerks a thumb toward the regulars.</p>
-          <button onclick="mendedDrumChat('vimes')">Chat with Commander Vimes</button>
-          <button onclick="mendedDrumChat('cohen')">Chat with Cohen the Barbarian</button>
-          <button onclick="mendedDrumChat('librarian')">Chat with The Librarian</button>
-          <button onclick="mendedDrumChat('bearded_dwarf')">Chat with Dorimunde Ironchin</button>
+        // The 4 patrons are now real NPCs on the map (Vimes/Cohen/Librarian/
+        // Dorimunde at the perimeter of the Drum). Bump them directly to
+        // chat — handled by the Dialog system. The barman's chat tab is
+        // now just a flavor pointer.
+        html = `<div style="padding:8px;">
+          <p style="margin:0; color:#bbb;">The barkeep jerks a thumb at the regulars scattered around the bar. <em>"Go on, talk to 'em if you must."</em></p>
         </div>`;
       } else {
         html = `<p style="color:#aaa; font-size:12px;">Nothing to discuss.</p>`;
@@ -21566,7 +22688,10 @@ window.BOUNDARY_DATA = {
   };
 
   // === Transaction Handlers ===
-  window.buy = function(icon, cost, type, qty = 1) {
+  // suppressReopen: when truthy, skip the openStore() re-render at the end.
+  // The new ShopDialog (shop_dialog.js) drives its own re-render and would
+  // otherwise see the legacy shop modal pop in on top of/under it.
+  window.buy = function(icon, cost, type, qty = 1, suppressReopen = false) {
     let shopType = type === 'bookstore' ? 'wizard' : type;
     let finalCost = cost;
     if((icon === '🪄' || icon === '🦯✨') && (type === 'wizard' || type === 'bookstore')) {
@@ -21578,17 +22703,17 @@ window.BOUNDARY_DATA = {
     if(icon === ItemDef.iconOf('prophylactic')) { larryEasterEgg(0); return; }
     if(!addPurchasedItem(icon, qty)) { logMsg("No room! (Inventory full)"); return; }
     changeGold(-finalCost);
-    openStore(type);
+    if(!suppressReopen) openStore(type);
   };
 
-  window.sell = function(idx, type) {
+  window.sell = function(idx, type, suppressReopen = false) {
     let item = inventory[idx];
     if(!item) return;
     let def = item.def;
     if(def && def.maxGP > 0) {
       changeGold(def.maxGP);
       decrementItem(idx);
-      openStore(type);
+      if(!suppressReopen) openStore(type);
     }
   };
 
@@ -21691,7 +22816,7 @@ window.BOUNDARY_DATA = {
       return;
     }
     changeGold(-cost);
-    logMsg(`<span style='color:var(--warning)'>The wizard sells you ${ItemDef.byIcon(icon)?.displayName ?? icon}. Somewhere, Granny clicks her tongue hard enough to bend iron.</span>`);
+    logMsg(`<span style='color:var(--warning)'>The wizard sells you ${ItemDef.byIcon(icon)?.label() ?? icon}. Somewhere, Granny clicks her tongue hard enough to bend iron.</span>`);
     openStore(type);
     storeTab('buy', type);
   };
@@ -21968,14 +23093,14 @@ window.BOUNDARY_DATA = {
       logMsg("<span style='color:var(--success)'>🧞 The Genie bows and steps aside. The exit stairs are open.</span>");
       if(typeof Sound !== 'undefined' && Sound.playVoice) Sound.playVoice('voice_genie_wish');
       // Remove genie so it doesn't block again
-      const idx = enemies.findIndex(e => e && e.type === 'genie' && e.isGenieGuardian);
-      if(idx !== -1) enemies.splice(idx, 1);
+      const genie = zone.findNpc(e => e && e.type === 'genie' && e.isGenieGuardian);
+      if(genie) zone.removeNpc(genie);
       if(typeof QuestEngine !== 'undefined') QuestEngine.emit('custom', { id: 'genie_wish_pass' });
     } else if(wish === 'fight') {
       logMsg("<span style='color:var(--error)'>🧞 The Genie roars: 'FOOL! You chose violence!'</span>");
-      const idx = enemies.findIndex(e => e && e.type === 'genie' && e.isGenieGuardian);
+      const idx = zone.npcs.findIndex(e => e && e.type === 'genie' && e.isGenieGuardian);
       if(idx !== -1) {
-        enemies[idx].isGenieGuardian = false;
+        zone.npcs[idx].isGenieGuardian = false;
         doCombat(idx);
       }
       return;
@@ -22557,7 +23682,7 @@ window.BOUNDARY_DATA = {
     }
     const def = ItemDef.byIcon(lh);
     if(!def) { openShop('fighting_master'); return; }
-    logMsg(`<span style='color:#fd0'>The Weapon Master examines your ${def.name}: Base damage ${def.baseDmg ?? 0}, ${def.ranged ? 'Ranged, ' : ''}${def.magicScaling ? 'Magic scaling: '+def.magicScaling : 'no magic scaling'}. "${(def.baseDmg ?? 0) >= 8 ? 'Now THAT is a weapon.' : (def.baseDmg ?? 0) >= 4 ? 'Serviceable.' : 'You call that a weapon?'}"</span>`);
+    logMsg(`<span style='color:#fd0'>The Weapon Master examines your ${def.label()}: Base damage ${def.baseDmg ?? 0}, ${def.ranged ? 'Ranged, ' : ''}${def.magicScaling ? 'Magic scaling: '+def.magicScaling : 'no magic scaling'}. "${(def.baseDmg ?? 0) >= 8 ? 'Now THAT is a weapon.' : (def.baseDmg ?? 0) >= 4 ? 'Serviceable.' : 'You call that a weapon?'}"</span>`);
     openShop('fighting_master');
   };
 
@@ -24079,7 +25204,7 @@ window.BOUNDARY_DATA = {
           for(let x = 0; x < ((theMap[y] || []).length || 0); x++)
             if(theMap[y][x] === TILES.PORTAL) return true;
       }
-      return !!(typeof enemies !== 'undefined' && enemies.some(e => e && e.type === 'ifrit' && e.isIfrit));
+      return !!(typeof zone !== 'undefined' && zone.npcs.some(e => e && e.type === 'ifrit' && e.isIfrit));
     }
 
     // ── Portal Fluid Simulation (Navier-Stokes, ping-pong FBOs) ─────────────
@@ -24880,12 +26005,14 @@ window.BOUNDARY_DATA = {
   // started by sighting a creature that wouldn't count toward completion.
   function _emitSawVerminIfFirstTime() {
     if(window._sawVerminFired) return;
-    if(typeof QuestEngine === 'undefined' || !enemies || !visible) return;
-    for(const e of enemies) {
+    if(typeof QuestEngine === 'undefined' || !visible) return;
+    for(const e of zone.npcs) {
       if((e.type === 'mouse' || e.type === 'cockroach') &&
          visible[e.y] && visible[e.y][e.x]) {
         window._sawVerminFired = true;
-        QuestEngine.emit('saw_vermin', {});
+        if (typeof Dialog !== 'undefined') {
+          Dialog.startSelf('vermin_first_sight');
+        }
         return;
       }
     }
@@ -25495,9 +26622,9 @@ window.BOUNDARY_DATA = {
     }
 
     // Draw Enemies
-    enemies.forEach(e => {
+    zone.npcs.forEach(e => {
       let vx = e.x - player.x + cx, vy = e.y - player.y + cy;
-      if(vx >= 0 && vx < VIEW_COLS && vy >= 0 && vy < VIEW_ROWS && visible[e.y][e.x]) {
+      if(vx >= 0 && vx < VIEW_COLS && vy >= 0 && vy < VIEW_ROWS && visible[e.y] && visible[e.y][e.x]) {
         let sprite = null;
         if(window.useSprites && assets.sprites) {
           if(assets.sprites[e.type]) sprite = assets.sprites[e.type];
@@ -25545,10 +26672,14 @@ window.BOUNDARY_DATA = {
         if(flipX) ctx.restore();
         ctx.restore();
 
-        // HP Bar
-        ctx.fillStyle = 'red'; ctx.fillRect(vx*TILE_SIZE, vy*TILE_SIZE-4, TILE_SIZE, 3);
-        let maxHp = MONSTER_DEF[e.type]?.hp || e.stats.hp;
-        ctx.fillStyle = 'green'; ctx.fillRect(vx*TILE_SIZE, vy*TILE_SIZE-4, TILE_SIZE * (e.stats.hp / maxHp), 3);
+        // HP Bar — only shown when wounded.
+        // Per-spawn maxHp wins (farmStats overrides MONSTER_DEF defaults,
+        // e.g. cow spawns with maxHp:20 but MONSTER_DEF.cow.hp is 50).
+        let maxHp = e.stats.maxHp ?? MONSTER_DEF[e.type]?.hp ?? e.stats.hp;
+        if(e.stats.hp < maxHp) {
+          ctx.fillStyle = 'red'; ctx.fillRect(vx*TILE_SIZE, vy*TILE_SIZE-4, TILE_SIZE, 3);
+          ctx.fillStyle = 'green'; ctx.fillRect(vx*TILE_SIZE, vy*TILE_SIZE-4, TILE_SIZE * (e.stats.hp / maxHp), 3);
+        }
       }
     });
 
@@ -26241,8 +27372,8 @@ const hBtn = document.getElementById('hamburgerBtn');
     }
 
     // Nearest enemy type + HP%
-    if(p && typeof enemies !== 'undefined' && enemies.length > 0) {
-      const hostile = enemies.filter(e => e && !e.friendly && !e.farmAnimal && e.stats && e.stats.hp > 0);
+    if(p && zone.npcs.length > 0) {
+      const hostile = zone.npcs.filter(e => e && !e.friendly && !e.farmAnimal && e.stats && e.stats.hp > 0);
       if(hostile.length > 0) {
         const nearest = hostile.reduce((best, e) => {
           const d = Math.hypot(e.x - p.x, e.y - p.y);
@@ -26299,7 +27430,7 @@ const hBtn = document.getElementById('hamburgerBtn');
       darkMap: _debugDeepClone(darkMap),
       explored: _debugDeepClone(explored),
       visible: _debugDeepClone(visible),
-      enemies: _debugDeepClone(enemies),
+      npcs: _debugDeepClone(zone.npcs),
       lootables: _debugDeepClone(zone.lootables),
       corpses: _debugDeepClone(zone.corpses),
       mapW,
@@ -26326,7 +27457,7 @@ const hBtn = document.getElementById('hamburgerBtn');
     darkMap = _debugDeepClone(snap.darkMap || []);
     explored = _debugDeepClone(snap.explored || []);
     visible = _debugDeepClone(snap.visible || []);
-    enemies = _debugDeepClone(snap.enemies || []);
+    zone.replaceNpcs(_debugDeepClone(snap.npcs || snap.enemies || []));
     syncActiveZone();
     // Re-hydrate Lootables from the snapshot — JSON.stringify stripped
     // their class identity, so we reconstruct each one.
@@ -26420,7 +27551,7 @@ const hBtn = document.getElementById('hamburgerBtn');
   };
 
   const _nearestEnemyToPlayer = (nameLike) => {
-    const list = (enemies || []).filter(en => en && en.stats && en.stats.hp > 0);
+    const list = zone.npcs.filter(en => en && en.stats && en.stats.hp > 0);
     if(list.length === 0) return null;
     const filtered = nameLike ? list.filter(en => en.type && en.type.toLowerCase().includes(nameLike.toLowerCase())) : list;
     if(filtered.length === 0) return null;
@@ -26635,14 +27766,14 @@ const hBtn = document.getElementById('hamburgerBtn');
         }
         case '/where': {
           const p = player;
-          const hostiles = (typeof enemies !== 'undefined' ? enemies : []).filter(e => e && e.stats && e.stats.hp > 0 && !e.friendly && !e.farmAnimal);
+          const hostiles = zone.npcs.filter(e => e && e.stats && e.stats.hp > 0 && !e.friendly && !e.farmAnimal);
           const nearest = hostiles.reduce((best, e) => {
             const d = Math.abs(e.x - p.x) + Math.abs(e.y - p.y);
             return (!best || d < best.d) ? { e, d } : best;
           }, null);
           debugLog(`Scene: ${currentScene} | Floor: ${currentLevel} | Pos: ${p.x},${p.y}`);
           const groundItemCount = zone.lootables.reduce((n, l) => n + (l.ownerKind === 'floor' ? l.size() : 0), 0);
-          debugLog(`Map: ${mapW}x${mapH} | Enemies: ${(enemies || []).length} | Ground items: ${groundItemCount}`);
+          debugLog(`Map: ${mapW}x${mapH} | Enemies: ${zone.npcs.length} | Ground items: ${groundItemCount}`);
           if(nearest) debugLog(`Nearest hostile: ${nearest.e.type} (${nearest.d} tiles)`);
           else debugLog('Nearest hostile: none');
           break;
@@ -26651,7 +27782,7 @@ const hBtn = document.getElementById('hamburgerBtn');
           const longMode = (args[0] || '').toLowerCase() === 'long';
           const tile = theMap?.[player.y]?.[player.x];
           debugLog(`You are at ${player.x},${player.y} in ${currentScene}:${currentLevel}. Tile=${tile}`);
-          const nearEnemies = (enemies || []).filter(en => Math.abs(en.x - player.x) <= 2 && Math.abs(en.y - player.y) <= 2 && en.stats && en.stats.hp > 0);
+          const nearEnemies = zone.npcs.filter(en => Math.abs(en.x - player.x) <= 2 && Math.abs(en.y - player.y) <= 2 && en.stats && en.stats.hp > 0);
           const nearPiles = zone.lootables.filter(l => l.ownerKind === 'floor' &&
               Math.abs(l.x - player.x) <= 2 && Math.abs(l.y - player.y) <= 2);
           if(nearEnemies.length) debugLog(`Nearby enemies: ${nearEnemies.map(en => `${en.type}@${en.x},${en.y}`).join(', ')}`);
@@ -26801,7 +27932,7 @@ const hBtn = document.getElementById('hamburgerBtn');
           if(raw === 'ifrit') {
             currentLevel = 1;
             if(typeof initMap === 'function') initMap(50);
-            const ifrit = (enemies || []).find(en => en.type === 'ifrit');
+            const ifrit = zone.findNpc(en => en.type === 'ifrit');
             if(ifrit) { player.x = Math.max(1, ifrit.x - 1); player.y = ifrit.y; }
             if(typeof calculateFOV === 'function') calculateFOV();
             if(typeof drawMap === 'function') drawMap();
@@ -26886,13 +28017,13 @@ const hBtn = document.getElementById('hamburgerBtn');
               const y = player.y + Math.floor(Math.random() * 9) - 4;
               if(x < 1 || x >= mapW - 1 || y < 1 || y >= mapH - 1) continue;
               if(!theMap[y] || !isTileFloor(theMap[y][x])) continue;
-              if(enemies.some(en => en.x === x && en.y === y)) continue;
+              if(zone.npcs.some(en => en.x === x && en.y === y)) continue;
               if(x === player.x && y === player.y) continue;
               pos = {x, y};
               break;
             }
             if(!pos) continue;
-            spawnNpc(enemies, pos.x, pos.y, mob, { stats: {...MONSTER_DEF[mob]} });
+            spawnNpc(zone.npcs, pos.x, pos.y, mob, { stats: {...MONSTER_DEF[mob]} });
             spawned++;
           }
           if(typeof drawMap === 'function') drawMap();
@@ -26901,27 +28032,25 @@ const hBtn = document.getElementById('hamburgerBtn');
           break;
         }
         case '/despawn': {
+          const isQuestNpc = en => en.isQuestNPC || (en.stats && en.stats.quest);
           if(args.length === 0 || args[0].toLowerCase() === 'all') {
-            const before = enemies.length;
-            enemies = enemies.filter(en => en.isQuestNPC || (en.stats && en.stats.quest));
+            const removed = zone.removeNpcs(en => !isQuestNpc(en));
             syncActiveZone();
-            debugLog(`Despawned ${before - enemies.length} non-quest enemies.`);
+            debugLog(`Despawned ${removed} non-quest enemies.`);
           } else if(args[0].toLowerCase() === 'radius') {
             const r = Math.max(1, Math.min(99, parseInt(args[1] || '6', 10) || 6));
-            const before = enemies.length;
-            enemies = enemies.filter(en => {
-              if(en.isQuestNPC || (en.stats && en.stats.quest)) return true;
+            const removed = zone.removeNpcs(en => {
+              if(isQuestNpc(en)) return false;
               const d = Math.abs(en.x - player.x) + Math.abs(en.y - player.y);
-              return d > r;
+              return d <= r;
             });
             syncActiveZone();
-            debugLog(`Despawned ${before - enemies.length} enemies within radius ${r}.`);
+            debugLog(`Despawned ${removed} enemies within radius ${r}.`);
           } else {
             const mob = args[0].toLowerCase();
-            const before = enemies.length;
-            enemies = enemies.filter(en => en.type !== mob || en.isQuestNPC || (en.stats && en.stats.quest));
+            const removed = zone.removeNpcs(en => en.type === mob && !isQuestNpc(en));
             syncActiveZone();
-            debugLog(`Despawned ${before - enemies.length} '${mob}' enemies.`);
+            debugLog(`Despawned ${removed} '${mob}' enemies.`);
           }
           if(typeof drawMap === 'function') drawMap();
           if(typeof updateUI === 'function') updateUI();
@@ -27019,7 +28148,7 @@ const hBtn = document.getElementById('hamburgerBtn');
           if(!Number.isFinite(player.hp) || !Number.isFinite(player.maxHp)) { errs++; debugLog('ERR HP invalid'); }
           if(player.hp > player.maxHp) { warns++; debugLog('WARN HP above max'); }
           let badEnemies = 0;
-          (enemies || []).forEach((en, i) => {
+          zone.npcs.forEach(en => {
             if(!en || !Number.isFinite(en.x) || !Number.isFinite(en.y) || !en.stats || !Number.isFinite(en.stats.hp)) badEnemies++;
           });
           if(badEnemies > 0) { errs++; debugLog(`ERR invalid enemies: ${badEnemies}`); }
@@ -27204,9 +28333,9 @@ const hBtn = document.getElementById('hamburgerBtn');
         case 'attack':
           if(args.length > 0) {
             let targetName = args.join(' ').toLowerCase();
-            let targetIdx = enemies.findIndex(e => e.type.includes(targetName) && Math.abs(e.x - player.x) <= 1 && Math.abs(e.y - player.y) <= 1);
-            if(targetIdx !== -1) {
-              if(typeof meleeAttack === 'function') { meleeAttack(); debugLog(`Attacking ${enemies[targetIdx].type}...`); }
+            let target = zone.findNpc(e => e.type.includes(targetName) && Math.abs(e.x - player.x) <= 1 && Math.abs(e.y - player.y) <= 1);
+            if(target) {
+              if(typeof meleeAttack === 'function') { meleeAttack(); debugLog(`Attacking ${target.type}...`); }
             } else {
               debugLog(`No nearby enemy matching "${args.join(' ')}".`);
             }
@@ -27222,9 +28351,9 @@ const hBtn = document.getElementById('hamburgerBtn');
             if(atMatch && typeof castSpell === 'function') {
               let spellName = atMatch[1].toLowerCase();
               let targetName = atMatch[2].toLowerCase();
-              let targetIdx = enemies.findIndex(e => e.type.includes(targetName) && Math.abs(e.x - player.x) <= 10 && Math.abs(e.y - player.y) <= 10);
-              if(targetIdx !== -1) {
-                player.facing = { dx: Math.sign(enemies[targetIdx].x - player.x) || 0, dy: Math.sign(enemies[targetIdx].y - player.y) || 1 };
+              let target = zone.findNpc(e => e.type.includes(targetName) && Math.abs(e.x - player.x) <= 10 && Math.abs(e.y - player.y) <= 10);
+              if(target) {
+                player.facing = { dx: Math.sign(target.x - player.x) || 0, dy: Math.sign(target.y - player.y) || 1 };
               }
               castSpell(spellName);
               debugLog(`Casting ${spellName} at ${targetName}...`);
@@ -27400,9 +28529,9 @@ const hBtn = document.getElementById('hamburgerBtn');
         if (!player.inventory) player.inventory = [];
         player.talents.fighterClass = { level: 1 };
         player.talents.wieldSwords  = { level: 1 };
-        const swordName = ItemDefs.sword?.displayName ?? 'Sword';
-        const bootsName = ItemDefs.fightersBoots?.displayName ?? "Fighter's Boots";
-        logMsg && logMsg(`You are a Fighter! +5 HP, ${swordName} equipped, ${bootsName} worn.`);
+        const swordLabel = ItemDefs.sword?.label() ?? 'Sword';
+        const bootsLabel = ItemDefs.fightersBoots?.label() ?? "Fighter's Boots";
+        logMsg && logMsg(`You are a Fighter! +5 HP, ${swordLabel} equipped, ${bootsLabel} worn.`);
       } else if (selClass === 'spellcaster') {
         player.startingClass = 'spellcaster';
         player.maxMp = 2;
@@ -27417,7 +28546,8 @@ const hBtn = document.getElementById('hamburgerBtn');
         // Grant 2 ranks of Level 1 Spell — that's 2 slots; Illuminate
         // fills one, leaving room to learn one more from a tome.
         player.talents.level1Spell      = { level: 2 };
-        logMsg && logMsg("You are a Spellcaster! 2 MP, Illumination known, Robe equipped.");
+        const robeLabel = ItemDefs.robe?.label() ?? 'Robe';
+        logMsg && logMsg(`You are a Spellcaster! 2 MP, Illumination known, ${robeLabel} equipped.`);
       } else if (selClass === 'rogue') {
         player.startingClass = 'rogue';
         player.talents.rogueClass   = { level: 1 };
@@ -27430,7 +28560,8 @@ const hBtn = document.getElementById('hamburgerBtn');
         } else {
           player.inventory.push(new ItemStack('lockpickingTools', 1));
         }
-        logMsg && logMsg("You are a Rogue! Lockpicking Tools in inventory.");
+        const pickLabel = ItemDefs.lockpickingTools?.label() ?? 'Lockpicking Tools';
+        logMsg && logMsg(`You are a Rogue! ${pickLabel} in inventory.`);
       }
       
       debugLog("Calculating FOV...");
@@ -27760,14 +28891,14 @@ const hBtn = document.getElementById('hamburgerBtn');
           if (item) {
             zone.dropAt(player.x, player.y, new ItemStack(item.itemName, item.qty ?? 1));
             inventory[drag.idx] = null;
-            logMsg(`Dropped ${item.def?.displayName ?? item.icon} on the ground.`);
+            logMsg(`Dropped ${item.def?.label() ?? item.icon} on the ground.`);
           }
         } else if (drag.source === 'equip') {
           const itemName = player.equipped[drag.slot];
           if (itemName) {
             const def = ItemDefs[itemName];
             zone.dropAt(player.x, player.y, new ItemStack(itemName, 1));
-            logMsg(`Dropped ${def?.displayName ?? itemName} on the ground.`);
+            logMsg(`Dropped ${def?.label() ?? itemName} on the ground.`);
             // Reuse swapEquip(-1, slot) so derived stats recompute.
             if (typeof swapEquip === 'function') swapEquip(-1, drag.slot);
             else player.equipped[drag.slot] = null;
@@ -27820,7 +28951,7 @@ const hBtn = document.getElementById('hamburgerBtn');
               zone.dropAt(player.x, player.y, new ItemStack(itemName, 1));
               player.equipped[dragData.slot] = null;
               const def = ItemDefs[itemName];
-              logMsg(`You drop the ${def?.displayName ?? itemName} on the ground.`);
+              logMsg(`You drop the ${def?.label() ?? itemName} on the ground.`);
               swapEquip(-1, dragData.slot);
               updateUI();
               if (typeof renderEquipModal === 'function') renderEquipModal();

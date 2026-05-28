@@ -101,5 +101,19 @@
         { text: 'Show me the stolen goods.', nextPhrase: '@shop' },
       ],
     },
+
+    // ── Vermin first sight (self-dialog) ─────────────────────
+    'vermin_first_sight': {
+      message: "Vermin! No shopkeeper has asked, but if I cull them the merchants will surely thank me.",
+      replies: [
+        {
+          text: 'Time to clean house.',
+          nextPhrase: '@close',
+          scriptEffects: [
+            { type: 'advanceQuest', questId: 'q_vermin_slayer', stage: 10 }
+          ]
+        }
+      ]
+    },
   });
 })();

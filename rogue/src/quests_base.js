@@ -254,12 +254,7 @@
         stages: [
           {
             progress: 10,
-            logText: "Vermin! No shopkeeper has asked, but if I cull them the merchants will surely thank me.",
-            trigger: {
-              event: "saw_vermin",
-              filter: {},
-              requirements: []
-            }
+            logText: "Vermin! No shopkeeper has asked, but if I cull them the merchants will surely thank me."
           },
           {
             progress: 20,

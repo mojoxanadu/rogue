@@ -72,6 +72,14 @@
       this._show();
     },
 
+    startSelf(phraseId) {
+      this.currentNpc = null;
+      this._log = [];
+      this._selectedReplyIdx = null;
+      this._goto(phraseId);
+      this._show();
+    },
+
     // Two-step selection (Andor's-Trail style): click a reply to MARK it
     // (checkmark + lighter background), then click the Next button to
     // commit. Lets the player change their pick before committing.
@@ -152,19 +160,23 @@
       const message = this._resolveMessage(phrase.message);
       if (message) {
         const npc = this.currentNpc;
-        this._log.push({
-          kind: 'speaker',
-          icon: (npc && npc.stats && npc.stats.icon) || '🗣',
-          // Resolution order: explicit phrase.speaker > NPC stats.name >
-          // prettified npc.type ('mended_drum_barman' → 'Mended Drum Barman')
-          // > 'NPC'. The prettifier exists so a NEW spawn site that forgets
-          // to set a name doesn't leak underscores into the UI.
-          name: phrase.speaker
-            || (npc && npc.stats && npc.stats.name)
-            || (npc && this._prettyType(npc.type))
-            || 'NPC',
-          text: message,
-        });
+        if (npc) {
+          this._log.push({
+            kind: 'speaker',
+            icon: (npc.stats && npc.stats.icon) || '🗣',
+            // Resolution order: explicit phrase.speaker > NPC stats.name >
+            // prettified npc.type ('mended_drum_barman' → 'Mended Drum Barman')
+            // > 'NPC'. The prettifier exists so a NEW spawn site that forgets
+            // to set a name doesn't leak underscores into the UI.
+            name: phrase.speaker
+              || (npc.stats && npc.stats.name)
+              || this._prettyType(npc.type)
+              || 'NPC',
+            text: message,
+          });
+        } else {
+          this._log.push({ kind: 'thought', text: message });
+        }
       }
     },
 
@@ -338,6 +350,12 @@
         return `<div style="display:flex; gap:8px; margin:8px 0; align-items:flex-start;">
           <span style="font-size:28px; line-height:1; flex-shrink:0;">${this._escape(entry.icon)}</span>
           <div style="flex:1;">${firstHtml}${restHtml}</div>
+        </div>`;
+      }
+      if (entry.kind === 'thought') {
+        return `<div style="display:flex; gap:8px; margin:8px 0; align-items:flex-start;">
+          <span style="font-size:28px; line-height:1; flex-shrink:0;">💭</span>
+          <div style="flex:1;"><p style="margin:0;"><strong style="color:#b3acbc;">Thought:</strong> ${this._escape(entry.text)}</p></div>
         </div>`;
       }
       if (entry.kind === 'self') {

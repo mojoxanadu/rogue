@@ -319,7 +319,9 @@
       if((e.type === 'mouse' || e.type === 'cockroach') &&
          visible[e.y] && visible[e.y][e.x]) {
         window._sawVerminFired = true;
-        QuestEngine.emit('saw_vermin', {});
+        if (typeof Dialog !== 'undefined') {
+          Dialog.startSelf('vermin_first_sight');
+        }
         return;
       }
     }

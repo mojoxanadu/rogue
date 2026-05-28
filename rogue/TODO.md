@@ -1,46 +1,121 @@
 # Rogue TODO
 
-Pri: 1 = critical / drop-everything (rarely used — fix immediately, don't queue).
-Higher numbers = less urgent. No cap. Decimals OK for fine-grained ordering.
+PICKPOCKET  pri:2.5  enhancement
+Implement Pickpocket talent.
 
-Status: `new`, `in progress`, `partial` (some done, rest postponed).
+SCAVENGER  pri:2.5  enhancement
+Implement Scavenger talent.
 
-Type: `bug`, `cos` (cosmetic), `enh` (enhancement).
+GROWTH_SPURT  pri:3  enhancement
+Implement Growth Spurt talent.
 
-| Status | Pri | Type | ID                  | Description                                                                                                  |
-|--------|-----|------|---------------------|--------------------------------------------------------------------------------------------------------------|
-| new    | 2.5 | enh  | pickpocket          | Implement Pickpocket talent.                                                                                  |
-| new    | 2.5 | enh  | scavenger           | Implement Scavenger talent.                                                                                   |
-| new    | 3   | enh  | growth spurt        | Implement Growth Spurt talent.                                                                                |
-| new    | 3   | enh  | endurance           | Implement Endurance talent.                                                                                   |
-| new    | 3   | enh  | life magic          | Implement Life Magic talent.                                                                                  |
-| new    | 3   | enh  | sweettalking        | Implement Sweettalking talent.                                                                                |
-| new    | 3   | enh  | weave magic         | Implement Weave Magic talent.                                                                                 |
-| new    | 3   | enh  | brawler             | Implement Brawler talent (+5%×N hit when unarmed) — def claims impl (no `tbi`) but 0 refs in code.            |
-| new    | 3   | enh  | intimidation        | Implement Intimidation talent — def claims impl (no `tbi`) but 0 refs in code.                                |
-| new    | 3   | enh  | level1Spell gate    | Wire tome-learning (mechanics.js:497) to gate on `talents.level1Spell.level` — currently unconditional.       |
-| new    | 3.5 | enh  | receiveHealing      | Add Sentient.receiveHealing() — central hook needed for Disciple of Life and similar healing-modifier talents.|
-| new    | 4   | enh  | floor/area split    | Dissociate floor numbers from area ids.                                                                       |
-| new    | 4   | bug  | wall loot pickup    | Wall-tile loot (e.g. ghost killed inside a wall) is unreachable — let the player bump the wall to grab it.     |
-| new    | 4   | enh  | dpad diagonal slide | When a tapped D-pad diagonal is blocked, slide to the open horizontal move, else the vertical one.            |
-| partial| 4   | enh  | foraging re-entry   | Spawn a small foraging-food batch when re-entering an already-cached floor (gen + per-turn paths impl; cache-restore path missing). |
-| new    | 4   | fix  | light levels        | Light levels don't work well; consolidate the various light/dark/visibility issues into one pass.             |
-| new    | 4   | enh  | damage types        | Support multiple damage types (Holy, etc.) end-to-end — prereq for Divine Strike / Divine Champion / Flame Strike. |
-| new    | 4   | enh  | sleep scheduler     | Run sleep under the scheduler so the world (NPCs, conditions, timers) keeps ticking while the player rests.   |
-| new    | 4   | fix  | loot balance        | Audit and rebalance all loot spawn rules — drop rates, gold scaling, item-tier gating across floors.          |
-| new    | 5   | enh  | darkvision          | Implement Darkvision talent (depends on: light levels fix).                                                   |
-| new    | 5   | enh  | dual wield          | Implement Dual Wield talent.                                                                                  |
-| new    | 5   | enh  | defensive fighting  | Implement Defensive Fighting talent.                                                                          |
-| new    | 5   | enh  | divine strike       | Implement Divine Strike talent (depends on: damage types).                                                    |
-| new    | 5   | enh  | disciple of life    | Implement Disciple of Life talent (depends on: receiveHealing).                                               |
-| new    | 5   | enh  | divine champion     | Implement Divine Champion talent (depends on: damage types).                                                  |
-| new    | 5   | enh  | dueling             | Implement Dueling talent.                                                                                     |
-| new    | 5   | enh  | flame strike        | Implement Flame Strike talent (depends on: damage types).                                                     |
-| new    | 5   | enh  | speed picking       | Implement Speed Picking talent.                                                                               |
-| new    | 5   | enh  | monster CRs         | Add challenge ratings to monster defs and use them to drive spawn-level scaling.                              |
-| new    | 5   | enh  | stats tab           | Add Statistics tab to Achievements.                                                                           |
-| new    | 5.1 | enh  | stats→achievements  | Review new statistics for additional achievement ideas (depends on: stats tab).                               |
-| new    | 6   | cos  | building fix        | Fix buildings graphically and for solidity.                                                                   |
-| new    | 6   | enh  | hunger rebalance    | Rework hunger effects for gameplay-fun-vs-balance tuning.                                                     |
-| new    | 7   | enh  | random town gen     | Procedurally generate towns.                                                                                  |
-| new    | 10  | enh  | levelup equip hints | Suggest additional helpful equipment (e.g. armor) in the level-up screen.                                     |
+ENDURANCE  pri:3  enhancement
+Implement Endurance talent.
+
+LIFE_MAGIC  pri:3  enhancement
+Implement Life Magic talent.
+
+SWEETTALKING  pri:3  enhancement
+Implement Sweettalking talent.
+
+WEAVE_MAGIC  pri:3  enhancement
+Implement Weave Magic talent.
+
+BRAWLER  pri:3  enhancement
+Implement Brawler talent (+5%×N hit when unarmed) — def claims
+impl (no `tbi`) but 0 refs in code.
+
+INTIMIDATION  pri:3  enhancement
+Implement Intimidation talent — def claims impl (no `tbi`) but 0
+refs in code.
+
+LEVEL1_SPELL_GATE  pri:3  enhancement
+Wire tome-learning (mechanics.js:497) to gate on
+`talents.level1Spell.level` — currently unconditional.
+
+RECEIVE_HEALING  pri:3.5  enhancement
+Add Sentient.receiveHealing() — central hook needed for Disciple
+of Life and similar healing-modifier talents.
+
+FLOOR_AREA_SPLIT  pri:4  enhancement
+Dissociate floor numbers from area ids.
+
+WALL_LOOT_PICKUP  pri:4  bug
+Wall-tile loot (e.g. ghost killed inside a wall) is
+unreachable — let the player bump the wall to grab it.
+
+DPAD_DIAGONAL_SLIDE  pri:4  enhancement
+When a tapped D-pad diagonal is blocked, slide to the open
+horizontal move, else the vertical one.
+
+FORAGING_RE_ENTRY  pri:4  enhancement
+Spawn a small foraging-food batch when re-entering an already-
+cached floor (gen + per-turn paths impl; cache-restore path
+missing).
+
+LIGHT_LEVELS  pri:4  bug
+Light levels don't work well; consolidate the various
+light/dark/visibility issues into one pass.
+
+DAMAGE_TYPES  pri:4  enhancement
+Support multiple damage types (Holy, etc.) end-to-end — prereq
+for Divine Strike / Divine Champion / Flame Strike.
+
+SLEEP_SCHEDULER  pri:4  enhancement
+Run sleep under the scheduler so the world (NPCs, conditions,
+timers) keeps ticking while the player rests.
+
+LOOT_BALANCE  pri:4  bug
+Audit and rebalance all loot spawn rules — drop rates, gold
+scaling, item-tier gating across floors.
+
+DARKVISION  pri:5  enhancement
+Implement Darkvision talent (depends on: light levels fix).
+
+DUAL_WIELD  pri:5  enhancement
+Implement Dual Wield talent.
+
+DEFENSIVE_FIGHTING  pri:5  enhancement
+Implement Defensive Fighting talent.
+
+DIVINE_STRIKE  pri:5  enhancement
+Implement Divine Strike talent (depends on: damage types).
+
+DISCIPLE_OF_LIFE  pri:5  enhancement
+Implement Disciple of Life talent (depends on: receiveHealing).
+
+DIVINE_CHAMPION  pri:5  enhancement
+Implement Divine Champion talent (depends on: damage types).
+
+DUELING  pri:5  enhancement
+Implement Dueling talent.
+
+FLAME_STRIKE  pri:5  enhancement
+Implement Flame Strike talent (depends on: damage types).
+
+SPEED_PICKING  pri:5  enhancement
+Implement Speed Picking talent.
+
+MONSTER_CRS  pri:5  enhancement
+Add challenge ratings to monster defs and use them to drive
+spawn-level scaling.
+
+STATS_TAB  pri:5  enhancement
+Add Statistics tab to Achievements.
+
+STATS_TO_ACHIEVEMENTS  pri:5.1  enhancement
+Review new statistics for additional achievement ideas (depends
+on: stats tab).
+
+BUILDING_FIX  pri:6  cosmetic
+Fix buildings graphically and for solidity.
+
+HUNGER_REBALANCE  pri:6  enhancement
+Rework hunger effects for gameplay-fun-vs-balance tuning.
+
+RANDOM_TOWN_GEN  pri:7  enhancement
+Procedurally generate towns.
+
+LEVELUP_EQUIP_HINTS  pri:10  enhancement
+Suggest additional helpful equipment (e.g. armor) in the level-
+up screen.
