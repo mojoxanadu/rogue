@@ -1992,13 +1992,7 @@
         openShop('town_guard');
         return;
       }
-      // E.TRIST.MENDED_DRUM (legacy fallback): if the Drum cohort somehow
-      // loses its phraseId (e.g. dialog system disabled), fall back to the
-      // old shared shop. Normally the Dialog branch above intercepts first.
-      if(['mended_drum_barman','cohen','librarian','vimes','bearded_dwarf'].includes(npc.type)) {
-        openShop('mended_drum_barman');
-        return;
-      }
+
       // dennis_wife / muck_peasant / retired_soldier migrated to Dialog
       // system. Their phraseIds are set on the spawn sites; the Dialog
       // branch above intercepts before this point.
@@ -2430,12 +2424,9 @@
 
     // Handle stores and special buildings
     if(tile === TILES.STORE) {
-      // Check if this is the Mended Drum location
-      if(window._mendedDrumX && nx === window._mendedDrumX && ny === window._mendedDrumY) {
-        openShop('mended_drum_barman');
-      } else {
-        openShop('apu');
-      }
+      // Mended Drum handled by NPC bump dialog — tile is just walkable
+      if (window._mendedDrumX && nx === window._mendedDrumX && ny === window._mendedDrumY) return;
+      openShop('apu');
       return;
     }
     if(tile === TILES.BOOKSTORE) {

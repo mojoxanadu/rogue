@@ -173,7 +173,7 @@
         return;
       }
       // Real phrase
-      const phrase = this._phrases[phraseId];
+      let phrase = this._phrases[phraseId];
       if (!phrase) {
         console.warn(`[Dialog] unknown phrase "${phraseId}"`);
         this.leave();
@@ -182,6 +182,18 @@
       this.currentPhrase = phrase;
       this.currentPhraseId = phraseId;
       this._selectedReplyIdx = null;  // fresh phrase, no pick yet
+      // Random phrase variant: pick one at random, merge message + replies.
+      // Variants with their own replies override the base phrase's replies;
+      // those without inherit from the base phrase (so common replies like
+      // "Browse your wares" don't need repeating across every variant).
+      if (phrase.randomPhrases && phrase.randomPhrases.length > 0) {
+        const variant = phrase.randomPhrases[Math.floor(Math.random() * phrase.randomPhrases.length)];
+        const merged = { ...phrase };
+        if (variant.message) merged.message = variant.message;
+        if (variant.replies) merged.replies = variant.replies;
+        this.currentPhrase = merged;
+        phrase = merged;  // downstream code reads from local `phrase`
+      }
       // Auto-select the first default reply, if any
       const visible = this._visibleReplies();
       const defIdx = visible.findIndex(r => r.default);
