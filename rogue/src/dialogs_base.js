@@ -170,9 +170,7 @@
           requires: [{ type: 'talent', talentId: 'fighterClass' }],
           scriptEffects: [
             { type: 'improveTalent', talentId: 'wieldSwords' },
-            { type: 'giveItem', itemName: 'sword', qty: 1 },
             { type: 'equipItem', slot: 'leftHand', itemName: 'sword' },
-            { type: 'giveItem', itemName: 'fightersBoots', qty: 1 },
             { type: 'equipItem', slot: 'feet', itemName: 'fightersBoots' },
             { type: 'modStat', stat: 'maxHp', delta: 5 },
             { type: 'modStat', stat: 'hp', delta: 5 },
@@ -186,6 +184,7 @@
           scriptEffects: [
             { type: 'improveTalent', talentId: 'wieldDaggers' },
             { type: 'giveItem', itemName: 'lockpickingTools', qty: 1 },
+            { type: 'equipItem', slot: 'leftHand', itemName: 'dagger' },
           ],
         },
         {
@@ -196,7 +195,6 @@
           scriptEffects: [
             { type: 'improveTalent', talentId: 'wieldStaffs' },
             { type: 'improveTalent', talentId: 'level1Spell', level: 2 },
-            { type: 'giveItem', itemName: 'robe', qty: 1 },
             { type: 'equipItem', slot: 'chest', itemName: 'robe' },
             { type: 'modStat', stat: 'maxMp', delta: 2 },
             { type: 'modStat', stat: 'mp', delta: 2 },

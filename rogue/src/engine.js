@@ -15,7 +15,7 @@
   6. Monty Python sequences – Bridge of Death trial, Roc capture/escape, Witch Trial
   7. Player movement (movePlayer) – collision, tile effects, bridge keeper encounter
 
-  The functions here are called from input.js (movePlayer, restPlayer), from the UI
+  The functions here are called from input.js (movePlayer, sleepPlayer), from the UI
   (combat clicks), and from the game's own turn‑based clock (advanceTurn). They update
   the global player, zone.npcs, itemsOnGround, and activeEffects arrays.
 */
@@ -1002,7 +1002,7 @@
     }
   }
 
-  function restPlayer() {
+  function sleepPlayer() {
     showOverlay();
     document.getElementById('modal-content').innerHTML = `<h2>💤 Sleeping...</h2><button onclick="wakeUp()">Wake Up</button>`;
     player.isSleeping = true;

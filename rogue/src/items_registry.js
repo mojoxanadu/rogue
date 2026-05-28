@@ -104,6 +104,16 @@ window.ItemDefs = ItemDefs;
 // Items registered here bypass LEGACY_ITEM_DATA entirely.
 // They can share icons with legacy items — the registry's
 // camelCase key and _byIcon first-wins rule keep things clean.
+ItemDefs.dagger = new ItemDef({
+  name: 'dagger',
+  displayName: 'Dagger',
+  icon: '🔪',
+  type: 'weapon',
+  baseDmg: 5,
+  maxGP: 50,
+  wieldTalent: 'wieldDaggers',
+});
+
 ItemDefs.scumbleMainlyApples = new ItemDef({
   name: 'scumbleMainlyApples',
   displayName: 'Scumble (mainly apples)',

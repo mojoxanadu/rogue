@@ -572,7 +572,7 @@ class LocalPlayer extends Player {
 LocalPlayer.DEFAULT_QUICKSLOT_COUNT = 6;
 
 
-Sentient.DEFAULT_COOLDOWNS = { move: 1.0, attack: 1.0 };
+Sentient.DEFAULT_COOLDOWNS = { move: 1.0, attack: 1.0, rest: 4.0 };
 
 
 // ─── Corpse ────────────────────────────────────────────────

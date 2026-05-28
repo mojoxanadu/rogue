@@ -112,6 +112,8 @@
       this.currentPhrase = null;
       this.currentPhraseId = null;
       this._selectedReplyIdx = null;
+      if (typeof renderQuickslots === 'function') renderQuickslots();
+      if (typeof updateUI === 'function') updateUI();
     },
 
     // ─── internals ────────────────────────────────────────────
@@ -313,6 +315,9 @@
           if (typeof player !== 'undefined') {
             if (!player.equipped) player.equipped = {};
             player.equipped[eff.slot] = eff.itemName;
+            const def = (typeof ItemDefs !== 'undefined') ? ItemDefs[eff.itemName] : null;
+            const label = def ? def.label() : eff.itemName;
+            this._pushLog({ kind: 'system', text: `[Equipped ${label}.]` });
           }
           break;
         case 'modStat':

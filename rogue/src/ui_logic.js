@@ -2844,6 +2844,10 @@ function _performStickyMove(src, target) {
     } else { logMsg("You hear nothing but your own breath."); }
   };
 
+  window.restAction = () => {
+    advanceTurn('rest');
+  };
+
   window.kneelAction = () => {
     player.isKneeling = true; logMsg("You kneel low to the ground.");
     const kneelBtn = document.getElementById('kneelBtn');
