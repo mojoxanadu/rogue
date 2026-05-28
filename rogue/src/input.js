@@ -1337,6 +1337,10 @@ const hBtn = document.getElementById('hamburgerBtn');
         if (typeof Dialog !== 'undefined' && Dialog.startSelf) {
           Dialog.startSelf(startPhrase);
         }
+        // Start watching for first XP gain to trigger tutorial
+        if (typeof window._watchFirstXpTutorial === 'function') {
+          window._watchFirstXpTutorial();
+        }
       }, 200);
       
       debugLog("Calculating FOV...");

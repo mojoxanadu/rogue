@@ -13,8 +13,16 @@
 // ============================================================
 
 const SPELL_DEFS = {
-  illuminate: { name: 'Illuminate', level: 1 },
-  unlock:     { name: 'Unlock',     level: 1, mpCost: 5 },
+  illuminate: { name: 'Illuminate',   level: 1 },
+  unlock:     { name: 'Unlock',       level: 1 },
+  lightning:  { name: 'Lightning',    level: 1 },
+  fireball:   { name: 'Fireball',     level: 1 },
+  haste:      { name: 'Haste',        level: 1 },
+  heal:       { name: 'Heal',         level: 1 },
+  icebolt:    { name: 'Ice Bolt',     level: 1 },
+  shield:     { name: 'Shield',       level: 1 },
+  strength:   { name: 'Strength',     level: 1 },
+  portal:     { name: 'Town Portal',  level: 1 },
 };
 
 if (typeof window !== 'undefined') window.SPELL_DEFS = SPELL_DEFS;

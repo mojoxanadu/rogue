@@ -346,6 +346,11 @@
             player[eff.stat] += eff.delta;
           }
           break;
+        case 'disableTutorial':
+          if (typeof window.gameSettings !== 'undefined') {
+            window.gameSettings.tutorial = false;
+          }
+          break;
         default:
           console.warn(`[Dialog] unsupported effect type "${eff.type}"`);
       }

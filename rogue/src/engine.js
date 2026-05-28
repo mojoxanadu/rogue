@@ -1257,6 +1257,18 @@
     if (player.xp >= req) {
       player.xp -= req; player.level++; player.statPoints += 1; player.talentPoints += 3;
       player.hp = player.maxHp; player.mp = player.maxMp; logMsg("LEVEL UP!"); triggerLevelUpVisuals();
+      // First level-up tutorial
+      if (player.level === 2 && window.gameSettings?.tutorial !== false) {
+        if (!player._seenTutorials) player._seenTutorials = [];
+        if (!player._seenTutorials.includes('tutorial_first_level_up')) {
+          player._seenTutorials.push('tutorial_first_level_up');
+          setTimeout(function() {
+            if (typeof Dialog !== 'undefined' && Dialog.startSelf) {
+              Dialog.startSelf('tutorial_first_level_up');
+            }
+          }, 600);
+        }
+      }
       // ── QUEST ENGINE EVENT: level_up ──
       if (typeof QuestEngine !== 'undefined') QuestEngine.emit('level_up', { level: player.level });
       if (typeof awardAchievement === 'function') {
@@ -1908,8 +1920,37 @@
   // in makeNpcCtx — also retired; NPC.takeTurn calls this.attack
   // directly.)
 
+  // ── Real-time activity tracking (for tutorials) ─────────────
+  const ACTIVITY_TIMEOUT = 60000;   // 60s — gaps longer than this are idle time
+  const SAVE_TUTORIAL_MS  = 900000; // 15 minutes
+
+  function _trackActivity() {
+    const now = Date.now();
+    if (window._lastActivityTime) {
+      const dt = now - window._lastActivityTime;
+      if (dt < ACTIVITY_TIMEOUT) {
+        player._realPlayTimeMs = (player._realPlayTimeMs || 0) + dt;
+      }
+    }
+    window._lastActivityTime = now;
+
+    if (player._realPlayTimeMs >= SAVE_TUTORIAL_MS &&
+        window.gameSettings?.tutorial !== false &&
+        !player._hasSaved &&
+        (!player._seenTutorials || !player._seenTutorials.includes('tutorial_save'))) {
+      if (!player._seenTutorials) player._seenTutorials = [];
+      player._seenTutorials.push('tutorial_save');
+      setTimeout(function() {
+        if (typeof Dialog !== 'undefined' && Dialog.startSelf) {
+          Dialog.startSelf('tutorial_save');
+        }
+      }, 300);
+    }
+  }
+
   function movePlayer(dx, dy) {
     if(isDead || player.isSleeping) return;
+    _trackActivity();
     // E15: T-Rex stomp stun check
     if(player._stunned && player._stunned > 0) {
       player._stunned--;
