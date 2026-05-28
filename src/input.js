@@ -15,7 +15,7 @@
   6. Shift‑key running – temporary speed boost with exhaustion consequences (handled in engine)
 
   The functions here are called directly by browser events (keydown, keyup, click) and
-  by the setInterval game loop. They invoke engine.js (movePlayer, restPlayer),
+  by the setInterval game loop. They invoke engine.js (movePlayer, sleepPlayer),
   mechanics.js (handleItemClick), and ui_logic.js (toggleModal) to drive game state.
 */
 const hBtn = document.getElementById('hamburgerBtn');
@@ -468,7 +468,7 @@ const hBtn = document.getElementById('hamburgerBtn');
           debugLog('  /dps start [sec]|report   - Damage test harness');
           debugLog('  /prof fps|ai|render|audio - Runtime profiler readouts');
           debugLog('Macro conditions: HP<N, MP<N, HUNGER>N, FLOOR>=N, STATUS=name');
-          debugLog('Macro actions: USE \'item name\', CAST spellname, REST, FLEE');
+          debugLog('Macro actions: USE \'item name\', CAST spellname, SLEEP, FLEE');
           break;
         case '/stats':
           debugLog(`Level ${player.level} | HP ${Math.floor(player.hp)}/${Math.floor(player.maxHp)} | MP ${Math.floor(player.mp)}/${Math.floor(player.maxMp)}`);
@@ -1103,8 +1103,8 @@ const hBtn = document.getElementById('hamburgerBtn');
         case 'southwest': case 'sw':
           if(typeof movePlayer === 'function') { movePlayer(-1, 1); debugLog('Moving southwest...'); }
           break;
-        case 'sleep': case 'rest':
-          if(typeof restPlayer === 'function') { restPlayer(); debugLog('Resting...'); }
+        case 'sleep':
+          if(typeof sleepPlayer === 'function') { sleepPlayer(); debugLog('Sleeping...'); }
           break;
         case 'kneel':
           if(typeof kneelAction === 'function') { kneelAction(); debugLog('Kneeling...'); }
@@ -1819,7 +1819,8 @@ const hBtn = document.getElementById('hamburgerBtn');
     moveWest:   ['a', 'arrowleft'],
     moveEast:   ['d', 'arrowright'],
     attack:     [' '],
-    rest:       ['z'],
+    sleep:      ['z'],
+    restAction: ['r'],
     inventory:      ['i'],
     equip:      ['e'],
     stats:      ['c'],
@@ -2029,7 +2030,8 @@ const hBtn = document.getElementById('hamburgerBtn');
     else if(keyMatches('magic', key)) toggleModal('magic-modal');
     else if(keyMatches('achieve', key)) toggleModal('achieve-modal');
     else if(keyMatches('quests', key)) toggleModal('quest-modal');
-    else if(keyMatches('rest', key)) restPlayer();
+    else if(keyMatches('sleep', key)) sleepPlayer();
+    else if(keyMatches('restAction', key)) restAction();
     else if(keyMatches('attack', key)) meleeAttack();
     else if(keyMatches('spellPri', key)) castEquippedSpell();
     else if(keyMatches('spellSec', key)) castSecondarySpell();

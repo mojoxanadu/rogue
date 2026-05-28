@@ -25,7 +25,7 @@
   // === WoW-style Macro System ===
   // Macros evaluate automatically each turn. Saved in player.macros[].
   // Conditions: HP<N, MP<N, HUNGER>N, FLOOR>=N, STATUS=name
-  // Actions: USE 'item name', CAST spellname, REST, FLEE
+  // Actions: USE 'item name', CAST spellname, SLEEP, FLEE
   window.runMacros = function() {
     if(!player.macros || player.macros.length === 0) return;
     for(const macro of player.macros) {
@@ -86,8 +86,8 @@
       if(pidx !== -1) { handleInventoryUse(pidx); }
     } else if((m = action.match(/^CAST\s+(\w+)$/i))) {
       castSpell(m[1].toLowerCase());
-    } else if(/^REST$/i.test(action)) {
-      if(typeof restPlayer === 'function') restPlayer();
+    } else if(/^SLEEP$/i.test(action)) {
+      if(typeof sleepPlayer === 'function') sleepPlayer();
     } else if(/^FLEE$/i.test(action)) {
       // Move away from nearest enemy
       const nearest = zone.npcs.reduce((best, e) => {

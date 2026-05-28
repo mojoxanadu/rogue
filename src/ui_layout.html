@@ -306,17 +306,18 @@
      other player action. Hidden by default. -->
 <div id="loot-popup" class="interactive" style="display:none;"></div>
 
-<!-- Circular "more actions" modal. Six buttons arranged on a circle.
+<!-- Circular "more actions" modal. Seven buttons arranged on a circle.
      Outside-click closes; no border around the modal. -->
 <div id="more-actions-modal" onclick="if(event.target===this) toggleMoreActions()"
      style="display:none; position:fixed; inset:0; z-index:210; background:rgba(0,0,0,0.45);">
   <div class="circular-modal">
-    <div class="ca-btn" style="--ang:0deg"   onclick="toggleMoreActions(); toggleModal('inventory-modal')" title="Inventory (I)"><div class="keybind-hint">I</div>🎒</div>
-    <div class="ca-btn" style="--ang:60deg"  onclick="toggleMoreActions(); toggleModal('equip-modal')" title="Equipment (E)"><div class="keybind-hint">E</div>🛡️</div>
-    <div class="ca-btn" style="--ang:120deg" onclick="toggleMoreActions(); kneelAction()" title="Kneel (K)" id="kneelBtn"><div class="keybind-hint">K</div>🙇</div>
-    <div class="ca-btn" style="--ang:180deg" onclick="toggleMoreActions(); restPlayer()" title="Sleep (Z)"><div class="keybind-hint">Z</div>💤</div>
-    <div class="ca-btn" style="--ang:240deg" onclick="toggleMoreActions(); listenAction()" title="Listen (L)"><div class="keybind-hint">L</div>👂</div>
-    <div class="ca-btn" style="--ang:300deg" onclick="toggleMoreActions(); quickSave()" title="Quicksave">💾</div>
+    <div class="ca-btn" style="--ang:0deg"     onclick="toggleMoreActions(); toggleModal('inventory-modal')" title="Inventory (I)"><div class="keybind-hint">I</div>🎒</div>
+    <div class="ca-btn" style="--ang:51.4deg"  onclick="toggleMoreActions(); toggleModal('equip-modal')" title="Equipment (E)"><div class="keybind-hint">E</div>🛡️</div>
+    <div class="ca-btn" style="--ang:102.9deg" onclick="toggleMoreActions(); kneelAction()" title="Kneel (K)" id="kneelBtn"><div class="keybind-hint">K</div>🙇</div>
+    <div class="ca-btn" style="--ang:154.3deg" onclick="toggleMoreActions(); restAction()" title="Rest (R)"><div class="keybind-hint">R</div>⏳</div>
+    <div class="ca-btn" style="--ang:205.7deg" onclick="toggleMoreActions(); sleepPlayer()" title="Sleep (Z)"><div class="keybind-hint">Z</div>💤</div>
+    <div class="ca-btn" style="--ang:257.1deg" onclick="toggleMoreActions(); listenAction()" title="Listen (L)"><div class="keybind-hint">L</div>👂</div>
+    <div class="ca-btn" style="--ang:308.6deg" onclick="toggleMoreActions(); quickSave()" title="Quicksave">💾</div>
   </div>
 </div>
 
