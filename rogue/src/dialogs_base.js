@@ -124,51 +124,14 @@
     'fighter_start': {
       message: "The fog lifts over Tristram. Embers still drift from the ruins of the old cathedral. Distant bells toll, muted by a damp wind.\n\n" +
         "Steel and grit — you are a Fighter.",
+      autoAdvance: true,
       replies: [
         {
-          text: 'Onward',
-          nextPhrase: 'welcome_message',
+          text: '',
+          nextPhrase: 'ready_to_go',
           default: true,
-          scriptEffects: [{ type: 'improveTalent', talentId: 'fighterClass' }],
-        },
-      ],
-    },
-
-    'rogue_start': {
-      message: "The fog lifts over Tristram. Embers still drift from the ruins of the old cathedral. Distant bells toll, muted by a damp wind.\n\n" +
-        "Shadow and cunning — you are a Rogue.",
-      replies: [
-        {
-          text: 'Onward',
-          nextPhrase: 'welcome_message',
-          default: true,
-          scriptEffects: [{ type: 'improveTalent', talentId: 'rogueClass' }],
-        },
-      ],
-    },
-
-    'spellcaster_start': {
-      message: "The fog lifts over Tristram. Embers still drift from the ruins of the old cathedral. Distant bells toll, muted by a damp wind.\n\n" +
-        "Arcane wisdom — you are a Spellcaster.",
-      replies: [
-        {
-          text: 'Onward',
-          nextPhrase: 'welcome_message',
-          default: true,
-          scriptEffects: [{ type: 'improveTalent', talentId: 'spellcasterClass' }],
-        },
-      ],
-    },
-
-    'welcome_message': {
-      message: "The brook chatters east of town, and a road runs toward an overgrown hedge country.",
-      replies: [
-        {
-          text: 'Ready my fighter gear',
-          nextPhrase: '@close',
-          default: true,
-          requires: [{ type: 'talent', talentId: 'fighterClass' }],
           scriptEffects: [
+            { type: 'improveTalent', talentId: 'fighterClass' },
             { type: 'improveTalent', talentId: 'wieldSwords' },
             { type: 'equipItem', slot: 'leftHand', itemName: 'sword' },
             { type: 'equipItem', slot: 'feet', itemName: 'fightersBoots' },
@@ -176,23 +139,39 @@
             { type: 'modStat', stat: 'hp', delta: 5 },
           ],
         },
+      ],
+    },
+
+    'rogue_start': {
+      message: "The fog lifts over Tristram. Embers still drift from the ruins of the old cathedral. Distant bells toll, muted by a damp wind.\n\n" +
+        "Shadow and cunning — you are a Rogue.",
+      autoAdvance: true,
+      replies: [
         {
-          text: 'Ready my rogue gear',
-          nextPhrase: '@close',
+          text: '',
+          nextPhrase: 'ready_to_go',
           default: true,
-          requires: [{ type: 'talent', talentId: 'rogueClass' }],
           scriptEffects: [
+            { type: 'improveTalent', talentId: 'rogueClass' },
             { type: 'improveTalent', talentId: 'wieldDaggers' },
             { type: 'giveItem', itemName: 'lockpickingTools', qty: 1 },
             { type: 'equipItem', slot: 'leftHand', itemName: 'dagger' },
           ],
         },
+      ],
+    },
+
+    'spellcaster_start': {
+      message: "The fog lifts over Tristram. Embers still drift from the ruins of the old cathedral. Distant bells toll, muted by a damp wind.\n\n" +
+        "Arcane wisdom — you are a Spellcaster.",
+      autoAdvance: true,
+      replies: [
         {
-          text: 'Ready my spellcaster gear',
-          nextPhrase: '@close',
+          text: '',
+          nextPhrase: 'ready_to_go',
           default: true,
-          requires: [{ type: 'talent', talentId: 'spellcasterClass' }],
           scriptEffects: [
+            { type: 'improveTalent', talentId: 'spellcasterClass' },
             { type: 'improveTalent', talentId: 'wieldStaffs' },
             { type: 'improveTalent', talentId: 'level1Spell', level: 2 },
             { type: 'equipItem', slot: 'chest', itemName: 'robe' },
@@ -201,6 +180,11 @@
           ],
         },
       ],
+    },
+
+    'ready_to_go': {
+      message: "The fog settles. Your gear is ready. The road ahead is uncertain, but fortune favors the bold.",
+      replies: [],
     },
   });
 })();

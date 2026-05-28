@@ -867,7 +867,7 @@ function _performStickyMove(src, target) {
 
   // === Settings ===
   // E1/E2: musicMode and sfxMode: 'off' | 'fm' | 'mp3'
-  window.gameSettings = { sfx: true, music: true, sprites: false, musicMode: 'fm', sfxMode: 'fm' };
+  window.gameSettings = { sfx: true, music: true, sprites: false, musicMode: 'fm', sfxMode: 'fm', moveMethod: 'dpad-continuous' };
   
   // Initialize checkbox states from gameSettings on page load
   window.addEventListener('DOMContentLoaded', () => {
@@ -962,8 +962,17 @@ function _performStickyMove(src, target) {
     if(musicBtn) musicBtn.textContent = _modeLabel(window.gameSettings.musicMode || 'fm');
     const sfxBtn = document.getElementById('sfxMode-cycle-btn');
     if(sfxBtn) sfxBtn.textContent = _modeLabel(window.gameSettings.sfxMode || 'fm');
+
+    // Movement method radio
+    const mm = window.gameSettings.moveMethod || 'dpad-continuous';
+    const radio = document.querySelector(`input[name="moveMethod"][value="${mm}"]`);
+    if (radio) radio.checked = true;
   };
   
+  window.setMoveMethod = (method) => {
+    window.gameSettings.moveMethod = method;
+  };
+
   window.toggleSetting = (setting, value) => {
     window.gameSettings[setting] = value;
     const knob = document.getElementById(`${setting}-knob`);
