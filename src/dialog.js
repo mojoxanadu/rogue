@@ -194,10 +194,6 @@
           this._pushLog({
             kind: 'speaker',
             icon: (npc.stats && npc.stats.icon) || '🗣',
-            // Resolution order: explicit phrase.speaker > NPC stats.name >
-            // prettified npc.type ('mended_drum_barman' → 'Mended Drum Barman')
-            // > 'NPC'. The prettifier exists so a NEW spawn site that forgets
-            // to set a name doesn't leak underscores into the UI.
             name: phrase.speaker
               || (npc.stats && npc.stats.name)
               || this._prettyType(npc.type)
@@ -206,6 +202,19 @@
           });
         } else {
           this._pushLog({ kind: 'thought', text: message });
+        }
+      }
+      // Auto-advance: if the phrase has autoAdvance and a default reply is
+      // selected, immediately commit the reply's effects and advance without
+      // waiting for the user to click Next.
+      if (phrase.autoAdvance && defIdx >= 0) {
+        const r = visible[defIdx];
+        if (r) {
+          this._applyEffects(r.scriptEffects);
+          this._selectedReplyIdx = null;
+          this._goto(r.nextPhrase);
+          this._render();
+          return;
         }
       }
     },

@@ -550,6 +550,30 @@
           </span>
         </label>
       </div>
+      <div style="display:flex; flex-direction:column; gap:6px; padding-top:4px; border-top:1px solid #3a3740;">
+        <div style="font-weight:bold; margin-bottom:2px;">🚶 Movement</div>
+        <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer; padding:3px 0;">
+          <input type="radio" name="moveMethod" value="dpad-continuous" onchange="setMoveMethod('dpad-continuous')">
+          <div>
+            <div style="font-weight:500;">D-Pad Continuous</div>
+            <div style="font-size:11px; color:#aaa;">Tap/hold to move, drag to change direction</div>
+          </div>
+        </label>
+        <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer; padding:3px 0;">
+          <input type="radio" name="moveMethod" value="dpad-single" onchange="setMoveMethod('dpad-single')">
+          <div>
+            <div style="font-weight:500;">D-Pad Single Tile</div>
+            <div style="font-size:11px; color:#aaa;">Tap to move one tile toward that direction</div>
+          </div>
+        </label>
+        <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer; padding:3px 0;">
+          <input type="radio" name="moveMethod" value="avoid-obstacles" onchange="setMoveMethod('avoid-obstacles')">
+          <div>
+            <div style="font-weight:500;">Avoid Obstacles</div>
+            <div style="font-size:11px; color:#aaa;">Tap a tile — walks around obstacles one step per turn</div>
+          </div>
+        </label>
+      </div>
     </div>
   </div>
 </div>

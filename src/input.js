@@ -1587,6 +1587,60 @@ const hBtn = document.getElementById('hamburgerBtn');
     if(dragonFrame) { dragonFrame.src = ''; dragonFrame.remove(); }
   };
 
+  // ── Move state (shared across dpad & avoid-obstacles) ──────
+  let _moveState = null;
+  let _dpadHandled = false;
+
+  // 8-way DPAD directions: 0=E, increases clockwise (canvas y down)
+  const DPAD_DIRS = [
+    { dx:  1, dy:  0 },  // 0  E
+    { dx:  1, dy:  1 },  // 1  SE
+    { dx:  0, dy:  1 },  // 2  S
+    { dx: -1, dy:  1 },  // 3  SW
+    { dx: -1, dy:  0 },  // 4  W
+    { dx: -1, dy: -1 },  // 5  NW
+    { dx:  0, dy: -1 },  // 6  N
+    { dx:  1, dy: -1 },  // 7  NE
+  ];
+
+  // BFS: first step from (sx,sy) toward (tx,ty). Intermediate tiles
+  // must be walkable (isTileFloor + no NPC). The target tile is always
+  // valid so bump attacks / dialog triggers work on the final step.
+  function _findStep(sx, sy, tx, ty) {
+    if (sx === tx && sy === ty) return null;
+    const w = mapW, h = mapH;
+    const visited = Array.from({ length: h }, () => new Uint8Array(w));
+    const queue = [{ x: sx, y: sy, firstDx: 0, firstDy: 0 }];
+    visited[sy][sx] = 1;
+    const NPC_SET = new Set(zone.npcs.map(e => `${e.x},${e.y}`));
+    for (let i = 0; i < queue.length; i++) {
+      const cur = queue[i];
+      for (let d = 0; d < 8; d++) {
+        const nx = cur.x + DPAD_DIRS[d].dx;
+        const ny = cur.y + DPAD_DIRS[d].dy;
+        if (nx < 0 || nx >= w || ny < 0 || ny >= h || visited[ny][nx]) continue;
+        const firstDx = cur.firstDx || DPAD_DIRS[d].dx;
+        const firstDy = cur.firstDy || DPAD_DIRS[d].dy;
+        if (nx === tx && ny === ty) return { dx: firstDx, dy: firstDy };
+        if (NPC_SET.has(`${nx},${ny}`)) continue;
+        const tile = theMap[ny][nx];
+        if (tile === TILES.BG_SCENE) {
+          if (!window.BOUNDARY_DATA) continue;
+          const bd = window.BOUNDARY_DATA[currentScene];
+          if (!bd) continue;
+          const isWalkable = bd.walkable && bd.walkable.some(p => p.x === nx && p.y === ny);
+          const isBlocked = bd.blocked && bd.blocked.some(p => p.x === nx && p.y === ny);
+          if (!isWalkable || isBlocked) continue;
+        } else if (!isTileFloor(tile)) {
+          continue;
+        }
+        visited[ny][nx] = 1;
+        queue.push({ x: nx, y: ny, firstDx, firstDy });
+      }
+    }
+    return null;
+  }
+
   // Fireball targeting click handler
   const gameCanvas = document.getElementById('gameCanvas');
   if(gameCanvas) {
@@ -1614,51 +1668,125 @@ const hBtn = document.getElementById('hamburgerBtn');
       }
     });
 
-    // ─── Tap-to-move (mobile) ────────────────────────────────────
-    //
-    //  Tap a map tile → take ONE step toward it along the shortest
-    //  8-way path. The user re-taps to keep moving (same input
-    //  granularity as a WASD press in this turn-based game). This
-    //  avoids the "auto-walk until disturbed" footgun and keeps the
-    //  user steering frame-by-frame.
-    //
-    //  Pathfinding rules:
-    //    - 8-way BFS over walkable tiles (isTileFloor and no enemy).
-    //    - The TARGET tile is a goal regardless of walkability — so
-    //      tapping a wall / closed door / NPC / enemy still pathfinds
-    //      adjacent and the final step bumps. movePlayer() handles
-    //      bump logic (combat, dialog, doors) as it does for WASD.
-    //    - If no path exists, do nothing.
+    // ── Avoid Obstacles: one BFS step per turn ───────────────
+    // Stored in _moveState: { active, targetX, targetY, rafId }.
+    // Recalculates the path each step so camera / obstacle changes
+    // are reflected immediately.
+    function _advanceAvoidStep() {
+      if (!_moveState || !_moveState.active) return;
+      if (isDead) { _moveState = null; return; }
+      if (player.x === _moveState.targetX && player.y === _moveState.targetY) {
+        _moveState = null; return;
+      }
+      if (typeof player.canAct !== 'function' || !player.canAct()) {
+        _moveState.rafId = requestAnimationFrame(_advanceAvoidStep);
+        return;
+      }
+      const step = _findStep(player.x, player.y, _moveState.targetX, _moveState.targetY);
+      if (!step) { _moveState = null; return; }
+      movePlayer(step.dx, step.dy);
+      _moveState.rafId = requestAnimationFrame(_advanceAvoidStep);
+    }
 
-    // Compute the dx/dy for the first step of the shortest 8-way
-    // path from (sx,sy) to (tx,ty). Returns {dx,dy} or null.
-    // Tap-to-move: invisible 8-way dpad centered on the player. The
-    // canvas is divided into eight 45° wedges around player center;
-    // a tap in any wedge moves one step in that direction. Bump logic
-    // (NPC dialog, combat, locked doors) is handled by movePlayer().
-    // A tap that lands on the player tile itself is treated as no-op.
-    //
-    // The 8 wedge indices follow atan2 quadrants — 0=E, increases
-    // clockwise (because canvas y goes down) through SE, S, SW, W,
-    // NW, N, NE.
-    const DPAD_DIRS = [
-      { dx:  1, dy:  0 },  // 0  E
-      { dx:  1, dy:  1 },  // 1  SE
-      { dx:  0, dy:  1 },  // 2  S
-      { dx: -1, dy:  1 },  // 3  SW
-      { dx: -1, dy:  0 },  // 4  W
-      { dx: -1, dy: -1 },  // 5  NW
-      { dx:  0, dy: -1 },  // 6  N
-      { dx:  1, dy: -1 },  // 7  NE
-    ];
+    // ── D-Pad: octant from pointer position ───────────────────
+    function _dpadFromPointer(clientX, clientY) {
+      const rect = gameCanvas.getBoundingClientRect();
+      const cx = Math.floor(VIEW_COLS / 2), cy = Math.floor(VIEW_ROWS / 2);
+      const px = (cx + 0.5) * TILE_SIZE;
+      const py = (cy + 0.5) * TILE_SIZE;
+      const dxPx = clientX - rect.left - px;
+      const dyPx = clientY - rect.top - py;
+      if (Math.hypot(dxPx, dyPx) < TILE_SIZE * 0.4) return null;
+      const angle = Math.atan2(dyPx, dxPx);
+      const wedge = ((Math.round(angle * 4 / Math.PI) + 8) % 8);
+      return DPAD_DIRS[wedge];
+    }
 
+    function _pointerDown(clientX, clientY) {
+      if (isDead) return;
+      if (_dpadHandled) return; // touch → mouse compat: already handled
+      const mm = window.gameSettings?.moveMethod || 'dpad-continuous';
+      if (mm === 'avoid-obstacles') return;
+      const d = _dpadFromPointer(clientX, clientY);
+      if (!d) return;
+      _dpadHandled = true;
+      movePlayer(d.dx, d.dy);
+      if (mm === 'dpad-continuous') {
+        if (_moveState) _cancelMove();
+        _moveState = { active: true, dx: d.dx, dy: d.dy, lastMoveTime: Date.now(), moveDelay: 150 };
+        _moveState.holdTimer = setTimeout(() => {
+          if (!_moveState) return;
+          _moveState.holdTimer = null;
+          _moveState.rafId = requestAnimationFrame(_continuousTick);
+        }, 200);
+      }
+    }
+
+    function _pointerMove(clientX, clientY) {
+      if (!_moveState || !_moveState.active) return;
+      const mm = window.gameSettings?.moveMethod || 'dpad-continuous';
+      if (mm !== 'dpad-continuous') return;
+      const d = _dpadFromPointer(clientX, clientY);
+      if (!d) return;
+      _moveState.dx = d.dx;
+      _moveState.dy = d.dy;
+    }
+
+    function _pointerUp() {
+      _cancelMove();
+    }
+
+    function _cancelMove() {
+      if (!_moveState) return;
+      if (_moveState.holdTimer) { clearTimeout(_moveState.holdTimer); _moveState.holdTimer = null; }
+      if (_moveState.rafId) { cancelAnimationFrame(_moveState.rafId); _moveState.rafId = null; }
+      _moveState = null;
+    }
+
+    function _continuousTick() {
+      if (!_moveState || !_moveState.active) return;
+      const now = Date.now();
+      if (typeof player !== 'undefined' && typeof player.canAct === 'function' && player.canAct() && now - _moveState.lastMoveTime >= _moveState.moveDelay) {
+        movePlayer(_moveState.dx, _moveState.dy);
+        _moveState.lastMoveTime = now;
+      }
+      _moveState.rafId = requestAnimationFrame(_continuousTick);
+    }
+
+    // ── Mouse events ──────────────────────────────────────────
+    gameCanvas.addEventListener('mousedown', (e) => {
+      _pointerDown(e.clientX, e.clientY);
+    });
+    gameCanvas.addEventListener('mousemove', (e) => {
+      _pointerMove(e.clientX, e.clientY);
+    });
+    gameCanvas.addEventListener('mouseup', () => {
+      _pointerUp();
+    });
+
+    // ── Touch events ──────────────────────────────────────────
+    gameCanvas.addEventListener('touchstart', (e) => {
+      const t = e.changedTouches[0];
+      if (!t) return;
+      _pointerDown(t.clientX, t.clientY);
+    }, { passive: true });
+    gameCanvas.addEventListener('touchmove', (e) => {
+      const t = e.changedTouches[0];
+      if (!t) return;
+      _pointerMove(t.clientX, t.clientY);
+    }, { passive: true });
+    gameCanvas.addEventListener('touchend', () => {
+      _pointerUp();
+    }, { passive: true });
+
+    // ── Click handler (avoid-obstacles + targeting + drag) ────
     gameCanvas.addEventListener('click', (e) => {
-      if(isDead) return;
+      if (isDead) return;
+      // D-Pad modes already handled on pointer-down — skip click.
+      if (_dpadHandled) { _dpadHandled = false; return; }
       // Yield to targeting handlers above — they consume the click.
-      if(window._fireballTargeting || window._rangedTargeting) return;
-      // Sticky-drag → drop on ground at player's tile. Works on both
-      // desktop and touch — tapping the map anywhere with a sticky
-      // selection drops the item on the player's tile.
+      if (window._fireballTargeting || window._rangedTargeting) return;
+      // Sticky-drag → drop on ground at player's tile.
       if (window._stickyDrag) {
         const drag = window._stickyDrag;
         if (drag.source === 'inv') {
@@ -1674,7 +1802,6 @@ const hBtn = document.getElementById('hamburgerBtn');
             const def = ItemDefs[itemName];
             zone.dropAt(player.x, player.y, new ItemStack(itemName, 1));
             logMsg(`Dropped ${def?.label() ?? itemName} on the ground.`);
-            // Reuse swapEquip(-1, slot) so derived stats recompute.
             if (typeof swapEquip === 'function') swapEquip(-1, drag.slot);
             else player.equipped[drag.slot] = null;
           }
@@ -1686,28 +1813,18 @@ const hBtn = document.getElementById('hamburgerBtn');
         drawMap();
         return;
       }
-      // Tap-to-move is a TOUCH-ONLY input affordance. On desktop,
-      // clicks on the map are usually misfires while reading; the
-      // keyboard owns movement. Gate the dpad behind IS_TOUCH so
-      // desktop clicks do nothing here. URL ?mobile=1 enables it
-      // in a desktop browser for testing.
-      if(!window.IS_TOUCH) return;
-      const rect = gameCanvas.getBoundingClientRect();
-      const cx = Math.floor(VIEW_COLS / 2), cy = Math.floor(VIEW_ROWS / 2);
-      // Player is rendered at the center tile; compute pixel offset
-      // from the player's center pixel to the tap point.
-      const px = (cx + 0.5) * TILE_SIZE;
-      const py = (cy + 0.5) * TILE_SIZE;
-      const dxPx = (e.clientX - rect.left) - px;
-      const dyPx = (e.clientY - rect.top)  - py;
-      // Dead-zone radius — taps within ~40% of a tile are treated as
-      // "on the player" and ignored. Prevents accidental moves when
-      // tapping the player to inspect / open context UI later.
-      if (Math.hypot(dxPx, dyPx) < TILE_SIZE * 0.4) return;
-      const angle = Math.atan2(dyPx, dxPx);     // 0 = east, +PI/2 = south
-      const wedge = ((Math.round(angle * 4 / Math.PI) + 8) % 8);
-      const d = DPAD_DIRS[wedge];
-      movePlayer(d.dx, d.dy);
+      // Avoid Obstacles: tap a tile → BFS one step, store target for next turn.
+      const mm = window.gameSettings?.moveMethod || 'dpad-continuous';
+      if (mm === 'avoid-obstacles') {
+        const rect = gameCanvas.getBoundingClientRect();
+        const cx = Math.floor(VIEW_COLS / 2), cy = Math.floor(VIEW_ROWS / 2);
+        const tileX = player.x + Math.floor((e.clientX - rect.left) / TILE_SIZE) - cx;
+        const tileY = player.y + Math.floor((e.clientY - rect.top) / TILE_SIZE) - cy;
+        if (tileX < 0 || tileX >= mapW || tileY < 0 || tileY >= mapH) return;
+        // Store target so each turn advances one step
+        _moveState = { active: true, targetX: tileX, targetY: tileY };
+        _advanceAvoidStep();
+      }
     });
     // Bug 26: Handle drag-drop of inventory items onto the map
     gameCanvas.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
