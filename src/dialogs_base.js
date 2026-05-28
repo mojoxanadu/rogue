@@ -43,7 +43,7 @@
       // No '[Leave]' reply — the bottom Leave button handles closure.
       // Only meaningful response options live in the replies list.
       replies: [
-        { text: 'Browse your wares.', nextPhrase: '@shop' },
+        { text: 'Browse your wares.', nextPhrase: '@shop', default: true },
       ],
     },
 
@@ -107,13 +107,102 @@
       message: "Vermin! No shopkeeper has asked, but if I cull them the merchants will surely thank me.",
       replies: [
         {
-          text: 'Time to clean house.',
+          text: 'Time to clean house (accept quest)',
           nextPhrase: '@close',
+          default: true,
           scriptEffects: [
             { type: 'advanceQuest', questId: 'q_vermin_slayer', stage: 10 }
           ]
         }
       ]
+    },
+
+    // ── Start-of-game class-specific self-dialogs ──────────
+    // The class modal sets _selectedClass; input.js starts the
+    // corresponding phrase, which grants the class talent and
+    // advances to the shared welcome message.
+    'fighter_start': {
+      message: "The fog lifts over Tristram. Embers still drift from the ruins of the old cathedral. Distant bells toll, muted by a damp wind.\n\n" +
+        "Steel and grit — you are a Fighter.",
+      replies: [
+        {
+          text: 'Onward',
+          nextPhrase: 'welcome_message',
+          default: true,
+          scriptEffects: [{ type: 'improveTalent', talentId: 'fighterClass' }],
+        },
+      ],
+    },
+
+    'rogue_start': {
+      message: "The fog lifts over Tristram. Embers still drift from the ruins of the old cathedral. Distant bells toll, muted by a damp wind.\n\n" +
+        "Shadow and cunning — you are a Rogue.",
+      replies: [
+        {
+          text: 'Onward',
+          nextPhrase: 'welcome_message',
+          default: true,
+          scriptEffects: [{ type: 'improveTalent', talentId: 'rogueClass' }],
+        },
+      ],
+    },
+
+    'spellcaster_start': {
+      message: "The fog lifts over Tristram. Embers still drift from the ruins of the old cathedral. Distant bells toll, muted by a damp wind.\n\n" +
+        "Arcane wisdom — you are a Spellcaster.",
+      replies: [
+        {
+          text: 'Onward',
+          nextPhrase: 'welcome_message',
+          default: true,
+          scriptEffects: [{ type: 'improveTalent', talentId: 'spellcasterClass' }],
+        },
+      ],
+    },
+
+    'welcome_message': {
+      message: "The brook chatters east of town, and a road runs toward an overgrown hedge country.",
+      replies: [
+        {
+          text: 'Ready my fighter gear',
+          nextPhrase: '@close',
+          default: true,
+          requires: [{ type: 'talent', talentId: 'fighterClass' }],
+          scriptEffects: [
+            { type: 'improveTalent', talentId: 'wieldSwords' },
+            { type: 'giveItem', itemName: 'sword', qty: 1 },
+            { type: 'equipItem', slot: 'leftHand', itemName: 'sword' },
+            { type: 'giveItem', itemName: 'fightersBoots', qty: 1 },
+            { type: 'equipItem', slot: 'feet', itemName: 'fightersBoots' },
+            { type: 'modStat', stat: 'maxHp', delta: 5 },
+            { type: 'modStat', stat: 'hp', delta: 5 },
+          ],
+        },
+        {
+          text: 'Ready my rogue gear',
+          nextPhrase: '@close',
+          default: true,
+          requires: [{ type: 'talent', talentId: 'rogueClass' }],
+          scriptEffects: [
+            { type: 'improveTalent', talentId: 'wieldDaggers' },
+            { type: 'giveItem', itemName: 'lockpickingTools', qty: 1 },
+          ],
+        },
+        {
+          text: 'Ready my spellcaster gear',
+          nextPhrase: '@close',
+          default: true,
+          requires: [{ type: 'talent', talentId: 'spellcasterClass' }],
+          scriptEffects: [
+            { type: 'improveTalent', talentId: 'wieldStaffs' },
+            { type: 'improveTalent', talentId: 'level1Spell', level: 2 },
+            { type: 'giveItem', itemName: 'robe', qty: 1 },
+            { type: 'equipItem', slot: 'chest', itemName: 'robe' },
+            { type: 'modStat', stat: 'maxMp', delta: 2 },
+            { type: 'modStat', stat: 'mp', delta: 2 },
+          ],
+        },
+      ],
     },
   });
 })();
