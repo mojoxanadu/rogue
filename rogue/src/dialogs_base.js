@@ -32,18 +32,36 @@
     // The barman greets, then the @shop sentinel hands off to the existing
     // store UI (with its buy/sell tabs intact). [Leave] closes the dialog.
     'mended_drum_barman_greet': {
-      // Multi-paragraph greeting: opener, then the carved-over-the-bar motto,
-      // then a sales pitch for the in-sewer-ants policy. Paragraphs split on
-      // blank lines (\n\n).
-      message:
-        "What'll it be, traveler?\n\n" +
-        "Motto over the bar reads: \"Quanti Canicula Ille In Fenestra.\" Old Latin. " +
-        "Means \"How much is that doggie in the window?\" Long story, don't ask.\n\n" +
-        "We've also got an Inn-Sewer-Ants Policy — 50 quid, covers you for limb loss up to but not including the head. Highly recommended.",
-      // No '[Leave]' reply — the bottom Leave button handles closure.
-      // Only meaningful response options live in the replies list.
+      // Random phrase variant — pick one each time the player bumps the barman.
+      // Most variants inherit the default replies below; the Latin motto
+      // variant provides its own replies with an extra "What does that mean?"
+      // option that leads to the translation phrase.
+      randomPhrases: [
+        { message: "What'll it be, traveler?" },
+        { message: "What'll it be? Scumble? Made from apples. Well. Mainly apples." },
+        { message: "No fighting in the Drum. Unless you pay the breakage deposit." },
+        {
+          message: "Motto over the bar reads: \"Quanti Canicula Ille In Fenestra.\" Old Latin.",
+          replies: [
+            { text: 'What does that mean?', nextPhrase: 'mended_drum_motto_translation' },
+            { text: 'Uh, whatever. I just came to shop.', nextPhrase: '@shop', default: true },
+          ],
+        },
+        { message: "Formerly across the river before the Great Fire. Now across the OTHER river since the Second Great Fire." },
+        { message: "Inn-Sewer-Ants Policy available at the bar. Covers Acts of Gods. (The small print covers which gods.)" },
+        { message: "We had a wizard in here once. He turned into a toad. Nobody noticed for three days." },
+        { message: "Sign says 'No Assassins'. Asterisk says 'By appointment only'." },
+        { message: "The rats pay rent. Better tenants than some I could name." },
+      ],
       replies: [
         { text: 'Browse your wares.', nextPhrase: '@shop', default: true },
+      ],
+    },
+
+    'mended_drum_motto_translation': {
+      message: "It means, 'How much is that doggie in the window?' Don't ask, no idea.",
+      replies: [
+        { text: 'Sorry I asked. You have anything to sell?', nextPhrase: '@shop', default: true },
       ],
     },
 
