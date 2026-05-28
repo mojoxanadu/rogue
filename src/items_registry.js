@@ -99,3 +99,18 @@ function _toCamelCase(displayName) {
 })();
 
 window.ItemDefs = ItemDefs;
+
+// ─── Direct (non-legacy) ItemDefs ──────────────────────────
+// Items registered here bypass LEGACY_ITEM_DATA entirely.
+// They can share icons with legacy items — the registry's
+// camelCase key and _byIcon first-wins rule keep things clean.
+ItemDefs.scumbleMainlyApples = new ItemDef({
+  name: 'scumbleMainlyApples',
+  displayName: 'Scumble (mainly apples)',
+  icon: '🍺',
+  type: 'food',
+  maxGP: 2,
+  maxHeal: 2,
+  foodValue: 6,
+  maxStack: 99,
+});

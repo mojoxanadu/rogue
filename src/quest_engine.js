@@ -321,7 +321,6 @@
       // Log quest progress to game log
       if (quest.showInLog !== false) {
         logMsg(`<span style='color:#FFD700'>📜 Quest Update: ${quest.name}</span>`);
-        logMsg(`<span style='color:#CCCCCC; font-style:italic;'>${stageDef.logText}</span>`);
         if (typeof Sound !== 'undefined' && Sound.questAdvance) Sound.questAdvance();
       }
 

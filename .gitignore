@@ -19,6 +19,7 @@ log
 
 # Local-only credentials + ops scripts (intentionally not secured — throwaway PAT for GitHub mirror).
 GITHUB_TOKEN
+.envrc
 snapshot
 
 # Per-developer Claude Code state (settings.local.json, scheduler locks).

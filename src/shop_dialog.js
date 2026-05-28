@@ -26,7 +26,7 @@
   // buy(icon, cost, type, qty) function works without modification.
   const SHOP_CATALOGS = {
     'mended_drum_barman': [
-      { icon: '🍺', name: 'Scumble (mainly apples)',       cost: 4   },
+      { id: 'scumbleMainlyApples', icon: '🍺', name: 'Scumble (mainly apples)',       cost: 4   },
       { icon: '🍖', name: 'Dwarf Bread (also a weapon)',   cost: 6   },
       { icon: '🧀', name: 'Lancre Cheese (legally a weapon)', cost: 5 },
       { icon: '📜', name: 'Inn-Sewer-Ants Policy',         cost: 50  },
@@ -67,12 +67,34 @@
     // the end. We re-render the new ShopDialog ourselves to reflect the
     // change in GP / inventory.
     buyItem(icon, cost, qty) {
-      if (typeof buy === 'function') buy(icon, cost, this._npcType, qty, true);
+      const item = (SHOP_CATALOGS[this._npcType] || []).find(i => i.icon === icon);
+      if (item && item.id && typeof ItemDefs !== 'undefined' && ItemDefs[item.id]) {
+        if (typeof player === 'undefined' || player.gp < cost) return;
+        const slot = inventory.findIndex(s => s === null);
+        if (slot < 0) { if (typeof logMsg === 'function') logMsg("Inventory full!"); return; }
+        inventory[slot] = new ItemStack(item.id, qty);
+        if (typeof changeGold === 'function') changeGold(-cost);
+      } else {
+        if (typeof buy === 'function') buy(icon, cost, this._npcType, qty, true);
+      }
+      if (typeof logMsg === 'function') {
+        logMsg(`<span style="color:var(--success)">Bought ${item ? item.icon : icon} ${this._esc(item ? item.name : icon)} for ${cost} gp.</span>`);
+      }
       this._render();
     },
 
     sellItem(idx) {
+      const it = (typeof inventory !== 'undefined' && inventory[idx]) || null;
+      let icon, name, gp;
+      if (it) {
+        icon = it.icon || '?';
+        name = (it.def && it.def.displayName) || it.itemName || 'unknown';
+        gp = (it.def && it.def.maxGP) || 0;
+      }
       if (typeof sell === 'function') sell(idx, this._npcType, true);
+      if (it && typeof logMsg === 'function') {
+        logMsg(`<span style="color:var(--success)">Sold ${icon} ${this._esc(name)} for ${gp} gp.</span>`);
+      }
       this._render();
     },
 
