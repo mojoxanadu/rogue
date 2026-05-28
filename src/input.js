@@ -1766,6 +1766,11 @@ const hBtn = document.getElementById('hamburgerBtn');
 
     // ── Touch events ──────────────────────────────────────────
     gameCanvas.addEventListener('touchstart', (e) => {
+      _dpadHandled = false;  // Each new touch resets the guard — synthetic
+                             // mousedown/click from a prior touch may never
+                             // have fired (e.g. interrupted by dialog, alert,
+                             // browser chrome), leaving the flag stuck true
+                             // and silently eating all future touches.
       const t = e.changedTouches[0];
       if (!t) return;
       _pointerDown(t.clientX, t.clientY);
