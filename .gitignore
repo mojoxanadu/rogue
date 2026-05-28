@@ -9,8 +9,6 @@ __pycache__/
 # Build artifacts — roguelike.html (the release output) IS tracked.
 dev_build.html
 assets.json
-err
-log
 
 # PWA bundle (derived from dev_build.html via mobile/Makefile).
 # NOTE: mobile/dist/ IS tracked — testers can clone the repo on

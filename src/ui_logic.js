@@ -188,6 +188,10 @@ function _performStickyMove(src, target) {
     // and slot-fit / canEquip gating all happen in one place.
     if (target.source === 'inv') {
       if (typeof swapEquip === 'function') swapEquip(target.idx, src.slot);
+      if (!player._seenTutorials) player._seenTutorials = [];
+      if (!player._seenTutorials.includes('tutorial_quickslot')) {
+        player._seenTutorials.push('tutorial_quickslot');
+      }
       return;
     }
     // Bag target: manual swap. Bags aren't equip slots, so the only
@@ -232,6 +236,13 @@ function _performStickyMove(src, target) {
   const tgtStack = _readAddr(target);
   _writeAddr(target, srcStack);
   _writeAddr(src,    tgtStack);
+  // Item placed into a quickslot → player clearly knows how, dismiss tutorial
+  if (target.source === 'inv') {
+    if (!player._seenTutorials) player._seenTutorials = [];
+    if (!player._seenTutorials.includes('tutorial_quickslot')) {
+      player._seenTutorials.push('tutorial_quickslot');
+    }
+  }
 }
 
 // === E13: Item Status Glow Helper ===
@@ -806,6 +817,11 @@ function _performStickyMove(src, target) {
   }
 
   window.saveGame = async () => {
+    player._hasSaved = true;
+    if (!player._seenTutorials) player._seenTutorials = [];
+    if (!player._seenTutorials.includes('tutorial_save')) {
+      player._seenTutorials.push('tutorial_save');
+    }
     const state = buildSaveState();
     const serialized = serializeSaveState(state);
 
@@ -867,7 +883,7 @@ function _performStickyMove(src, target) {
 
   // === Settings ===
   // E1/E2: musicMode and sfxMode: 'off' | 'fm' | 'mp3'
-  window.gameSettings = { sfx: true, music: true, sprites: false, musicMode: 'fm', sfxMode: 'fm', moveMethod: 'dpad-continuous' };
+  window.gameSettings = { sfx: true, music: true, sprites: false, musicMode: 'fm', sfxMode: 'fm', moveMethod: 'dpad-continuous', tutorial: true };
   
   // Initialize checkbox states from gameSettings on page load
   window.addEventListener('DOMContentLoaded', () => {
@@ -891,6 +907,12 @@ function _performStickyMove(src, target) {
     // Update knob positions
     if(sfxToggle && typeof toggleSetting === 'function') toggleSetting('sfx', window.gameSettings.sfx);
     if(musicToggle && typeof toggleSetting === 'function') toggleSetting('music', window.gameSettings.music);
+    // Tutorial toggle
+    const tutorialToggle = document.getElementById('tutorial-toggle');
+    if(tutorialToggle) {
+      tutorialToggle.checked = window.gameSettings.tutorial !== false;
+      if(typeof toggleSetting === 'function') toggleSetting('tutorial', window.gameSettings.tutorial !== false);
+    }
   });
 
   // E1/E2: Cycle a 3-position mode setting: off → fm → mp3 → off
@@ -967,10 +989,33 @@ function _performStickyMove(src, target) {
     const mm = window.gameSettings.moveMethod || 'dpad-continuous';
     const radio = document.querySelector(`input[name="moveMethod"][value="${mm}"]`);
     if (radio) radio.checked = true;
+
+    // Tutorial toggle
+    const tutorialToggle = document.getElementById('tutorial-toggle');
+    if (tutorialToggle) tutorialToggle.checked = window.gameSettings.tutorial !== false;
   };
   
   window.setMoveMethod = (method) => {
     window.gameSettings.moveMethod = method;
+  };
+
+  // ── Tutorial system ────────────────────────────────────────────
+  // Watches for the first XP gain and shows the tutorial dialog.
+  // Uses rAF polling to avoid touching any of the 34+ player.xp += N sites.
+  window._watchFirstXpTutorial = () => {
+    if (!window.gameSettings?.tutorial) return;
+    if (player._seenTutorials && player._seenTutorials.includes('tutorial_first_xp')) return;
+    if (player.xp > 0) {
+      if (!player._seenTutorials) player._seenTutorials = [];
+      if (!player._seenTutorials.includes('tutorial_first_xp')) {
+        player._seenTutorials.push('tutorial_first_xp');
+        if (typeof Dialog !== 'undefined' && Dialog.startSelf) {
+          setTimeout(() => Dialog.startSelf('tutorial_first_xp'), 300);
+        }
+      }
+      return;
+    }
+    requestAnimationFrame(window._watchFirstXpTutorial);
   };
 
   window.toggleSetting = (setting, value) => {
@@ -1521,6 +1566,7 @@ function _performStickyMove(src, target) {
       }
       slot.onclick = () => {
         if (handleStickyTap('inv', i)) return;
+        if (!item) { _tryShowQuickslotTutorial(); return; }
         if(item && item.def && item.def.type === 'bag') return;
         handleItemClick(i);
       };
@@ -1531,6 +1577,16 @@ function _performStickyMove(src, target) {
       grid.appendChild(slot);
     }
   };
+
+  function _tryShowQuickslotTutorial() {
+    if (window.gameSettings?.tutorial === false) return;
+    if (player._seenTutorials && player._seenTutorials.includes('tutorial_quickslot')) return;
+    if (!player._seenTutorials) player._seenTutorials = [];
+    player._seenTutorials.push('tutorial_quickslot');
+    if (typeof Dialog !== 'undefined' && Dialog.startSelf) {
+      setTimeout(function() { Dialog.startSelf('tutorial_quickslot'); }, 200);
+    }
+  }
 
   // Bug 27: Right-click context menu for inventory items
   window.showItemContextMenu = (idx, e) => {
@@ -2576,6 +2632,140 @@ function _performStickyMove(src, target) {
       showMagic();
     }, 1000);
   };
+
+  // ─── Tome Learning Dialog ─────────────────────────────────────
+  window.showTomeDialog = function(idx) {
+    const item = inventory[idx];
+    if (!item || !item.def) return;
+    const def = item.def;
+    if (def.type !== 'spell' || !def.spell) return;
+
+    window._tomeDialogIdx = idx;
+
+    const spellId = def.spell;
+    const spellDef = SPELL_DEFS[spellId];
+    if (!spellDef) {
+      logMsg(`<span style='color:var(--error)'>Unknown spell: ${spellId}</span>`);
+      return;
+    }
+
+    const tomeName = def.displayName || def.name;
+    const spellName = spellDef.name;
+    const spellLevel = spellDef.level;
+    const icon = def.icon || '📖';
+
+    let modal = document.getElementById('tome-dialog');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'tome-dialog';
+      modal.className = 'draggable-modal';
+      document.body.appendChild(modal);
+      modal.addEventListener('mousedown', () => bringToFront(modal));
+    }
+
+    modal.innerHTML = `
+      <div class="modal-header">
+        <span>${icon} ${tomeName}</span>
+        <button class="modal-close" onclick="closeTomeDialog()">✖</button>
+      </div>
+      <div class="modal-body" id="tome-body" style="min-height:50px;">
+        <p>Learn new spell <strong>${spellName}</strong>?</p>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;padding:8px 12px;border-top:1px solid var(--secondary);">
+        <button id="tome-learn-btn" onclick="handleTomeLearn()" style="padding:6px 14px;">Learn</button>
+        <button onclick="closeTomeDialog()" style="padding:6px 14px;">Close</button>
+      </div>
+    `;
+
+    _updateTomeLearnBtn();
+    modal.style.display = 'block';
+    bringToFront(modal);
+  };
+
+  window.closeTomeDialog = function() {
+    const modal = document.getElementById('tome-dialog');
+    if (modal) modal.style.display = 'none';
+    window._tomeDialogIdx = null;
+  };
+
+  window.handleTomeLearn = function() {
+    const idx = window._tomeDialogIdx;
+    if (idx === undefined || idx === null) return;
+    const item = inventory[idx];
+    if (!item || !item.def) return;
+    const def = item.def;
+    const spellId = def.spell;
+    const spellDef = SPELL_DEFS[spellId];
+    if (!spellDef) return;
+
+    const check = _canLearnTomeSpell(spellId, spellDef.level);
+    if (!check.ok) {
+      const body = document.getElementById('tome-body');
+      if (body) body.innerHTML = `<p style="color:var(--error);">${check.reason}</p>`;
+      const btn = document.getElementById('tome-learn-btn');
+      if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; btn.textContent = 'Learn'; }
+      return;
+    }
+
+    if (!player.spells) player.spells = {};
+    player.spells[spellId] = { level: 1 };
+
+    logMsg(`<span style='color:var(--success)'>${spellDef.name} has been added to your spell book!</span>`);
+    if (typeof Sound !== 'undefined' && Sound.clink) Sound.clink();
+
+    inventory[idx] = new ItemStack('spellResidue', 1);
+    if (typeof renderQuickslots === 'function') renderQuickslots();
+    if (typeof updateUI === 'function') updateUI();
+
+    closeTomeDialog();
+  };
+
+  function _canLearnTomeSpell(spellId, spellLevel) {
+    if (player.spells && player.spells[spellId]) {
+      const name = (SPELL_DEFS[spellId] && SPELL_DEFS[spellId].name) || spellId;
+      return { ok: false, reason: `You already know the ${name} spell.` };
+    }
+
+    const hasSpellcaster = player.talents && player.talents.spellcasterClass && player.talents.spellcasterClass.level > 0;
+    if (!hasSpellcaster) {
+      return { ok: false, reason: 'Become a Spellcaster by buying the Spellcaster Class talent, then buy a Level 1 Spell to begin learning spells.' };
+    }
+
+    const talentId = 'level' + spellLevel + 'Spell';
+    const talentLevel = (player.talents && player.talents[talentId] && player.talents[talentId].level) || 0;
+    const talentDef = (typeof TALENT_DEFS !== 'undefined') ? TALENT_DEFS[talentId] : null;
+
+    if (talentLevel === 0) {
+      return { ok: false, reason: 'You must buy the Level ' + spellLevel + ' Spell talent first to learn a spell of this level.' };
+    }
+
+    const count = player.countSpells({ level: spellLevel });
+    const maxLevel = 1 + ((talentDef && talentDef.cost && talentDef.cost.max) || 0);
+
+    if (count >= talentLevel) {
+      if (talentLevel >= maxLevel) {
+        return { ok: false, reason: 'You have already learned the maximum number of level ' + spellLevel + ' spells. Might as well sell this Tome.' };
+      }
+      return { ok: false, reason: 'You must improve your Level ' + spellLevel + ' Spell talent before learning another spell of this level.' };
+    }
+
+    return { ok: true };
+  }
+
+  function _updateTomeLearnBtn() {
+    const idx = window._tomeDialogIdx;
+    if (idx === undefined || idx === null) return;
+    const item = inventory[idx];
+    if (!item || !item.def) return;
+    const def = item.def;
+    const spellDef = SPELL_DEFS[def.spell];
+    if (!spellDef) return;
+
+    const check = _canLearnTomeSpell(def.spell, spellDef.level);
+    const btn = document.getElementById('tome-learn-btn');
+    if (!btn) return;
+    btn.textContent = check.ok ? 'Learn' : '\u26A0\uFE0F Learn';
+  }
 
   window.showAssetViewer = () => {
     const body = document.getElementById('asset-viewer-body');

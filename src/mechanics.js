@@ -502,14 +502,12 @@
         renderQuickslots(); updateUI();
         return;
       }
-      // Equip a spellbook as active spell
-      player.equippedSpell = def.spell;
-      if(!player.spells[def.spell]) player.spells[def.spell] = { level: 1 };
-      logMsg(`<span style='color:var(--success)'>Learned spell: ${def.label()}. The tome crumbles to ash!</span>`);
-      Sound.clink();
-      // Bug 35: Replace tome with spell residue ash
-      inventory[idx] = new ItemStack('spellResidue', 1);
-      renderQuickslots(); updateUI();
+      // Show tome learning dialog instead of auto-learning
+      if (typeof window.showTomeDialog === 'function') {
+        window.showTomeDialog(idx);
+        return;
+      }
+      logMsg(`<span style='color:var(--warning)'>Cannot interact with this tome right now.</span>`);
     }
     else if(itemObj.itemName === 'magicTeapot') {
       // Magic Teapot — create a healing potion (60min cooldown)

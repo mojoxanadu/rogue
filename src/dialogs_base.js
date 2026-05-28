@@ -193,6 +193,8 @@
             { type: 'improveTalent', talentId: 'wieldStaffs' },
             { type: 'improveTalent', talentId: 'level1Spell', level: 2 },
             { type: 'equipItem', slot: 'chest', itemName: 'robe' },
+            { type: 'equipItem', slot: 'leftHand', itemName: 'staff' },
+            { type: 'giveItem', itemName: 'tomeOfIlluminate', qty: 1 },
             { type: 'modStat', stat: 'maxMp', delta: 2 },
             { type: 'modStat', stat: 'mp', delta: 2 },
           ],
@@ -203,6 +205,54 @@
     'ready_to_go': {
       message: "The fog settles. Your gear is ready. The road ahead is uncertain, but fortune favors the bold.",
       replies: [],
+    },
+
+    // ── Tutorial phrases ────────────────────────────────────
+    'tutorial_first_xp': {
+      message: "You gain experience points (XP) from killing monsters and completing quests. Gain enough XP and you level up. The XP needed to reach the next level is shown in the bar at the bottom.",
+      replies: [
+        { text: 'Got it', nextPhrase: '@close', default: true },
+        { text: "Don't show tutorials", nextPhrase: '@close', scriptEffects: [
+          { type: 'disableTutorial' },
+        ]},
+      ],
+    },
+
+    'tutorial_first_level_up': {
+      message: "You gained enough XP to reach level 2! Whenever you gain a level you get 1 Ability Point (AP) that can be used to increase your base ability scores and 3 Talent Points (TP) that can be used to get or improve special skills. Remember to visit the Character Stats screen each time you gain a level.",
+      replies: [
+        { text: 'Go to Character Stats now.', nextPhrase: '@close', default: true, scriptEffects: [
+          { type: 'callFn', fn: 'toggleModal', args: ['stats-modal'] },
+          { type: 'callFn', fn: 'showStatsTab', args: ['stats'] },
+        ]},
+        { text: 'Save points for later, return to game.', nextPhrase: '@close' },
+        { text: "Don't show me these tutorial messages anymore.", nextPhrase: '@close', scriptEffects: [
+          { type: 'disableTutorial' },
+        ]},
+      ],
+    },
+
+    'tutorial_save': {
+      message: "You've been playing for a while! Don't forget to save your game. Open the menu (tap the ☰ icon in the top-left corner), tap the 💾 Save Game button, and choose where to save. Save often — you never know what's around the corner!",
+      replies: [
+        { text: 'Save my game now!', nextPhrase: '@close', default: true, scriptEffects: [
+          { type: 'callFn', fn: 'saveGame' },
+        ]},
+        { text: "I'll save later.", nextPhrase: '@close' },
+        { text: "Don't show me these tutorial messages anymore.", nextPhrase: '@close', scriptEffects: [
+          { type: 'disableTutorial' },
+        ]},
+      ],
+    },
+
+    'tutorial_quickslot': {
+      message: "These are your quickslots — they hold items you want quick access to. To assign an item, open your Inventory (tap the 🎒 icon), tap an item to select it, then tap the quickslot you want it in.",
+      replies: [
+        { text: 'Got it', nextPhrase: '@close', default: true },
+        { text: "Don't show tutorials", nextPhrase: '@close', scriptEffects: [
+          { type: 'disableTutorial' },
+        ]},
+      ],
     },
   });
 })();
