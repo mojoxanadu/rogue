@@ -2000,10 +2000,24 @@
       // Non-hostile NPC interactions
       let npc = zone.npcs[eIdx];
 
+      // E6: Deckard Cain heals player to full on first visit per town entry.
+      // Must happen before Dialog routing (Cain now uses phraseId).
+      if(npc.type === 'cain' && !window._cainHealedThisVisit) {
+        window._cainHealedThisVisit = true;
+        player.hp = player.maxHp;
+        player.mp = player.maxMp;
+        logMsg("<span style='color:#88ff88'>He places a hand on your shoulder...</span>");
+        logMsg("<span style='color:#88ff88'>✨ Deckard Cain lays his hands upon you. You feel completely restored.</span>");
+        addFloatingText(npc.x, npc.y, '+HEALED', '#88ff88', 18);
+        Sound.playTone(440, 'sine', 0.3, 0.1, 600);
+        setTimeout(() => Sound.playTone(660, 'sine', 0.2, 0.05, 400), 200);
+        updateUI();
+      }
+
       // Andor's-Trail-style dialog: NPCs with a phraseId opt into the new
       // Dialog system. Everything below this is legacy per-NPC handling
       // that we'll migrate NPC-by-NPC in tier-2+. Tier-1 migrants today:
-      // mended_drum_barman + 4 patrons (vimes/cohen/librarian/bearded_dwarf),
+      // cain, mended_drum_barman + 4 patrons (vimes/cohen/librarian/bearded_dwarf),
       // and bridge_keeper (spawn + tree owned by quests_monty_python_bridge.js).
       if (npc.phraseId && typeof Dialog !== 'undefined') {
         Dialog.startWith(npc, npc.phraseId);
@@ -2012,22 +2026,6 @@
 
       if(npc.type === 'chaplain') {
         openShop('chaplain');
-        return;
-      }
-      if(npc.type === 'cain') {
-        // E6: Deckard Cain heals player to full on first visit per town entry
-        if(!window._cainHealedThisVisit) {
-          window._cainHealedThisVisit = true;
-          player.hp = player.maxHp;
-          player.mp = player.maxMp;
-          logMsg("<span style='color:#88ff88'>He places a hand on your shoulder...</span>");
-          logMsg("<span style='color:#88ff88'>✨ Deckard Cain lays his hands upon you. You feel completely restored.</span>");
-          addFloatingText(npc.x, npc.y, '+HEALED', '#88ff88', 18);
-          Sound.playTone(440, 'sine', 0.3, 0.1, 600);
-          setTimeout(() => Sound.playTone(660, 'sine', 0.2, 0.05, 400), 200);
-          updateUI();
-        }
-        openShop('cain');
         return;
       }
       if(npc.type === 'dennis') {

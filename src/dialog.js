@@ -196,6 +196,11 @@
         this.currentPhrase = merged;
         phrase = merged;  // downstream code reads from local `phrase`
       }
+      // Resolve function-based replies (called fresh each time)
+      if (typeof this.currentPhrase.replies === 'function') {
+        this.currentPhrase.replies = this.currentPhrase.replies.call(this);
+      }
+      phrase = this.currentPhrase;
       // Auto-select the first default reply, if any
       const visible = this._visibleReplies();
       const defIdx = visible.findIndex(r => r.default);
@@ -352,6 +357,51 @@
           if (typeof window.gameSettings !== 'undefined') {
             window.gameSettings.tutorial = false;
           }
+          break;
+        case 'identifyAll': {
+          if (!player) break;
+          if (!player.identifiedItems) player.identifiedItems = new Set();
+          const getNames = (typeof window.getUnidentifiedItemNames === 'function') ? window.getUnidentifiedItemNames() : [];
+          if (getNames.length === 0) {
+            this._pushLog({ kind: 'system', text: "Everything is already identified." });
+          } else if (player.gp < 100) {
+            this._pushLog({ kind: 'system', text: "Cain squints at your coin purse. 'Come back when you have 100 gold.'" });
+          } else {
+            if (typeof changeGold === 'function') changeGold(-100);
+            getNames.forEach(name => player.identifiedItems.add(name));
+            this._pushLog({ kind: 'system', text: "🧔 Deckard Cain intones: 'Stay awhile and listen...' — your entire haul is identified!" });
+            if (typeof awardAchievement === 'function') awardAchievement('prophet');
+            if (typeof renderQuickslots === 'function') renderQuickslots();
+            if (typeof renderInventory === 'function') renderInventory();
+            if (typeof updateUI === 'function') updateUI();
+          }
+          break;
+        }
+        case 'identifyOne': {
+          if (!eff.itemName || !player) break;
+          if (!player.identifiedItems) player.identifiedItems = new Set();
+          if (player.identifiedItems.has(eff.itemName)) {
+            this._pushLog({ kind: 'system', text: "That item type is already identified." });
+          } else if (player.gp < 1) {
+            this._pushLog({ kind: 'system', text: "Cain holds out his hand expectantly. Single identification is 1g." });
+          } else {
+            player.identifiedItems.add(eff.itemName);
+            if (typeof changeGold === 'function') changeGold(-1);
+            const def = (typeof ItemDefs !== 'undefined') ? ItemDefs[eff.itemName] : null;
+            this._pushLog({ kind: 'system', text: `🧔 Cain identifies ${def ? def.icon + ' ' : ''}${def ? def.displayName : eff.itemName} for 1g.` });
+            if (typeof awardAchievement === 'function') awardAchievement('prophet');
+            if (typeof renderQuickslots === 'function') renderQuickslots();
+            if (typeof renderInventory === 'function') renderInventory();
+            if (typeof updateUI === 'function') updateUI();
+          }
+          break;
+        }
+        case 'healToFull':
+          if (!player) break;
+          player.hp = player.maxHp;
+          player.mp = player.maxMp;
+          this._pushLog({ kind: 'system', text: '✨ Deckard Cain lays his hands upon you. You feel completely restored.' });
+          if (typeof updateUI === 'function') updateUI();
           break;
         default:
           console.warn(`[Dialog] unsupported effect type "${eff.type}"`);

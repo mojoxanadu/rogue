@@ -514,18 +514,19 @@
   };
 
   // === Deckard Cain Bulk Identification ===
-  function getUnidentifiedIcons() {
+  // Track identified items by camelCase item name, never by icon emoji.
+  window.getUnidentifiedItemNames = getUnidentifiedItemNames;
+  function getUnidentifiedItemNames() {
     if(!player.identifiedItems) player.identifiedItems = new Set();
     const out = [];
     const seen = new Set();
     const pushIfNeeded = (item) => {
-      if(!item || !item.icon) return;
-      if(player.identifiedItems.has(item.icon)) return;
-      if(seen.has(item.icon)) return;
-      seen.add(item.icon);
-      out.push(item.icon);
+      if(!item || !item.itemName) return;
+      if(player.identifiedItems.has(item.itemName)) return;
+      if(seen.has(item.itemName)) return;
+      seen.add(item.itemName);
+      out.push(item.itemName);
     };
-    inventory.forEach(pushIfNeeded);
     inventory.forEach(pushIfNeeded);
     return out;
   }
@@ -533,14 +534,14 @@
   window.bulkIdentify = function() {
     if(player.gp < 100) return showInsufficientFunds('cain', 100, 'Cain\'s services');
     if(!player.identifiedItems) player.identifiedItems = new Set();
-    const toIdentify = getUnidentifiedIcons();
+    const toIdentify = getUnidentifiedItemNames();
     if(toIdentify.length === 0) {
       logMsg("<span style='color:#888'>Cain squints at your gear. 'Everything here is already identified.'</span>");
       return;
     }
     changeGold(-100);
     logMsg("Deckard Cain intones: 'Stay awhile and listen...' — your entire haul is identified!");
-    toIdentify.forEach(icon => player.identifiedItems.add(icon));
+    toIdentify.forEach(name => player.identifiedItems.add(name));
     if(typeof awardAchievement === 'function') awardAchievement('prophet');
     renderQuickslots();
     renderInventory();
@@ -548,18 +549,18 @@
     hideOverlay();
   };
 
-  window.identifyOneItem = function(icon) {
-    if(!icon) return;
+  window.identifyOneItem = function(itemName) {
+    if(!itemName) return;
     if(player.gp < 1) return showInsufficientFunds('cain', 1, 'Single identification');
     if(!player.identifiedItems) player.identifiedItems = new Set();
-    if(player.identifiedItems.has(icon)) {
+    if(player.identifiedItems.has(itemName)) {
       logMsg("<span style='color:#888'>That item type is already identified.</span>");
       return;
     }
     changeGold(-1);
-    player.identifiedItems.add(icon);
-    const def = ItemDef.byIcon(icon);
-    logMsg(`<span style='color:var(--success)'>🧔 Cain identifies ${icon} ${def ? def.name : 'item'} for 1g.</span>`);
+    player.identifiedItems.add(itemName);
+    const def = (typeof ItemDefs !== 'undefined') ? ItemDefs[itemName] : null;
+    logMsg(`<span style='color:var(--success)'>🧔 Cain identifies ${def ? def.icon + ' ' : ''}${def ? def.displayName : itemName} for 1g.</span>`);
     if(typeof awardAchievement === 'function') awardAchievement('prophet');
     renderQuickslots();
     renderInventory();
@@ -1065,13 +1066,13 @@
           {icon:'🦯✨', name:'Proper Staff', cost:25000},
         ];
        } else if(type === 'cain') {
-         const unidentified = getUnidentifiedIcons();
-         const oneByOneHtml = unidentified.length
-           ? unidentified.map(icon => {
-               const def = ItemDef.byIcon(icon);
-               return `<button onclick="identifyOneItem('${icon}')" style="width:100%; margin-top:4px;">Identify ${icon} ${def ? def.name : 'Item'} (1g)</button>`;
-             }).join('')
-           : `<div style="margin-top:6px; color:#888; font-size:12px;">Everything in your inventory and inventory is already identified.</div>`;
+          const unidentified = getUnidentifiedItemNames();
+          const oneByOneHtml = unidentified.length
+            ? unidentified.map(name => {
+                const def = (typeof ItemDefs !== 'undefined') ? ItemDefs[name] : null;
+                return `<button onclick="identifyOneItem('${name}')" style="width:100%; margin-top:4px;">Identify ${def ? def.icon + ' ' : ''}${def ? def.displayName : name} (1g)</button>`;
+              }).join('')
+            : `<div style="margin-top:6px; color:#888; font-size:12px;">Everything in your inventory and inventory is already identified.</div>`;
          html = `<div style="padding:8px;">
            <p style="margin-top:0;">Deckard Cain peers at your belongings with the weight of three very long afternoons.</p>
            <button onclick="bulkIdentify()" style="width:100%;">Identify All (100g)</button>

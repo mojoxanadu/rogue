@@ -638,7 +638,7 @@
 
     const TRISTRAM_NPCS = [
       // E.TRIST.1: Cain the chronicler — custom icon override on top of MONSTER_DEF
-      { x: 12, y: 14, type: 'cain', stats: { ...MONSTER_DEF['cain'], icon: '🧙🏽‍♂️' } },
+      { x: 12, y: 14, type: 'cain', phraseId: 'cain_greet', stats: { ...MONSTER_DEF['cain'], icon: '🧙🏽‍♂️' } },
       // E5: Blacksmith — adjacent to the FORGE tile (tristMap '5' at x=30,y=11)
       { x: 29, y: 11, type: 'blacksmith', isQuestNPC: true, _blacksmithDialogIdx: 0, phraseId: 'blacksmith_greet' },
       // Dennis

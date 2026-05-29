@@ -1748,7 +1748,7 @@ function _performStickyMove(src, target) {
         // shown while the item is still unidentified. Once the player
         // knows what it does, drop the cue.
         const hasEffect = itemHasStatusEffect(item.icon);
-        const isIdentified = player.identifiedItems && player.identifiedItems.has(item.icon);
+        const isIdentified = player.identifiedItems && player.identifiedItems.has(item.itemName);
         if(hasEffect && !isIdentified) {
           slot.style.outline = '2px solid #0f8';
           slot.title = (item.def?.displayName ?? item.icon) + ' [Unidentified effects]';
@@ -1956,7 +1956,7 @@ function _performStickyMove(src, target) {
       // E13: Green glow as a "worth identifying" hint — only shown
       // while still unidentified.
       const hasEffect = itemHasStatusEffect(item.icon);
-      const isIdentified = player.identifiedItems && player.identifiedItems.has(item.icon);
+      const isIdentified = player.identifiedItems && player.identifiedItems.has(item.itemName);
       if (hasEffect && !isIdentified) {
         slot.style.outline = '2px solid #0f8';
         slot.title = (item.def?.displayName ?? item.icon) + ' [Unidentified effects]';

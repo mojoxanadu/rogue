@@ -65,6 +65,104 @@
       ],
     },
 
+    // ── Deckard Cain ────────────────────────────────────────
+    'cain_greet': {
+      message: function() {
+        const names = (typeof window.getUnidentifiedItemNames === 'function') ? window.getUnidentifiedItemNames() : [];
+        if (names.length > 0) {
+          return '"Stay awhile and listen. I see you have items of questionable provenance that require my scholarly attention. Or perhaps you just want a story."';
+        }
+        return '"Stay awhile and listen. I identify the mysterious, explain the obvious, and ramble without mercy."';
+      },
+      replies: function() {
+        const out = [
+          { text: 'Identify everything! (100g)', nextPhrase: 'cain_identify_all',
+            requires: [{ type: 'playerStat', stat: 'gp', min: 100 }] },
+          { text: 'Identify one item...', nextPhrase: 'cain_identify_one' },
+          { text: 'Ask for a story', nextPhrase: 'cain_ramble' },
+          { text: 'Ask about the beach', nextPhrase: 'cain_beach' },
+          { text: 'Ask about pirates', nextPhrase: 'cain_pirates' },
+          { text: 'Ask what actually matters', nextPhrase: 'cain_quests' },
+        ];
+        if (typeof player !== 'undefined' && player.hp < player.maxHp) {
+          out.unshift({ text: 'Heal me.', nextPhrase: 'cain_heal' });
+        }
+        return out;
+      },
+    },
+    'cain_heal': {
+      message: '"Of course. Let me see what I can do."',
+      scriptEffects: [{ type: 'healToFull' }],
+      replies: [
+        { text: 'Thank you.', nextPhrase: 'cain_greet', default: true },
+      ],
+    },
+
+    'cain_identify_all': {
+      message: function() {
+        const names = (typeof window.getUnidentifiedItemNames === 'function') ? window.getUnidentifiedItemNames() : [];
+        const count = names.length;
+        if (count === 0) return '"Everything in your inventory is already identified. You are either very organized or very boring."';
+        return `"Very well. Let me examine these ${count} curiosities... Stay awhile and listen."`;
+      },
+      scriptEffects: [{ type: 'identifyAll' }],
+      replies: [
+        { text: 'Thanks, Cain.', nextPhrase: '@close', default: true },
+      ],
+    },
+
+    'cain_identify_one': {
+      message: function() {
+        const names = (typeof window.getUnidentifiedItemNames === 'function') ? window.getUnidentifiedItemNames() : [];
+        if (names.length === 0) return '"Every bauble and blade you carry is already accounted for in my records. Nothing to identify."';
+        return '"Which one shall I examine? The fee is a single gold coin — a bargain for enlightenment."';
+      },
+      replies: function() {
+        const names = (typeof window.getUnidentifiedItemNames === 'function') ? window.getUnidentifiedItemNames() : [];
+        if (names.length === 0) {
+          return [{ text: 'Never mind, then.', nextPhrase: '@close', default: true }];
+        }
+        const out = names.map(name => {
+          const def = (typeof ItemDefs !== 'undefined') ? ItemDefs[name] : null;
+          return {
+            text: `${def ? def.icon + ' ' : ''}${def ? def.displayName : name} (1g)`,
+            nextPhrase: '@close',
+            scriptEffects: [{ type: 'identifyOne', itemName: name }],
+          };
+        });
+        out.push({ text: 'Never mind.', nextPhrase: 'cain_greet' });
+        return out;
+      },
+    },
+
+    'cain_ramble': {
+      message: '"Did I ever tell you about the time we tied onions to our belts, which was the style at the time? Of course, back then the Cathedral had not yet started ejecting skeletons into respectable society."\n\n"We walked from Tristram to the old coast by moonlight, and every third mile someone warned us about pirates, prophecy, or damp socks. These warnings were all accurate."',
+      replies: [
+        { text: 'Fascinating.', nextPhrase: 'cain_greet', default: true },
+      ],
+    },
+
+    'cain_beach': {
+      message: '"The beach beyond these depths looks pleasant only from a distance. The surf hides old quarrels, older wrecks, and at least one quest that smells of fish and poor decisions."\n\n[Lore hint: the coast is where pirate business, old treasure, and the SCUMM Bar troubles begin in earnest.]',
+      replies: [
+        { text: 'Good to know.', nextPhrase: 'cain_greet', default: true },
+      ],
+    },
+
+    'cain_pirates': {
+      message: '"Pirates are seldom as dead as one hopes. If you hear singing, insults, or the confident misuse of grog, you are already too close."\n\n[Lore hint: learning pirate insults matters more than a sharp blade when you finally meet their swordmaster.]',
+      replies: [
+        { text: 'I\'ll keep that in mind.', nextPhrase: 'cain_greet', default: true },
+      ],
+    },
+
+    'cain_quests': {
+      message: '"Very well, the short version. Carry light in the dark. Listen for what hunts without being seen. On the coast, speak to everyone twice and trust almost no one."\n\n[Lore hint: beach quests tie together pirates, grog, a safe, and a very specific sort of mockery.]',
+      replies: [
+        { text: 'Sound advice.', nextPhrase: 'cain_greet', default: true },
+      ],
+    },
+
     // ── Griswold the Blacksmith ──────────────────────────────
     // Chat first ("Ah, an adventurer!"), then "Show me your wares" → @shop.
     'blacksmith_greet': {

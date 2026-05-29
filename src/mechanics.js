@@ -208,7 +208,7 @@
     if(isIdentifying) {
       isIdentifying = false;
       if(!player.identifiedItems) player.identifiedItems = new Set();
-      player.identifiedItems.add(itemObj.icon);
+      player.identifiedItems.add(itemObj.itemName);
       const identDef = itemObj.def;
       logMsg(`<span style='color:#4af'>✨ Identified: ${identDef ? identDef.name : itemObj.icon}!</span>`);
       if(identDef) {
