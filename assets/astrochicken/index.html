@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Ms. Astro Chicken: Flight of the Plummet - by ScumSoft ®</title>
+    <style>
+      body { margin: 0; overflow: hidden; background: #000; }
+      #game-container { position: relative; width: 100vw; height: 100vh; }
+      canvas { display: block; }
+      
+      /* Quest hint glitch overlay */
+      #quest-glitch {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0, 0, 0, 0.85);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        font-family: 'Courier New', monospace;
+      }
+      #quest-glitch .glitch-content {
+        text-align: center;
+        color: #0f0;
+        text-shadow: 0 0 10px #0f0, 2px 2px 0 #00f;
+        animation: glitch-text 0.3s infinite;
+      }
+      #quest-glitch .glitch-title {
+        font-size: 24px;
+        margin-bottom: 20px;
+        letter-spacing: 4px;
+      }
+      #quest-glitch .glitch-hint {
+        font-size: 16px;
+        max-width: 80%;
+        line-height: 1.6;
+      }
+      @keyframes glitch-text {
+        0% { transform: translate(0); }
+        20% { transform: translate(-2px, 2px); }
+        40% { transform: translate(-2px, -2px); }
+        60% { transform: translate(2px, 2px); }
+        80% { transform: translate(2px, -2px); }
+        100% { transform: translate(0); }
+      }
+      .scanlines {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        pointer-events: none;
+        background: repeating-linear-gradient(
+          0deg,
+          rgba(0, 0, 0, 0.15),
+          rgba(0, 0, 0, 0.15) 1px,
+          transparent 1px,
+          transparent 2px
+        );
+        z-index: 999;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="game-container">
+      <div class="scanlines"></div>
+      <div id="quest-glitch">
+        <div class="glitch-content">
+          <div class="glitch-title">// SYSTEM GLITCH //</div>
+          <div class="glitch-hint" id="glitch-message"></div>
+        </div>
+      </div>
+    </div>
+    <script src="wasm_exec.js"></script>
+    <script>
+      // Quest hints that appear as "glitches" in the game
+      const QUEST_HINTS = [
+        "The insult sword fighting master awaits at the SCUMM Bar...",
+        "Beware the Killer Rabbit of Caerbannog! Look for the Holy Hand Grenade...",
+        "The three-headed monkey guards the path to LeChuck's fortress...",
+        "Feed Gurgi munchings and crunchings to befriend him...",
+        "The Bridge of Death asks three questions. Choose wisely...",
+        "Find all 8 Orichalcum beads to activate the Atlantean machine...",
+        "The Horned King's castle holds dark secrets in its dungeon...",
+        "Duck Hunt! Kill 5 ducks for the achievement. Watch for the laughing dog...",
+        "The Grue lurks in dark places. Carry a light source...",
+        "Cousin Dave knows something about the thief's hideout...",
+        "The Black Knight loses limbs as you defeat him...",
+        "King Graham needs help rescuing the rat in the bandit camp...",
+        "The Morva Witches guard powerful secrets... and a cauldron...",
+        "Astrochicken Champion: Launch yourself into orbit!",
+        "INT 15 required to unlock the hardest quest gates...",
+        "The French Taunter mocks your mother's hamster habits...",
+        "Dennis the Peasant has a complaint about the violence...",
+        "The Genie in the brass bottle grants wishes... for a price...",
+        "Safe cracking at the antique shop yields treasures...",
+        "Caustic Grog: Mix ingredients carefully at the SCUMM Bar..."
+      ];
+      
+      let glitchTimeout = null;
+      let glitchInterval = null;
+      
+      function showQuestGlitch() {
+        const glitchEl = document.getElementById('quest-glitch');
+        const messageEl = document.getElementById('glitch-message');
+        
+        // Pick random hint
+        const hint = QUEST_HINTS[Math.floor(Math.random() * QUEST_HINTS.length)];
+        messageEl.textContent = hint;
+        
+        // Show glitch
+        glitchEl.style.display = 'flex';
+        
+        // Play glitch sound effect
+        try {
+          const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          const oscillator = audioCtx.createOscillator();
+          const gainNode = audioCtx.createGain();
+          oscillator.connect(gainNode);
+          gainNode.connect(audioCtx.destination);
+          oscillator.frequency.value = 150 + Math.random() * 100;
+          oscillator.type = 'sawtooth';
+          gainNode.gain.value = 0.1;
+          oscillator.start();
+          oscillator.stop(audioCtx.currentTime + 0.1);
+        } catch(e) {}
+        
+        // Hide after 3-5 seconds
+        const displayTime = 3000 + Math.random() * 2000;
+        setTimeout(() => {
+          glitchEl.style.display = 'none';
+        }, displayTime);
+      }
+      
+      // Schedule random glitches (every 30-90 seconds)
+      function scheduleGlitch() {
+        const delay = 30000 + Math.random() * 60000; // 30-90 seconds
+        glitchTimeout = setTimeout(() => {
+          showQuestGlitch();
+          scheduleGlitch();
+        }, delay);
+      }
+      
+      // Initialize WebAssembly game
+      const go = new Go();
+      WebAssembly.instantiateStreaming(fetch("msastrochicken.wasm"), go.importObject).then(result => {
+        go.run(result.instance);
+        
+        // Start glitch system after game loads
+        setTimeout(() => {
+          scheduleGlitch();
+          // Also show first glitch after 10 seconds
+          setTimeout(showQuestGlitch, 10000);
+        }, 5000);
+      }).catch(err => {
+        console.error("Failed to load Astrochicken:", err);
+      });
+      
+      // Expose function to trigger glitch from parent window (for integration)
+      window.triggerQuestGlitch = showQuestGlitch;
+    </script>
+  </body>
+</html>

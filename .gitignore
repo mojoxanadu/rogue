@@ -1,7 +1,5 @@
 rogue-notes.txt
 
-# Source asset staging dir — populate from upstream, not tracked.
-assets/
 raw/
 __pycache__/
 *.pyc

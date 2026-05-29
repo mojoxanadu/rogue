@@ -1,0 +1,19 @@
+{
+  "slime": { "source": "emoji", "path": "🟢" },
+  "skeleton": { "source": "color", "path": "#C7C7C7" },
+  "bat": { "source": "emoji", "path": "🦇" },
+  "ghost": { "source": "color", "path": "#F8F9FA" },
+  "snake": { "source": "emoji", "path": "🐍" },
+  "assassin": { "source": "color", "path": "#2C3E50" },
+  "genie": { "source": "emoji", "path": "🧞" },
+  "king": { "source": "emoji", "path": "🤴" },
+  "bridge_keeper": { "source": "emoji", "path": "🧙‍♂️" },
+  "chipmunk": { "source": "emoji", "path": "🐿️" },
+  "duck": { "source": "emoji", "path": "🦆" },
+  "shark": { "source": "emoji", "path": "🦈" },
+  "wet_rat": { "source": "emoji", "path": "🐀" },
+  "water": { "source": "color", "path": "#74B9FF" },
+  "floor": { "source": "color", "path": "#DFE6E9" },
+  "tree": { "source": "emoji", "path": "🌳" },
+  "rock": { "source": "color", "path": "#636E72" }
+}
