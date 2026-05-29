@@ -137,6 +137,9 @@ function setPlayerDefaults() {
     { type: 'action', id: 'inventory' },
     { type: 'action', id: 'magic' },
   ];
+  player._lightBurnData = {};
+  player._lightFuel = {};
+  player._gameTime = 0;
 }
 
 // Apply legacy default fields to the LocalPlayer instance (quest flags,

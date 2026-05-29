@@ -626,8 +626,10 @@
     // ── KEY ──────────────────────────────────────────
     "🗝️": { name: "Key", type: "key", stackable: true, maxGP: 25 },
 
-    // ── LIGHT ────────────────────────────────────────
-    "🕯️": { name: "Candle", type: "light", stackable: true, maxStack: 99, lightRange: 15, maxGP: 15 },
+    // ── LIGHT (equippable, one-hand either, burn fuel) ──
+    "🕯️": { name: "Candle", type: "light", stackable: false, equipChoice: ['leftHand', 'rightHand'], lightRadius: 3, burnTime: 25.0, leaves: 'blobOfWax', maxGP: 15 },
+    "🔥": { name: "Torch", type: "light", stackable: false, equipChoice: ['leftHand', 'rightHand'], lightRadius: 4, burnTime: 30.0, leaves: 'spentTorch', maxGP: 25 },
+    "🏮": { name: "Lantern", type: "light", stackable: false, equipChoice: ['leftHand', 'rightHand'], lightRadius: 5, burnTime: 40.0, leaves: 'emptyLantern', maxGP: 50 },
 
     // ── EXPLOSIVE ────────────────────────────────────
     // E16: Bomb item — place at player position, explodes after fuseTime turns
@@ -697,6 +699,9 @@
     "🦴": { name: "Bone", type: "useless", stackable: true, maxGP: 1 },
     "🧱": { name: "Brick", type: "useless", stackable: true, maxGP: 1 },
     "🕯️💨": { name: "Burnt-Out Candle", type: "useless", stackable: true, maxGP: 0 },
+    "🕯️🫗": { name: "Blob of Wax", type: "useless", stackable: true, maxGP: 0 },
+    "🪵🔥": { name: "Spent Torch", type: "useless", stackable: true, maxGP: 0 },
+    "🏮⚫": { name: "Empty Lantern", type: "useless", stackable: true, maxGP: 0 },
     "📜": { name: "Certified Pastafarian", type: "useless", stackable: false, maxGP: 0 },
     "🦗": { name: "Cockroach Leg (stale)", type: "useless", stackable: true, maxGP: 0 },
     "🫧": { name: "Dandruff Flake", type: "useless", stackable: true, maxGP: 0 },

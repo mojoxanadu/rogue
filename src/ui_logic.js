@@ -2764,14 +2764,7 @@ function _performStickyMove(src, target) {
   // Bug 32: Spell cooldown helper — returns remaining seconds (float) or 0
   window._spellCooldownRemaining = (spellName) => {
     if(spellName === 'illuminate') {
-      if(player._illumTurns > 0) {
-        return player._illumTurns;
-      }
-      if(player._illumLastUse) {
-        const cd = 150;
-        const rem = cd - ((window._turnCount ?? 0) - player._illumLastUse);
-        return rem > 0 ? rem : 0;
-      }
+      return player._illumTurns > 0 ? player._illumTurns : 0;
     }
     if(spellName === 'fireball') {
       if(window.fireballCooldown && window.fireballCooldown > now) {

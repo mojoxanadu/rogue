@@ -158,8 +158,8 @@ const hBtn = document.getElementById('hamburgerBtn');
 
     // Light level
     if(p && typeof theMap !== 'undefined' && theMap.length > 0) {
-      const lightVal = typeof lightTurns !== 'undefined' ? lightTurns : 0;
-      chips.push(chip('#330', `💡 ${lightVal}t`));
+      const lightR = typeof window._playerLightRadius === 'function' ? window._playerLightRadius() : 0;
+      chips.push(chip('#330', `💡 r${lightR}`));
     }
 
     // Sight distance
@@ -1709,6 +1709,7 @@ const hBtn = document.getElementById('hamburgerBtn');
     function _pointerDown(clientX, clientY) {
       if (isDead) return;
       if (_dpadHandled) return; // touch → mouse compat: already handled
+      if (window._stickyDrag) return; // let click handler drop the item
       const mm = window.gameSettings?.moveMethod || 'dpad-continuous';
       if (mm === 'avoid-obstacles') return;
       const d = _dpadFromPointer(clientX, clientY);
@@ -1746,14 +1747,17 @@ const hBtn = document.getElementById('hamburgerBtn');
       if (_moveState.rafId) { cancelAnimationFrame(_moveState.rafId); _moveState.rafId = null; }
       _moveState = null;
     }
+    window._cancelMove = _cancelMove;
 
     function _continuousTick() {
       if (!_moveState || !_moveState.active) return;
       const now = Date.now();
       if (typeof player !== 'undefined' && typeof player.canAct === 'function' && player.canAct() && now - _moveState.lastMoveTime >= _moveState.moveDelay) {
         movePlayer(_moveState.dx, _moveState.dy);
+        if (!_moveState) return;
         _moveState.lastMoveTime = now;
       }
+      if (!_moveState) return;
       _moveState.rafId = requestAnimationFrame(_continuousTick);
     }
 

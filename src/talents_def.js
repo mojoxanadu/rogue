@@ -114,8 +114,7 @@ const TALENT_DEFS = {
     cost:  { initial: 5, improve: 1, max: 2 },
     requires: { rogueClass: 1 },
     flags: [],
-    tbi:   true,
-    desc:  `Don't need light to see in the dark. N = 2 , including magical dark rooms.`,
+    desc:  `Grants light radius 2 + talent level. Also works in magical darkness.`,
   },
   defensiveFighting: {
     name:  'Defensive Fighting',

@@ -361,21 +361,8 @@
       return;
     }
     
-    // Candle — light source
-    if(def.type === "light") {
-      // E3: Warn and skip if area is already environmentally lit
-      let areaIsLit = (currentScene === 'town') || (currentLevel === 0) ||
-                      (window.debugFlags && debugFlags.fullLight);
-      if(areaIsLit) {
-        logMsg("<span style='color:#aaa; font-style:italic;'>You raise the candle, then pause. It's perfectly well-lit here. You'd just be wasting it.</span>");
-        return;
-      }
-      lightTurns = (lightTurns ?? 0) + (def.lightRange ?? 15);
-      logMsg(`<span style='color:var(--success)'>You light the ${def.label()}! (${lightTurns} turns of light)</span>`);
-      decrementItem(idx);
-      calculateFOV(); drawMap(); updateUI();
-      return;
-    }
+    // Light sources — equip rather than consume
+    if(def.type === "light") { swapEquip(idx, 'leftHand'); return; }
     
     // Useless items
     if(def.type === "useless" || def.type === "misc" || def.type === "quest") {
@@ -713,18 +700,10 @@
       return;
     }
     if(spellName === 'illuminate') {
-      let now = performance.now();
-      let illumCooldown = 5 * 60 * 1000; // 5 minutes
-      if(player._illumLastUse && now - player._illumLastUse < illumCooldown) {
-        let remaining = Math.ceil((illumCooldown - (now - player._illumLastUse)) / 1000);
-        logMsg(`Illuminate on cooldown! (${remaining}s)`);
-        return;
-      }
       if(player.mp < 2) { logMsg("Not enough mana! (2 MP)"); return; }
       player.mp -= 2;
       if(window.WebGLFX && WebGLFX.onManaUse) WebGLFX.onManaUse(2);
-      player._illumLastUse = now;
-      lightTurns = 5; // 2 moves bright, 3 moves dimming
+      player._illumTurns = (SPELL_DEFS && SPELL_DEFS.illuminate && SPELL_DEFS.illuminate.duration) || 30;
       logMsg("<span style='color:var(--success)'>✨ Illuminate! Light surrounds you for a few turns...</span>");
       Sound.playTone(600, 'sine', 0.3, 0.08, 900);
       // Brief WebGL aura burst
@@ -1196,10 +1175,39 @@
           linkedSlotsOf(s).forEach(ls => slotsToClear.add(ls));
         }
       }
+      // Save burn fuel for cleared light items before removing them
+      if (player._lightBurnData) {
+        slotsToClear.forEach(s => {
+          const burn = player._lightBurnData[s];
+          if (burn) {
+            const elapsed = (Date.now() - burn.equippedAt) / 1000;
+            const remaining = Math.max(0, burn.remaining - elapsed);
+            if (remaining > 0) {
+              if (!player._lightFuel) player._lightFuel = {};
+              player._lightFuel[burn.itemName] = remaining;
+            }
+            delete player._lightBurnData[s];
+          }
+        });
+      }
       slotsToClear.forEach(s => { player.equipped[s] = null; });
 
       // Write the incoming item to all target-group slots.
       targetGroup.forEach(s => { player.equipped[s] = incoming; });
+      // Start burning for incoming light items
+      if (incoming) {
+        const incDef = ItemDefs[incoming];
+        if (incDef && incDef.type === 'light') {
+          if (!player._lightBurnData) player._lightBurnData = {};
+          if (!player._lightFuel) player._lightFuel = {};
+          const saved = player._lightFuel[incoming];
+          const remaining = saved != null ? saved : (incDef.burnTime || 0);
+          delete player._lightFuel[incoming];
+          targetGroup.forEach(s => {
+            player._lightBurnData[s] = { itemName: incoming, remaining, equippedAt: Date.now() };
+          });
+        }
+      }
 
       // Pull the incoming stack out of inventory (qty=1; equippables are
       // non-stackable). Then deposit displaced: first one back into the
@@ -1264,6 +1272,17 @@
     const cur = player.equipped[slot];
     if(!cur) return;
     const def = ItemDefs[cur];
+    // Save burn fuel before unequipping
+    if (player._lightBurnData && player._lightBurnData[slot]) {
+      const burn = player._lightBurnData[slot];
+      const elapsed = (Date.now() - burn.equippedAt) / 1000;
+      const remaining = Math.max(0, burn.remaining - elapsed);
+      if (remaining > 0 && burn.itemName === cur) {
+        if (!player._lightFuel) player._lightFuel = {};
+        player._lightFuel[cur] = remaining;
+      }
+      delete player._lightBurnData[slot];
+    }
     const group = linkedSlotsOf(slot);
     const freeSlot = inventory.findIndex(s => s === null);
     if(freeSlot !== -1) {
@@ -1278,3 +1297,77 @@
   };
 
   window.linkedSlotsOf = linkedSlotsOf;
+
+  // Return the effective light radius from darkvision + equipped light items.
+  // Raw light radius from all sources (before dark-tile penalty).
+  window._playerLightRadius = function() {
+    let r = 0;
+    // Ambient base by scene
+    if (currentScene === 'dungeon') r = Math.max(r, 2);
+    else if (currentScene === 'forest') r = Math.max(r, 10);
+    else r = Math.max(r, 15); // town, outworld, etc. — fully lit
+    // Darkvision talent
+    if (player.talents && player.talents.darkvision) {
+      r = Math.max(r, 2 + player.talents.darkvision.level);
+    }
+    // Illuminate spell — temporary bright light
+    if (player._illumTurns && player._illumTurns > 0) {
+      r = Math.max(r, (SPELL_DEFS && SPELL_DEFS.illuminate && SPELL_DEFS.illuminate.radius) || 15);
+    }
+    // Equipped light items
+    if (player._lightBurnData) {
+      for (const slot of Object.keys(player._lightBurnData)) {
+        const burn = player._lightBurnData[slot];
+        if (!burn) continue;
+        const def = ItemDefs[burn.itemName];
+        if (def && def.type === 'light' && def.lightRadius) {
+          r = Math.max(r, def.lightRadius);
+        }
+      }
+    }
+    return r;
+  };
+
+  // Final light radius after dark-tile penalty.
+  // Dark tiles: radius = floor(radius / 2 - 2), clamped to 0.
+  window._playerFinalLightRadius = function() {
+    let r = window._playerLightRadius();
+    if (darkMap[player.y] && darkMap[player.y][player.x]) {
+      r = Math.floor(r / 2 - 2);
+      if (r < 0) r = 0;
+    }
+    return r;
+  };
+
+  window._hasLight = function() {
+    return window._playerFinalLightRadius() > 0;
+  };
+
+  // Tick burning light items — depletes fuel and replaces depleted items
+  // with their residue. Called from updateUI() each frame.
+  window._tickLightBurn = function() {
+    if (!player._lightBurnData) return;
+    for (const slot of Object.keys(player._lightBurnData)) {
+      const burn = player._lightBurnData[slot];
+      if (!burn) continue;
+      const elapsed = (Date.now() - burn.equippedAt) / 1000;
+      const remaining = burn.remaining - elapsed;
+      if (remaining <= 0) {
+        // Depleted — replace with residue
+        const def = ItemDefs[burn.itemName];
+        const leaves = (def && def.leaves) || null;
+        delete player._lightBurnData[slot];
+        player.equipped[slot] = null;
+        if (leaves) {
+          const freeSlot = inventory.findIndex(s => s === null);
+          if (freeSlot !== -1) {
+            inventory[freeSlot] = new ItemStack(leaves, 1);
+          } else {
+            zone.dropAt(player.x, player.y, new ItemStack(leaves, 1));
+          }
+        }
+        if (def) logMsg(`<span style='color:var(--warning)'>Your ${def.displayName} burned out!</span>`);
+        calculateFOV(); drawMap();
+      }
+    }
+  };

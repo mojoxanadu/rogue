@@ -595,6 +595,11 @@
           : 1);
     advanceSceneNPCs();
     window._turnCount = (window._turnCount ?? 0) + steps;
+    player._gameTime = (player._gameTime ?? 0) + steps;
+    // Tick down spell/condition durations
+    if (player._illumTurns && player._illumTurns > 0) {
+      player._illumTurns = Math.max(0, player._illumTurns - steps);
+    }
 
     // Foraging talent — small per-turn chance to spawn a food pile on
     // a visible floor tile. Scales with rank N (1%×N per turn). This
@@ -690,46 +695,54 @@
       "You feel cold claws trace a line down your spine.",
       "⚠️ A pair of pale eyes opens in the darkness directly in front of you.",
     ];
-    if(currentScene === 'dungeon' && darkMap[player.y] && darkMap[player.y][player.x]) {
-      if(lightTurns > 0 || (window.debugFlags && debugFlags.fullLight)) {
-        // Light is active — Grue retreats, danger resets
-        if(player.grueDanger > 0) {
-          logMsg("<span style='color:#888; font-style:italic;'>You hear a retreating hiss as the light chases back the darkness.</span>");
-        }
-        player.grueDanger = 0;
-      } else {
-        // In the dark — accumulate danger
-        player.grueDanger = (player.grueDanger ?? 0) + steps;
-        let danger = player.grueDanger;
-        // Messages at thresholds
-        let msgIdx = null;
-        if(danger === 1) msgIdx = 0;
-        else if(danger === 3) msgIdx = 1;
-        else if(danger === 5) msgIdx = 2;
-        else if(danger === 7) msgIdx = 3;
-        else if(danger === 9) msgIdx = 4;
-        else if(danger === 11) msgIdx = 5;
-        else if(danger === 13) msgIdx = 6;
-        else if(danger >= 15) {
-          // Each step past 15 has escalating chance of instant death
-          let deathChance = Math.min(0.9, (danger - 14) * 0.15);
-          if(Math.random() < deathChance) {
-            logMsg("<span style='color:var(--error); font-size:14px; font-weight:bold;'>🌑 The Grue strikes from the darkness! You never even saw it coming.</span>");
-            player.hp = 0;
-            die('grue');
-            return;
+    // Tutorial: first time light radius is <= 2
+    if (!player._seenDarknessTutorial && window.gameSettings?.tutorial !== false) {
+      const r = typeof window._playerFinalLightRadius === 'function' ? window._playerFinalLightRadius() : 5;
+      if (r <= 2) {
+        player._seenDarknessTutorial = true;
+        if (!player._seenTutorials) player._seenTutorials = [];
+        if (!player._seenTutorials.includes('tutorial_darkness')) {
+          player._seenTutorials.push('tutorial_darkness');
+          if (typeof Dialog !== 'undefined' && Dialog.startSelf) {
+            setTimeout(() => Dialog.startSelf('tutorial_darkness'), 300);
           }
-          if(danger === 15) msgIdx = 7;
-        }
-        if(msgIdx !== null) {
-          let urgency = danger >= 13 ? 'var(--error)' : danger >= 7 ? 'var(--warning)' : '#aaa';
-          logMsg(`<span style='color:${urgency}; font-style:italic;'>${GRUE_MESSAGES[msgIdx]}</span>`);
-          if(danger >= 5) Sound.playTone(80 + danger * 5, 'sawtooth', 0.05, 0.3, 200);
         }
       }
-    } else {
-      // Not on a dark tile — reset danger
+    }
+
+    // Grue: pure sight-radius check (no scene/dark-tile gate)
+    const hasLight = (typeof window._hasLight === 'function' && window._hasLight()) || (window.debugFlags && debugFlags.fullLight);
+    if (hasLight) {
+      if (player.grueDanger > 0) {
+        logMsg("<span style='color:#888; font-style:italic;'>You hear a retreating hiss as the light chases back the darkness.</span>");
+      }
       player.grueDanger = 0;
+    } else {
+      player.grueDanger = (player.grueDanger ?? 0) + steps;
+      let danger = player.grueDanger;
+      let msgIdx = null;
+      if(danger === 1) msgIdx = 0;
+      else if(danger === 3) msgIdx = 1;
+      else if(danger === 5) msgIdx = 2;
+      else if(danger === 7) msgIdx = 3;
+      else if(danger === 9) msgIdx = 4;
+      else if(danger === 11) msgIdx = 5;
+      else if(danger === 13) msgIdx = 6;
+      else if(danger >= 15) {
+        let deathChance = Math.min(0.9, (danger - 14) * 0.15);
+        if(Math.random() < deathChance) {
+          logMsg("<span style='color:var(--error); font-size:14px; font-weight:bold;'>🌑 The Grue strikes from the darkness! You never even saw it coming.</span>");
+          player.hp = 0;
+          die('grue');
+          return;
+        }
+        if(danger === 15) msgIdx = 7;
+      }
+      if(msgIdx !== null) {
+        let urgency = danger >= 13 ? 'var(--error)' : danger >= 7 ? 'var(--warning)' : '#aaa';
+        logMsg(`<span style='color:${urgency}; font-style:italic;'>${GRUE_MESSAGES[msgIdx]}</span>`);
+        if(danger >= 5) Sound.playTone(80 + danger * 5, 'sawtooth', 0.05, 0.3, 200);
+      }
     }
     // Hunger damage when starving
     if (player.hunger >= 100) {
@@ -2058,7 +2071,7 @@
         return;
       }
       if(npc.type === 'pacifist_orc') {
-        if(lightTurns > 0 || (window.debugFlags && debugFlags.fullLight)) {
+        if((typeof window._hasLight === 'function' && window._hasLight()) || (window.debugFlags && debugFlags.fullLight)) {
           if(!player._grokMetBefore) {
             grokFirstMeet(); // Was sleeping — wakes up grumpy
           } else {
