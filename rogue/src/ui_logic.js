@@ -499,34 +499,6 @@ function _performStickyMove(src, target) {
     const magicModal = document.getElementById('magic-modal');
     if(magicModal && magicModal.style.display === 'flex') showMagic();
 
-    // Bug 32: Update quickslot spell cooldown countdown numbers
-    ['spell-icon-1', 'spell-icon-2'].forEach((id, idx) => {
-      const slotEl = document.getElementById(id);
-      if(!slotEl) return;
-      const spellKey = idx === 0 ? player.equippedSpell : player.secondarySpell;
-      // Remove old cooldown badge if present
-      let badge = slotEl.parentElement.querySelector('.spell-cd-badge');
-      if(badge) badge.remove();
-      if(spellKey) {
-        slotEl.textContent = spellKey === 'illuminate' ? '🌟' : spellKey === 'fireball' ? '🔥' : spellKey === 'lightning' ? '⚡' : spellKey === 'icebolt' ? '❄️' : spellKey === 'poison' ? '☠️' : spellKey === 'shield' ? '🛡️' : spellKey === 'haste' ? '⚡' : '✨';
-        const cdRem = window._spellCooldownRemaining ? window._spellCooldownRemaining(spellKey) : 0;
-        if(cdRem > 0) {
-          let cdBadge = document.createElement('span');
-          cdBadge.className = 'spell-cd-badge';
-          cdBadge.style.cssText = 'position:absolute;bottom:1px;right:2px;font-size:7px;color:#FFD700;font-weight:bold;pointer-events:none;';
-          cdBadge.textContent = Math.ceil(cdRem) + 's';
-          slotEl.parentElement.style.opacity = '0.55';
-          slotEl.parentElement.appendChild(cdBadge);
-        } else {
-          slotEl.parentElement.style.opacity = '1';
-        }
-      } else {
-        // #2: Show empty slot indicator when no spell selected
-        slotEl.textContent = '🔘';
-        slotEl.parentElement.style.opacity = '1';
-      }
-    });
-
     const inventoryModal = document.getElementById('inventory-modal');
     if(inventoryModal && inventoryModal.style.display === 'flex') renderInventory();
 
@@ -568,6 +540,7 @@ function _performStickyMove(src, target) {
         : '👊';
     }
     _updateSelectedNameLabels();
+    _renderActionQuickslots();
   }
 
   // === Save/Load System ===
@@ -907,11 +880,32 @@ function _performStickyMove(src, target) {
     // Update knob positions
     if(sfxToggle && typeof toggleSetting === 'function') toggleSetting('sfx', window.gameSettings.sfx);
     if(musicToggle && typeof toggleSetting === 'function') toggleSetting('music', window.gameSettings.music);
+    _updateActionButton();
+    _renderActionQuickslots();
     // Tutorial toggle
     const tutorialToggle = document.getElementById('tutorial-toggle');
     if(tutorialToggle) {
       tutorialToggle.checked = window.gameSettings.tutorial !== false;
       if(typeof toggleSetting === 'function') toggleSetting('tutorial', window.gameSettings.tutorial !== false);
+    }
+
+    // Long-press → assigner for touch devices on action quickslots
+    for (let i = 0; i < 2; i++) {
+      const btn = document.getElementById('action-qs-' + i);
+      if (!btn) continue;
+      let longPressTimer = null;
+      btn.addEventListener('touchstart', function() {
+        longPressTimer = setTimeout(function() {
+          longPressTimer = null;
+          _showActionQSAssigner(i);
+        }, 500);
+      }, { passive: true });
+      btn.addEventListener('touchend', function() {
+        if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+      });
+      btn.addEventListener('touchmove', function() {
+        if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+      });
     }
   });
 
@@ -1414,6 +1408,49 @@ function _performStickyMove(src, target) {
     _renderLootPopup();
   }
 
+  // ── Quick Action system ──────────────────────────────────────
+  const _circularActions = {
+    inventory: { icon: '\uD83C\uDF92', title: 'Inventory', fn: () => toggleModal('inventory-modal') },
+    equip:     { icon: '\uD83D\uDEE1\uFE0F', title: 'Equipment', fn: () => toggleModal('equip-modal') },
+    kneel:     { icon: '\uD83D\uDE4F', title: 'Kneel',     fn: () => kneelAction() },
+    rest:      { icon: '\u23F3',       title: 'Rest',       fn: () => restAction() },
+    magic:     { icon: '\u2728',       title: 'Spell Book', fn: () => toggleModal('magic-modal') },
+    sleep:     { icon: '\uD83D\uDCA4', title: 'Sleep',      fn: () => sleepPlayer() },
+    listen:    { icon: '\uD83D\uDC42', title: 'Listen',     fn: () => listenAction() },
+    quicksave: { icon: '\uD83D\uDCBE', title: 'Quicksave',  fn: () => quickSave() },
+  };
+
+  window._lastAction = 'inventory';
+
+  window.doCircularAction = function(key) {
+    const action = _circularActions[key];
+    if (!action) return;
+    toggleMoreActions();
+    window._lastAction = key;
+    action.fn();
+    _updateActionButton();
+  };
+
+  window.performLastAction = function() {
+    if (window._lastAction === '_spell' && window._lastSpellId) {
+      castSpell(window._lastSpellId);
+      return;
+    }
+    const action = _circularActions[window._lastAction];
+    if (action) action.fn();
+  };
+
+  function _updateActionButton() {
+    const el = document.getElementById('action-icon');
+    if (!el) return;
+    if (window._lastAction === '_spell' && window._lastSpellId) {
+      el.textContent = (SPELL_ICONS && SPELL_ICONS[window._lastSpellId]) || '\u2728';
+      return;
+    }
+    const action = _circularActions[window._lastAction];
+    if (action) el.textContent = action.icon;
+  }
+
   window.toggleMoreActions = () => {
     const el = document.getElementById('more-actions-modal');
     if(!el) return;
@@ -1426,6 +1463,158 @@ function _performStickyMove(src, target) {
 
   window.quickSave = () => {
     if(typeof saveGame === 'function') saveGame();
+  };
+
+  // ── Action Quickslots (F/G) ────────────────────────────────
+  function _actionQSInfo(qs) {
+    if (!qs) return { icon: '\uD83D\uDD18', label: 'Unset' };
+    if (qs.type === 'action') {
+      const action = _circularActions[qs.id];
+      if (action) return { icon: action.icon, label: action.title };
+      return { icon: '\uD83D\uDD18', label: qs.id };
+    }
+    if (qs.type === 'spell') {
+      const def = typeof SPELL_DEFS !== 'undefined' ? SPELL_DEFS[qs.id] : null;
+      const icns = typeof SPELL_ICONS !== 'undefined' ? SPELL_ICONS : {};
+      const icon = icns[qs.id] || '\uD83D\uDCD6';
+      return { icon, label: def ? def.name : qs.id };
+    }
+    if (qs.type === 'talent') {
+      const def = typeof TALENT_DEFS !== 'undefined' ? TALENT_DEFS[qs.id] : null;
+      const icon = def ? def.name.charAt(0).toUpperCase() : '?';
+      return { icon, label: def ? def.name : qs.id };
+    }
+    return { icon: '\uD83D\uDD18', label: 'Unset' };
+  }
+
+  window._renderActionQuickslots = function() {
+    if (!player._actionQuickslots) {
+      player._actionQuickslots = [
+        { type: 'action', id: 'inventory' },
+        { type: 'action', id: 'magic' },
+      ];
+    }
+    for (let i = 0; i < 2; i++) {
+      const qs = player._actionQuickslots[i];
+      const iconEl = document.getElementById('action-qs-icon-' + i);
+      if (!iconEl) continue;
+      const info = _actionQSInfo(qs);
+      iconEl.textContent = info.icon;
+      const btn = document.getElementById('action-qs-' + i);
+      if (btn) btn.title = info.label + ' (' + (i === 0 ? 'F' : 'G') + ')';
+    }
+  };
+
+  window._executeActionQSlot = function(slotIndex) {
+    const qs = player._actionQuickslots && player._actionQuickslots[slotIndex];
+    if (!qs) return;
+    if (qs.type === 'action') {
+      const action = _circularActions[qs.id];
+      if (action) action.fn();
+    } else if (qs.type === 'spell') {
+      if (typeof castSpell === 'function') castSpell(qs.id);
+    } else if (qs.type === 'talent') {
+      const def = typeof TALENT_DEFS !== 'undefined' ? TALENT_DEFS[qs.id] : null;
+      if (!def) return;
+      const flags = def.flags || [];
+      if (flags.includes('use')) {
+        if (typeof window.useTalent === 'function') window.useTalent(qs.id);
+      } else if (flags.includes('toggle')) {
+        if (typeof window.toggleTalentFlag === 'function') window.toggleTalentFlag(qs.id);
+      }
+    }
+  };
+
+  window._showActionQSAssigner = function(slotIndex) {
+    const slotKey = slotIndex === 0 ? 'F' : 'G';
+    let modal = document.getElementById('action-qs-assigner');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'action-qs-assigner';
+      modal.className = 'draggable-modal';
+      document.body.appendChild(modal);
+      modal.addEventListener('mousedown', () => bringToFront(modal));
+    }
+
+    // Actions section
+    let bodyHtml = '<div style="margin-bottom:12px;">' +
+      '<div style="color:var(--primary);font-weight:bold;border-bottom:1px solid #444;padding-bottom:4px;margin-bottom:4px;font-size:12px;">Actions</div>';
+    for (const [key, action] of Object.entries(_circularActions)) {
+      bodyHtml += '<div class="action-qs-assigner-item" onclick="assignActionQS(' + slotIndex + ',\'action\',\'' + key + '\')">' +
+        '<span class="aqs-icon">' + action.icon + '</span>' +
+        '<span class="aqs-label">' + action.title + '</span></div>';
+    }
+    bodyHtml += '</div>';
+
+    // Spells section
+    if (player.spells) {
+      const spellKeys = Object.keys(player.spells);
+      if (spellKeys.length > 0) {
+        const icns = typeof SPELL_ICONS !== 'undefined' ? SPELL_ICONS : {};
+        const defs = typeof SPELL_DEFS !== 'undefined' ? SPELL_DEFS : {};
+        bodyHtml += '<div style="margin-bottom:12px;">' +
+          '<div style="color:var(--primary);font-weight:bold;border-bottom:1px solid #444;padding-bottom:4px;margin-bottom:4px;font-size:12px;">Spells</div>';
+        for (const spellId of spellKeys) {
+          const sDef = defs[spellId];
+          const sName = sDef ? sDef.name : spellId;
+          const sIcon = icns[spellId] || '\uD83D\uDCD6';
+          bodyHtml += '<div class="action-qs-assigner-item" onclick="assignActionQS(' + slotIndex + ',\'spell\',\'' + spellId + '\')">' +
+            '<span class="aqs-icon">' + sIcon + '</span>' +
+            '<span class="aqs-label">' + sName + '</span></div>';
+        }
+        bodyHtml += '</div>';
+      }
+    }
+
+    // Talents section (use/toggle only)
+    const ownedTalentIds = Object.keys(player.talents || {}).filter(function(id) {
+      var def = typeof TALENT_DEFS !== 'undefined' ? TALENT_DEFS[id] : null;
+      if (!def) return false;
+      var flags = def.flags || [];
+      return flags.indexOf('use') !== -1 || flags.indexOf('toggle') !== -1;
+    });
+    if (ownedTalentIds.length > 0) {
+      bodyHtml += '<div style="margin-bottom:4px;">' +
+        '<div style="color:var(--primary);font-weight:bold;border-bottom:1px solid #444;padding-bottom:4px;margin-bottom:4px;font-size:12px;">Talents</div>';
+      for (const talentId of ownedTalentIds) {
+        const def = typeof TALENT_DEFS !== 'undefined' ? TALENT_DEFS[talentId] : null;
+        if (!def) continue;
+        const tIcon = def.name.charAt(0).toUpperCase();
+        bodyHtml += '<div class="action-qs-assigner-item" onclick="assignActionQS(' + slotIndex + ',\'talent\',\'' + talentId + '\')">' +
+          '<span class="aqs-icon" style="font-size:14px;font-weight:bold;">' + tIcon + '</span>' +
+          '<span class="aqs-label">' + def.name + '</span></div>';
+      }
+      bodyHtml += '</div>';
+    }
+
+    if (!bodyHtml) {
+      bodyHtml = '<p style="color:#888;text-align:center;padding:20px;">Nothing to assign yet.<br>Learn spells or buy talents first.</p>';
+    }
+
+    modal.innerHTML = '<div class="modal-header">' +
+      '<span>Assign Quickslot ' + slotKey + '</span>' +
+      '<button class="modal-close" onclick="closeActionQSAssigner()">\u2716</button></div>' +
+      '<div class="modal-body" style="max-height:400px;overflow-y:auto;padding:10px 12px;">' + bodyHtml + '</div>';
+
+    modal.style.display = 'block';
+    bringToFront(modal);
+  };
+
+  window.closeActionQSAssigner = function() {
+    const modal = document.getElementById('action-qs-assigner');
+    if (modal) modal.style.display = 'none';
+  };
+
+  window.assignActionQS = function(slotIndex, type, id) {
+    if (!player._actionQuickslots) {
+      player._actionQuickslots = [
+        { type: 'action', id: 'inventory' },
+        { type: 'action', id: 'magic' },
+      ];
+    }
+    player._actionQuickslots[slotIndex] = { type: type, id: id };
+    if (typeof window._renderActionQuickslots === 'function') window._renderActionQuickslots();
+    if (typeof closeActionQSAssigner === 'function') closeActionQSAssigner();
   };
 
   window.hideOverlay = () => {
@@ -2606,16 +2795,12 @@ function _performStickyMove(src, target) {
     let html = "<div style='display:flex; flex-direction:column; gap:4px;'>";
     keys.forEach(k => {
       let sp = player.spells[k] || { level: 1 };
-      let isEq = player.equippedSpell === k, isSec = player.secondarySpell === k;
       let cdRem = window._spellCooldownRemaining(k);
       let onCd = cdRem > 0;
       html += `<div style="background:var(--surface-container); padding:6px; border-radius:4px; display:flex; justify-content:space-between; align-items:center; position:relative; ${onCd ? 'opacity:0.7;' : ''}">
         ${onCd ? `<div style="position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.45);border-radius:4px;display:flex;align-items:center;justify-content:center;z-index:1;pointer-events:none;"><span style="color:#FFD700;font-size:14px;font-weight:bold;">${cdRem.toFixed(1)}s</span></div>` : ''}
         <span style="font-size:12px; cursor:pointer; z-index:2;" onclick="castSpell('${k}')">${k.toUpperCase()} (Lv${sp.level ?? 1})${onCd ? ' ⏳' : ''}</span>
-        <div style="display:flex; gap:4px; z-index:2;">
-          <button onclick="player.equippedSpell='${k}';showMagic();updateUI();" style="font-size:10px; background:${isEq?'var(--success)':'#444'}; padding:2px 6px;">${isEq?'F:✓':'F'}</button>
-          <button onclick="player.secondarySpell='${k}';showMagic();updateUI();" style="font-size:10px; background:${isSec?'var(--primary)':'#444'}; padding:2px 6px;">${isSec?'G:✓':'G'}</button>
-        </div>
+        <button onclick="window._lastAction='_spell';window._lastSpellId='${k}';_updateActionButton();castSpell('${k}');" style="font-size:10px; padding:2px 8px; z-index:2;">Cast</button>
       </div>`;
     });
     magicBody.innerHTML = html + "</div>";

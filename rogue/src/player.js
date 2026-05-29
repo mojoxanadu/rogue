@@ -133,6 +133,10 @@ function setPlayerDefaults() {
   // size. All quickslot rendering and key bindings must read this —
   // never hardcode the count.
   player.quickslotCount = 6;
+  player._actionQuickslots = [
+    { type: 'action', id: 'inventory' },
+    { type: 'action', id: 'magic' },
+  ];
 }
 
 // Apply legacy default fields to the LocalPlayer instance (quest flags,

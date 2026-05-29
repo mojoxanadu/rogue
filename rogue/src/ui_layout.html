@@ -220,20 +220,26 @@
     <div class="icon-btn" id="menu-toggle-btn" onclick="toggleMenu()" title="Menu (ESC)"><div class="keybind-hint">ESC / ^X</div><span class="sparkle-star">✦</span>&#9776;<div class="badge" id="stat-badge" style="display:none;">0</div></div>
     <div class="chip" id="gpUI">💰 0</div>
     <div class="icon-btn" onclick="meleeAttack()" title="Melee Attack (Space)"><div class="keybind-hint">SPC</div><span id="melee-icon">🗡️</span></div>
-    <div class="icon-btn" onclick="toggleModal('magic-modal')" title="Magic (M)"><div class="keybind-hint">M</div>✨</div>
+    <div class="icon-btn" id="action-btn" onclick="performLastAction()" title="Repeat last action">
+      <span id="action-icon">🔘</span>
+    </div>
     <div class="icon-btn" id="more-actions-btn" onclick="toggleMoreActions()" title="More actions — drag items here to send to inventory"
       ondragover="event.preventDefault(); event.dataTransfer.dropEffect='move'; this.style.borderColor='var(--success)'"
       ondragleave="this.style.borderColor=''"
       ondrop="dropToInventory(event); this.style.borderColor=''">
-      🎒<span class="more-dots">…</span><div class="badge" id="inventory-badge" style="display:none;">0</div>
+      ▼<div class="badge" id="inventory-badge" style="display:none;">0</div>
     </div>
-    <div id="magic-quickslots-inline">
-      <div class="mq-slot" onclick="castEquippedSpell()" title="Cast Spell (F)">
-        <span class="mq-key">F</span><span id="spell-icon-1" class="mq-icon">🔘</span>
-      </div>
-      <div class="mq-slot" onclick="castSecondarySpell()" title="Spell 2 (G)">
-        <span class="mq-key">G</span><span id="spell-icon-2" class="mq-icon">🔘</span>
-      </div>
+    <div class="icon-btn action-qs-btn" id="action-qs-0"
+      onclick="_executeActionQSlot(0)" oncontextmenu="_showActionQSAssigner(0)"
+      title="Action quickslot (F)">
+      <div class="keybind-hint">F</div>
+      <span id="action-qs-icon-0">🔘</span>
+    </div>
+    <div class="icon-btn action-qs-btn" id="action-qs-1"
+      onclick="_executeActionQSlot(1)" oncontextmenu="_showActionQSAssigner(1)"
+      title="Action quickslot (G)">
+      <div class="keybind-hint">G</div>
+      <span id="action-qs-icon-1">🔘</span>
     </div>
   </div>
 
@@ -311,13 +317,14 @@
 <div id="more-actions-modal" onclick="if(event.target===this) toggleMoreActions()"
      style="display:none; position:fixed; inset:0; z-index:210; background:rgba(0,0,0,0.45);">
   <div class="circular-modal">
-    <div class="ca-btn" style="--ang:0deg"     onclick="toggleMoreActions(); toggleModal('inventory-modal')" title="Inventory (I)"><div class="keybind-hint">I</div>🎒</div>
-    <div class="ca-btn" style="--ang:51.4deg"  onclick="toggleMoreActions(); toggleModal('equip-modal')" title="Equipment (E)"><div class="keybind-hint">E</div>🛡️</div>
-    <div class="ca-btn" style="--ang:102.9deg" onclick="toggleMoreActions(); kneelAction()" title="Kneel (K)" id="kneelBtn"><div class="keybind-hint">K</div>🙇</div>
-    <div class="ca-btn" style="--ang:154.3deg" onclick="toggleMoreActions(); restAction()" title="Rest (R)"><div class="keybind-hint">R</div>⏳</div>
-    <div class="ca-btn" style="--ang:205.7deg" onclick="toggleMoreActions(); sleepPlayer()" title="Sleep (Z)"><div class="keybind-hint">Z</div>💤</div>
-    <div class="ca-btn" style="--ang:257.1deg" onclick="toggleMoreActions(); listenAction()" title="Listen (L)"><div class="keybind-hint">L</div>👂</div>
-    <div class="ca-btn" style="--ang:308.6deg" onclick="toggleMoreActions(); quickSave()" title="Quicksave">💾</div>
+    <div class="ca-btn" style="--ang:0deg"   onclick="doCircularAction('inventory')" title="Inventory (I)"><div class="keybind-hint">I</div>🎒</div>
+    <div class="ca-btn" style="--ang:45deg"  onclick="doCircularAction('equip')" title="Equipment (E)"><div class="keybind-hint">E</div>🛡️</div>
+    <div class="ca-btn" style="--ang:90deg"  onclick="doCircularAction('kneel')" title="Kneel (K)" id="kneelBtn"><div class="keybind-hint">K</div>🙇</div>
+    <div class="ca-btn" style="--ang:135deg" onclick="doCircularAction('rest')" title="Rest (R)"><div class="keybind-hint">R</div>⏳</div>
+    <div class="ca-btn" style="--ang:180deg" onclick="doCircularAction('magic')" title="Spell Book (M)"><div class="keybind-hint">M</div>✨</div>
+    <div class="ca-btn" style="--ang:225deg" onclick="doCircularAction('sleep')" title="Sleep (Z)"><div class="keybind-hint">Z</div>💤</div>
+    <div class="ca-btn" style="--ang:270deg" onclick="doCircularAction('listen')" title="Listen (L)"><div class="keybind-hint">L</div>👂</div>
+    <div class="ca-btn" style="--ang:315deg" onclick="doCircularAction('quicksave')" title="Quicksave">💾</div>
   </div>
 </div>
 

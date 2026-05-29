@@ -25,4 +25,20 @@ const SPELL_DEFS = {
   portal:     { name: 'Town Portal',  level: 1 },
 };
 
-if (typeof window !== 'undefined') window.SPELL_DEFS = SPELL_DEFS;
+const SPELL_ICONS = {
+  illuminate: '\uD83C\uDF00',
+  unlock:     '\uD83D\uDD13',
+  lightning:  '\u26A1',
+  fireball:   '\uD83D\uDD25',
+  haste:      '\uD83D\uDC5F',
+  heal:       '\uD83D\uDC96',
+  icebolt:    '\u2744\uFE0F',
+  shield:     '\uD83D\uDEE1\uFE0F',
+  strength:   '\uD83D\uDCAA',
+  portal:     '\uD83D\uDCD6',
+};
+
+if (typeof window !== 'undefined') {
+  window.SPELL_DEFS = SPELL_DEFS;
+  window.SPELL_ICONS = SPELL_ICONS;
+}
