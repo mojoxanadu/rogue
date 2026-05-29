@@ -13,7 +13,7 @@
 // ============================================================
 
 const SPELL_DEFS = {
-  illuminate: { name: 'Illuminate',   level: 1 },
+  illuminate: { name: 'Illuminate',   level: 1, duration: 30, radius: 15 },
   unlock:     { name: 'Unlock',       level: 1 },
   lightning:  { name: 'Lightning',    level: 1 },
   fireball:   { name: 'Fireball',     level: 1 },

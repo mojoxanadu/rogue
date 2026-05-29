@@ -2117,7 +2117,12 @@
         </div>`;
       if(!hasCandles) {
         let slot = inventory.findIndex(s => s === null);
-        if(slot !== -1) { inventory[slot] = new ItemStack('candle', 3); renderQuickslots(); }
+        if(slot !== -1) {
+          inventory[slot] = new ItemStack('candle', 1);
+          let slot2 = inventory.findIndex(s => s === null);
+          if(slot2 !== -1) inventory[slot2] = new ItemStack('candle', 1);
+          renderQuickslots();
+        }
       }
     }
     else if(step === 'chaplain') {

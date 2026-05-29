@@ -287,23 +287,19 @@
       _emitSawVerminIfFirstTime();
       return;
     }
-    let sightLimit = lightTurns > 0 ? 15 : 5;
-    if(darkMap[player.y] && darkMap[player.y][player.x] && lightTurns <= 0) {
-      visible[player.y][player.x] = true; explored[player.y][player.x] = true;
-      return; 
-    }
+    const finalR = typeof window._playerFinalLightRadius === 'function' ? window._playerFinalLightRadius() : 5;
     visible[player.y][player.x] = true; explored[player.y][player.x] = true;
+    if (finalR <= 0) return;
     for(let angle=0; angle<360; angle+=2) {
       let rad = angle * Math.PI / 180;
       let dx = Math.cos(rad), dy = Math.sin(rad);
       let cx = player.x + 0.5, cy = player.y + 0.5;
-      for(let r=1; r<=sightLimit; r++) {
+      for(let r=1; r<=finalR; r++) {
         cx += dx; cy += dy;
         let mapX = Math.floor(cx), mapY = Math.floor(cy);
         if(mapX < 0 || mapY < 0 || mapX >= mapW || mapY >= mapH) break;
         visible[mapY][mapX] = true; explored[mapY][mapX] = true;
         if(theMap[mapY][mapX] === TILES.WALL || (window._eagleDoor && !window._eagleDoor.opened && mapX === window._eagleDoor.x && mapY === window._eagleDoor.y)) break;
-        if(darkMap[mapY][mapX] && lightTurns <= 0) break;
       }
     }
     _emitSawVerminIfFirstTime();
@@ -315,6 +311,7 @@
   function _emitSawVerminIfFirstTime() {
     if(window._sawVerminFired) return;
     if(typeof QuestEngine === 'undefined' || !visible) return;
+    if ((player._gameTime ?? 0) < 5) return;
     for(const e of zone.npcs) {
       if((e.type === 'mouse' || e.type === 'cockroach') &&
          visible[e.y] && visible[e.y][e.x]) {
@@ -1134,7 +1131,8 @@
     
     // Forest gets a wider, dimmer cone; dungeons get tight cone
     let baseSight = isPartialLight ? 10 : 5;
-    const lightTileRadius = player.blind ? 0 : (lightTurns > 0 ? 15 : baseSight);
+    const finalR = typeof window._playerFinalLightRadius === 'function' ? window._playerFinalLightRadius() : 0;
+    const lightTileRadius = player.blind ? 0 : Math.max(finalR, isPartialLight ? 10 : 0);
     const lightPx = lightTileRadius * TILE_SIZE;
     
     // Darkness intensity: forest = 0.4 (dim), dungeon = 0.92 (dark)

@@ -67,6 +67,7 @@
 
     // ─── public flow API ──────────────────────────────────────
     startWith(npc, phraseId) {
+      if (typeof window._cancelMove === 'function') window._cancelMove();
       this.currentNpc = npc;
       this._log = [];
       this._selectedReplyIdx = null;
@@ -75,6 +76,7 @@
     },
 
     startSelf(phraseId) {
+      if (typeof window._cancelMove === 'function') window._cancelMove();
       this.currentNpc = null;
       this._log = [];
       this._selectedReplyIdx = null;

@@ -254,5 +254,15 @@
         ]},
       ],
     },
+
+    'tutorial_darkness': {
+      message: "Dungeons are dark places. Equip a Candle, cast Illuminate, or invest in the Darkvision talent.",
+      replies: [
+        { text: 'Got it', nextPhrase: '@close', default: true },
+        { text: "Don't show tutorials", nextPhrase: '@close', scriptEffects: [
+          { type: 'disableTutorial' },
+        ]},
+      ],
+    },
   });
 })();
