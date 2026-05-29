@@ -10,6 +10,7 @@ __pycache__/
 dev_build.html
 assets.json
 roguelike_assets*.dat
+roguelike-*.apk
 
 # PWA bundle (derived from dev_build.html via mobile/Makefile).
 # NOTE: mobile/dist/ IS tracked — testers can clone the repo on

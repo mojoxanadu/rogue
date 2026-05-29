@@ -8,7 +8,9 @@
 #   make all          dev + release
 #   make lint         node --check every <script> block in dev_build.html
 #   make test         node:test runner against tests/*.test.js
-#   make mobile       PWA bundle (mobile/dist/ — drop on any HTTPS host)
+#   make mobile       Android APK, dev (no bundled .dat files)
+#   make mobile-dev   same as mobile
+#   make mobile-release  Android APK (bundles .dat files)
 #   make clean        wipe artifacts (keeps raw/ and src/)
 
 include config
@@ -18,7 +20,7 @@ RELEASE   := roguelike.html
 
 PY_SHARED := config.py build_files.py
 
-.PHONY: all dev assets dat release lint test mobile clean
+.PHONY: all dev assets dat release lint test mobile mobile-dev mobile-release clean
 .DEFAULT_GOAL := dev
 
 dev: dev_build.html
@@ -77,10 +79,22 @@ lint: dev_build.html lint.py
 test:
 	node --test tests/
 
-# PWA bundle. Ensures dev_build.html is fresh, then delegates to the
-# subdir Makefile that injects manifest+SW glue into dist/.
-mobile: dev
-	$(MAKE) -C mobile/pwa
+# Android APK — dev build (no bundled .dat files, assets loaded via file picker).
+mobile: mobile-dev
+
+# Android APK — dev build (no bundled .dat files, assets loaded via file picker).
+APK_DIR := mobile/android/app/build/outputs/apk
+mobile-dev: dev
+	cd mobile/android && ./gradlew assembleDebug
+	cp $(APK_DIR)/debug/app-debug.apk roguelike-dev.apk
+
+# Android APK — release build (bundles .dat files, auto-loaded at startup).
+# Requires the .dat files to exist (run make dat first if needed).
+mobile-release: dev dat
+	cd mobile/android && ./gradlew assembleRelease -PincludeDatAssets=true
+	cp $(APK_DIR)/release/app-release-unsigned.apk roguelike-release.apk 2>/dev/null || \
+	  cp $(APK_DIR)/release/app-release.apk roguelike-release.apk
 
 clean:
-	rm -f dev_build.html assets.json roguelike.html roguelike_build*.html roguelike_assets*.dat raw/title_rendered.png assets/title_rendered.png
+	rm -f dev_build.html assets.json roguelike.html roguelike_build*.html roguelike_assets*.dat roguelike-dev.apk roguelike-release.apk raw/title_rendered.png assets/title_rendered.png
+	rm -rf mobile/pwa/dist mobile/android/app/build mobile/android/.gradle mobile/android/local.properties mobile/android/app/src/main/assets/index.html mobile/android/app/src/main/assets/roguelike_assets*.dat

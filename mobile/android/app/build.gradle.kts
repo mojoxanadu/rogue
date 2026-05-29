@@ -46,6 +46,20 @@ tasks.named("preBuild") {
   dependsOn("copyDevBuild")
 }
 
+// Copy .dat files when building with bundled assets (mobile-release).
+// Enable with: ./gradlew -PincludeDatAssets=true
+if (project.hasProperty("includeDatAssets") && project.property("includeDatAssets") == "true") {
+  tasks.register<Copy>("copyDatAssets") {
+    from("${rootProject.projectDir}/../../roguelike_assets.dat")
+    from("${rootProject.projectDir}/../../roguelike_assets_ambient_movies.dat")
+    from("${rootProject.projectDir}/../../roguelike_assets_arcade.dat")
+    into("${projectDir}/src/main/assets/")
+  }
+  tasks.named("preBuild") {
+    dependsOn("copyDatAssets")
+  }
+}
+
 dependencies {
   implementation("androidx.core:core-ktx:1.12.0")
   implementation("androidx.appcompat:appcompat:1.6.1")

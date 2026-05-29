@@ -908,6 +908,9 @@ function _performStickyMove(src, target) {
         if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
       });
     }
+
+    // Kick off bundled-asset fetch (if any) — non-blocking.
+    autoLoadBundledAssets();
   });
 
   // E1/E2: Cycle a 3-position mode setting: off → fm → mp3 → off
@@ -3638,34 +3641,54 @@ function _performStickyMove(src, target) {
     logMsg('Asset state reset.');
   };
 
-  const assetInput = document.getElementById('asset-loader');
-  if(assetInput) {
-    assetInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      _loadSelectedAssetFile(1, file, (err) => alert('Invalid asset file: ' + err.message));
-      e.target.value = '';
-    });
-  }
-
-  // Ambient + movies bundle
-  const assetInputAudio = document.getElementById('asset-loader-audio');
-  if(assetInputAudio) {
-    assetInputAudio.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      _loadSelectedAssetFile(2, file, (err) => alert('Invalid ambient+movies asset file: ' + err.message));
-      e.target.value = '';
-    });
-  }
-
-   // Arcade bundle (Astrochicken WASM + Centipede)
-   const assetInputExtra = document.getElementById('asset-loader-extra');
-   if(assetInputExtra) {
-     assetInputExtra.addEventListener('change', (e) => {
+   const assetInput = document.getElementById('asset-loader');
+   if(assetInput) {
+     assetInput.addEventListener('change', (e) => {
        const file = e.target.files[0];
-       _loadSelectedAssetFile(3, file, (err) => alert('Failed to load arcade bundle: ' + err.message));
+       _loadSelectedAssetFile(1, file, (err) => alert('Invalid asset file: ' + err.message));
        e.target.value = '';
      });
    }
+
+   // Ambient + movies bundle
+   const assetInputAudio = document.getElementById('asset-loader-audio');
+   if(assetInputAudio) {
+     assetInputAudio.addEventListener('change', (e) => {
+       const file = e.target.files[0];
+       _loadSelectedAssetFile(2, file, (err) => alert('Invalid ambient+movies asset file: ' + err.message));
+       e.target.value = '';
+     });
+   }
+
+    // Arcade bundle (Astrochicken WASM + Centipede)
+    const assetInputExtra = document.getElementById('asset-loader-extra');
+    if(assetInputExtra) {
+      assetInputExtra.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        _loadSelectedAssetFile(3, file, (err) => alert('Failed to load arcade bundle: ' + err.message));
+        e.target.value = '';
+      });
+    }
+
+    // Auto-load bundled .dat files (APK or PWA with co-located assets).
+    // Silently skips any that don't exist (dev builds without bundled dats).
+    async function autoLoadBundledAssets() {
+      const bundles = [
+        { file: 'roguelike_assets.dat',               slot: 1 },
+        { file: 'roguelike_assets_ambient_movies.dat', slot: 2 },
+        { file: 'roguelike_assets_arcade.dat',         slot: 3 },
+      ];
+      for (const { file, slot } of bundles) {
+        try {
+          const resp = await fetch(file);
+          if (!resp.ok) continue;
+          const data = await resp.json();
+          const summary = loadAssetData(data, file);
+          loadedAssetFilenames.add(file);
+          _updateAssetSlot(slot, '+', _loadAssetSummary(slot, summary), true);
+        } catch (_) { /* not bundled, skip silently */ }
+      }
+    }
 
   // === Astrochicken Minigame ===
   // Opens the Ms. Astro Chicken game embedded from assets
