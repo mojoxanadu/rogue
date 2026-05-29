@@ -253,7 +253,7 @@ function _performStickyMove(src, target) {
     const def = ItemDef.byIcon(icon);
     if(!def) return false;
     return !!(def.evadePercent || def.thornsDmg || def.intBonus || def.special ||
-              def.magicScaling || def.lightRange || def.manaCost || def.hitRateBonus ||
+              def.magicScaling || def.lightRange || def.lightRadius || def.manaCost || def.hitRateBonus ||
               def.meleeDmgBonus || def.rangedDmgBonus || (def.maxHeal && def.maxHeal > 5));
   }
 
@@ -541,6 +541,7 @@ function _performStickyMove(src, target) {
     }
     _updateSelectedNameLabels();
     _renderActionQuickslots();
+    if (typeof window._tickLightBurn === 'function') window._tickLightBurn();
   }
 
   // === Save/Load System ===
@@ -1789,7 +1790,7 @@ function _performStickyMove(src, target) {
       border-radius:6px; padding:4px 0; min-width:140px; box-shadow:0 4px 12px rgba(0,0,0,0.5);`;
     let name = item.def?.displayName ?? item.icon;
     const def = item.def;
-    const canEquip = def && (def.slot || def.type === 'weapon' || def.type === 'armor');
+    const canEquip = def && (def.slot || def.type === 'weapon' || def.type === 'armor' || def.type === 'light');
     const freeInventory = inventory.findIndex(s => s === null);
     menu.innerHTML = `
       <div style="padding:4px 12px; color:var(--primary); font-size:11px; border-bottom:1px solid #444; margin-bottom:2px;">${item.icon} ${name}</div>
@@ -2067,8 +2068,8 @@ function _performStickyMove(src, target) {
               // Swap — check if target item fits the slot
               const targetDef = ItemDefs[targetItem.itemName];
               const fitsSlot = targetDef && (
-                (slotName === 'leftHand' && (targetDef.type === 'weapon' || targetDef.slot === 'leftHand')) ||
-                (slotName === 'rightHand' && (targetDef.type === 'weapon' || targetDef.slot === 'rightHand')) ||
+                (slotName === 'leftHand' && (targetDef.type === 'weapon' || targetDef.type === 'light' || targetDef.slot === 'leftHand')) ||
+                (slotName === 'rightHand' && (targetDef.type === 'weapon' || targetDef.type === 'light' || targetDef.slot === 'rightHand')) ||
                 (targetDef.slot === slotName)
               );
               if (fitsSlot) {
@@ -2236,8 +2237,8 @@ function _performStickyMove(src, target) {
     if (!def) return;
 
     // Check slot compatibility
-    const fits = (slotName === 'leftHand' && (def.type === 'weapon' || def.slot === 'leftHand')) ||
-                 (slotName === 'rightHand' && (def.type === 'weapon' || def.slot === 'rightHand')) ||
+    const fits = (slotName === 'leftHand' && (def.type === 'weapon' || def.type === 'light' || def.slot === 'leftHand')) ||
+                 (slotName === 'rightHand' && (def.type === 'weapon' || def.type === 'light' || def.slot === 'rightHand')) ||
                  (def.slot === slotName);
     if (!fits) { logMsg(`${def.label()} doesn't fit the ${slotName} slot.`); return; }
 
@@ -2762,11 +2763,13 @@ function _performStickyMove(src, target) {
 
   // Bug 32: Spell cooldown helper — returns remaining seconds (float) or 0
   window._spellCooldownRemaining = (spellName) => {
-    const now = Date.now();
     if(spellName === 'illuminate') {
+      if(player._illumTurns > 0) {
+        return player._illumTurns;
+      }
       if(player._illumLastUse) {
-        const cd = 10000; // 10s illuminate cooldown
-        const rem = (player._illumLastUse + cd - now) / 1000;
+        const cd = 150;
+        const rem = cd - ((window._turnCount ?? 0) - player._illumLastUse);
         return rem > 0 ? rem : 0;
       }
     }
@@ -2798,7 +2801,7 @@ function _performStickyMove(src, target) {
       let cdRem = window._spellCooldownRemaining(k);
       let onCd = cdRem > 0;
       html += `<div style="background:var(--surface-container); padding:6px; border-radius:4px; display:flex; justify-content:space-between; align-items:center; position:relative; ${onCd ? 'opacity:0.7;' : ''}">
-        ${onCd ? `<div style="position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.45);border-radius:4px;display:flex;align-items:center;justify-content:center;z-index:1;pointer-events:none;"><span style="color:#FFD700;font-size:14px;font-weight:bold;">${cdRem.toFixed(1)}s</span></div>` : ''}
+        ${onCd ? `<div style="position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.45);border-radius:4px;display:flex;align-items:center;justify-content:center;z-index:1;pointer-events:none;"><span style="color:#FFD700;font-size:14px;font-weight:bold;">${cdRem.toFixed(0)}</span></div>` : ''}
         <span style="font-size:12px; cursor:pointer; z-index:2;" onclick="castSpell('${k}')">${k.toUpperCase()} (Lv${sp.level ?? 1})${onCd ? ' ⏳' : ''}</span>
         <button onclick="window._lastAction='_spell';window._lastSpellId='${k}';_updateActionButton();castSpell('${k}');" style="font-size:10px; padding:2px 8px; z-index:2;">Cast</button>
       </div>`;
@@ -3200,7 +3203,9 @@ function _performStickyMove(src, target) {
     html += '<span style="color:#FFD700;">TURN-BASED (advances via advanceTurn)</span><br>';
     html += `<span>Hunger: ${player.hunger.toFixed(1)}% (hunger damage at 100%)</span><br>`;
     html += `<span>Exhaustion: ${player.exhaustion.toFixed(1)} (HP/MP drain if >20)</span><br>`;
-    html += `<span>Light Turns: ${lightTurns > 0 ? lightTurns + ' remaining' : 'none'}</span><br>`;
+    const rawR = typeof window._playerLightRadius === 'function' ? window._playerLightRadius() : 0;
+    const finalR = typeof window._playerFinalLightRadius === 'function' ? window._playerFinalLightRadius() : 0;
+    html += `<span>Light: raw=${rawR} final=${finalR}</span><br>`;
     html += `<span>Heal Over Time: ${player.healOverTime > 0 ? player.healOverTime + ' ticks' : 'none'}</span><br>`;
     html += `<span>Status Effect: ${player.statusType || 'none'} (${player.statusTurns} turns)</span><br>`;
     html += `<span>Vermin Kills: ${player.verminKills ?? 0}</span><br>`;
@@ -3222,7 +3227,7 @@ function _performStickyMove(src, target) {
       Sound.playTone(180, 'sine', 0.2, 0.04, 120);
       return;
     }
-    if(darkMap[player.y] && darkMap[player.y][player.x] && lightTurns <= 0) {
+    if(!(typeof window._hasLight === 'function' && window._hasLight())) {
       logMsg("<span style='color:var(--warning)'>You hear faint, scuttling footsteps... something is near.</span>");
       Sound.playTone(100, 'sine', 0.5, 0.05, 50);
     } else { logMsg("You hear nothing but your own breath."); }
