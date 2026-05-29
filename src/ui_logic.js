@@ -2507,12 +2507,30 @@ function _performStickyMove(src, target) {
   window.useTalent = (id) => {
     logMsg && logMsg(`${TALENT_DEFS[id]?.name || id}: use action TBI.`);
   };
+  function _anyHostileSeesPlayer() {
+    for (const e of zone.npcs) {
+      if (!e || e.stats?.passive || e._dead) continue;
+      if (typeof e.isHostile === 'function' && !e.isHostile()) continue;
+      const dist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
+      const range = e.stats?.aggro ?? 6;
+      if (dist <= range) return true;
+    }
+    return false;
+  }
+
   window.toggleTalentFlag = (id) => {
     const owned = player.talents[id];
     if (!owned) return;
+    if (id === 'stealth') {
+      if (!owned.on && _anyHostileSeesPlayer()) {
+        logMsg && logMsg("<span style='color:var(--error)'>Can't activate Stealth — foes can see you!</span>");
+        return;
+      }
+    }
     owned.on = !owned.on;
     logMsg && logMsg(`${TALENT_DEFS[id].name}: ${owned.on ? 'on' : 'off'}.`);
     showTalents();
+    drawMap();
   };
 
   // ── Filter / sort handlers ──────────────────────────────────

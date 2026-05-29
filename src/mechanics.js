@@ -660,6 +660,7 @@
   const FIREBALL_COOLDOWN_MS = 5000;
 
   window.castSpell = function(spellName, fromScroll) {
+    _endStealthOnAction();
     if(spellName === 'portal') {
       // Town Portal: create a portal 2 tiles in front of player
       if(currentLevel === 0) { logMsg("You're already in town!"); return; }
@@ -909,6 +910,13 @@
     logMsg(`Unknown spell: ${spellName}`);
   };
 
+  function _endStealthOnAction() {
+    if (player.talents?.stealth?.on && player.talents.stealth.level < 2) {
+      player.talents.stealth.on = false;
+      logMsg("Stealth broken by your action.");
+    }
+  }
+
   window.startRangedAttackTargeting = function() {
     const weaponDef = getEquippedWeaponDef();
     if(!weaponDef || !weaponDef.ranged) {
@@ -929,6 +937,7 @@
   };
 
   window.rangedWeaponTarget = function(tx, ty) {
+    _endStealthOnAction();
     window._rangedTargeting = false;
     const weaponDef = getEquippedWeaponDef();
     if(!weaponDef || !weaponDef.ranged) return;

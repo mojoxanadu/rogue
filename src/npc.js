@@ -250,6 +250,11 @@ class NPC extends Sentient {
     const e = this;
     const { player, theMap, enemies, isTileFloor } = ctx;
     if (!e.stats) return 'move';
+    // Stealthed player: don't chase unless adjacent
+    if (player.talents?.stealth?.on) {
+      const isAdj = Math.abs(e.x - player.x) <= 1 && Math.abs(e.y - player.y) <= 1;
+      if (!isAdj) return this._takeWanderTurn(ctx);
+    }
     const isAdj = Math.abs(e.x - player.x) <= 1 && Math.abs(e.y - player.y) <= 1;
     if (isAdj) { e.attack(player, ctx); return 'attack'; }
     let dx = Math.sign(player.x - e.x), dy = Math.sign(player.y - e.y);

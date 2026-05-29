@@ -465,7 +465,9 @@ class Player extends Sentient {
 
   // ── Combat overrides ───────────────────────────────────────
   effectiveHitRate() {
-    return (this.hitRate ?? 0) + this._sumEquipBonus('hitRateBonus');
+    let rate = (this.hitRate ?? 0) + this._sumEquipBonus('hitRateBonus');
+    if (this.talents?.stealth?.on) rate += 0.5;
+    return rate;
   }
 
   /**

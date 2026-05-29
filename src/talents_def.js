@@ -258,14 +258,7 @@ const TALENT_DEFS = {
     flags: [],
     desc:  `More food spawns on newly generated floors and a little more random spawns on old floors too. More for higher N.`,
   },
-  greatStealth: {
-    name:  'Great Stealth',
-    cost:  { initial: 6, improve: null, max: 1 },
-    requires: { stealth: 1 },
-    flags: ['toggle'],
-    tbi:   true,
-    desc:  `You can attack or cast spells while using Stealth without it ending. Same effect as Great Invisibility spell without the MP cost.`,
-  },
+
   growthSpurt: {
     name:  'Growth Spurt',
     cost:  { initial: 1, improve: null, max: 1 },
@@ -562,11 +555,10 @@ const TALENT_DEFS = {
   },
   stealth: {
     name:  'Stealth',
-    cost:  { initial: 4, improve: null, max: 1 },
+    cost:  { initial: 4, improve: 6, max: 2 },
     requires: { rogueClass: 1 },
     flags: ['toggle'],
-    tbi:   true,
-    desc:  `Can be toggled on only when not seen by any foes (unlike Invisibility spell), and toggled off at will. Otherwise exactly like Invisibility spell: player icon becomes a ghostly outline, foes won't attack but may randomly bump you and end the Stealth, if you attack or cast any spell it ends.`,
+    desc:  `Can be toggled on only when not seen by any foes, and toggled off at will. While active, your character appears as a ghostly outline and foes won't attack unless you're adjacent. Ends when you attack or cast a spell.\n\nImproved: You may attack or cast spells while Stealth remains active. Bonus to-hit +50% while Stealth is active.`,
   },
   sweettalking: {
     name:  'Sweettalking',

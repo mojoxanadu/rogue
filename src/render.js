@@ -1250,7 +1250,13 @@
     const tileCx = px + TILE_SIZE / 2;
     const footY = py + TILE_SIZE - 2;
 
+    const isGhostly = player.talents?.stealth?.on || player.isInvisible;
+
     ctx.save();
+    if (isGhostly) {
+      ctx.globalAlpha = 0.4;
+      ctx.filter = 'grayscale(100%)';
+    }
     ctx.font = `${size - 2}px sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';

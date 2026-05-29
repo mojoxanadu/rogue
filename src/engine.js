@@ -1504,6 +1504,11 @@
 
   function doCombat(enemyIndex) {
     let e = zone.npcs[enemyIndex]; if(!e) return;
+    // End stealth on melee attack (unless improved to level 2)
+    if (player.talents?.stealth?.on && player.talents.stealth.level < 2) {
+      player.talents.stealth.on = false;
+      logMsg("Stealth broken by your attack.");
+    }
     if(e.type === 'master' || e.type === 'pirate') { insultBattle(enemyIndex); return; }
     let dmg = getPlayerDmgVersus(e);
 
