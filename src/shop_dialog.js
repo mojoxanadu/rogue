@@ -32,6 +32,12 @@
       { icon: '📜', name: 'Inn-Sewer-Ants Policy',         cost: 50  },
       { icon: '🗡️', name: 'Perfectly Ordinary Sword',     cost: 120 },
     ],
+    'blacksmith': [
+      { icon: '🗡️', name: 'Sword',  cost: 100 },
+      { icon: '🛡️', name: 'Shield', cost: 150 },
+      { icon: '🦯', name: 'Staff',  cost: 30  },
+      { id: 'dagger', icon: '🔪', name: 'Dagger', cost: 80  },
+    ],
   };
 
   const ShopDialog = {
@@ -81,6 +87,7 @@
         logMsg(`<span style="color:var(--success)">Bought ${item ? item.icon : icon} ${this._esc(item ? item.name : icon)} for ${cost} gp.</span>`);
       }
       this._render();
+      if (typeof renderQuickslots === 'function') renderQuickslots();
     },
 
     sellItem(idx) {
@@ -96,6 +103,7 @@
         logMsg(`<span style="color:var(--success)">Sold ${icon} ${this._esc(name)} for ${gp} gp.</span>`);
       }
       this._render();
+      if (typeof renderQuickslots === 'function') renderQuickslots();
     },
 
     // ─── internals ─────────────────────────────────────────────

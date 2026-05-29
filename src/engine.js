@@ -2014,11 +2014,6 @@
         openShop('chaplain');
         return;
       }
-      if(npc.type === 'blacksmith') {
-        // B760.FORGE: always use the blacksmith shop modal with talking-head video.
-        openShop('blacksmith');
-        return;
-      }
       if(npc.type === 'cain') {
         // E6: Deckard Cain heals player to full on first visit per town entry
         if(!window._cainHealedThisVisit) {
@@ -2491,10 +2486,6 @@
       openShop('leftys');
       return;
     }
-    if(tile === TILES.FORGE) {
-      openShop('blacksmith');
-      return;
-    }
     if(tile === TILES.HALL) {
       let count = Object.keys(achievements).length;
       if(count >= 20) {
@@ -2560,32 +2551,6 @@
     // No auto-pickup — items require right-click interaction
     advanceTurn('move');
   }
-
-  // E5: Blacksmith Repair service — costs 50g, restores all equipped items
-  window.blacksmithRepair = function() {
-    if(player.gp < 50) {
-      logMsg("<span style='color:var(--error)'>🧑‍🔧 Griswold: \"Fifty gold is the going rate, friend. Come back when you've got it.\"</span>");
-      return;
-    }
-    // Check if any equipped item has durability to repair
-    let hasEquipped = Object.values(player.equipped || {}).some(name => name !== null);
-    if(!hasEquipped) {
-      logMsg("<span style='color:#aaa'>🧑‍🔧 Griswold: \"Your equipment is in fine shape already! Come back when something needs fixing.\"</span>");
-      return;
-    }
-    changeGold(-50);
-    // Restore durability on all equipped items (if durability system exists)
-    Object.values(player.equipped || {}).forEach(name => {
-      const def = name ? ItemDefs[name] : null;
-      if(def && def.durability !== undefined) def.durability = def.maxDurability ?? 100;
-    });
-    addFloatingText(player.x, player.y, '🔨 REPAIRED', '#fc0', 16);
-    logMsg("<span style='color:var(--success)'>🧑‍🔧 Griswold hammers away for a moment. \"There! Good as new. Well, good as it's going to get.\"</span>");
-    Sound.playTone(300, 'triangle', 0.3, 0.05, 400);
-    setTimeout(() => Sound.playTone(450, 'triangle', 0.2, 0.05, 300), 150);
-    hideOverlay();
-    updateUI();
-  };
 
   // bridgeTrial / bridgeAns / bridgeAns2 / bridgeAns3 deleted — the bridge
   // keeper now uses the Dialog system. See quests_monty_python_bridge.js for

@@ -65,6 +65,15 @@
       ],
     },
 
+    // ── Griswold the Blacksmith ──────────────────────────────
+    // Chat first ("Ah, an adventurer!"), then "Show me your wares" → @shop.
+    'blacksmith_greet': {
+      message: quipsFrom('blacksmith', "Ah, an adventurer! What can I craft for you today?"),
+      replies: [
+        { text: 'Show me your wares.', nextPhrase: '@shop', default: true },
+      ],
+    },
+
     // ── Vimes ────────────────────────────────────────────────
     // No replies — pure flavor NPC. Bottom Leave is always there;
     // Next is hidden when replies is empty.

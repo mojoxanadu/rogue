@@ -669,7 +669,7 @@
   }
 
   function canSellToStore(type) {
-    return ['apu', 'leftys', 'wizard', 'bookstore', 'mended_drum_barman', 'dennis', 'blacksmith', 'forge', 'fence', 'champion'].includes(type);
+    return ['apu', 'leftys', 'wizard', 'bookstore', 'dennis', 'fence', 'champion'].includes(type);
   }
 
   // mendedDrumChat — DELETED. The 4 patrons (Vimes, Cohen, Librarian,
@@ -692,7 +692,6 @@
     let npcVideoType = isDave ? 'cousin_dave' : type;
     if(type === 'wizard' || type === 'bookstore') npcVideoType = 'erasmus';
     if(type === 'leftys') npcVideoType = 'lefty';
-    if(type === 'forge' || type === 'blacksmith') npcVideoType = 'blacksmith';
     // Start NPC movie animation if a movie exists for this NPC type
     startNPCVideo(npcVideoType);
 
@@ -747,16 +746,6 @@
         ${npcFaceHTML('npc_wizard', '🧙', 'erasmus')}
         <p>Wizard: "${chosen.text}"</p>`;
       setTimeout(() => playVoiceClip(chosen.voice), 30);
-    }
-    else if(type === 'blacksmith' || type === 'forge') {
-      let bsDef = MONSTER_DEF && MONSTER_DEF['blacksmith'];
-      let bsDialogLines = bsDef && bsDef.dialog ? bsDef.dialog : ["What needs fixing, traveller?"];
-      let bsIdx = Math.floor(Math.random() * bsDialogLines.length);
-      let bsLine = bsDialogLines[bsIdx];
-      html += `<h2>⚒️ Griswold the Blacksmith</h2>
-        ${npcFaceHTML('', '🧑‍🔧', 'blacksmith')}
-        <p>"${bsLine}"</p>`;
-      setTimeout(() => playVoiceClip('voice_blacksmith_' + bsIdx), 30);
     }
     else if(type === 'cain') {
       html += `<h2>🧔 Deckard Cain</h2>
@@ -953,21 +942,6 @@
     }
 
     // E.TRIST.MENDED_DRUM: Discworld characters
-    else if(type === 'mended_drum_barman') {
-      const def = MONSTER_DEF['mended_drum_barman'];
-      const idx = Math.floor(Math.random() * def.dialog.length);
-      html += `<h2>🍺 The Mended Drum</h2>
-        <p style="font-size:10px;color:#888;margin:0 0 4px;">
-          <em>"Ankh-Morpork's finest establishment. Motto: Quanti Canicula Ille In Fenestra"</em><br>
-          <em>"Formerly across the river before the Great Fire. Now across the OTHER river since the Second Great Fire."</em>
-        </p>
-        ${npcFaceHTML('', '🧔', 'mended_drum_barman')}
-        <p>"${def.dialog[idx]}"</p>
-        <p style="font-size:10px;color:#555;margin-top:8px;">
-          ⚠️ <em>Inn-Sewer-Ants Policy available at the bar. Covers Acts of Gods. (The small print covers which gods.)</em>
-        </p>`;
-      setTimeout(() => playVoiceClip('voice_nobby_' + idx), 30);
-    }
     else if(type === 'cohen') {
       const def = MONSTER_DEF['cohen'];
       const idx = Math.floor(Math.random() * def.dialog.length);
@@ -1021,7 +995,7 @@
     if(canSell) tabBtns.push(`<button id="tab-sell" onclick="storeTab('sell','${type}')" style="flex:1; padding:6px; font-size:12px; background:var(--surface-container); color:#aaa; border:none; border-radius:4px 4px 0 0; cursor:pointer;">💰 Sell</button>`);
     tabBtns.push(`<button id="tab-chat" onclick="storeTab('chat','${type}')" style="flex:1; padding:6px; font-size:12px; background:var(--surface-container); color:#aaa; border:none; border-radius:4px 4px 0 0; cursor:pointer;">💬 Chat</button>`);
     html += `<div style="display:flex; gap:4px; margin-bottom:6px;">${tabBtns.join('')}</div>`;
-    const tabContentMaxH = (type === 'apu' || type === 'mended_drum_barman') ? '22vh' : '30vh';
+    const tabContentMaxH = (type === 'apu') ? '22vh' : '30vh';
     html += `<div id="store-tab-content" style="max-height:${tabContentMaxH}; overflow-y:auto; background:rgba(0,0,0,0.2); border-radius:0 0 4px 4px; padding:6px;"></div>`;
 
     m.innerHTML = html;
@@ -1104,16 +1078,6 @@
            <div style="margin-top:8px; font-size:12px; color:#bbb;">Or identify a single item type:</div>
            ${oneByOneHtml}
          </div>`;
-       } else if(type === 'mended_drum_barman') {
-         html += `<h3 style="margin:4px 0 8px; color:#c8a060;">🍺 Bar Menu</h3>
-           <p style="font-size:10px;color:#888;margin:0 0 4px;"><em>A rat in a tiny fez nods approvingly from behind the counter.</em></p>`;
-         items = [
-           {icon:'🍺', name:'Scumble (mainly apples)', cost:4},
-           {icon:'🍖', name:'Dwarf Bread (also a weapon)', cost:6},
-           {icon:'🧀', name:'Lancre Cheese (legally a weapon)', cost:5},
-           {icon:'📜', name:"Inn-Sewer-Ants Policy", cost:50},
-           {icon:'🗡️', name:'Perfectly Ordinary Sword', cost:120},
-         ];
        } else if(type === 'dennis') {
         items = [
           {icon:'🏹', name:'Bow', cost:25},
@@ -1121,17 +1085,6 @@
           {icon:'🥩', name:'Meat', cost:8},
           {icon:'🧣', name:'Scarf (knitted by wife, keeps warm)', cost:15},
           {icon:'🍞', name:'Bread', cost:3},
-        ];
-      } else if(type === 'blacksmith' || type === 'forge') {
-        html = `<div style="padding:8px; display:flex; flex-direction:column; gap:6px;">
-          <button onclick="blacksmithRepair()" style="background:var(--secondary); font-size:13px;">🔨 Repair All Equipment (50g)</button>
-          <hr style="border-color:#555; margin:4px 0;"/>
-          <p style="margin:0; font-size:11px; color:#aaa;">Purchase weapons & gear:</p>
-        </div>`;
-        items = [
-          {icon:'🗡️', name:'Sword', cost:100},
-          {icon:'🛡️', name:'Shield', cost:150},
-          {icon:'🦯', name:'Staff', cost:30},
         ];
       } else if(type === 'champion') {
         // Hall of Champions — tiered high-end items
@@ -1234,14 +1187,6 @@
           ${(player.equipped.head === 'crownOfNoodlyAppendages' || player.gp > 1000)
             ? `<button onclick="getConvention()">Request constitutional convention</button>`
             : ''}
-        </div>`;
-      } else if(type === 'mended_drum_barman') {
-        // The 4 patrons are now real NPCs on the map (Vimes/Cohen/Librarian/
-        // Dorimunde at the perimeter of the Drum). Bump them directly to
-        // chat — handled by the Dialog system. The barman's chat tab is
-        // now just a flavor pointer.
-        html = `<div style="padding:8px;">
-          <p style="margin:0; color:#bbb;">The barkeep jerks a thumb at the regulars scattered around the bar. <em>"Go on, talk to 'em if you must."</em></p>
         </div>`;
       } else {
         html = `<p style="color:#aaa; font-size:12px;">Nothing to discuss.</p>`;
