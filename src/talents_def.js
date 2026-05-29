@@ -438,14 +438,7 @@ const TALENT_DEFS = {
     tbi:   true,
     desc:  `Sacrifice half your current HP and gain the same in MP (can raise to max MP).`,
   },
-  pickpocket: {
-    name:  'Pickpocket',
-    cost:  { initial: 3, improve: 2, max: 3 },
-    requires: { stealth: 1 },
-    flags: ['toggle'],
-    tbi:   true,
-    desc:  `Bump foe action is Steal (use Fight command to attack). Base success rate 30% x N, minus 10% x CR, minimum 5%. Ends Stealth/Invisibility if unsuccessful. Otherwise opens loot popup.`,
-  },
+
   poisonTaster: {
     name:  'Poison Taster',
     cost:  { initial: 4, improve: 3, max: 3 },
@@ -506,7 +499,7 @@ const TALENT_DEFS = {
     requires: { foraging: 1 },
     flags: ['toggle'],
     tbi:   true,
-    desc:  `Pick up loot you walk over or bump into automatically, even from unlocked containers. Also causes auto-Pickpocket if you have Puckpocketing enabled.`,
+    desc:  `Pick up loot you walk over or bump into automatically, even from unlocked containers.`,
   },
   secondWind: {
     name:  'Second Wind',
@@ -517,11 +510,10 @@ const TALENT_DEFS = {
   },
   sleightOfHand: {
     name:  'Sleight of Hand',
-    cost:  { initial: 6, improve: 3, max: 5 },
-    requires: { scavenger: 1 },
-    flags: ['toggle'],
-    tbi:   true,
-    desc:  `When buying from a shop, gives chance of 40% + 11% x N that the item will instead be free (because you stole it). If this fails, the owner will insist you give him 5 times the item's value before selling anything to you.`,
+    cost:  { initial: 5, improve: 3, max: 5 },
+    requires: { rogueClass: 1 },
+    flags: ['use'],
+    desc:  `Use on an adjacent foe to attempt stealing. On a shopkeeper, shows their wares — pick one to try swiping. On a monster, attempt pickpocket. Better chance as talent improves. Failure angers the target.`,
   },
   sneakAttack: {
     name:  'Sneak Attack',

@@ -2504,7 +2504,204 @@ function _performStickyMove(src, target) {
   };
 
   // ── Stubs for use/toggle (engine wiring lands per-talent) ───
+  // ── Sleight of Hand (SoH) — steal from shopkeepers / pickpocket monsters ──
+  const _SHOP_STEAL_ITEMS = {
+    'apu': [
+      {icon:'📃',name:'Scroll of Identify',cost:30},
+      {icon:'🌀',name:'Town Portal Scroll',cost:5},
+      {icon:'🧪',name:'Health Potion',cost:40},
+      {icon:'🕯️',name:'Candle',cost:15},
+      {icon:'🍕',name:'Pizza',cost:10},
+      {icon:'🍛',name:'Curry',cost:5},
+      {icon:'🥤',name:'Slurpee',cost:5},
+      {icon:'🥛',name:'Milk',cost:3},
+      {icon:'🦪',name:'Oyster',cost:2},
+      {icon:'🥜',name:'Peanuts',cost:1},
+      {icon:'💰',name:'Gold Bag',cost:50},
+    ],
+    'leftys': [
+      {icon:'🍛',name:'Curry',cost:5},{icon:'🥤',name:'Slurpee',cost:5},
+      {icon:'🥃',name:'Whiskey',cost:15},{icon:'🍺',name:'Watered Down Beer',cost:5},
+    ],
+    'wizard': [
+      {icon:'📃',name:'Scroll of Identify',cost:25},{icon:'🌀',name:'Town Portal Scroll',cost:5},
+      {icon:'🔥📘',name:'Tome of Fireball',cost:800},{icon:'🌀📘',name:'Tome of Illuminate',cost:400},
+    ],
+    'bookstore': [
+      {icon:'📃',name:'Scroll of Identify',cost:25},{icon:'🌀',name:'Town Portal Scroll',cost:5},
+      {icon:'🔥📘',name:'Tome of Fireball',cost:800},{icon:'🌀📘',name:'Tome of Illuminate',cost:400},
+    ],
+    'dennis': [
+      {icon:'🏹',name:'Bow',cost:25},{icon:'➶',name:'Arrows x12',cost:5,qty:12},
+      {icon:'🥩',name:'Meat',cost:8},{icon:'🧣',name:'Scarf (knitted by wife)',cost:15},
+      {icon:'🍞',name:'Bread',cost:3},
+    ],
+    'fence': [
+      {icon:'🗡️',name:'Mysterious Dagger',cost:50},{icon:'🧤',name:'Leather Gloves',cost:30},
+      {icon:'💍',name:'Tarnished Ring',cost:100},
+    ],
+    'blacksmith': [
+      {icon:'🗡️',name:'Sword',cost:100},{icon:'🛡️',name:'Shield',cost:150},
+      {icon:'🦯',name:'Staff',cost:30},{icon:'🔪',name:'Dagger',cost:80},
+    ],
+  };
+
+  function _findTargetByCombatPriority() {
+    const dirs = [
+      [player.facing.dx, player.facing.dy],
+      [player.facing.dy, player.facing.dx],
+      [-player.facing.dy, -player.facing.dx],
+      [-player.facing.dx, -player.facing.dy],
+    ];
+    for (const [dx, dy] of dirs) {
+      const npc = zone.npcAt(player.x + dx, player.y + dy);
+      if (npc) return npc;
+    }
+    return null;
+  }
+
+  function _sohItemsFor(npc) {
+    const key = npc.shopType || npc.type;
+    return _SHOP_STEAL_ITEMS[key] || [];
+  }
+
+  function _isShopkeeperNPC(npc) {
+    if (npc.isShopkeeper || npc.shopType) return true;
+    return ['apu','dennis','fence','chaplain','leftys','wizard','bookstore','cain',
+            'town_guard','fighting_master','blacksmith','mended_drum_barman'].includes(npc.type);
+  }
+
+  function _sohItemCost(item) {
+    return item.cost || 0;
+  }
+
+  function _attemptStealItem(npc, item) {
+    const N = player.talents.sleightOfHand.level || 1;
+    const cost = _sohItemCost(item);
+    const noticeChance = 1 - (0.4 + 0.11 * N);
+    if (Math.random() < noticeChance) {
+      hideOverlay();
+      const debt = 3 * cost;
+      const npcName = (npc.stats && npc.stats.name) || (npc.stats && npc.stats.icon) || npc.type;
+      const m = document.getElementById('modal-content');
+      m.innerHTML = `<h2>🚨 Caught!</h2>
+        <p>${npcName} catches your hand!</p>
+        <p><em>"THIEF! Pay me <strong>${debt}g</strong> or I'll call the guard!"</em></p>` +
+        (player.gp >= debt
+          ? `<button onclick="window._sohPayDebt(${debt})" style="margin-top:8px;">Pay ${debt}g</button>`
+          : `<p style="color:var(--error);font-size:11px;">You only have ${player.gp}g. Need ${debt}g.</p>`) +
+        `<button onclick="hideOverlay();advanceTurn(1)" style="margin-top:4px;background:var(--surface-container);">Flee!</button>`;
+      document.getElementById('overlay').style.display = 'flex';
+      const key = npc.shopType || npc.type;
+      window._sohThiefKey = key;
+      window._sohThiefDebt = debt;
+      return;
+    }
+    const successChance = Math.max(0, 0.2 * N - Math.sqrt(cost) / 100);
+    if (Math.random() < successChance) {
+      logMsg(`<span style='color:var(--success)'>You swipe ${item.icon} ${item.name}!</span>`);
+      const slot = inventory.findIndex(s => s === null);
+      if (slot >= 0) {
+        inventory[slot] = ItemStack.fromIcon(item.icon, item.qty || 1);
+        if (typeof renderQuickslots === 'function') renderQuickslots();
+      } else {
+        logMsg("Inventory full — the prize falls to the floor!");
+        zone.dropAt(player.x, player.y, ItemStack.fromIcon(item.icon, item.qty || 1));
+      }
+    } else {
+      logMsg(`<span style='color:var(--warning)'>Unnoticed but unsuccessful — ${item.icon} ${item.name} stays put.</span>`);
+    }
+    hideOverlay();
+    advanceTurn(1);
+  }
+
+  window._sohPayDebt = function(amount) {
+    if (player.gp < amount) return;
+    changeGold(-amount);
+    hideOverlay();
+    logMsg(`<span style='color:var(--warning)'>You pay ${amount}g compensation.</span>`);
+    advanceTurn(1);
+  };
+
+  function _attemptPickpocketMonster(npc) {
+    const N = player.talents.sleightOfHand.level || 1;
+    const CR = npc.stats && npc.stats.cr ? npc.stats.cr : 0;
+    const chance = Math.max(0.05, 0.3 * N - 0.1 * CR);
+    const npcName = (npc.stats && npc.stats.name) || (npc.stats && npc.stats.icon) || npc.type;
+    if (Math.random() < chance) {
+      // Check if monster has lootable items
+      const lootable = npc.lootable || (npc._lootableOnDeath);
+      if (lootable && lootable.slots && lootable.slots.length > 0) {
+        const item = lootable.slots[0];
+        logMsg(`<span style='color:var(--success)'>Stole ${item.icon || '?'} ${item.def ? item.def.label() : 'something'} from ${npc.stats && npc.stats.icon ? npc.stats.icon + ' ' : ''}${npc.type}!</span>`);
+        const slot = inventory.findIndex(s => s === null);
+        if (slot >= 0) {
+          const stack = lootable.removeSlot(0);
+          inventory[slot] = stack;
+          if (typeof renderQuickslots === 'function') renderQuickslots();
+        }
+      } else {
+        logMsg(`${npc.stats && npc.stats.icon ? npc.stats.icon + ' ' : ''}${npcName} has nothing to steal.`);
+      }
+    } else {
+      logMsg(`<span style='color:var(--error)'>${npcName} notices your wandering hand!</span>`);
+      if (npc.stats) npc.stats.passive = false;
+      if (typeof NPC_ATTITUDE !== 'undefined' && typeof npc.setAttitude === 'function') {
+        npc.setAttitude(NPC_ATTITUDE.HOSTILE);
+      }
+      if (typeof npc.provoked !== 'undefined') npc.provoked = true;
+    }
+    advanceTurn(1);
+  }
+
+  function _doSleightOfHand() {
+    if (player.talents.sleightOfHand.onCooldown) {
+      logMsg("Sleight of Hand is on cooldown.");
+      return;
+    }
+    const target = _findTargetByCombatPriority();
+    if (!target) { logMsg("No one nearby to target."); return; }
+    // Check stealth
+    if (player.talents?.stealth?.on && player.talents.stealth.level < 2) {
+      player.talents.stealth.on = false;
+      logMsg("Stealth broken as you make your move.");
+    }
+    if (_isShopkeeperNPC(target)) {
+      const items = _sohItemsFor(target);
+      if (items.length === 0) {
+        logMsg("Nothing worthwhile to steal here.");
+        advanceTurn(1);
+        return;
+      }
+      // Show steal popup via overlay
+      const m = document.getElementById('modal-content');
+      let html = `<h2>🫳 Steal</h2><div style="display:flex;flex-direction:column;gap:4px;">`;
+      for (let i = 0; i < items.length; i++) {
+        const it = items[i];
+        html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 6px;background:#2D2B32;border-radius:4px;">
+          <span>${it.icon} ${it.name}</span>
+          <button onclick="window._sohStealItem(${i})" style="padding:2px 8px;">Steal</button>
+        </div>`;
+      }
+      html += `</div><button onclick="hideOverlay();advanceTurn(1)" style="margin-top:8px;background:var(--surface-container);">Cancel</button>`;
+      window._sohTargetItems = items;
+      window._sohTargetNpc = target;
+      m.innerHTML = html;
+      document.getElementById('overlay').style.display = 'flex';
+    } else {
+      _attemptPickpocketMonster(target);
+    }
+  }
+
+  window._sohStealItem = function(idx) {
+    const items = window._sohTargetItems;
+    const npc = window._sohTargetNpc;
+    if (!items || items[idx] == null) return;
+    _attemptStealItem(npc, items[idx]);
+  };
+
   window.useTalent = (id) => {
+    if (id === 'sleightOfHand') { _doSleightOfHand(); return; }
     logMsg && logMsg(`${TALENT_DEFS[id]?.name || id}: use action TBI.`);
   };
   function _anyHostileSeesPlayer() {
