@@ -68,6 +68,11 @@ class ItemDef {
       this.maxStack = spec.stackable ? STACKABLE_DEFAULT_MAX_QTY : NON_STACKABLE_QTY;
     }
     delete this.stackable;
+    // Register in the reverse icon-lookup map so byIcon(icon) works
+    // for direct ItemDefs (not just LEGACY_ITEM_DATA entries).
+    if (ItemDef._byIcon && !ItemDef._byIcon[this.icon]) {
+      ItemDef._byIcon[this.icon] = this;
+    }
   }
 
   /**
