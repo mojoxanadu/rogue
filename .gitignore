@@ -21,7 +21,4 @@ snapshot
 # Per-developer Claude Code state (settings.local.json, scheduler locks).
 .claude/
 
-# Side projects (accidentally landed in this repo).
-gettingout/
-wallets/
-rogue/
+
