@@ -1947,6 +1947,7 @@ function _performStickyMove(src, target) {
     const cell = _makeInvCell({
       item,
       onTap:    () => _onInvSlotTap(invIdx),
+      invIdx,
       tintDepth: isOpenBag ? 0 : -1,
       stickySelected: !!(window._stickyDrag &&
         window._stickyDrag.source === 'inv' &&
@@ -1980,7 +1981,7 @@ function _performStickyMove(src, target) {
 
   // Build a single inv-slot DOM node with shared styling.
   // tintDepth: -1 = normal slot, 0..N = open-bag depth tint band.
-  function _makeInvCell({ item, onTap, tintDepth, stickySelected }) {
+  function _makeInvCell({ item, onTap, tintDepth, stickySelected, invIdx }) {
     const slot = document.createElement('div');
     slot.className = 'inv-slot';
     slot.style.width = '36px'; slot.style.height = '36px';
@@ -1993,8 +1994,6 @@ function _performStickyMove(src, target) {
     if (item) {
       slot.innerHTML = item.icon;
       if (item.qty > 1) slot.innerHTML += `<span class="qty">${item.qty}</span>`;
-      // E13: Green glow as a "worth identifying" hint — only shown
-      // while still unidentified.
       const hasEffect = itemHasStatusEffect(item.icon);
       const isIdentified = player.identifiedItems && player.identifiedItems.has(item.itemName);
       if (hasEffect && !isIdentified) {
@@ -2005,6 +2004,18 @@ function _performStickyMove(src, target) {
       }
     }
     slot.onclick = onTap;
+    // Right-click: directly use/equip (same as quickslot tap)
+    if (invIdx != null) {
+      slot.oncontextmenu = (e) => { e.preventDefault(); if(inventory[invIdx]) handleItemClick(invIdx); };
+      slot.addEventListener('touchstart', function() { this._lpStart = Date.now(); }, { passive: true });
+      slot.addEventListener('touchend', function() {
+        if (inventory[invIdx] && Date.now() - this._lpStart >= 400) {
+          this.dataset.lpFired = '1';
+          handleItemClick(invIdx);
+        }
+      });
+      slot.addEventListener('touchmove', function() { this._lpStart = 0; });
+    }
     return slot;
   }
 

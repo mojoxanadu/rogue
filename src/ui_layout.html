@@ -220,14 +220,16 @@
     <div class="icon-btn" id="menu-toggle-btn" onclick="toggleMenu()" title="Menu (ESC)"><div class="keybind-hint">ESC / ^X</div><span class="sparkle-star">✦</span>&#9776;<div class="badge" id="stat-badge" style="display:none;">0</div></div>
     <div class="chip" id="gpUI">💰 0</div>
     <div class="icon-btn" onclick="meleeAttack()" title="Melee Attack (Space)"><div class="keybind-hint">SPC</div><span id="melee-icon">🗡️</span></div>
-    <div class="icon-btn" id="action-btn" onclick="performLastAction()" title="Repeat last action">
-      <span id="action-icon">🔘</span>
-    </div>
-    <div class="icon-btn" id="more-actions-btn" onclick="toggleMoreActions()" title="More actions — drag items here to send to inventory"
-      ondragover="event.preventDefault(); event.dataTransfer.dropEffect='move'; this.style.borderColor='var(--success)'"
-      ondragleave="this.style.borderColor=''"
-      ondrop="dropToInventory(event); this.style.borderColor=''">
-      ▼<div class="badge" id="inventory-badge" style="display:none;">0</div>
+    <div class="action-pill">
+      <div class="icon-btn" id="action-btn" onclick="performLastAction()" title="Repeat last action">
+        <span id="action-icon">🔘</span>
+      </div>
+      <div class="icon-btn" id="more-actions-btn" onclick="toggleMoreActions()" title="More actions — drag items here to send to inventory"
+        ondragover="event.preventDefault(); event.dataTransfer.dropEffect='move'; this.style.borderColor='var(--success)'"
+        ondragleave="this.style.borderColor=''"
+        ondrop="dropToInventory(event); this.style.borderColor=''">
+        ▼<div class="badge" id="inventory-badge" style="display:none;">0</div>
+      </div>
     </div>
     <div class="icon-btn action-qs-btn" id="action-qs-0"
       onclick="_executeActionQSlot(0)" oncontextmenu="_showActionQSAssigner(0)"
