@@ -294,6 +294,61 @@
       ],
     },
 
+    // ── Curiosity Shoppe (Erasmus the Wizard) ──────────────
+    'bookstore_greet': {
+      message: '"Welcome to The Curiosity Shoppe! I am Erasmus, your guide to the arcane and the obscure. What brings you to my humble shop?"',
+      replies: [
+        { text: 'What books are for sale?', nextPhrase: '@shop', default: true },
+        { text: 'Ask about Grues', nextPhrase: 'bookstore_grue_menu' },
+      ],
+    },
+
+    'bookstore_grue_menu': {
+      message: '"Ah, the Grue! A fascinating and terrifying subject. What would you like to know?"',
+      replies: [
+        { text: 'What IS a Grue?', nextPhrase: 'bookstore_grue_anatomy' },
+        { text: 'How do I fight a Grue?', nextPhrase: 'bookstore_grue_fight' },
+        { text: 'Where do they come from?', nextPhrase: 'bookstore_grue_origins' },
+        { text: 'Is a Grue dangerous?', nextPhrase: 'bookstore_grue_danger' },
+        { text: 'How do I detect them?', nextPhrase: 'bookstore_grue_detect' },
+      ],
+    },
+
+    'bookstore_grue_anatomy': {
+      message: '"A Grue is a dark creature of the night. It has slavering fangs and razor-sharp claws. They are said to melt when exposed to light — like snow, but more evil. I once saw one. It was eating a man. The man was screaming. It was very unpleasant."',
+      replies: [
+        { text: 'Back to Grue questions', nextPhrase: 'bookstore_grue_menu', default: true },
+      ],
+    },
+
+    'bookstore_grue_fight': {
+      message: '"You can\'t. Well, you could try. But you\'d die. A Grue is, as near as we can determine, invulnerable to most attacks. Light is your only defense. Carry a candle. Always. I heard a rumor that high intelligence helps you sense them before they eat you. But I may have made that up."',
+      replies: [
+        { text: 'Back to Grue questions', nextPhrase: 'bookstore_grue_menu', default: true },
+      ],
+    },
+
+    'bookstore_grue_origins': {
+      message: '"Some say they come from a place called Zork. Others say they are the natural defenders of dark places. I once read a book that said Grues are actually quite friendly if you meet them in good lighting. That book was wrong. Do not trust that book."',
+      replies: [
+        { text: 'Back to Grue questions', nextPhrase: 'bookstore_grue_menu', default: true },
+      ],
+    },
+
+    'bookstore_grue_danger': {
+      message: '"Dangerous? No. They\'re incredibly dangerous. It is pitch black. You are likely to be eaten by a Grue. This is not a joke. I have seen men disappear into the dark. Only their screams remain."',
+      replies: [
+        { text: 'Back to Grue questions', nextPhrase: 'bookstore_grue_menu', default: true },
+      ],
+    },
+
+    'bookstore_grue_detect': {
+      message: '"The Listen command — have you tried it? In the darkness, you might hear something scuttling. If your Intelligence is high enough, you may even get a warning before they close in. But honestly? If it\'s dark and you don\'t have light, you\'ve already lost."',
+      replies: [
+        { text: 'Back to Grue questions', nextPhrase: 'bookstore_grue_menu', default: true },
+      ],
+    },
+
     // ── Vermin first sight (self-dialog) ─────────────────────
     'vermin_first_sight': {
       message: "Vermin! No shopkeeper has asked, but if I cull them the merchants will surely thank me.",

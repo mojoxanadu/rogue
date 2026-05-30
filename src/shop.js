@@ -147,14 +147,9 @@
 
   const APU_FACES     = ['😊','😮','😏','😟','😉','🙂','😄','😌','😑'];
   const APU_FACES_SELL= ['😄','🤑','😁','💰','😏','🤝'];
-  const WIZARD_FACES  = ['🧙','😮','🤔','😏','😄','🤨','😌','🧐','🤫'];
-
   function apuFace(mode) {
     return mode === 'sell' ? APU_FACES_SELL[Math.floor(Math.random() * APU_FACES_SELL.length)]
                            : APU_FACES[Math.floor(Math.random() * APU_FACES.length)];
-  }
-  function wizardFace() {
-    return WIZARD_FACES[Math.floor(Math.random() * WIZARD_FACES.length)];
   }
 
   const APU_VOICE_BY_LINE = {
@@ -569,87 +564,7 @@
     storeTab('buy', 'cain');
   };
 
-  // === Wizard Grue Lore ===
-  // === Grue Conversation Tree ===
-  let grueStep = 0;
-  window.askGrue = function() {
-    let m = document.getElementById('modal-content');
-    grueStep = 0;
-    showGrueConversation(m);
-  };
 
-  function showGrueConversation(m) {
-    if(grueStep === 0) {
-      m.innerHTML = `<h2>📚 The Grue: What You Need to Know</h2>
-        ${npcFaceHTML('npc_wizard', '🧙', 'erasmus')}
-        <p>Wizard: "You ask about the Grue? Very well. What would you like to know?"</p>
-        <button onclick="grueStep=1; showGrueConversation(document.getElementById('modal-content'))">What IS a Grue?</button>
-        <button onclick="grueStep=2; showGrueConversation(document.getElementById('modal-content'))">How do I fight a Grue?</button>
-        <button onclick="grueStep=3; showGrueConversation(document.getElementById('modal-content'))">Where do they come from?</button>
-        <button onclick="grueStep=4; showGrueConversation(document.getElementById('modal-content'))">Is a Grue dangerous?</button>
-        <button onclick="grueStep=5; showGrueConversation(document.getElementById('modal-content'))">How do I detect them?</button>
-        <button onclick="hideOverlay(); advanceTurn(1)">Leave</button>`;
-      setTimeout(() => playVoiceClip('voice_wizard_grue_anatomy'), 30);
-    }
-    else if(grueStep === 1) {
-      m.innerHTML = `<h2>📚 The Grue: Anatomy</h2>
-        ${npcFaceHTML('npc_wizard', '🧙', 'erasmus')}
-        <p>Wizard: "A Grue is a dark creature of the night. It has slavering fangs and razor-sharp claws."</p>
-        <p>Wizard: "They are said to melt when exposed to light — like snow, but more <em>evil</em>."</p>
-        <p>Wizard: "I once saw one. It was eating a man. The man was screaming. It was very unpleasant."</p>
-        <button onclick="grueStep=0; showGrueConversation(document.getElementById('modal-content'))">Back</button>
-        <button onclick="grueStep=2; showGrueConversation(document.getElementById('modal-content'))">How do I fight one?</button>
-        <button onclick="hideOverlay(); advanceTurn(1)">Leave</button>`;
-      setTimeout(() => playVoiceClip('voice_wizard_grue_anatomy'), 30);
-    }
-    else if(grueStep === 2) {
-      m.innerHTML = `<h2>📚 Fighting a Grue</h2>
-        ${npcFaceHTML('npc_wizard', '🧙', 'erasmus')}
-        <p>Wizard: "You can't. Well, you <em>could</em> try. But you'd die."</p>
-        <p>Wizard: "A Grue is, as near as we can determine, invulnerable to most attacks."</p>
-        <p>Wizard: "Light is your only defense. Carry a candle. Always."</p>
-        <p>Wizard: "I heard a rumor that high intelligence helps you sense them before they eat you. But I may have made that up."</p>
-        <button onclick="grueStep=0; showGrueConversation(document.getElementById('modal-content'))">Back</button>
-        <button onclick="grueStep=5; showGrueConversation(document.getElementById('modal-content'))">How do I detect them?</button>
-        <button onclick="hideOverlay(); advanceTurn(1)">Leave</button>`;
-      setTimeout(() => playVoiceClip('voice_wizard_grue_fight'), 30);
-    }
-    else if(grueStep === 3) {
-      m.innerHTML = `<h2>📚 Grue Origins</h2>
-        ${npcFaceHTML('npc_wizard', '🧙', 'erasmus')}
-        <p>Wizard: "Some say they come from a place called Zork. Others say they are the natural defenders of dark places."</p>
-        <p>Wizard: "I once read a book that said Grues are actually quite friendly if you meet them in good lighting."</p>
-        <p>Wizard: "That book was wrong. Do not trust that book."</p>
-        <button onclick="grueStep=0; showGrueConversation(document.getElementById('modal-content'))">Back</button>
-        <button onclick="grueStep=4; showGrueConversation(document.getElementById('modal-content'))">Are they dangerous?</button>
-        <button onclick="hideOverlay(); advanceTurn(1)">Leave</button>`;
-      setTimeout(() => playVoiceClip('voice_wizard_grue_anatomy'), 30);
-    }
-    else if(grueStep === 4) {
-      m.innerHTML = `<h2>📚 Grue Danger Level</h2>
-        ${npcFaceHTML('npc_wizard', '🧙', 'erasmus')}
-        <p>Wizard: "Dangerous? No. They're <em>incredibly</em> dangerous."</p>
-        <p>Wizard: "It is pitch black. You are likely to be eaten by a Grue."</p>
-        <p>Wizard: "This is not a joke. I have seen men disappear into the dark. Only their screams remain."</p>
-        <button onclick="grueStep=0; showGrueConversation(document.getElementById('modal-content'))">Back</button>
-        <button onclick="grueStep=5; showGrueConversation(document.getElementById('modal-content'))">How do I detect them?</button>
-        <button onclick="hideOverlay(); advanceTurn(1)">Leave</button>`;
-      setTimeout(() => playVoiceClip('voice_wizard_grue_fight'), 30);
-    }
-    else if(grueStep === 5) {
-      m.innerHTML = `<h2>📚 Detecting Grues</h2>
-        ${npcFaceHTML('npc_wizard', '🧙', 'erasmus')}
-        <p>Wizard: "The Listen command — have you tried it? In the darkness, you might hear something... scuttling."</p>
-        <p>Wizard: "If your Intelligence is high enough, you may even get a warning before they close in."</p>
-        <p>Wizard: "But honestly? If it's dark and you <em>don't</em> have light... you've already lost."</p>
-        <p style="font-size:11px; color:#888; margin-top:10px;">[Use the Listen (L) command in darkness to detect Grues]</p>
-        <button onclick="grueStep=0; showGrueConversation(document.getElementById('modal-content'))">Back</button>
-        <button onclick="grueStep=2; showGrueConversation(document.getElementById('modal-content'))">Can I fight one?</button>
-        <button onclick="hideOverlay(); advanceTurn(1)">Leave</button>`;
-      setTimeout(() => playVoiceClip('voice_wizard_grue_anatomy'), 30);
-    }
-    startNPCVideo('erasmus');
-  }
 
   // === Dennis the Peasant ===
   window.getConvention = function() {
@@ -1008,8 +923,6 @@
       // Start NPC face animation after tab renders
       if(type === 'apu' || type === 'leftys' || type === 'fence') {
         startNPCAnimation('npc-face', APU_FACES, 1200);
-      } else if(type === 'wizard' || type === 'bookstore') {
-        startNPCAnimation('npc-face', WIZARD_FACES, 1500);
       }
     }, 50);
   }
@@ -1138,12 +1051,6 @@
         }
         html += `</div>`;
         setTimeout(() => isDave ? playVoiceClip('voice_apu_dave_hedge_hint') : playApuVoiceForLine(line), 30);
-      } else if(type === 'wizard' || type === 'bookstore') {
-        html = `<div style="padding:8px;">
-          ${npcFaceHTML('npc_wizard', '🧙', 'erasmus')}
-          <p>Wizard: "Welcome to The Curiosity Shoppe!"</p>
-          <button onclick="askGrue()" style="margin-top:8px;">📖 Ask about Grues</button>
-        </div>`;
       } else if(type === 'cain') {
         html = `<div style="padding:8px; display:flex; flex-direction:column; gap:6px;">
           ${npcFaceHTML('npc_wizard', '🧔', 'cain')}
@@ -1174,11 +1081,9 @@
     if(tab === 'chat') {
       setTimeout(() => {
         if(type === 'apu') startNPCAnimation('npc-face', APU_FACES, 1200);
-        else if(type === 'wizard' || type === 'bookstore') startNPCAnimation('npc-face', WIZARD_FACES, 1500);
 
         let chatVideoType = null;
         if(type === 'apu') chatVideoType = (currentScene === 'beach') ? 'cousin_dave' : 'apu';
-        else if(type === 'wizard' || type === 'bookstore') chatVideoType = 'erasmus';
         else if(type === 'cain') chatVideoType = 'cain';
         if(chatVideoType) startNPCVideo(chatVideoType);
       }, 30);
@@ -1196,11 +1101,6 @@
       const id = icon;
       const def = typeof ItemDefs !== 'undefined' && ItemDefs[id];
       if (!def) { logMsg(`<span style='color:var(--error)'>Unknown item: ${id}</span>`); return; }
-      // Discworld arcana banter for special items
-      if((id === 'wizardsWand' || id === 'properStaff') && (type === 'wizard' || type === 'bookstore')) {
-        openDiscworldArcanaBanter(def.icon, finalCost, type, qty);
-        return;
-      }
       if(player.gp < finalCost) return showInsufficientFunds(shopType, finalCost, def.displayName);
       const stack = new ItemStack(id, qty);
       if (typeof tryPlaceInInventory === 'function' && tryPlaceInInventory(stack)) {
@@ -1209,10 +1109,6 @@
         logMsg("No room! (Inventory full)");
       }
       if(!suppressReopen) openStore(type);
-      return;
-    }
-    if((icon === '🪄' || icon === '🦯✨') && (type === 'wizard' || type === 'bookstore')) {
-      openDiscworldArcanaBanter(icon, finalCost, type, qty);
       return;
     }
     if(player.gp < finalCost) return showInsufficientFunds(shopType, finalCost, ItemDef.byIcon(icon)?.displayName ?? 'that');
@@ -1299,44 +1195,7 @@
     startNPCVideo('dennis');
   };
 
-  window.openDiscworldArcanaBanter = function(icon, cost, type, qty = 1) {
-    let m = document.getElementById('modal-content');
-    if(!m) return;
-    let itemName = ItemDef.byIcon(icon)?.displayName ?? 'arcane nonsense';
-    let canAfford = player.gp >= cost;
-    if(!canAfford) showInsufficientFunds('wizard', cost, itemName);
-    awardAchievement('granny_weatherwax');
-    m.innerHTML = `<h2>📚 The Curiosity Shoppe</h2>
-      ${npcFaceHTML('npc_wizard', '🧙', 'erasmus')}
-      <p>Wizard: "A ${itemName}? Technically yes, I have one. Morally, I ought to hide it from the impressionable."</p>
-      <p>Granny Weatherwax (from somewhere disapproving): "Wands is for people who can't persuade the universe proper. Staffs is for people who want everyone to notice them doing it."</p>
-      <p>Wizard: "To be fair, some customers specifically request overcompensating timber."</p>
-      <p>Granny Weatherwax: "Then sell 'em a broom and tell 'em it's ambition with a handle."</p>
-      ${canAfford
-        ? `<button onclick="confirmDiscworldArcanaBuy('${icon}', ${cost}, '${type}', ${qty})">Buy anyway (${cost}g)</button>`
-        : `<p style='color:var(--error)'>You cannot afford ${itemName}. The wizard looks relieved.</p>`}
-      <button onclick="openStore('${type}'); storeTab('buy','${type}');" style='margin-top:8px;'>Back to wares</button>`;
-    showOverlay();
-    startNPCVideo('erasmus');
-    setTimeout(() => { playVoiceClip('voice_wizard_wand_banter'); }, 30);
-    setTimeout(() => { playVoiceClip('voice_granny_wand'); }, 2500);
-  };
 
-  window.confirmDiscworldArcanaBuy = function(icon, cost, type, qty = 1) {
-    if(player.gp < cost) {
-      showInsufficientFunds('wizard', cost, ItemDef.byIcon(icon)?.displayName ?? 'that');
-      openDiscworldArcanaBanter(icon, cost, type, qty);
-      return;
-    }
-    if(!addPurchasedItem(icon, qty)) {
-      logMsg('No room! (Inventory full)');
-      return;
-    }
-    changeGold(-cost);
-    logMsg(`<span style='color:var(--warning)'>The wizard sells you ${ItemDef.byIcon(icon)?.label() ?? icon}. Somewhere, Granny clicks her tongue hard enough to bend iron.</span>`);
-    openStore(type);
-    storeTab('buy', type);
-  };
 
   // === Pirate Chaplain Pastafarianism Dialogue ===
   window.chaplainSpeak = (step) => {

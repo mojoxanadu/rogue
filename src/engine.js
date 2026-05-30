@@ -2490,7 +2490,14 @@
       return;
     }
     if(tile === TILES.BOOKSTORE) {
-      openShop('wizard');
+      if (typeof Dialog !== 'undefined' && Dialog.startWith) {
+        Dialog.startWith({
+          type: 'bookstore',
+          stats: { icon: '📚', name: 'Erasmus' },
+        }, 'bookstore_greet');
+      } else {
+        openShop('wizard');
+      }
       return;
     }
     if(tile === TILES.LEFTYS) {
