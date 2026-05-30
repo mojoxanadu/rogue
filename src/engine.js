@@ -1977,7 +1977,7 @@
     }
     player.facing = {dx, dy};
     let nx = player.x + dx, ny = player.y + dy;
-    if(nx < 0 || nx >= mapW || ny < 0 || ny >= mapH) { Sound.oof(); return; }
+    if(nx < 0 || nx >= mapW || ny < 0 || ny >= mapH) { Sound.oof(); if(dx !== 0 && dy !== 0) { const _sx=player.x,_sy=player.y; movePlayer(dx,0); if(player.x!==_sx||player.y!==_sy) return; movePlayer(0,dy); } return; }
     let tile = theMap[ny][nx];
 
     // #13: Background scene boundary collision check
@@ -1986,7 +1986,7 @@
       if(bd) {
         const isWalkable = bd.walkable && bd.walkable.some(p => p.x === nx && p.y === ny);
         const isBlocked = bd.blocked && bd.blocked.some(p => p.x === nx && p.y === ny);
-        if(!isWalkable || isBlocked) { Sound.oof(); return; }
+        if(!isWalkable || isBlocked) { Sound.oof(); if(dx !== 0 && dy !== 0) { const _sx=player.x,_sy=player.y; movePlayer(dx,0); if(player.x!==_sx||player.y!==_sy) return; movePlayer(0,dy); } return; }
       }
     }
     
@@ -2205,7 +2205,7 @@
       enterBackgroundScene('eagle_crag', { x: 30, y: 40 });
       return;
     }
-    if (tile === TILES.WALL || tile === TILES.TREE || tile === TILES.ROCK || tile === TILES.MOAT) { Sound.oof(); return; }
+    if (tile === TILES.WALL || tile === TILES.TREE || tile === TILES.ROCK || tile === TILES.MOAT) { Sound.oof(); if(dx !== 0 && dy !== 0) { const _sx=player.x,_sy=player.y; movePlayer(dx,0); if(player.x!==_sx||player.y!==_sy) return; movePlayer(0,dy); } return; }
 
     // Phase 5b: bumping into an impassable container (Box, Chest, Safe,
     // etc. with def.impassable) opens the loot popup at THAT tile rather
@@ -2227,6 +2227,7 @@
     if(tile === TILES.DEEP_WATER && isEagleSkyTile(nx, ny)) {
       Sound.oof();
       logMsg("<span style='color:#88CCFF'>A sheer cliff drops away into open sky. Best not to test whether you can fly.</span>");
+      if(dx !== 0 && dy !== 0) { const _sx=player.x,_sy=player.y; movePlayer(dx,0); if(player.x!==_sx||player.y!==_sy) return; movePlayer(0,dy); }
       return;
     }
     if (tile === TILES.SECRET_WALL) {
