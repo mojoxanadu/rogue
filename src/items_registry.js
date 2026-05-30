@@ -1645,7 +1645,7 @@ ItemDefs.staff = new ItemDef({
   stackable: false,
   type: 'weapon',
   wieldTalent: 'wieldStaffs',
-  equipGroups: [['leftHand']]
+  equipGroups: [['leftHand'], ['rightHand']]
 });
 
 ItemDefs.sword = new ItemDef({
