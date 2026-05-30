@@ -364,6 +364,13 @@
     // Light sources — equip rather than consume
     if(def.type === "light") { swapEquip(idx, 'leftHand'); return; }
     
+    // Equippable accessories (gloves, rings, etc.)
+    if(def.type === "equip") {
+      const slot = def.slot || (def.equipChoice && def.equipChoice[0]) || 'chest';
+      swapEquip(idx, slot);
+      return;
+    }
+    
     // Useless items
     if(def.type === "useless" || def.type === "misc" || def.type === "quest") {
       // E17: Poop — humorous use messages, does not consume item
@@ -905,6 +912,32 @@
       calculateFOV();
       drawMap();
       updateUI();
+      return;
+    }
+    // ── Stubs for new spells (not yet implemented) ─────────
+    // Effects come from raw/spells.txt. Implementation notes in spells_def.js.
+    if(spellName === 'burningHands') {
+      // TODO: add 1d6+Potent heat damage to melee hits for 4 ticks
+      return;
+    }
+    if(spellName === 'cureCondition') {
+      // TODO: open conditions dialog with "Cast Cure" button per condition
+      return;
+    }
+    if(spellName === 'healWounds') {
+      // TODO: restore 2d6+Potent HP
+      return;
+    }
+    if(spellName === 'hinder') {
+      // TODO: AoE radius 2+Potent, -15% to-hit on enemies for 6 ticks
+      return;
+    }
+    if(spellName === 'necroticShroud') {
+      // TODO: apply NecroShroud condition with 8+Potent points
+      return;
+    }
+    if(spellName === 'nourish') {
+      // TODO: remove 10%-30%+Potent*10 hunger; set 40.0 spell cooldown
       return;
     }
     logMsg(`Unknown spell: ${spellName}`);

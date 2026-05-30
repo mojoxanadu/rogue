@@ -104,6 +104,106 @@ window.ItemDefs = ItemDefs;
 // Items registered here bypass LEGACY_ITEM_DATA entirely.
 // They can share icons with legacy items — the registry's
 // camelCase key and _byIcon first-wins rule keep things clean.
+// ── New tomes (from raw/spells.txt) ────────────────────────
+ItemDefs.tomeOfBurningHands = new ItemDef({
+  name: 'tomeOfBurningHands',
+  displayName: 'Tome of Burning Hands',
+  icon: '\uD83D\uDCD6\uD83D\uDD25',
+  type: 'spell',
+  spell: 'burningHands',
+  maxGP: 600,
+});
+ItemDefs.tomeOfCureCondition = new ItemDef({
+  name: 'tomeOfCureCondition',
+  displayName: 'Tome of Cure Condition',
+  icon: '\uD83D\uDCD6\uD83D\uDC8A',
+  type: 'spell',
+  spell: 'cureCondition',
+  maxGP: 800,
+});
+ItemDefs.tomeOfHealWounds = new ItemDef({
+  name: 'tomeOfHealWounds',
+  displayName: 'Tome of Heal Wounds',
+  icon: '\uD83D\uDCD6\uD83D\uDC9A',
+  type: 'spell',
+  spell: 'healWounds',
+  maxGP: 1200,
+});
+ItemDefs.tomeOfHinder = new ItemDef({
+  name: 'tomeOfHinder',
+  displayName: 'Tome of Hinder',
+  icon: '\uD83D\uDCD6\uD83D\uDCA8',
+  type: 'spell',
+  spell: 'hinder',
+  maxGP: 700,
+});
+ItemDefs.tomeOfNecroticShroud = new ItemDef({
+  name: 'tomeOfNecroticShroud',
+  displayName: 'Tome of Necrotic Shroud',
+  icon: '\uD83D\uDCD6\uD83D\uDC80',
+  type: 'spell',
+  spell: 'necroticShroud',
+  maxGP: 1500,
+});
+ItemDefs.tomeOfNourish = new ItemDef({
+  name: 'tomeOfNourish',
+  displayName: 'Tome of Nourish',
+  icon: '\uD83D\uDCD6\uD83C\uDF4E',
+  type: 'spell',
+  spell: 'nourish',
+  maxGP: 500,
+});
+
+// ── New items from raw/spells.txt ─────────────────────────
+ItemDefs.burningGloves = new ItemDef({
+  name: 'burningGloves',
+  displayName: 'Burning Gloves',
+  icon: '\uD83E\uDDE4\uD83D\uDD25',
+  type: 'equip',
+  equipChoice: ['leftHand', 'rightHand'],
+  equipGroups: [['leftHand'], ['rightHand']],
+  maxGP: 250,
+});
+ItemDefs.antitoxin = new ItemDef({
+  name: 'antitoxin',
+  displayName: 'Antitoxin',
+  icon: '\uD83D\uDC8A\uD83E\uDDA0',
+  type: 'potion',
+  maxHeal: 0,
+  maxGP: 20,
+  stackable: true,
+  maxStack: 99,
+});
+ItemDefs.antibiotic = new ItemDef({
+  name: 'antibiotic',
+  displayName: 'Antibiotic',
+  icon: '\uD83D\uDC8A\uD83E\uDDEC',
+  type: 'potion',
+  maxHeal: 0,
+  maxGP: 30,
+  stackable: true,
+  maxStack: 99,
+});
+ItemDefs.smokeBomb = new ItemDef({
+  name: 'smokeBomb',
+  displayName: 'Smoke Bomb',
+  icon: '\uD83D\uDCA8',
+  type: 'scroll',
+  spell: 'hinder',
+  maxGP: 35,
+  stackable: true,
+  maxStack: 20,
+});
+ItemDefs.necroticSkin = new ItemDef({
+  name: 'necroticSkin',
+  displayName: 'Necrotic Skin',
+  icon: '\uD83D\uDC7B',
+  type: 'equip',
+  slot: 'chest',
+  equipGroups: [['chest']],
+  maxGP: 2000,
+});
+
 ItemDefs.dagger = new ItemDef({
   name: 'dagger',
   displayName: 'Dagger',
@@ -218,6 +318,9 @@ window.SHOP_ITEM_CATALOGS = {
     { id: 'identifyScroll', cost: 30 },
     { id: 'townPortalScroll', cost: 5 },
     { id: 'healthPotion', cost: 40 },
+    { id: 'antitoxin', cost: 20 },
+    { id: 'antibiotic', cost: 30 },
+    { id: 'smokeBomb', cost: 35 },
     { id: 'candle', cost: 15 },
     { id: 'pizza', cost: 10 },
     { id: 'curry', cost: 5 },
@@ -241,6 +344,12 @@ window.SHOP_ITEM_CATALOGS = {
     { id: 'townPortalScroll', cost: 5 },
     { id: 'tomeOfFireball', cost: 800 },
     { id: 'tomeOfIlluminate', cost: 400 },
+    { id: 'tomeOfHealWounds', cost: 1200 },
+    { id: 'tomeOfBurningHands', cost: 600 },
+    { id: 'tomeOfCureCondition', cost: 800 },
+    { id: 'tomeOfHinder', cost: 700 },
+    { id: 'tomeOfNecroticShroud', cost: 1500 },
+    { id: 'tomeOfNourish', cost: 500 },
     { id: 'wizardsWand', cost: 25000 },
     { id: 'properStaff', cost: 25000 },
   ],
@@ -249,6 +358,12 @@ window.SHOP_ITEM_CATALOGS = {
     { id: 'townPortalScroll', cost: 5 },
     { id: 'tomeOfFireball', cost: 800 },
     { id: 'tomeOfIlluminate', cost: 400 },
+    { id: 'tomeOfHealWounds', cost: 1200 },
+    { id: 'tomeOfBurningHands', cost: 600 },
+    { id: 'tomeOfCureCondition', cost: 800 },
+    { id: 'tomeOfHinder', cost: 700 },
+    { id: 'tomeOfNecroticShroud', cost: 1500 },
+    { id: 'tomeOfNourish', cost: 500 },
     { id: 'wizardsWand', cost: 25000 },
     { id: 'properStaff', cost: 25000 },
   ],
@@ -271,5 +386,7 @@ window.SHOP_ITEM_CATALOGS = {
     { id: 'shield', cost: 150 },
     { id: 'staff', cost: 30 },
     { id: 'dagger', cost: 80 },
+    { id: 'burningGloves', cost: 250 },
+    { id: 'necroticSkin', cost: 2000 },
   ],
 };
