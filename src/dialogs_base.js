@@ -27,7 +27,74 @@
     };
   }
 
+  // Helper: clear thief debt for a given NPC key.
+  // Exposed on window so scriptEffects { type: 'callFn' } can reach it.
+  window._clearThiefStatus = function(key) {
+    if (player._thiefDebt) delete player._thiefDebt[key];
+  };
+
   Dialog.registerPhrases({
+    // ── Thief-caught interceptor ─────────────────────────────
+    // First catch — "I caught you!" then auto-advances to the debt demand.
+    '_thief_caught': {
+      message: function() {
+        const npc = Dialog.currentNpc;
+        const name = (npc && npc.stats && npc.stats.name) || (npc && (npc.shopType || npc.type)) || 'shopkeeper';
+        return `"I caught you! You can't shop here any more until you pay restitution."`;
+      },
+      autoAdvance: true,
+      replies: [
+        { text: '', nextPhrase: '_thief_caught_debt', default: true },
+      ],
+    },
+
+    // Debt demand — shown after the initial catch or on subsequent bumps.
+    '_thief_caught_debt': {
+      message: function() {
+        const npc = Dialog.currentNpc;
+        const key = (npc && (npc.shopType || npc.type)) || '';
+        const debt = (player._thiefDebt && player._thiefDebt[key]) || 0;
+        const enough = typeof player !== 'undefined' && player.gp >= debt;
+        return enough
+          ? `"Do you have the ${debt} gp you owe me, you thief?"`
+          : `"You owe me ${debt} gp, thief. Don't come back until you have it."`;
+      },
+      replies: function() {
+        const npc = Dialog.currentNpc;
+        const key = (npc && (npc.shopType || npc.type)) || '';
+        const debt = (player._thiefDebt && player._thiefDebt[key]) || 0;
+        const enough = typeof player !== 'undefined' && player.gp >= debt;
+        const out = [];
+        out.push({
+          text: enough ? `Yes, I'm so sorry, here's my restitution.` : `I don't have the gold yet.`,
+          nextPhrase: enough ? '_thief_forgiven' : '@close',
+          scriptEffects: enough ? [
+            { type: 'modStat', stat: 'gp', delta: -debt },
+            { type: 'callFn', fn: '_clearThiefStatus', args: [key] },
+            { type: 'log', message: `You pay ${debt}g restitution.` },
+          ] : [],
+        });
+        if (enough) {
+          out[0].default = true;
+        }
+        out.push({
+          text: "Not yet, I'll be back when I have it.",
+          nextPhrase: '@close',
+        });
+        return out;
+      },
+    },
+
+    '_thief_forgiven': {
+      message: '"Don\'t let me catch you again."',
+      autoAdvance: true,
+      replies: function() {
+        const npc = Dialog.currentNpc;
+        const returnPhrase = (npc && npc._thiefReturnPhrase) || '@close';
+        return [{ text: '', nextPhrase: returnPhrase, default: true }];
+      },
+    },
+
     // ── Barman ────────────────────────────────────────────────
     // The barman greets, then the @shop sentinel hands off to the existing
     // store UI (with its buy/sell tabs intact). [Leave] closes the dialog.

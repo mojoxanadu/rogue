@@ -4,48 +4,28 @@
 
   Replaces openShop()/openStore() for migrated shopkeepers. The Dialog
   engine's @shop sentinel routes to ShopDialog.open(type) instead of the
-  legacy openShop. Un-migrated shop NPCs (Apu, blacksmith, Cain, etc.)
+  legacy openShop. Un-migrated shop NPCs (e.g. champion, cain)
   still use the old openShop path — no regression for them.
 
   UI: no title bar; Buy + Sell tabs only; total GP bottom-left; Leave
   button bottom-right. Per the tier-1 spec.
 
-  Item catalogs live in SHOP_CATALOGS, keyed by NPC type. Tier-1 ships
-  only the barman; more shopkeepers join in tier-2 as they migrate.
-  buy() and sell() from shop.js are reused as-is.
+  Item catalogs live in window.SHOP_ITEM_CATALOGS (items_registry.js),
+  keyed by NPC type. Icon/name/price resolved from ItemDefs at runtime.
 
-  All user-facing strings (item names, NPC types) pass through _esc()
-  before innerHTML interpolation; payloads are author-controlled
-  (CATALOG constants + inventory items the player already owns).
+  All user-facing strings funnel through _esc() before innerHTML
+  interpolation; payloads are author-controlled constants + inventory
+  the player already owns.
 */
 (function() {
   'use strict';
-
-  // ─── Per-NPC item catalog ────────────────────────────────────
-  // Each entry mirrors the legacy shop.js items[] shape so the existing
-  // buy(icon, cost, type, qty) function works without modification.
-  const SHOP_CATALOGS = {
-    'mended_drum_barman': [
-      { id: 'scumbleMainlyApples', icon: '🍺', name: 'Scumble (mainly apples)',       cost: 4   },
-      { icon: '🍖', name: 'Dwarf Bread (also a weapon)',   cost: 6   },
-      { icon: '🧀', name: 'Lancre Cheese (legally a weapon)', cost: 5 },
-      { icon: '📜', name: 'Inn-Sewer-Ants Policy',         cost: 50  },
-      { icon: '🗡️', name: 'Perfectly Ordinary Sword',     cost: 120 },
-    ],
-    'blacksmith': [
-      { icon: '🗡️', name: 'Sword',  cost: 100 },
-      { icon: '🛡️', name: 'Shield', cost: 150 },
-      { icon: '🦯', name: 'Staff',  cost: 30  },
-      { id: 'dagger', icon: '🔪', name: 'Dagger', cost: 80  },
-    ],
-  };
 
   const ShopDialog = {
     _npcType: null,
     _tab: 'buy',
 
     open(npcType) {
-      if (!SHOP_CATALOGS[npcType]) {
+      if (!window.SHOP_ITEM_CATALOGS[npcType]) {
         console.warn(`[ShopDialog] no catalog for "${npcType}" — falling back to legacy openShop`);
         if (typeof openShop === 'function') openShop(npcType);
         return;
@@ -68,23 +48,23 @@
       this._npcType = null;
     },
 
-    // Called from button onclick — runs the legacy buy() / sell() with the
-    // suppressReopen flag (true) so they DON'T pop the old shop modal at
-    // the end. We re-render the new ShopDialog ourselves to reflect the
-    // change in GP / inventory.
-    buyItem(icon, cost, qty) {
-      const item = (SHOP_CATALOGS[this._npcType] || []).find(i => i.icon === icon);
-      if (item && item.id && typeof ItemDefs !== 'undefined' && ItemDefs[item.id]) {
-        if (typeof player === 'undefined' || player.gp < cost) return;
-        const slot = inventory.findIndex(s => s === null);
-        if (slot < 0) { if (typeof logMsg === 'function') logMsg("Inventory full!"); return; }
-        inventory[slot] = new ItemStack(item.id, qty);
-        if (typeof changeGold === 'function') changeGold(-cost);
-      } else {
-        if (typeof buy === 'function') buy(icon, cost, this._npcType, qty, true);
+    // Called from button onclick — places item in inventory using the
+    // catalog's camelCase ID so icon conflicts are never an issue.
+    buyItem(id, cost, qty) {
+      if (typeof player === 'undefined' || player.gp < cost) return;
+      const def = typeof ItemDefs !== 'undefined' && ItemDefs[id];
+      if (!def) {
+        if (typeof logMsg === 'function') logMsg(`<span style='color:var(--error)'>Unknown item: ${id}</span>`);
+        return;
       }
-      if (typeof logMsg === 'function') {
-        logMsg(`<span style="color:var(--success)">Bought ${item ? item.icon : icon} ${this._esc(item ? item.name : icon)} for ${cost} gp.</span>`);
+      const stack = new ItemStack(id, qty);
+      if (typeof tryPlaceInInventory === 'function' && tryPlaceInInventory(stack)) {
+        if (typeof changeGold === 'function') changeGold(-cost);
+        if (typeof logMsg === 'function') {
+          logMsg(`<span style="color:var(--success)">Bought ${def.icon} ${this._esc(def.displayName)} for ${cost} gp.</span>`);
+        }
+      } else {
+        if (typeof logMsg === 'function') logMsg("Inventory full!");
       }
       this._render();
       if (typeof renderQuickslots === 'function') renderQuickslots();
@@ -107,8 +87,6 @@
     },
 
     // ─── internals ─────────────────────────────────────────────
-    // All dynamic content funneled through _esc() before interpolation
-    // — see _renderBuy/_renderSell. No runtime/network input reaches DOM.
     _render() {
       this._updateTabs();
       this._updateBottom();
@@ -135,28 +113,24 @@
     },
 
     _renderBuy() {
-      const catalog = SHOP_CATALOGS[this._npcType] || [];
+      const catalog = window.SHOP_ITEM_CATALOGS[this._npcType] || [];
       if (catalog.length === 0) {
         return '<p style="color:#aaa; font-style:italic;">Nothing for sale.</p>';
       }
       return '<div style="display:flex; flex-direction:column; gap:6px;">' +
         catalog.map(item => {
+          const def = typeof ItemDefs !== 'undefined' && ItemDefs[item.id];
+          const displayName = def ? def.displayName : item.id;
+          const icon = def ? def.icon : '?';
           const qty = item.qty != null ? item.qty : 1;
           const affordable = (typeof player !== 'undefined' && player.gp >= item.cost);
-          // Args must be SINGLE-quoted so the onclick attribute's outer
-          // double-quotes survive intact. Matches the legacy shop.js style.
-          // Safe for our emoji icons (none contain a single quote); if a
-          // future catalog adds icons with apostrophes, switch to HTML
-          // entity encoding (&quot;) around a JSON.stringify wrapper.
-          const callArgs = `'${item.icon}', ${item.cost}, ${qty}`;
-          // Visible disabled styling for can't-afford items — matches the
-          // Next button treatment in dialog.js so the disabled state is
-          // unmistakable across browsers (default :disabled is too subtle).
+          // Args single-quoted so the onclick attribute's outer double-quotes survive.
+          const callArgs = `'${item.id}', ${item.cost}, ${qty}`;
           const btnStyle = affordable
             ? 'padding:4px 10px;'
             : 'padding:4px 10px; opacity:0.4; cursor:not-allowed; filter:grayscale(60%);';
           return `<div style="display:flex; justify-content:space-between; align-items:center; padding:6px 8px; background:#2D2B32; border-radius:4px;">
-            <span>${this._esc(item.icon)} ${this._esc(item.name)} <span style="color:var(--warning); margin-left:6px;">${item.cost}g</span></span>
+            <span>${this._esc(icon)} ${this._esc(displayName)} <span style="color:var(--warning); margin-left:6px;">${item.cost}g</span></span>
             <button onclick="ShopDialog.buyItem(${callArgs})" ${affordable ? '' : 'disabled'} style="${btnStyle}">Buy</button>
           </div>`;
         }).join('') + '</div>';

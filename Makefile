@@ -85,6 +85,7 @@ mobile: mobile-dev
 # Android APK — dev build (no bundled .dat files, assets loaded via file picker).
 APK_DIR := mobile/android/app/build/outputs/apk
 mobile-dev: dev
+	rm -f mobile/android/app/src/main/assets/roguelike_assets*.dat
 	cd mobile/android && ./gradlew assembleDebug
 	cp $(APK_DIR)/debug/app-debug.apk roguelike-dev.apk
 

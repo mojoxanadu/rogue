@@ -2025,6 +2025,13 @@
       // cain, mended_drum_barman + 4 patrons (vimes/cohen/librarian/bearded_dwarf),
       // and bridge_keeper (spawn + tree owned by quests_monty_python_bridge.js).
       if (npc.phraseId && typeof Dialog !== 'undefined') {
+        // Intercept: if player owes theft debt to this NPC, redirect to thief dialog
+        const debtKey = npc.shopType || npc.type;
+        if (player._thiefDebt && player._thiefDebt[debtKey]) {
+          if (npc.phraseId) npc._thiefReturnPhrase = npc.phraseId;
+          Dialog.startWith(npc, '_thief_caught_debt');
+          return;
+        }
         Dialog.startWith(npc, npc.phraseId);
         return;
       }

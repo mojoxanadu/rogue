@@ -1030,42 +1030,11 @@
 
     let html = '';
     if(tab === 'buy') {
-      // Build buyable items
+      // Build buyable items from unified catalog or special-case
       let items = [];
-      if(type === 'apu') {
-        items = [
-          {icon:'📃', name:'Scroll of Identify', cost:30},
-          {icon:'🌀', name:'Town Portal Scroll', cost:5},
-          {icon:'🧪', name:'Health Potion', cost:40},
-          {icon:'🕯️', name:'Candle', cost:15},
-          {icon:'🍕', name:'Pizza', cost:10},
-          {icon:'🍛', name:'Curry', cost:5},
-          {icon:'🥤', name:'Slurpee', cost:5},
-          {icon:'🥛', name:'Milk', cost:3},
-          {icon:'🦪', name:"Oyster (maybe I shouldn't?)", cost:2},
-          {icon:'🥜', name:'Peanuts (I might be allergic...)', cost:1},
-          {icon:'💰', name:'Gold Bag', cost:50},
-          {icon:'🎒', name:'Small Cloth Bag (3 slots)', cost:10},
-          {icon:'👜', name:'Leather Purse (3 slots)', cost:12},
-          {icon:'🛍️', name:'Canvas Tote (3 slots)', cost:8},
-        ];
-      } else if(type === 'leftys') {
-        items = [
-          {icon:'🍛', name:'Curry', cost:5},
-          {icon:'🥤', name:'Slurpee', cost:5},
-          {icon:'🥃', name:'Whiskey', cost:15},
-          {icon:'🍺', name:'Watered Down Beer', cost:5},
-        ];
-      } else if(type === 'wizard' || type === 'bookstore') {
-        items = [
-          {icon:'📃', name:'Scroll of Identify', cost:25},
-          {icon:'🌀', name:'Town Portal Scroll', cost:5},
-          {icon:'🔥📘', name:'Tome of Fireball', cost:800},
-          {icon:'🌀📘', name:'Tome of Illuminate', cost:400},
-          {icon:'🪄', name:"Wizard's Wand", cost:25000},
-          {icon:'🦯✨', name:'Proper Staff', cost:25000},
-        ];
-       } else if(type === 'cain') {
+      if (window.SHOP_ITEM_CATALOGS && window.SHOP_ITEM_CATALOGS[type]) {
+        items = window.SHOP_ITEM_CATALOGS[type];
+      } else if(type === 'cain') {
           const unidentified = getUnidentifiedItemNames();
           const oneByOneHtml = unidentified.length
             ? unidentified.map(name => {
@@ -1096,8 +1065,8 @@
           <p>"Our wares are reserved for the truly dedicated."</p>`;
         items = [];
         if(achieveCount >= 20) {
-          items.push({icon:'🌀', name:'Tome of Town Portal', cost:1000});
-          items.push({icon:'💎', name:'Resurrection Crystal', cost:2000});
+          items.push({icon:'📖🌀', name:'Tome of Town Portal', cost:1000});
+          items.push({icon:'💎💠', name:'Resurrection Crystal', cost:2000});
         }
         if(achieveCount >= 25) {
           items.push({icon:'💍⚡', name:'Ring of Evasion (+20%)', cost:5000});
@@ -1124,8 +1093,13 @@
       } else if(items.length > 0) {
         html = '<div style="display:flex; flex-direction:column; gap:4px;">';
         items.forEach(i => {
-          html += `<div class="shop-item" style="margin:0; padding:4px;"><span>${i.icon} ${i.name} (<span style="color:var(--warning)">${i.cost}g</span>)</span>
-            <button onclick="buy('${i.icon}', ${i.cost}, '${type}', ${i.qty ?? 1})">Buy</button></div>`;
+          const def = typeof ItemDefs !== 'undefined' && ItemDefs[i.id];
+          const icon = def ? def.icon : (i.icon || '?');
+          const label = def ? def.displayName : (i.name || i.id);
+          // Legacy items (champion) use icon-based buy; catalog items use id
+          const args = i.id ? `'${i.id}', ${i.cost}, '${type}', ${i.qty ?? 1}, false, true` : `'${icon}', ${i.cost}, '${type}', ${i.qty ?? 1}`;
+          html += `<div class="shop-item" style="margin:0; padding:4px;"><span>${icon} ${label} (<span style="color:var(--warning)">${i.cost}g</span>)</span>
+            <button onclick="buy(${args})">Buy</button></div>`;
         });
         html += '</div>';
       }
@@ -1215,9 +1189,28 @@
   // suppressReopen: when truthy, skip the openStore() re-render at the end.
   // The new ShopDialog (shop_dialog.js) drives its own re-render and would
   // otherwise see the legacy shop modal pop in on top of/under it.
-  window.buy = function(icon, cost, type, qty = 1, suppressReopen = false) {
+  window.buy = function(icon, cost, type, qty = 1, suppressReopen = false, useId = false) {
     let shopType = type === 'bookstore' ? 'wizard' : type;
     let finalCost = cost;
+    if(useId) {
+      const id = icon;
+      const def = typeof ItemDefs !== 'undefined' && ItemDefs[id];
+      if (!def) { logMsg(`<span style='color:var(--error)'>Unknown item: ${id}</span>`); return; }
+      // Discworld arcana banter for special items
+      if((id === 'wizardsWand' || id === 'properStaff') && (type === 'wizard' || type === 'bookstore')) {
+        openDiscworldArcanaBanter(def.icon, finalCost, type, qty);
+        return;
+      }
+      if(player.gp < finalCost) return showInsufficientFunds(shopType, finalCost, def.displayName);
+      const stack = new ItemStack(id, qty);
+      if (typeof tryPlaceInInventory === 'function' && tryPlaceInInventory(stack)) {
+        changeGold(-finalCost);
+      } else {
+        logMsg("No room! (Inventory full)");
+      }
+      if(!suppressReopen) openStore(type);
+      return;
+    }
     if((icon === '🪄' || icon === '🦯✨') && (type === 'wizard' || type === 'bookstore')) {
       openDiscworldArcanaBanter(icon, finalCost, type, qty);
       return;

@@ -124,3 +124,152 @@ ItemDefs.scumbleMainlyApples = new ItemDef({
   foodValue: 6,
   maxStack: 99,
 });
+
+ItemDefs.bread = new ItemDef({
+  name: 'bread',
+  displayName: 'Bread',
+  icon: '🍞',
+  type: 'food',
+  maxGP: 1,
+  maxHeal: 3,
+  foodValue: 5,
+  maxStack: 99,
+});
+
+ItemDefs.dwarfBread = new ItemDef({
+  name: 'dwarfBread',
+  displayName: 'Dwarf Bread (also a weapon)',
+  icon: '🍖',
+  type: 'food',
+  maxGP: 3,
+  maxHeal: 6,
+  foodValue: 10,
+  maxStack: 10,
+  baseDmg: 3,
+});
+
+ItemDefs.lancreCheese = new ItemDef({
+  name: 'lancreCheese',
+  displayName: 'Lancre Cheese (legally a weapon)',
+  icon: '🧀',
+  type: 'food',
+  maxGP: 2,
+  maxHeal: 4,
+  foodValue: 8,
+  maxStack: 10,
+  baseDmg: 2,
+});
+
+ItemDefs.innSewerAntsPolicy = new ItemDef({
+  name: 'innSewerAntsPolicy',
+  displayName: 'Inn-Sewer-Ants Policy',
+  icon: '📜',
+  type: 'scroll',
+  maxGP: 25,
+  stackable: true,
+  maxStack: 99,
+});
+
+ItemDefs.perfectlyOrdinarySword = new ItemDef({
+  name: 'perfectlyOrdinarySword',
+  displayName: 'Perfectly Ordinary Sword',
+  icon: '🗡️',
+  type: 'weapon',
+  maxGP: 60,
+  baseDmg: 8,
+  wieldTalent: 'wieldSwords',
+});
+
+ItemDefs.mysteriousDagger = new ItemDef({
+  name: 'mysteriousDagger',
+  displayName: 'Mysterious Dagger',
+  icon: '🗡️',
+  type: 'weapon',
+  maxGP: 25,
+  baseDmg: 7,
+  wieldTalent: 'wieldDaggers',
+});
+
+ItemDefs.leatherGloves = new ItemDef({
+  name: 'leatherGloves',
+  displayName: 'Leather Gloves',
+  icon: '🧤',
+  type: 'equip',
+  maxGP: 15,
+  slot: 'gloves',
+});
+
+ItemDefs.tarnishedRing = new ItemDef({
+  name: 'tarnishedRing',
+  displayName: 'Tarnished Ring',
+  icon: '💍',
+  type: 'equip',
+  maxGP: 50,
+  slot: 'finger',
+});
+
+// ─── Unified shop item catalogs ──────────────────────────────
+// Single source of truth for all NPC shop inventories. Each entry is
+// { id: camelCaseItemDefsId, cost: buyPrice/stealValue, qty?: quantity }.
+// Icon, displayName, and other properties are resolved from ItemDefs[id]
+// at render time.
+window.SHOP_ITEM_CATALOGS = {
+  'apu': [
+    { id: 'identifyScroll', cost: 30 },
+    { id: 'townPortalScroll', cost: 5 },
+    { id: 'healthPotion', cost: 40 },
+    { id: 'candle', cost: 15 },
+    { id: 'pizza', cost: 10 },
+    { id: 'curry', cost: 5 },
+    { id: 'slurpee', cost: 5 },
+    { id: 'milk', cost: 3 },
+    { id: 'oyster', cost: 2 },
+    { id: 'peanuts', cost: 1 },
+    { id: 'goldBag', cost: 50 },
+    { id: 'smallClothBag', cost: 10 },
+    { id: 'leatherPurse', cost: 12 },
+    { id: 'canvasTote', cost: 8 },
+  ],
+  'leftys': [
+    { id: 'curry', cost: 5 },
+    { id: 'slurpee', cost: 5 },
+    { id: 'whiskey', cost: 15 },
+    { id: 'wateredDownBeer', cost: 5 },
+  ],
+  'wizard': [
+    { id: 'identifyScroll', cost: 25 },
+    { id: 'townPortalScroll', cost: 5 },
+    { id: 'tomeOfFireball', cost: 800 },
+    { id: 'tomeOfIlluminate', cost: 400 },
+    { id: 'wizardsWand', cost: 25000 },
+    { id: 'properStaff', cost: 25000 },
+  ],
+  'bookstore': [
+    { id: 'identifyScroll', cost: 25 },
+    { id: 'townPortalScroll', cost: 5 },
+    { id: 'tomeOfFireball', cost: 800 },
+    { id: 'tomeOfIlluminate', cost: 400 },
+    { id: 'wizardsWand', cost: 25000 },
+    { id: 'properStaff', cost: 25000 },
+  ],
+  'dennis': [
+    { id: 'bow', cost: 25 },
+    { id: 'arrows', cost: 5, qty: 12 },
+    { id: 'rawMeat', cost: 8 },
+    { id: 'scarf', cost: 15 },
+    { id: 'bread', cost: 3 },
+  ],
+  'mended_drum_barman': [
+    { id: 'scumbleMainlyApples', cost: 4 },
+    { id: 'dwarfBread', cost: 6 },
+    { id: 'lancreCheese', cost: 5 },
+    { id: 'innSewerAntsPolicy', cost: 50 },
+    { id: 'perfectlyOrdinarySword', cost: 120 },
+  ],
+  'blacksmith': [
+    { id: 'sword', cost: 100 },
+    { id: 'shield', cost: 150 },
+    { id: 'staff', cost: 30 },
+    { id: 'dagger', cost: 80 },
+  ],
+};

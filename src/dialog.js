@@ -181,7 +181,6 @@
         this.leave();
         return;
       }
-      this.currentPhrase = phrase;
       this.currentPhraseId = phraseId;
       this._selectedReplyIdx = null;  // fresh phrase, no pick yet
       // Random phrase variant: pick one at random, merge message + replies.
@@ -195,6 +194,13 @@
         if (variant.replies) merged.replies = variant.replies;
         this.currentPhrase = merged;
         phrase = merged;  // downstream code reads from local `phrase`
+      } else {
+        // Clone phrase so function-based replies (evaluated below) don't
+        // mutate the shared phrase object in the registry. Without this,
+        // subsequent visits to the same phrase use the cached array instead
+        // of calling the function fresh — a bug that manifests whenever the
+        // function's return value depends on mutable player state (gp, HP, …).
+        this.currentPhrase = { ...phrase };
       }
       // Resolve function-based replies (called fresh each time)
       if (typeof this.currentPhrase.replies === 'function') {

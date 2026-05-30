@@ -2505,46 +2505,9 @@ function _performStickyMove(src, target) {
 
   // ── Stubs for use/toggle (engine wiring lands per-talent) ───
   // ── Sleight of Hand (SoH) — steal from shopkeepers / pickpocket monsters ──
-  const _SHOP_STEAL_ITEMS = {
-    'apu': [
-      {icon:'📃',name:'Scroll of Identify',cost:30},
-      {icon:'🌀',name:'Town Portal Scroll',cost:5},
-      {icon:'🧪',name:'Health Potion',cost:40},
-      {icon:'🕯️',name:'Candle',cost:15},
-      {icon:'🍕',name:'Pizza',cost:10},
-      {icon:'🍛',name:'Curry',cost:5},
-      {icon:'🥤',name:'Slurpee',cost:5},
-      {icon:'🥛',name:'Milk',cost:3},
-      {icon:'🦪',name:'Oyster',cost:2},
-      {icon:'🥜',name:'Peanuts',cost:1},
-      {icon:'💰',name:'Gold Bag',cost:50},
-    ],
-    'leftys': [
-      {icon:'🍛',name:'Curry',cost:5},{icon:'🥤',name:'Slurpee',cost:5},
-      {icon:'🥃',name:'Whiskey',cost:15},{icon:'🍺',name:'Watered Down Beer',cost:5},
-    ],
-    'wizard': [
-      {icon:'📃',name:'Scroll of Identify',cost:25},{icon:'🌀',name:'Town Portal Scroll',cost:5},
-      {icon:'🔥📘',name:'Tome of Fireball',cost:800},{icon:'🌀📘',name:'Tome of Illuminate',cost:400},
-    ],
-    'bookstore': [
-      {icon:'📃',name:'Scroll of Identify',cost:25},{icon:'🌀',name:'Town Portal Scroll',cost:5},
-      {icon:'🔥📘',name:'Tome of Fireball',cost:800},{icon:'🌀📘',name:'Tome of Illuminate',cost:400},
-    ],
-    'dennis': [
-      {icon:'🏹',name:'Bow',cost:25},{icon:'➶',name:'Arrows x12',cost:5,qty:12},
-      {icon:'🥩',name:'Meat',cost:8},{icon:'🧣',name:'Scarf (knitted by wife)',cost:15},
-      {icon:'🍞',name:'Bread',cost:3},
-    ],
-    'fence': [
-      {icon:'🗡️',name:'Mysterious Dagger',cost:50},{icon:'🧤',name:'Leather Gloves',cost:30},
-      {icon:'💍',name:'Tarnished Ring',cost:100},
-    ],
-    'blacksmith': [
-      {icon:'🗡️',name:'Sword',cost:100},{icon:'🛡️',name:'Shield',cost:150},
-      {icon:'🦯',name:'Staff',cost:30},{icon:'🔪',name:'Dagger',cost:80},
-    ],
-  };
+  // Items resolved from window.SHOP_ITEM_CATALOGS (items_registry.js).
+  // Each entry: { id: camelCaseItemDefsId, cost, qty? }
+  // Icon/displayName resolved from ItemDefs at render time.
 
   function _findTargetByCombatPriority() {
     const dirs = [
@@ -2562,7 +2525,17 @@ function _performStickyMove(src, target) {
 
   function _sohItemsFor(npc) {
     const key = npc.shopType || npc.type;
-    return _SHOP_STEAL_ITEMS[key] || [];
+    const catalog = window.SHOP_ITEM_CATALOGS && window.SHOP_ITEM_CATALOGS[key];
+    if (catalog) return catalog;
+    // Steal-only items for NPCs that don't have a buy catalog (fence)
+    const STEAL_ONLY = {
+      'fence': [
+        { id: 'mysteriousDagger', cost: 50 },
+        { id: 'leatherGloves', cost: 30 },
+        { id: 'tarnishedRing', cost: 100 },
+      ],
+    };
+    return STEAL_ONLY[key] || [];
   }
 
   function _isShopkeeperNPC(npc) {
@@ -2582,46 +2555,37 @@ function _performStickyMove(src, target) {
     if (Math.random() < noticeChance) {
       hideOverlay();
       const debt = 3 * cost;
-      const npcName = (npc.stats && npc.stats.name) || (npc.stats && npc.stats.icon) || npc.type;
-      const m = document.getElementById('modal-content');
-      m.innerHTML = `<h2>🚨 Caught!</h2>
-        <p>${npcName} catches your hand!</p>
-        <p><em>"THIEF! Pay me <strong>${debt}g</strong> or I'll call the guard!"</em></p>` +
-        (player.gp >= debt
-          ? `<button onclick="window._sohPayDebt(${debt})" style="margin-top:8px;">Pay ${debt}g</button>`
-          : `<p style="color:var(--error);font-size:11px;">You only have ${player.gp}g. Need ${debt}g.</p>`) +
-        `<button onclick="hideOverlay();advanceTurn(1)" style="margin-top:4px;background:var(--surface-container);">Flee!</button>`;
-      document.getElementById('overlay').style.display = 'flex';
       const key = npc.shopType || npc.type;
-      window._sohThiefKey = key;
-      window._sohThiefDebt = debt;
+      player._thiefDebt = player._thiefDebt || {};
+      player._thiefDebt[key] = debt;
+      if (npc.phraseId) npc._thiefReturnPhrase = npc.phraseId;
+      if (typeof Dialog !== 'undefined' && Dialog.startWith) {
+        if (typeof Dialog._hide === 'function') Dialog._hide();
+        Dialog.startWith(npc, '_thief_caught');
+      }
+      advanceTurn(1);
       return;
     }
     const successChance = Math.max(0, 0.2 * N - Math.sqrt(cost) / 100);
     if (Math.random() < successChance) {
-      logMsg(`<span style='color:var(--success)'>You swipe ${item.icon} ${item.name}!</span>`);
-      const slot = inventory.findIndex(s => s === null);
-      if (slot >= 0) {
-        inventory[slot] = ItemStack.fromIcon(item.icon, item.qty || 1);
-        if (typeof renderQuickslots === 'function') renderQuickslots();
-      } else {
-        logMsg("Inventory full — the prize falls to the floor!");
-        zone.dropAt(player.x, player.y, ItemStack.fromIcon(item.icon, item.qty || 1));
+      const def = ItemDefs[item.id];
+      logMsg(`<span style='color:var(--success)'>You swipe ${def ? def.icon : '?'} ${def ? def.displayName : item.id}!</span>`);
+      // ItemStack.fromIcon is legacy — use id-based constructor
+      const stack = new ItemStack(item.id, item.qty || 1);
+      if (typeof tryPlaceInInventory !== 'function' || !tryPlaceInInventory(stack)) {
+        zone.dropAt(player.x, player.y, stack);
+        if (typeof tryPlaceInInventory !== 'function') logMsg("Inventory full — the prize falls to the floor!");
       }
+      if (typeof renderQuickslots === 'function') renderQuickslots();
     } else {
-      logMsg(`<span style='color:var(--warning)'>Unnoticed but unsuccessful — ${item.icon} ${item.name} stays put.</span>`);
+      const def = ItemDefs[item.id];
+      logMsg(`<span style='color:var(--warning)'>Unnoticed but unsuccessful — ${def ? def.icon : '?'} ${def ? def.displayName : item.id} stays put.</span>`);
     }
     hideOverlay();
     advanceTurn(1);
   }
 
-  window._sohPayDebt = function(amount) {
-    if (player.gp < amount) return;
-    changeGold(-amount);
-    hideOverlay();
-    logMsg(`<span style='color:var(--warning)'>You pay ${amount}g compensation.</span>`);
-    advanceTurn(1);
-  };
+
 
   function _attemptPickpocketMonster(npc) {
     const N = player.talents.sleightOfHand.level || 1;
@@ -2634,12 +2598,14 @@ function _performStickyMove(src, target) {
       if (lootable && lootable.slots && lootable.slots.length > 0) {
         const item = lootable.slots[0];
         logMsg(`<span style='color:var(--success)'>Stole ${item.icon || '?'} ${item.def ? item.def.label() : 'something'} from ${npc.stats && npc.stats.icon ? npc.stats.icon + ' ' : ''}${npc.type}!</span>`);
-        const slot = inventory.findIndex(s => s === null);
-        if (slot >= 0) {
-          const stack = lootable.removeSlot(0);
-          inventory[slot] = stack;
-          if (typeof renderQuickslots === 'function') renderQuickslots();
+        const stack = lootable.remove(0);
+        if (stack && typeof tryPlaceInInventory === 'function') {
+          tryPlaceInInventory(stack);
+        } else if (stack) {
+          const slot = inventory.findIndex(s => s === null);
+          if (slot >= 0) inventory[slot] = stack;
         }
+        if (typeof renderQuickslots === 'function') renderQuickslots();
       } else {
         logMsg(`${npc.stats && npc.stats.icon ? npc.stats.icon + ' ' : ''}${npcName} has nothing to steal.`);
       }
@@ -2667,6 +2633,15 @@ function _performStickyMove(src, target) {
       logMsg("Stealth broken as you make your move.");
     }
     if (_isShopkeeperNPC(target)) {
+      // Already flagged as thief — go straight to debt conversation
+      const debtKey = target.shopType || target.type;
+      if (player._thiefDebt && player._thiefDebt[debtKey]) {
+        if (target.phraseId) target._thiefReturnPhrase = target.phraseId;
+        if (typeof Dialog !== 'undefined' && Dialog.startWith) {
+          Dialog.startWith(target, '_thief_caught_debt');
+        }
+        return;
+      }
       const items = _sohItemsFor(target);
       if (items.length === 0) {
         logMsg("Nothing worthwhile to steal here.");
@@ -2678,8 +2653,12 @@ function _performStickyMove(src, target) {
       let html = `<h2>🫳 Steal</h2><div style="display:flex;flex-direction:column;gap:4px;">`;
       for (let i = 0; i < items.length; i++) {
         const it = items[i];
+        const def = typeof ItemDefs !== 'undefined' && ItemDefs[it.id];
+        const icon = def ? def.icon : '?';
+        const label = def ? def.displayName : it.id;
+        const qtyLabel = (it.qty != null && it.qty > 1) ? ` x${it.qty}` : '';
         html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 6px;background:#2D2B32;border-radius:4px;">
-          <span>${it.icon} ${it.name}</span>
+          <span>${icon} ${label}${qtyLabel}</span>
           <button onclick="window._sohStealItem(${i})" style="padding:2px 8px;">Steal</button>
         </div>`;
       }

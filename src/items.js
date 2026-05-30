@@ -258,6 +258,8 @@ class ItemStack {
    * itemName is the icon itself (so the data isn't lost) and
    * logs a warning. That lets migration proceed without halting
    * on icons that haven't been added to LEGACY_ITEM_DATA yet.
+   *
+   * LEGACY — prefer new ItemStack(id, qty) with camelCase ItemDefs ID.
    */
   static fromIcon(icon, qty = NON_STACKABLE_QTY) {
     const def = ItemDef.byIcon(icon);
