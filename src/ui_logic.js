@@ -1823,16 +1823,27 @@ function _performStickyMove(src, target) {
           slot.title = (item.def?.displayName ?? item.icon) + ' [Unidentified effects]';
         }
       }
-      slot.onclick = () => {
+      slot.onclick = function() {
         if (handleStickyTap('inv', i)) return;
-        if (!item) { _tryShowQuickslotTutorial(); return; }
-        if(item && item.def && item.def.type === 'bag') return;
+        if (this.dataset.lpFired) { delete this.dataset.lpFired; return; }
+        if (!inventory[i]) { _tryShowQuickslotTutorial(); return; }
+        const item = inventory[i];
+        if(item.def && item.def.type === 'bag') return;
         handleItemClick(i);
       };
-      // #35: Double-click to use item directly
-      slot.ondblclick = () => { if(item) handleItemClick(i); };
-      // Bug 27: Right-click for Use/Drop popup
-      slot.oncontextmenu = (e) => { e.preventDefault(); showItemContextMenu(i, e); };
+      // Right-click (desktop) / long-press (Android contextmenu)
+      slot.oncontextmenu = (e) => { e.preventDefault(); if(inventory[i]) handleItemClick(i); };
+      // Long-press for iOS (contextmenu doesn't fire there)
+      (function(el, idx) {
+        el.addEventListener('touchstart', function() { this._lpStart = Date.now(); }, { passive: true });
+        el.addEventListener('touchend', function() {
+          if (inventory[idx] && Date.now() - this._lpStart >= 400) {
+            this.dataset.lpFired = '1';
+            handleItemClick(idx);
+          }
+        });
+        el.addEventListener('touchmove', function() { this._lpStart = 0; });
+      })(slot, i);
       grid.appendChild(slot);
     }
   };
@@ -1847,46 +1858,6 @@ function _performStickyMove(src, target) {
     }
   }
 
-  // Bug 27: Right-click context menu for inventory items
-  window.showItemContextMenu = (idx, e) => {
-    let item = inventory[idx];
-    if(!item) return;
-    let existing = document.getElementById('item-ctx-menu');
-    if(existing) existing.remove();
-    let menu = document.createElement('div');
-    menu.id = 'item-ctx-menu';
-    menu.style.cssText = `position:fixed; z-index:9999; background:rgba(29,27,32,0.95); border:2px solid var(--secondary);
-      border-radius:6px; padding:4px 0; min-width:140px; box-shadow:0 4px 12px rgba(0,0,0,0.5);`;
-    let name = item.def?.displayName ?? item.icon;
-    const def = item.def;
-    const canEquip = def && (def.slot || def.type === 'weapon' || def.type === 'armor' || def.type === 'light');
-    const freeInventory = inventory.findIndex(s => s === null);
-    menu.innerHTML = `
-      <div style="padding:4px 12px; color:var(--primary); font-size:11px; border-bottom:1px solid #444; margin-bottom:2px;">${item.icon} ${name}</div>
-      <div style="padding:6px 12px; cursor:pointer; font-size:12px;" onmouseover="this.style.background='#4A4458'" onmouseout="this.style.background=''"
-        onclick="handleItemClick(${idx}); document.getElementById('item-ctx-menu')?.remove();">Use</div>
-      ${canEquip ? `<div style="padding:6px 12px; cursor:pointer; font-size:12px;" onmouseover="this.style.background='#4A4458'" onmouseout="this.style.background=''"
-        onclick="swapEquip(${idx}, '${def.slot || 'leftHand'}'); document.getElementById('item-ctx-menu')?.remove();">Equip</div>` : ''}
-      ${freeInventory !== -1 ? `<div style="padding:6px 12px; cursor:pointer; font-size:12px;" onmouseover="this.style.background='#4A4458'" onmouseout="this.style.background=''"
-        onclick="tryPlaceInInventory(inventory[${idx}]); inventory[${idx}]=null; renderQuickslots(); renderInventory(); document.getElementById('item-ctx-menu')?.remove();">Move to Inventory</div>` : ''}
-      <div style="padding:6px 12px; cursor:pointer; font-size:12px; color:var(--error);" onmouseover="this.style.background='#4A4458'" onmouseout="this.style.background=''"
-        onclick="dropItemFromCtx(${idx}); document.getElementById('item-ctx-menu')?.remove();">Drop</div>`;
-    menu.style.left = Math.min(e.clientX, window.innerWidth - 150) + 'px';
-    menu.style.top = Math.min(e.clientY, window.innerHeight - 120) + 'px';
-    document.body.appendChild(menu);
-    setTimeout(() => {
-      document.addEventListener('click', function closeCtx() { menu.remove(); document.removeEventListener('click', closeCtx); });
-    }, 50);
-  };
-
-  window.dropItemFromCtx = (idx) => {
-    let item = inventory[idx];
-    if(!item) return;
-    zone.dropAt(player.x, player.y, new ItemStack(item.itemName, item.qty ?? 1));
-    inventory[idx] = null;
-    logMsg(`Dropped ${item.icon} on the ground.`);
-    renderQuickslots(); updateUI();
-  };
 
   window.handleInventoryClick = (i) => {
     if(dropMode) { zone.dropAt(player.x, player.y, new ItemStack(inventory[i].itemName, 1)); decrementInventory(i); dropMode = false; renderInventory(); return; }
