@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Asset Viewer</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .test { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .pass { background: #d4edda; color: #155724; }
+        .fail { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>Asset Viewer Test</h1>
+    
+    <div class="test">
+        <h3>Test 1: File Structure</h3>
+        <p>Checking if roguelike_assets.dat exists and is valid JSON...</p>
+        <div id="test1"></div>
+    </div>
+    
+    <div class="test">
+        <h3>Test 2: Asset Counts</h3>
+        <p>Checking asset counts match game data...</p>
+        <div id="test2"></div>
+    </div>
+    
+    <div class="test">
+        <h3>Test 3: Sprite Keys</h3>
+        <p>Checking sprite keys match monster/item definitions...</p>
+        <div id="test3"></div>
+    </div>
+    
+    <script>
+        async function runTests() {
+            // Test 1: File structure
+            try {
+                const response = await fetch('roguelike_assets.dat');
+                const text = await response.text();
+                const data = JSON.parse(text);
+                
+                if (data.sprites && data.sounds) {
+                    document.getElementById('test1').innerHTML = 
+                        `<div class="pass">✓ File loaded successfully. Contains sprites and sounds.</div>`;
+                } else {
+                    document.getElementById('test1').innerHTML = 
+                        `<div class="fail">✗ File missing required sections</div>`;
+                }
+                
+                // Test 2: Asset counts
+                const spriteCount = Object.keys(data.sprites || {}).length;
+                const soundCount = Object.keys(data.sounds || {}).length;
+                
+                let test2Html = `<div class="pass">`;
+                test2Html += `✓ Sprites: ${spriteCount}<br>`;
+                test2Html += `✓ Sounds: ${soundCount}<br>`;
+                
+                if (spriteCount >= 50) {
+                    test2Html += `✓ Sprite count looks good<br>`;
+                } else {
+                    test2Html += `✗ Low sprite count (expected ~57)<br>`;
+                }
+                
+                if (soundCount >= 4) {
+                    test2Html += `✓ Sound count looks good</div>`;
+                } else {
+                    test2Html += `✗ Low sound count (expected 4)</div>`;
+                }
+                
+                document.getElementById('test2').innerHTML = test2Html;
+                
+                // Test 3: Key matching
+                const spriteKeys = Object.keys(data.sprites || {});
+                const expectedKeys = ['player', 'wall', 'floor', 'slime', 'skeleton', 'bat', 'ghost'];
+                
+                let test3Html = `<div class="pass">`;
+                let allFound = true;
+                for (const key of expectedKeys) {
+                    if (spriteKeys.includes(key)) {
+                        test3Html += `✓ Found: ${key}<br>`;
+                    } else {
+                        test3Html += `✗ Missing: ${key}<br>`;
+                        allFound = false;
+                    }
+                }
+                
+                if (allFound) {
+                    test3Html += `✓ All expected sprite keys found</div>`;
+                } else {
+                    test3Html += `✗ Some sprite keys missing</div>`;
+                }
+                
+                document.getElementById('test3').innerHTML = test3Html;
+                
+            } catch (error) {
+                document.getElementById('test1').innerHTML = 
+                    `<div class="fail">✗ Failed to load asset file: ${error.message}</div>`;
+            }
+        }
+        
+        runTests();
+    </script>
+</body>
+</html>

@@ -1,0 +1,388 @@
+#!/usr/bin/env python3
+"""
+Generate an HTML asset selector for roguelike sprites with better parsing.
+"""
+import os
+import json
+import base64
+import re
+import ast
+from pathlib import Path
+
+# ----------------------------------------------------------------------
+# Parse sprite_definitions from build_complete_assets.py
+# ----------------------------------------------------------------------
+def parse_sprite_definitions():
+    """Extract sprite_definitions dictionary from build_complete_assets.py"""
+    with open('build_complete_assets.py', 'r') as f:
+        lines = f.readlines()
+    
+    # Find start and end lines of sprite_definitions = {
+    start = None
+    for i, line in enumerate(lines):
+        if 'sprite_definitions = {' in line:
+            start = i
+            break
+    if start is None:
+        raise ValueError('sprite_definitions not found')
+    
+    # Find matching brace
+    brace = 0
+    for i in range(start, len(lines)):
+        brace += lines[i].count('{')
+        brace -= lines[i].count('}')
+        if brace == 0:
+            end = i
+            break
+    else:
+        end = len(lines) - 1
+    
+    # Extract the dictionary lines
+    dict_lines = lines[start:end+1]
+    # Remove comments and trailing commas
+    cleaned = []
+    for line in dict_lines:
+        # Remove inline comments
+        line = re.sub(r'#.*', '', line)
+        cleaned.append(line)
+    dict_text = ''.join(cleaned)
+    # Now evaluate using ast.literal_eval (requires the whole expression)
+    # The text is 'sprite_definitions = {...}' we need just the dict part
+    # Find the first '{' and last '}'
+    first_brace = dict_text.find('{')
+    last_brace = dict_text.rfind('}') + 1
+    dict_only = dict_text[first_brace:last_brace]
+    # Replace '...' with valid Python literals (emoji strings are fine)
+    # Use ast.literal_eval
+    try:
+        sprite_defs = ast.literal_eval(dict_only)
+    except SyntaxError:
+        # Fallback: manual parsing
+        sprite_defs = {}
+        key = None
+        for line in dict_lines:
+            line = line.strip()
+            if line.startswith('"') or line.startswith("'"):
+                # Key line
+                match = re.match(r'^["\']([^"\']+)["\']\s*:', line)
+                if match:
+                    key = match.group(1)
+                    # Look for value dict
+                    # simplistic
+                    if '{' in line:
+                        # multi-line dict, skip
+                        pass
+                    else:
+                        # simple dict, ignore
+                        pass
+        # If still empty, use hardcoded
+        sprite_defs = {}
+    
+    if not sprite_defs:
+        # Hardcoded fallback from earlier reading
+        sprite_defs = {
+            "player": {"color": "#FF6B6B", "name": "Player"},
+            "slime": {"color": "#4ECDC4", "name": "Slime"},
+            "skeleton": {"color": "#C7C7C7", "name": "Skeleton", "detailed": "skeleton"},
+            "bat": {"color": "#6C5B7B", "name": "Bat"},
+            "ghost": {"color": "#F8F9FA", "name": "Ghost"},
+            "robot": {"color": "#45B7D1", "name": "Robot"},
+            "dragon": {"color": "#FF9A76", "name": "Dragon"},
+            "snake": {"color": "#96CEB4", "name": "Snake"},
+            "troll": {"color": "#588C7E", "name": "Troll", "detailed": "troll"},
+            "medusa": {"color": "#9E579D", "name": "Medusa"},
+            "assassin": {"color": "#2C3E50", "name": "Assassin", "detailed": "assassin"},
+            "killer_rabbit": {"color": "#FFEAA7", "name": "Rabbit"},
+            "thief": {"color": "#636E72", "name": "Thief"},
+            "fence": {"color": "#A29BFE", "name": "Fence", "detailed": "fence_closed"},
+            "fence_flasher": {"color": "#A29BFE", "name": "Fence Flasher", "detailed": "fence_flasher"},
+            "cain": {"color": "#FDCB6E", "name": "Cain", "detailed": "cain"},
+            "pirate": {"color": "#00B894", "name": "Pirate", "detailed": "pirate"},
+            "master": {"color": "#E17055", "name": "Master", "detailed": "master"},
+            "cat": {"color": "#FF7675", "name": "Cat"},
+            "genie": {"color": "#74B9FF", "name": "Genie", "detailed": "genie"},
+            "king": {"color": "#FDCB6E", "name": "King", "detailed": "king"},
+            "eagle": {"color": "#636E72", "name": "Eagle"},
+            "gurgi": {"color": "#A29BFE", "name": "Gurgi"},
+            "erasmus": {"color": "#6C5B7B", "name": "Erasmus"},
+            "cow": {"color": "#FFFFFF", "name": "Cow"},
+            "black_knight": {"color": "#2D3436", "name": "Knight", "detailed": "black_knight_4limbs"},
+            "black_knight_4limbs": {"color": "#2D3436", "name": "Knight 4 Limbs", "detailed": "black_knight_4limbs"},
+            "black_knight_3limbs": {"color": "#2D3436", "name": "Knight 3 Limbs", "detailed": "black_knight_3limbs"},
+            "black_knight_2limbs": {"color": "#2D3436", "name": "Knight 2 Limbs", "detailed": "black_knight_2limbs"},
+            "black_knight_1limb": {"color": "#2D3436", "name": "Knight 1 Limb", "detailed": "black_knight_1limb"},
+            "black_knight_0limbs": {"color": "#2D3436", "name": "Knight 0 Limbs", "detailed": "black_knight_0limbs"},
+            "french_taunter": {"color": "#0984E3", "name": "Taunter", "detailed": "french_taunter"},
+            "dennis": {"color": "#00B894", "name": "Dennis"},
+            "bridge_keeper": {"color": "#6C5B7B", "name": "Keeper", "detailed": "bridge_keeper"},
+            "chipmunk": {"color": "#D63031", "name": "Chipmunk"},
+            "duck": {"color": "#FFD700", "name": "Duck"},
+            "shark": {"color": "#2196F3", "name": "Shark"},
+            "wet_rat": {"color": "#795548", "name": "Wet Rat"},
+            "duck_hunt_dog": {"color": "#D2691E", "name": "Duck Hunt Dog", "detailed": "duck_hunt_dog"},
+            "wall": {"color": "#636E72", "name": "Wall"},
+            "floor": {"color": "#DFE6E9", "name": "Floor"},
+            "water": {"color": "#74B9FF", "name": "Water", "detailed": "water_tessellating"},
+            "sand": {"color": "#FFEAA7", "name": "Sand", "detailed": "sand_tessellating"},
+            "grass": {"color": "#00B894", "name": "Grass"},
+            "tree": {"color": "#00B894", "name": "Tree"},
+            "rock": {"color": "#636E72", "name": "Rock"},
+            "chest_closed": {"color": "#8B4513", "name": "Chest Closed", "detailed": "chest_closed"},
+            "chest_open": {"color": "#8B4513", "name": "Chest Open", "detailed": "chest_open"},
+            "bookstore": {"color": "#8B4513", "name": "Bookstore", "detailed": "bookstore"},
+            "💣🌟": {"color": "#FF7675", "name": "Grenade"},
+            "🧪": {"color": "#FD79A8", "name": "Potion"},
+            "🗡️": {"color": "#636E72", "name": "Sword"},
+            "🛡️": {"color": "#FDCB6E", "name": "Shield"},
+            "💰": {"color": "#FDCB6E", "name": "Gold"},
+        }
+    return sprite_defs
+
+# ----------------------------------------------------------------------
+# Additional asset groups from build_complete_assets.py
+# ----------------------------------------------------------------------
+def get_extra_assets():
+    return {
+        'warrior_sheets': {
+            'warrior_walk': 'Warrior Walk',
+            'warrior_run': 'Warrior Run',
+            'warrior_sleep': 'Warrior Sleep',
+            'warrior_fight': 'Warrior Fight',
+        },
+        'heads': {
+            'npc_apu': 'Apu',
+            'npc_wizard': 'Wizard',
+            'npc_chaplain': 'Chaplain',
+        },
+        'backgrounds': {
+            'bg_eagle_s_crag': 'Eagle\'s Crag',
+            'bg_hall_of_champions': 'Hall of Champions',
+            'bg_roc_nest': 'Roc Nest',
+        },
+    }
+
+# ----------------------------------------------------------------------
+# Scan image directories
+# ----------------------------------------------------------------------
+def scan_image_dirs():
+    lpc_dir = Path('external/lpc-spritesheet')
+    crawl_dir = Path('external/crawl/crawl-ref/source/rltiles')
+    images = {'lpc': [], 'crawl': []}
+    if lpc_dir.exists():
+        for ext in ['*.png', '*.jpg', '*.jpeg', '*.gif', '*.bmp']:
+            for img in lpc_dir.rglob(ext):
+                rel = img.relative_to(lpc_dir)
+                images['lpc'].append(str(rel))
+    if crawl_dir.exists():
+        for sub in ['dngn', 'mon', 'item', 'player', 'misc']:
+            subdir = crawl_dir / sub
+            if subdir.exists():
+                for ext in ['*.png', '*.jpg', '*.jpeg', '*.gif']:
+                    for img in subdir.rglob(ext):
+                        rel = img.relative_to(crawl_dir)
+                        images['crawl'].append(str(rel))
+    return images
+
+# ----------------------------------------------------------------------
+# Mapping from asset key to search terms
+# ----------------------------------------------------------------------
+def get_search_terms(key, config):
+    """Return list of search strings for given asset key."""
+    terms = [key]
+    if isinstance(config, dict) and 'name' in config:
+        terms.append(config['name'].lower())
+    # Additional mappings for emoji items
+    emoji_map = {
+        '💣🌟': ['grenade', 'bomb'],
+        '🧪': ['potion', 'vial', 'flask'],
+        '🗡️': ['sword', 'dagger', 'blade'],
+        '🛡️': ['shield'],
+        '💰': ['gold', 'coin', 'money'],
+    }
+    if key in emoji_map:
+        terms.extend(emoji_map[key])
+    # Remove duplicates
+    seen = set()
+    unique = []
+    for t in terms:
+        tl = t.lower()
+        if tl not in seen:
+            seen.add(tl)
+            unique.append(tl)
+    return unique
+
+# ----------------------------------------------------------------------
+# Generate HTML
+# ----------------------------------------------------------------------
+def generate_html():
+    sprite_defs = parse_sprite_definitions()
+    extra_assets = get_extra_assets()
+    image_db = scan_image_dirs()
+    
+    # Categorize sprite_defs
+    categories = {
+        'monsters': [],
+        'npcs': [],
+        'tiles': [],
+        'items': [],
+    }
+    monster_keys = ['slime', 'skeleton', 'bat', 'ghost', 'robot', 'dragon', 'snake', 'troll', 'medusa', 'assassin', 'killer_rabbit', 'chipmunk', 'duck', 'shark', 'wet_rat', 'duck_hunt_dog']
+    npc_keys = ['thief', 'fence', 'fence_flasher', 'cain', 'pirate', 'master', 'cat', 'genie', 'king', 'eagle', 'gurgi', 'erasmus', 'cow', 'black_knight', 'black_knight_4limbs', 'black_knight_3limbs', 'black_knight_2limbs', 'black_knight_1limb', 'black_knight_0limbs', 'french_taunter', 'dennis', 'bridge_keeper']
+    tile_keys = ['wall', 'floor', 'water', 'sand', 'grass', 'tree', 'rock', 'chest_closed', 'chest_open', 'bookstore']
+    item_keys = ['💣🌟', '🧪', '🗡️', '🛡️', '💰']
+    
+    for key, config in sprite_defs.items():
+        if key in monster_keys:
+            categories['monsters'].append((key, config))
+        elif key in npc_keys:
+            categories['npcs'].append((key, config))
+        elif key in tile_keys:
+            categories['tiles'].append((key, config))
+        elif key in item_keys:
+            categories['items'].append((key, config))
+        elif key == 'player':
+            categories['monsters'].append((key, config))
+        else:
+            # default to npcs
+            categories['npcs'].append((key, config))
+    
+    # Build HTML
+    html = []
+    html.append('<!DOCTYPE html>')
+    html.append('<html><head><meta charset="UTF-8"><title>Roguelike Asset Selector</title>')
+    html.append('<style>')
+    html.append('body { font-family: sans-serif; margin: 20px; }')
+    html.append('table { border-collapse: collapse; width: 100%; margin-bottom: 30px; }')
+    html.append('th, td { border: 1px solid #ccc; padding: 8px; text-align: left; vertical-align: top; }')
+    html.append('.thumb { cursor: pointer; border: 2px solid transparent; margin: 2px; }')
+    html.append('img.thumb { width: 32px; height: 32px; image-rendering: pixelated; }')
+    html.append('.emoji { font-size: 24px; display: inline-block; text-align: center; line-height: 32px; width: 32px; height: 32px; }')
+    html.append('.color-square { width: 32px; height: 32px; }')
+    html.append('.suggestions { display: flex; flex-wrap: wrap; align-items: center; }')
+    html.append('.category { margin-bottom: 40px; }')
+    html.append('</style>')
+    html.append('</head><body>')
+    html.append('<h1>Roguelike Asset Selector</h1>')
+    html.append('<p>Click on a suggestion image to select it for each asset. Then click Generate Mapping at the bottom.</p>')
+    
+    # For each category
+    for cat_name, cat_items in categories.items():
+        html.append(f'<div class="category"><h2>{cat_name.title()}</h2>')
+        html.append('<table><thead><tr><th>Asset Key</th><th>Name</th><th>Current</th><th>LPC Suggestions</th><th>DCSS Suggestions</th><th>Selected</th></tr></thead><tbody>')
+        for key, config in cat_items:
+            html.append(f'<tr data-key="{key}">')
+            html.append(f'<td><code>{key}</code></td>')
+            html.append(f'<td>{config.get("name", "")}</td>')
+            # Current representation (clickable)
+            if key in ['💣🌟', '🧪', '🗡️', '🛡️', '💰']:
+                # Emoji items - make emoji clickable
+                html.append(f'<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="{key}">{key}</span></td>')
+            else:
+                # Non-emoji items - show colored square if color available
+                color = config.get('color', '#CCC')
+                html.append(f'<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: {color}; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="{color}" title="Current color: {color}"></div></td>')
+            # Suggestions
+            search_terms = get_search_terms(key, config)
+            lpc_matches = []
+            crawl_matches = []
+            # Search in LPC
+            for img in image_db['lpc']:
+                img_lower = img.lower()
+                if any(term in img_lower for term in search_terms):
+                    lpc_matches.append(img)
+            # Search in crawl
+            for img in image_db['crawl']:
+                img_lower = img.lower()
+                if any(term in img_lower for term in search_terms):
+                    crawl_matches.append(img)
+            # Limit to 5 each
+            lpc_matches = lpc_matches[:5]
+            crawl_matches = crawl_matches[:5]
+            # Build thumbnail cells
+            lpc_cell = []
+            for img in lpc_matches:
+                lpc_cell.append(f'<img class="thumb" src="external/lpc-spritesheet/{img}" data-source="lpc" data-path="{img}" title="{img}">')
+            crawl_cell = []
+            for img in crawl_matches:
+                crawl_cell.append(f'<img class="thumb" src="external/crawl/crawl-ref/source/rltiles/{img}" data-source="crawl" data-path="{img}" title="{img}">')
+            html.append(f'<td class="suggestions">{" ".join(lpc_cell) if lpc_cell else "none"}</td>')
+            html.append(f'<td class="suggestions">{" ".join(crawl_cell) if crawl_cell else "none"}</td>')
+            html.append(f'<td class="selected-cell" id="selected-{key}">-</td>')
+            html.append('</tr>')
+        html.append('</tbody></table></div>')
+    
+    # Extra assets (warrior sheets, heads, backgrounds)
+    for cat_name, items in extra_assets.items():
+        html.append(f'<div class="category"><h2>{cat_name.title()}</h2>')
+        html.append('<table><thead><tr><th>Asset Key</th><th>Name</th><th>Current</th><th>LPC Suggestions</th><th>DCSS Suggestions</th><th>Selected</th></tr></thead><tbody>')
+        for key, name in items.items():
+            html.append(f'<tr data-key="{key}">')
+            html.append(f'<td><code>{key}</code></td>')
+            html.append(f'<td>{name}</td>')
+            html.append('<td>?</td>')
+            # Suggestions (search by key)
+            lpc_matches = []
+            crawl_matches = []
+            for img in image_db['lpc']:
+                if key.lower() in img.lower():
+                    lpc_matches.append(img)
+            for img in image_db['crawl']:
+                if key.lower() in img.lower():
+                    crawl_matches.append(img)
+            lpc_matches = lpc_matches[:5]
+            crawl_matches = crawl_matches[:5]
+            lpc_cell = [f'<img class="thumb" src="external/lpc-spritesheet/{img}" data-source="lpc" data-path="{img}">' for img in lpc_matches]
+            crawl_cell = [f'<img class="thumb" src="external/crawl/crawl-ref/source/rltiles/{img}" data-source="crawl" data-path="{img}">' for img in crawl_matches]
+            html.append(f'<td class="suggestions">{" ".join(lpc_cell) if lpc_cell else "none"}</td>')
+            html.append(f'<td class="suggestions">{" ".join(crawl_cell) if crawl_cell else "none"}</td>')
+            html.append(f'<td class="selected-cell" id="selected-{key}">-</td>')
+            html.append('</tr>')
+        html.append('</tbody></table></div>')
+    
+    # Generate button and output
+    html.append('<hr><button id="generate">Generate Mapping JSON</button>')
+    html.append('<pre id="output" style="background: #eee; padding: 10px; max-height: 300px; overflow: auto;"></pre>')
+    
+    # JavaScript
+    html.append('<script>')
+    html.append('const selections = {};')
+    html.append('function handleThumbClick(element) {')
+    html.append('  const row = element.closest("tr");')
+    html.append('  const key = row.dataset.key;')
+    html.append('  selections[key] = {')
+    html.append('    source: element.dataset.source,')
+    html.append('    path: element.dataset.path')
+    html.append('  };')
+    html.append('  // Update selected cell')
+    html.append('  const selectedCell = row.querySelector(".selected-cell");')
+    html.append('  if (element.dataset.source === "emoji") {')
+    html.append('    selectedCell.textContent = element.textContent + " (emoji)";')
+    html.append('  } else if (element.dataset.source === "color") {')
+    html.append('    selectedCell.textContent = element.dataset.path + " (color)";')
+    html.append('  } else {')
+    html.append('    selectedCell.textContent = element.dataset.path;')
+    html.append('  }')
+    html.append('  // Visual feedback')
+    html.append('  row.querySelectorAll(".thumb").forEach(i => i.style.borderColor = "transparent");')
+    html.append('  element.style.borderColor = "blue";')
+    html.append('}')
+    html.append('document.querySelectorAll(".thumb").forEach(el => {')
+    html.append('  el.addEventListener("click", function() {')
+    html.append('    handleThumbClick(this);')
+    html.append('  });')
+    html.append('});')
+    html.append('document.getElementById("generate").addEventListener("click", () => {')
+    html.append('  const output = JSON.stringify(selections, null, 2);')
+    html.append('  document.getElementById("output").textContent = output;')
+    html.append('});')
+    html.append('</script>')
+    
+    html.append('</body></html>')
+    return '\n'.join(html)
+
+if __name__ == '__main__':
+    html = generate_html()
+    with open('asset_selector_v2.html', 'w') as f:
+        f.write(html)
+    print('Generated asset_selector_v2.html')
+    print('Open in browser from the project root directory.')

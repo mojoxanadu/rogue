@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Roguelike Asset Selector</title>
+<style>
+body { font-family: sans-serif; margin: 20px; }
+table { border-collapse: collapse; width: 100%; margin-bottom: 30px; }
+th, td { border: 1px solid #ccc; padding: 8px; text-align: left; vertical-align: top; }
+.thumb { cursor: pointer; border: 2px solid transparent; margin: 2px; }
+img.thumb { width: 32px; height: 32px; image-rendering: pixelated; }
+.emoji { font-size: 24px; display: inline-block; text-align: center; line-height: 32px; width: 32px; height: 32px; }
+.color-square { width: 32px; height: 32px; }
+.suggestions { display: flex; flex-wrap: wrap; align-items: center; }
+.category { margin-bottom: 40px; }
+</style>
+</head><body>
+<h1>Roguelike Asset Selector</h1>
+<p>Click on a suggestion image to select it for each asset. Then click Generate Mapping at the bottom.</p>
+<div class="category"><h2>Monsters</h2>
+<table><thead><tr><th>Asset Key</th><th>Name</th><th>Current</th><th>LPC Suggestions</th><th>DCSS Suggestions</th><th>Selected</th></tr></thead><tbody>
+<tr data-key="player">
+<td><code>player</code></td>
+<td>Player</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #FF6B6B; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#FF6B6B" title="Current color: #FF6B6B"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/nonliving/player_shadow.png" data-source="crawl" data-path="mon/nonliving/player_shadow.png" title="mon/nonliving/player_shadow.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/player/old-serpent-geh.png" data-source="crawl" data-path="mon/player/old-serpent-geh.png" title="mon/player/old-serpent-geh.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/player/old-serpent-dis.png" data-source="crawl" data-path="mon/player/old-serpent-dis.png" title="mon/player/old-serpent-dis.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/player/old-serpent-tar.png" data-source="crawl" data-path="mon/player/old-serpent-tar.png" title="mon/player/old-serpent-tar.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/player/old-serpent-coc.png" data-source="crawl" data-path="mon/player/old-serpent-coc.png" title="mon/player/old-serpent-coc.png"></td>
+<td class="selected-cell" id="selected-player">-</td>
+</tr>
+<tr data-key="slime">
+<td><code>slime</code></td>
+<td>Slime</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #4ECDC4; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#4ECDC4" title="Current color: #4ECDC4"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/slime_overlay_SW.png" data-source="crawl" data-path="dngn/floor/slime_overlay_SW.png" title="dngn/floor/slime_overlay_SW.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/slime_overlay_NE.png" data-source="crawl" data-path="dngn/floor/slime_overlay_NE.png" title="dngn/floor/slime_overlay_NE.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/slime_overlay_SE.png" data-source="crawl" data-path="dngn/floor/slime_overlay_SE.png" title="dngn/floor/slime_overlay_SE.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/slime_overlay_W.png" data-source="crawl" data-path="dngn/floor/slime_overlay_W.png" title="dngn/floor/slime_overlay_W.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/slime_overlay_NW.png" data-source="crawl" data-path="dngn/floor/slime_overlay_NW.png" title="dngn/floor/slime_overlay_NW.png"></td>
+<td class="selected-cell" id="selected-slime">-</td>
+</tr>
+<tr data-key="skeleton">
+<td><code>skeleton</code></td>
+<td>Skeleton</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #C7C7C7; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#C7C7C7" title="Current color: #C7C7C7"></div></td>
+<td class="suggestions"><img class="thumb" src="external/lpc-spritesheet/weapons/left hand/either/arrow_skeleton.png" data-source="lpc" data-path="weapons/left hand/either/arrow_skeleton.png" title="weapons/left hand/either/arrow_skeleton.png"> <img class="thumb" src="external/lpc-spritesheet/weapons/right hand/either/bow_skeleton.png" data-source="lpc" data-path="weapons/right hand/either/bow_skeleton.png" title="weapons/right hand/either/bow_skeleton.png"> <img class="thumb" src="external/lpc-spritesheet/body/male/skeleton.png" data-source="lpc" data-path="body/male/skeleton.png" title="body/male/skeleton.png"> <img class="thumb" src="external/lpc-spritesheet/body/male/eyes/casting_eyeglow_skeleton.png" data-source="lpc" data-path="body/male/eyes/casting_eyeglow_skeleton.png" title="body/male/eyes/casting_eyeglow_skeleton.png"></td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/vaults/brick_dark_skeleton.png" data-source="crawl" data-path="dngn/vaults/brick_dark_skeleton.png" title="dngn/vaults/brick_dark_skeleton.png"></td>
+<td class="selected-cell" id="selected-skeleton">-</td>
+</tr>
+<tr data-key="bat">
+<td><code>bat</code></td>
+<td>Bat</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #6C5B7B; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#6C5B7B" title="Current color: #6C5B7B"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/animals/vampire_bat_orange.png" data-source="crawl" data-path="mon/animals/vampire_bat_orange.png" title="mon/animals/vampire_bat_orange.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/animals/bat.png" data-source="crawl" data-path="mon/animals/bat.png" title="mon/animals/bat.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/animals/fire_bat.png" data-source="crawl" data-path="mon/animals/fire_bat.png" title="mon/animals/fire_bat.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/animals/vampire_bat.png" data-source="crawl" data-path="mon/animals/vampire_bat.png" title="mon/animals/vampire_bat.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/animals/vampire_bat_blue.png" data-source="crawl" data-path="mon/animals/vampire_bat_blue.png" title="mon/animals/vampire_bat_blue.png"></td>
+<td class="selected-cell" id="selected-bat">-</td>
+</tr>
+<tr data-key="ghost">
+<td><code>ghost</code></td>
+<td>Ghost</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #F8F9FA; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#F8F9FA" title="Current color: #F8F9FA"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/undead/ghost.png" data-source="crawl" data-path="mon/undead/ghost.png" title="mon/undead/ghost.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/undead/flayed_ghost.png" data-source="crawl" data-path="mon/undead/flayed_ghost.png" title="mon/undead/flayed_ghost.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/undead/missing_ghost.png" data-source="crawl" data-path="mon/undead/missing_ghost.png" title="mon/undead/missing_ghost.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/animals/ghost_moth.png" data-source="crawl" data-path="mon/animals/ghost_moth.png" title="mon/animals/ghost_moth.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/animals/ghost_crab.png" data-source="crawl" data-path="mon/animals/ghost_crab.png" title="mon/animals/ghost_crab.png"></td>
+<td class="selected-cell" id="selected-ghost">-</td>
+</tr>
+<tr data-key="robot">
+<td><code>robot</code></td>
+<td>Robot</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #45B7D1; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#45B7D1" title="Current color: #45B7D1"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-robot">-</td>
+</tr>
+<tr data-key="dragon">
+<td><code>dragon</code></td>
+<td>Dragon</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #FF9A76; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#FF9A76" title="Current color: #FF9A76"></div></td>
+<td class="suggestions"><img class="thumb" src="external/lpc-spritesheet/weapons/oversize/two hand/either/dragonspear.png" data-source="lpc" data-path="weapons/oversize/two hand/either/dragonspear.png" title="weapons/oversize/two hand/either/dragonspear.png"></td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/statues/statue_dragon.png" data-source="crawl" data-path="dngn/statues/statue_dragon.png" title="dngn/statues/statue_dragon.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/statues/statue_depths_zot_dragon.png" data-source="crawl" data-path="dngn/statues/statue_depths_zot_dragon.png" title="dngn/statues/statue_depths_zot_dragon.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/undead/bone_dragon.png" data-source="crawl" data-path="mon/undead/bone_dragon.png" title="mon/undead/bone_dragon.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/holy/pearl_dragon.png" data-source="crawl" data-path="mon/holy/pearl_dragon.png" title="mon/holy/pearl_dragon.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/animals/komodo_dragon.png" data-source="crawl" data-path="mon/animals/komodo_dragon.png" title="mon/animals/komodo_dragon.png"></td>
+<td class="selected-cell" id="selected-dragon">-</td>
+</tr>
+<tr data-key="snake">
+<td><code>snake</code></td>
+<td>Snake</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #96CEB4; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#96CEB4" title="Current color: #96CEB4"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/snake-c3.png" data-source="crawl" data-path="dngn/floor/snake-c3.png" title="dngn/floor/snake-c3.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/snake-a1.png" data-source="crawl" data-path="dngn/floor/snake-a1.png" title="dngn/floor/snake-a1.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/snake-a2.png" data-source="crawl" data-path="dngn/floor/snake-a2.png" title="dngn/floor/snake-a2.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/snake-a0.png" data-source="crawl" data-path="dngn/floor/snake-a0.png" title="dngn/floor/snake-a0.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/snake-c0.png" data-source="crawl" data-path="dngn/floor/snake-c0.png" title="dngn/floor/snake-c0.png"></td>
+<td class="selected-cell" id="selected-snake">-</td>
+</tr>
+<tr data-key="troll">
+<td><code>troll</code></td>
+<td>Troll</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #588C7E; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#588C7E" title="Current color: #588C7E"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/vault/deep_troll_monk_ghost.png" data-source="crawl" data-path="mon/vault/deep_troll_monk_ghost.png" title="mon/vault/deep_troll_monk_ghost.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/vault/moon_troll.png" data-source="crawl" data-path="mon/vault/moon_troll.png" title="mon/vault/moon_troll.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/humanoids/deep_troll_earth_mage.png" data-source="crawl" data-path="mon/humanoids/deep_troll_earth_mage.png" title="mon/humanoids/deep_troll_earth_mage.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/humanoids/deep_troll_shaman.png" data-source="crawl" data-path="mon/humanoids/deep_troll_shaman.png" title="mon/humanoids/deep_troll_shaman.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/humanoids/iron_troll.png" data-source="crawl" data-path="mon/humanoids/iron_troll.png" title="mon/humanoids/iron_troll.png"></td>
+<td class="selected-cell" id="selected-troll">-</td>
+</tr>
+<tr data-key="medusa">
+<td><code>medusa</code></td>
+<td>Medusa</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #9E579D; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#9E579D" title="Current color: #9E579D"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/panlord/demon_head_medusa.png" data-source="crawl" data-path="mon/panlord/demon_head_medusa.png" title="mon/panlord/demon_head_medusa.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/talisman/medusa.png" data-source="crawl" data-path="item/talisman/medusa.png" title="item/talisman/medusa.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/player/transform/medusa_form_humanoid_front.png" data-source="crawl" data-path="player/transform/medusa_form_humanoid_front.png" title="player/transform/medusa_form_humanoid_front.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/player/transform/medusa_form_gale_centaur_back.png" data-source="crawl" data-path="player/transform/medusa_form_gale_centaur_back.png" title="player/transform/medusa_form_gale_centaur_back.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/player/transform/medusa_form_humanoid_back.png" data-source="crawl" data-path="player/transform/medusa_form_humanoid_back.png" title="player/transform/medusa_form_humanoid_back.png"></td>
+<td class="selected-cell" id="selected-medusa">-</td>
+</tr>
+<tr data-key="assassin">
+<td><code>assassin</code></td>
+<td>Assassin</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #2C3E50; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#2C3E50" title="Current color: #2C3E50"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/artefact/urand_assassin.png" data-source="crawl" data-path="item/armour/artefact/urand_assassin.png" title="item/armour/artefact/urand_assassin.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/artefact/urand_hood_assassin.png" data-source="crawl" data-path="item/armour/artefact/urand_hood_assassin.png" title="item/armour/artefact/urand_hood_assassin.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/player/head/hood_assassin.png" data-source="crawl" data-path="player/head/hood_assassin.png" title="player/head/hood_assassin.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/player/hand1/artefact/blowgun_assassin.png" data-source="crawl" data-path="player/hand1/artefact/blowgun_assassin.png" title="player/hand1/artefact/blowgun_assassin.png"></td>
+<td class="selected-cell" id="selected-assassin">-</td>
+</tr>
+<tr data-key="killer_rabbit">
+<td><code>killer_rabbit</code></td>
+<td>Rabbit</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #FFEAA7; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#FFEAA7" title="Current color: #FFEAA7"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-killer_rabbit">-</td>
+</tr>
+<tr data-key="chipmunk">
+<td><code>chipmunk</code></td>
+<td>Chipmunk</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #D63031; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#D63031" title="Current color: #D63031"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-chipmunk">-</td>
+</tr>
+<tr data-key="duck">
+<td><code>duck</code></td>
+<td>Duck</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #FFD700; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#FFD700" title="Current color: #FFD700"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-duck">-</td>
+</tr>
+<tr data-key="shark">
+<td><code>shark</code></td>
+<td>Shark</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #2196F3; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#2196F3" title="Current color: #2196F3"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/animals/skyshark.png" data-source="crawl" data-path="mon/animals/skyshark.png" title="mon/animals/skyshark.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/player/crawling_zombie_skyshark.png" data-source="crawl" data-path="mon/player/crawling_zombie_skyshark.png" title="mon/player/crawling_zombie_skyshark.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/undead/zombies/zombie_skyshark.png" data-source="crawl" data-path="mon/undead/zombies/zombie_skyshark.png" title="mon/undead/zombies/zombie_skyshark.png"></td>
+<td class="selected-cell" id="selected-shark">-</td>
+</tr>
+<tr data-key="wet_rat">
+<td><code>wet_rat</code></td>
+<td>Wet Rat</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #795548; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#795548" title="Current color: #795548"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-wet_rat">-</td>
+</tr>
+<tr data-key="duck_hunt_dog">
+<td><code>duck_hunt_dog</code></td>
+<td>Duck Hunt Dog</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #D2691E; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#D2691E" title="Current color: #D2691E"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-duck_hunt_dog">-</td>
+</tr>
+</tbody></table></div>
+<div class="category"><h2>Npcs</h2>
+<table><thead><tr><th>Asset Key</th><th>Name</th><th>Current</th><th>LPC Suggestions</th><th>DCSS Suggestions</th><th>Selected</th></tr></thead><tbody>
+<tr data-key="thief">
+<td><code>thief</code></td>
+<td>Thief</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #636E72; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#636E72" title="Current color: #636E72"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/artefact/urand_thief.png" data-source="crawl" data-path="item/armour/artefact/urand_thief.png" title="item/armour/artefact/urand_thief.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/player/hand1/sword_thief.png" data-source="crawl" data-path="player/hand1/sword_thief.png" title="player/hand1/sword_thief.png"></td>
+<td class="selected-cell" id="selected-thief">-</td>
+</tr>
+<tr data-key="fence">
+<td><code>fence</code></td>
+<td>Fence</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #A29BFE; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#A29BFE" title="Current color: #A29BFE"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/artefact/urand_fencer.png" data-source="crawl" data-path="item/armour/artefact/urand_fencer.png" title="item/armour/artefact/urand_fencer.png"></td>
+<td class="selected-cell" id="selected-fence">-</td>
+</tr>
+<tr data-key="fence_flasher">
+<td><code>fence_flasher</code></td>
+<td>Fence Flasher</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #A29BFE; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#A29BFE" title="Current color: #A29BFE"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-fence_flasher">-</td>
+</tr>
+<tr data-key="cain">
+<td><code>cain</code></td>
+<td>Cain</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #FDCB6E; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#FDCB6E" title="Current color: #FDCB6E"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-cain">-</td>
+</tr>
+<tr data-key="pirate">
+<td><code>pirate</code></td>
+<td>Pirate</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #00B894; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#00B894" title="Current color: #00B894"></div></td>
+<td class="suggestions"><img class="thumb" src="external/lpc-spritesheet/accessories/necklaces_female_ no_th-sh/pirate_wc_sc_only.png" data-source="lpc" data-path="accessories/necklaces_female_ no_th-sh/pirate_wc_sc_only.png" title="accessories/necklaces_female_ no_th-sh/pirate_wc_sc_only.png"> <img class="thumb" src="external/lpc-spritesheet/torso/shirts/sleeveless/female/teal_pirate.png" data-source="lpc" data-path="torso/shirts/sleeveless/female/teal_pirate.png" title="torso/shirts/sleeveless/female/teal_pirate.png"> <img class="thumb" src="external/lpc-spritesheet/torso/shirts/sleeveless/female/maroon_pirate.png" data-source="lpc" data-path="torso/shirts/sleeveless/female/maroon_pirate.png" title="torso/shirts/sleeveless/female/maroon_pirate.png"> <img class="thumb" src="external/lpc-spritesheet/torso/shirts/sleeveless/female/white_pirate.png" data-source="lpc" data-path="torso/shirts/sleeveless/female/white_pirate.png" title="torso/shirts/sleeveless/female/white_pirate.png"> <img class="thumb" src="external/lpc-spritesheet/torso/shirts/sleeveless/female/brown_pirate.png" data-source="lpc" data-path="torso/shirts/sleeveless/female/brown_pirate.png" title="torso/shirts/sleeveless/female/brown_pirate.png"></td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-pirate">-</td>
+</tr>
+<tr data-key="master">
+<td><code>master</code></td>
+<td>Master</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #E17055; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#E17055" title="Current color: #E17055"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/vault/master_elementalist.png" data-source="crawl" data-path="mon/vault/master_elementalist.png" title="mon/vault/master_elementalist.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/humanoids/elves/deep_elf_blademaster.png" data-source="crawl" data-path="mon/humanoids/elves/deep_elf_blademaster.png" title="mon/humanoids/elves/deep_elf_blademaster.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/humanoids/elves/deep_elf_master_archer.png" data-source="crawl" data-path="mon/humanoids/elves/deep_elf_master_archer.png" title="mon/humanoids/elves/deep_elf_master_archer.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/humanoids/humans/ironbound_beastmaster.png" data-source="crawl" data-path="mon/humanoids/humans/ironbound_beastmaster.png" title="mon/humanoids/humans/ironbound_beastmaster.png"></td>
+<td class="selected-cell" id="selected-master">-</td>
+</tr>
+<tr data-key="cat">
+<td><code>cat</code></td>
+<td>Cat</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #FF7675; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#FF7675" title="Current color: #FF7675"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/statues/statue_cat.png" data-source="crawl" data-path="dngn/statues/statue_cat.png" title="dngn/statues/statue_cat.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/wall/catacombs1.png" data-source="crawl" data-path="dngn/wall/catacombs1.png" title="dngn/wall/catacombs1.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/wall/catacombs2.png" data-source="crawl" data-path="dngn/wall/catacombs2.png" title="dngn/wall/catacombs2.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/wall/catacombs6.png" data-source="crawl" data-path="dngn/wall/catacombs6.png" title="dngn/wall/catacombs6.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/wall/catacombs7.png" data-source="crawl" data-path="dngn/wall/catacombs7.png" title="dngn/wall/catacombs7.png"></td>
+<td class="selected-cell" id="selected-cat">-</td>
+</tr>
+<tr data-key="genie">
+<td><code>genie</code></td>
+<td>Genie</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #74B9FF; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#74B9FF" title="Current color: #74B9FF"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-genie">-</td>
+</tr>
+<tr data-key="king">
+<td><code>king</code></td>
+<td>King</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #FDCB6E; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#FDCB6E" title="Current color: #FDCB6E"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/abyss/lurking_horror.png" data-source="crawl" data-path="mon/abyss/lurking_horror.png" title="mon/abyss/lurking_horror.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/animals/blinking_frog.png" data-source="crawl" data-path="mon/animals/blinking_frog.png" title="mon/animals/blinking_frog.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/nonliving/walking_alembic.png" data-source="crawl" data-path="mon/nonliving/walking_alembic.png" title="mon/nonliving/walking_alembic.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/fungi_plants/alderking0.png" data-source="crawl" data-path="mon/fungi_plants/alderking0.png" title="mon/fungi_plants/alderking0.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/fungi_plants/alderking1.png" data-source="crawl" data-path="mon/fungi_plants/alderking1.png" title="mon/fungi_plants/alderking1.png"></td>
+<td class="selected-cell" id="selected-king">-</td>
+</tr>
+<tr data-key="eagle">
+<td><code>eagle</code></td>
+<td>Eagle</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #636E72; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#636E72" title="Current color: #636E72"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-eagle">-</td>
+</tr>
+<tr data-key="gurgi">
+<td><code>gurgi</code></td>
+<td>Gurgi</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #A29BFE; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#A29BFE" title="Current color: #A29BFE"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-gurgi">-</td>
+</tr>
+<tr data-key="erasmus">
+<td><code>erasmus</code></td>
+<td>Erasmus</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #6C5B7B; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#6C5B7B" title="Current color: #6C5B7B"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-erasmus">-</td>
+</tr>
+<tr data-key="cow">
+<td><code>cow</code></td>
+<td>Cow</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #FFFFFF; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#FFFFFF" title="Current color: #FFFFFF"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/panlord/demon_head_cow_skull.png" data-source="crawl" data-path="mon/panlord/demon_head_cow_skull.png" title="mon/panlord/demon_head_cow_skull.png"></td>
+<td class="selected-cell" id="selected-cow">-</td>
+</tr>
+<tr data-key="black_knight">
+<td><code>black_knight</code></td>
+<td>Knight</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #2D3436; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#2D3436" title="Current color: #2D3436"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/undead/vampire_knight.png" data-source="crawl" data-path="mon/undead/vampire_knight.png" title="mon/undead/vampire_knight.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/nonliving/ancestor_knight.png" data-source="crawl" data-path="mon/nonliving/ancestor_knight.png" title="mon/nonliving/ancestor_knight.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/draco/draco-job-knight.png" data-source="crawl" data-path="mon/draco/draco-job-knight.png" title="mon/draco/draco-job-knight.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/humanoids/orcs/orc_knight.png" data-source="crawl" data-path="mon/humanoids/orcs/orc_knight.png" title="mon/humanoids/orcs/orc_knight.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/humanoids/elves/deep_elf_knight.png" data-source="crawl" data-path="mon/humanoids/elves/deep_elf_knight.png" title="mon/humanoids/elves/deep_elf_knight.png"></td>
+<td class="selected-cell" id="selected-black_knight">-</td>
+</tr>
+<tr data-key="black_knight_4limbs">
+<td><code>black_knight_4limbs</code></td>
+<td>Knight 4 Limbs</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #2D3436; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#2D3436" title="Current color: #2D3436"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-black_knight_4limbs">-</td>
+</tr>
+<tr data-key="black_knight_3limbs">
+<td><code>black_knight_3limbs</code></td>
+<td>Knight 3 Limbs</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #2D3436; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#2D3436" title="Current color: #2D3436"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-black_knight_3limbs">-</td>
+</tr>
+<tr data-key="black_knight_2limbs">
+<td><code>black_knight_2limbs</code></td>
+<td>Knight 2 Limbs</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #2D3436; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#2D3436" title="Current color: #2D3436"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-black_knight_2limbs">-</td>
+</tr>
+<tr data-key="black_knight_1limb">
+<td><code>black_knight_1limb</code></td>
+<td>Knight 1 Limb</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #2D3436; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#2D3436" title="Current color: #2D3436"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-black_knight_1limb">-</td>
+</tr>
+<tr data-key="black_knight_0limbs">
+<td><code>black_knight_0limbs</code></td>
+<td>Knight 0 Limbs</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #2D3436; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#2D3436" title="Current color: #2D3436"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-black_knight_0limbs">-</td>
+</tr>
+<tr data-key="french_taunter">
+<td><code>french_taunter</code></td>
+<td>Taunter</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #0984E3; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#0984E3" title="Current color: #0984E3"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-french_taunter">-</td>
+</tr>
+<tr data-key="dennis">
+<td><code>dennis</code></td>
+<td>Dennis</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #00B894; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#00B894" title="Current color: #00B894"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-dennis">-</td>
+</tr>
+<tr data-key="bridge_keeper">
+<td><code>bridge_keeper</code></td>
+<td>Keeper</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #6C5B7B; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#6C5B7B" title="Current color: #6C5B7B"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/nonliving/peacekeeper.png" data-source="crawl" data-path="mon/nonliving/peacekeeper.png" title="mon/nonliving/peacekeeper.png"></td>
+<td class="selected-cell" id="selected-bridge_keeper">-</td>
+</tr>
+</tbody></table></div>
+<div class="category"><h2>Tiles</h2>
+<table><thead><tr><th>Asset Key</th><th>Name</th><th>Current</th><th>LPC Suggestions</th><th>DCSS Suggestions</th><th>Selected</th></tr></thead><tbody>
+<tr data-key="wall">
+<td><code>wall</code></td>
+<td>Wall</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #636E72; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#636E72" title="Current color: #636E72"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/wall/cobalt_stone07.png" data-source="crawl" data-path="dngn/wall/cobalt_stone07.png" title="dngn/wall/cobalt_stone07.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/wall/brick_dark_1_10.png" data-source="crawl" data-path="dngn/wall/brick_dark_1_10.png" title="dngn/wall/brick_dark_1_10.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/wall/crystal_wall11.png" data-source="crawl" data-path="dngn/wall/crystal_wall11.png" title="dngn/wall/crystal_wall11.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/wall/catacombs1.png" data-source="crawl" data-path="dngn/wall/catacombs1.png" title="dngn/wall/catacombs1.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/wall/wall_stone_shadow_mesh3.png" data-source="crawl" data-path="dngn/wall/wall_stone_shadow_mesh3.png" title="dngn/wall/wall_stone_shadow_mesh3.png"></td>
+<td class="selected-cell" id="selected-wall">-</td>
+</tr>
+<tr data-key="floor">
+<td><code>floor</code></td>
+<td>Floor</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #DFE6E9; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#DFE6E9" title="Current color: #DFE6E9"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/mosaic8.png" data-source="crawl" data-path="dngn/floor/mosaic8.png" title="dngn/floor/mosaic8.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/grey_dirt7.png" data-source="crawl" data-path="dngn/floor/grey_dirt7.png" title="dngn/floor/grey_dirt7.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/spider09.png" data-source="crawl" data-path="dngn/floor/spider09.png" title="dngn/floor/spider09.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/frozen6.png" data-source="crawl" data-path="dngn/floor/frozen6.png" title="dngn/floor/frozen6.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/studio3.png" data-source="crawl" data-path="dngn/floor/studio3.png" title="dngn/floor/studio3.png"></td>
+<td class="selected-cell" id="selected-floor">-</td>
+</tr>
+<tr data-key="water">
+<td><code>water</code></td>
+<td>Water</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #74B9FF; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#74B9FF" title="Current color: #74B9FF"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/water/open_sea.png" data-source="crawl" data-path="dngn/water/open_sea.png" title="dngn/water/open_sea.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/water/deep_water_wave_W2.png" data-source="crawl" data-path="dngn/water/deep_water_wave_W2.png" title="dngn/water/deep_water_wave_W2.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/water/shoals_deep_water6.png" data-source="crawl" data-path="dngn/water/shoals_deep_water6.png" title="dngn/water/shoals_deep_water6.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/water/shoals_deep_water4.png" data-source="crawl" data-path="dngn/water/shoals_deep_water4.png" title="dngn/water/shoals_deep_water4.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/water/shoals_shallow_water1.png" data-source="crawl" data-path="dngn/water/shoals_shallow_water1.png" title="dngn/water/shoals_shallow_water1.png"></td>
+<td class="selected-cell" id="selected-water">-</td>
+</tr>
+<tr data-key="sand">
+<td><code>sand</code></td>
+<td>Sand</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #FFEAA7; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#FFEAA7" title="Current color: #FFEAA7"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/sand6.png" data-source="crawl" data-path="dngn/floor/sand6.png" title="dngn/floor/sand6.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/sandstone_floor3.png" data-source="crawl" data-path="dngn/floor/sandstone_floor3.png" title="dngn/floor/sandstone_floor3.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/sandstone_floor5.png" data-source="crawl" data-path="dngn/floor/sandstone_floor5.png" title="dngn/floor/sandstone_floor5.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/sand5.png" data-source="crawl" data-path="dngn/floor/sand5.png" title="dngn/floor/sand5.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/sandstone_floor4.png" data-source="crawl" data-path="dngn/floor/sandstone_floor4.png" title="dngn/floor/sandstone_floor4.png"></td>
+<td class="selected-cell" id="selected-sand">-</td>
+</tr>
+<tr data-key="grass">
+<td><code>grass</code></td>
+<td>Grass</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #00B894; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#00B894" title="Current color: #00B894"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/necropolis_tile_grass_3.png" data-source="crawl" data-path="dngn/floor/necropolis_tile_grass_3.png" title="dngn/floor/necropolis_tile_grass_3.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/necropolis_grass_2.png" data-source="crawl" data-path="dngn/floor/necropolis_grass_2.png" title="dngn/floor/necropolis_grass_2.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/necropolis_square_grass_1.png" data-source="crawl" data-path="dngn/floor/necropolis_square_grass_1.png" title="dngn/floor/necropolis_square_grass_1.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/necropolis_grass_3.png" data-source="crawl" data-path="dngn/floor/necropolis_grass_3.png" title="dngn/floor/necropolis_grass_3.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/necropolis_grass_4.png" data-source="crawl" data-path="dngn/floor/necropolis_grass_4.png" title="dngn/floor/necropolis_grass_4.png"></td>
+<td class="selected-cell" id="selected-grass">-</td>
+</tr>
+<tr data-key="tree">
+<td><code>tree</code></td>
+<td>Tree</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #00B894; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#00B894" title="Current color: #00B894"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/trees/tree_demonic14.png" data-source="crawl" data-path="dngn/trees/tree_demonic14.png" title="dngn/trees/tree_demonic14.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/trees/tree4.png" data-source="crawl" data-path="dngn/trees/tree4.png" title="dngn/trees/tree4.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/trees/mangrove3.png" data-source="crawl" data-path="dngn/trees/mangrove3.png" title="dngn/trees/mangrove3.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/trees/tree_demonic5.png" data-source="crawl" data-path="dngn/trees/tree_demonic5.png" title="dngn/trees/tree_demonic5.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/trees/dead_tree_of_woe3.png" data-source="crawl" data-path="dngn/trees/dead_tree_of_woe3.png" title="dngn/trees/dead_tree_of_woe3.png"></td>
+<td class="selected-cell" id="selected-tree">-</td>
+</tr>
+<tr data-key="rock">
+<td><code>rock</code></td>
+<td>Rock</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #636E72; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#636E72" title="Current color: #636E72"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/seismorock0.png" data-source="crawl" data-path="dngn/floor/seismorock0.png" title="dngn/floor/seismorock0.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/seismorock1.png" data-source="crawl" data-path="dngn/floor/seismorock1.png" title="dngn/floor/seismorock1.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/seismorock3.png" data-source="crawl" data-path="dngn/floor/seismorock3.png" title="dngn/floor/seismorock3.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/seismorock2.png" data-source="crawl" data-path="dngn/floor/seismorock2.png" title="dngn/floor/seismorock2.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/wall/rock_wall_crypt2.png" data-source="crawl" data-path="dngn/wall/rock_wall_crypt2.png" title="dngn/wall/rock_wall_crypt2.png"></td>
+<td class="selected-cell" id="selected-rock">-</td>
+</tr>
+<tr data-key="chest_closed">
+<td><code>chest_closed</code></td>
+<td>Chest Closed</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #8B4513; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#8B4513" title="Current color: #8B4513"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-chest_closed">-</td>
+</tr>
+<tr data-key="chest_open">
+<td><code>chest_open</code></td>
+<td>Chest Open</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #8B4513; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#8B4513" title="Current color: #8B4513"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-chest_open">-</td>
+</tr>
+<tr data-key="bookstore">
+<td><code>bookstore</code></td>
+<td>Bookstore</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #8B4513; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#8B4513" title="Current color: #8B4513"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-bookstore">-</td>
+</tr>
+</tbody></table></div>
+<div class="category"><h2>Items</h2>
+<table><thead><tr><th>Asset Key</th><th>Name</th><th>Current</th><th>LPC Suggestions</th><th>DCSS Suggestions</th><th>Selected</th></tr></thead><tbody>
+<tr data-key="💣🌟">
+<td><code>💣🌟</code></td>
+<td>Grenade</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="💣🌟">💣🌟</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/animals/bombardier_beetle.png" data-source="crawl" data-path="mon/animals/bombardier_beetle.png" title="mon/animals/bombardier_beetle.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/nonliving/monarch_bomb.png" data-source="crawl" data-path="mon/nonliving/monarch_bomb.png" title="mon/nonliving/monarch_bomb.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/nonliving/bomblet.png" data-source="crawl" data-path="mon/nonliving/bomblet.png" title="mon/nonliving/bomblet.png"></td>
+<td class="selected-cell" id="selected-💣🌟">-</td>
+</tr>
+<tr data-key="🧪">
+<td><code>🧪</code></td>
+<td>Potion</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🧪">🧪</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/shops/shop_potions.png" data-source="crawl" data-path="dngn/shops/shop_potions.png" title="dngn/shops/shop_potions.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/potion/pink.png" data-source="crawl" data-path="item/potion/pink.png" title="item/potion/pink.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/potion/bubbly.png" data-source="crawl" data-path="item/potion/bubbly.png" title="item/potion/bubbly.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/potion/i-flight.png" data-source="crawl" data-path="item/potion/i-flight.png" title="item/potion/i-flight.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/potion/puce.png" data-source="crawl" data-path="item/potion/puce.png" title="item/potion/puce.png"></td>
+<td class="selected-cell" id="selected-🧪">-</td>
+</tr>
+<tr data-key="🗡️">
+<td><code>🗡️</code></td>
+<td>Sword</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🗡️">🗡️</span></td>
+<td class="suggestions"><img class="thumb" src="external/lpc-spritesheet/weapons/oversize/right hand/female/longsword_female.png" data-source="lpc" data-path="weapons/oversize/right hand/female/longsword_female.png" title="weapons/oversize/right hand/female/longsword_female.png"> <img class="thumb" src="external/lpc-spritesheet/weapons/oversize/right hand/male/longsword_male.png" data-source="lpc" data-path="weapons/oversize/right hand/male/longsword_male.png" title="weapons/oversize/right hand/male/longsword_male.png"> <img class="thumb" src="external/lpc-spritesheet/weapons/right hand/female/dagger_female.png" data-source="lpc" data-path="weapons/right hand/female/dagger_female.png" title="weapons/right hand/female/dagger_female.png"> <img class="thumb" src="external/lpc-spritesheet/weapons/right hand/male/dagger_male.png" data-source="lpc" data-path="weapons/right hand/male/dagger_male.png" title="weapons/right hand/male/dagger_male.png"></td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/blade_floor1.png" data-source="crawl" data-path="dngn/floor/blade_floor1.png" title="dngn/floor/blade_floor1.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/blade_floor2.png" data-source="crawl" data-path="dngn/floor/blade_floor2.png" title="dngn/floor/blade_floor2.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/blade_floor3.png" data-source="crawl" data-path="dngn/floor/blade_floor3.png" title="dngn/floor/blade_floor3.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/blade_floor0.png" data-source="crawl" data-path="dngn/floor/blade_floor0.png" title="dngn/floor/blade_floor0.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/statues/statue_sword.png" data-source="crawl" data-path="dngn/statues/statue_sword.png" title="dngn/statues/statue_sword.png"></td>
+<td class="selected-cell" id="selected-🗡️">-</td>
+</tr>
+<tr data-key="🛡️">
+<td><code>🛡️</code></td>
+<td>Shield</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🛡️">🛡️</span></td>
+<td class="suggestions"><img class="thumb" src="external/lpc-spritesheet/weapons/left hand/male/shield_male_cutoutforbody.png" data-source="lpc" data-path="weapons/left hand/male/shield_male_cutoutforbody.png" title="weapons/left hand/male/shield_male_cutoutforbody.png"> <img class="thumb" src="external/lpc-spritesheet/weapons/left hand/male/shield_male_cutoutforhat.png" data-source="lpc" data-path="weapons/left hand/male/shield_male_cutoutforhat.png" title="weapons/left hand/male/shield_male_cutoutforhat.png"></td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/amulet/artefact/urand_brooch_of_shielding.png" data-source="crawl" data-path="item/amulet/artefact/urand_brooch_of_shielding.png" title="item/amulet/artefact/urand_brooch_of_shielding.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/shields/tower_shield2.png" data-source="crawl" data-path="item/armour/shields/tower_shield2.png" title="item/armour/shields/tower_shield2.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/shields/kite_shield_donald.png" data-source="crawl" data-path="item/armour/shields/kite_shield_donald.png" title="item/armour/shields/kite_shield_donald.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/shields/kite_shield_dd.png" data-source="crawl" data-path="item/armour/shields/kite_shield_dd.png" title="item/armour/shields/kite_shield_dd.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/shields/buckler3.png" data-source="crawl" data-path="item/armour/shields/buckler3.png" title="item/armour/shields/buckler3.png"></td>
+<td class="selected-cell" id="selected-🛡️">-</td>
+</tr>
+<tr data-key="💰">
+<td><code>💰</code></td>
+<td>Gold</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="💰">💰</span></td>
+<td class="suggestions"><img class="thumb" src="external/lpc-spritesheet/facial/male/bigstache/gold.png" data-source="lpc" data-path="facial/male/bigstache/gold.png" title="facial/male/bigstache/gold.png"> <img class="thumb" src="external/lpc-spritesheet/facial/male/fiveoclock/gold.png" data-source="lpc" data-path="facial/male/fiveoclock/gold.png" title="facial/male/fiveoclock/gold.png"> <img class="thumb" src="external/lpc-spritesheet/facial/male/beard/gold.png" data-source="lpc" data-path="facial/male/beard/gold.png" title="facial/male/beard/gold.png"> <img class="thumb" src="external/lpc-spritesheet/facial/male/frenchstache/gold.png" data-source="lpc" data-path="facial/male/frenchstache/gold.png" title="facial/male/frenchstache/gold.png"> <img class="thumb" src="external/lpc-spritesheet/facial/male/mustache/gold.png" data-source="lpc" data-path="facial/male/mustache/gold.png" title="facial/male/mustache/gold.png"></td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/metal_gold1.png" data-source="crawl" data-path="dngn/floor/metal_gold1.png" title="dngn/floor/metal_gold1.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/metal_gold3.png" data-source="crawl" data-path="dngn/floor/metal_gold3.png" title="dngn/floor/metal_gold3.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/metal_gold0.png" data-source="crawl" data-path="dngn/floor/metal_gold0.png" title="dngn/floor/metal_gold0.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/metal_gold2.png" data-source="crawl" data-path="dngn/floor/metal_gold2.png" title="dngn/floor/metal_gold2.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/vaults/golden_statue_1.png" data-source="crawl" data-path="dngn/vaults/golden_statue_1.png" title="dngn/vaults/golden_statue_1.png"></td>
+<td class="selected-cell" id="selected-💰">-</td>
+</tr>
+</tbody></table></div>
+<div class="category"><h2>Warrior_Sheets</h2>
+<table><thead><tr><th>Asset Key</th><th>Name</th><th>Current</th><th>LPC Suggestions</th><th>DCSS Suggestions</th><th>Selected</th></tr></thead><tbody>
+<tr data-key="warrior_walk">
+<td><code>warrior_walk</code></td>
+<td>Warrior Walk</td>
+<td>?</td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-warrior_walk">-</td>
+</tr>
+<tr data-key="warrior_run">
+<td><code>warrior_run</code></td>
+<td>Warrior Run</td>
+<td>?</td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-warrior_run">-</td>
+</tr>
+<tr data-key="warrior_sleep">
+<td><code>warrior_sleep</code></td>
+<td>Warrior Sleep</td>
+<td>?</td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-warrior_sleep">-</td>
+</tr>
+<tr data-key="warrior_fight">
+<td><code>warrior_fight</code></td>
+<td>Warrior Fight</td>
+<td>?</td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-warrior_fight">-</td>
+</tr>
+</tbody></table></div>
+<div class="category"><h2>Heads</h2>
+<table><thead><tr><th>Asset Key</th><th>Name</th><th>Current</th><th>LPC Suggestions</th><th>DCSS Suggestions</th><th>Selected</th></tr></thead><tbody>
+<tr data-key="npc_apu">
+<td><code>npc_apu</code></td>
+<td>Apu</td>
+<td>?</td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-npc_apu">-</td>
+</tr>
+<tr data-key="npc_wizard">
+<td><code>npc_wizard</code></td>
+<td>Wizard</td>
+<td>?</td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-npc_wizard">-</td>
+</tr>
+<tr data-key="npc_chaplain">
+<td><code>npc_chaplain</code></td>
+<td>Chaplain</td>
+<td>?</td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-npc_chaplain">-</td>
+</tr>
+</tbody></table></div>
+<div class="category"><h2>Backgrounds</h2>
+<table><thead><tr><th>Asset Key</th><th>Name</th><th>Current</th><th>LPC Suggestions</th><th>DCSS Suggestions</th><th>Selected</th></tr></thead><tbody>
+<tr data-key="bg_eagle_s_crag">
+<td><code>bg_eagle_s_crag</code></td>
+<td>Eagle's Crag</td>
+<td>?</td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-bg_eagle_s_crag">-</td>
+</tr>
+<tr data-key="bg_hall_of_champions">
+<td><code>bg_hall_of_champions</code></td>
+<td>Hall of Champions</td>
+<td>?</td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-bg_hall_of_champions">-</td>
+</tr>
+<tr data-key="bg_roc_nest">
+<td><code>bg_roc_nest</code></td>
+<td>Roc Nest</td>
+<td>?</td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-bg_roc_nest">-</td>
+</tr>
+</tbody></table></div>
+<hr><button id="generate">Generate Mapping JSON</button>
+<pre id="output" style="background: #eee; padding: 10px; max-height: 300px; overflow: auto;"></pre>
+<script>
+const selections = {};
+function handleThumbClick(element) {
+  const row = element.closest("tr");
+  const key = row.dataset.key;
+  selections[key] = {
+    source: element.dataset.source,
+    path: element.dataset.path
+  };
+  // Update selected cell
+  const selectedCell = row.querySelector(".selected-cell");
+  if (element.dataset.source === "emoji") {
+    selectedCell.textContent = element.textContent + " (emoji)";
+  } else if (element.dataset.source === "color") {
+    selectedCell.textContent = element.dataset.path + " (color)";
+  } else {
+    selectedCell.textContent = element.dataset.path;
+  }
+  // Visual feedback
+  row.querySelectorAll(".thumb").forEach(i => i.style.borderColor = "transparent");
+  element.style.borderColor = "blue";
+}
+document.querySelectorAll(".thumb").forEach(el => {
+  el.addEventListener("click", function() {
+    handleThumbClick(this);
+  });
+});
+document.getElementById("generate").addEventListener("click", () => {
+  const output = JSON.stringify(selections, null, 2);
+  document.getElementById("output").textContent = output;
+});
+</script>
+</body></html>

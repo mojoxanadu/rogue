@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rogue JS - Asset Viewer Build 762</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #141218; color: #CCC2DC; }
+    .page { max-width: 1500px; margin: 0 auto; padding: 20px; }
+    .panel { background: #1D1B20; border: 1px solid #4A4458; border-radius: 12px; padding: 16px; }
+    .header { margin-bottom: 16px; }
+    .header h1 { margin: 0 0 6px; color: #D0BCFF; }
+    .muted { color: #999; font-size: 13px; }
+    .loader-row { display: flex; gap: 12px; flex-wrap: wrap; margin: 16px 0; }
+    .slot-card { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 110px; }
+    .slot-button {
+      width: 56px; height: 56px; border-radius: 8px; border: 2px solid #555;
+      background: #2D2B32; color: #fff; font-size: 24px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .slot-button.loaded { border-color: #81C784; box-shadow: 0 0 10px rgba(129,199,132,0.35); }
+    .slot-label { font-size: 12px; color: #D0BCFF; }
+    .slot-summary { font-size: 11px; color: #888; min-height: 14px; text-align: center; }
+    .row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+    .search { width: 100%; max-width: 360px; padding: 10px 12px; border-radius: 8px; border: 1px solid #4A4458; background: #2D2B32; color: #fff; }
+    .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+    .chip { padding: 6px 10px; border-radius: 999px; background: #2D2B32; border: 1px solid #4A4458; cursor: pointer; font-size: 12px; }
+    .chip.active { background: #D0BCFF; color: #381E72; }
+    .stats { display: flex; gap: 10px; flex-wrap: wrap; margin: 12px 0 18px; }
+    .stat { background: #2D2B32; border: 1px solid #4A4458; border-radius: 8px; padding: 8px 10px; font-size: 12px; }
+    .section { margin-top: 18px; }
+    .section h2 { margin: 0 0 12px; color: #D0BCFF; font-size: 18px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+    .card { background: #2D2B32; border: 1px solid #4A4458; border-radius: 10px; padding: 12px; }
+    .card[hidden] { display: none !important; }
+    .card-head { display: flex; gap: 10px; align-items: center; }
+    .emoji { width: 40px; text-align: center; font-size: 28px; }
+    .name { color: #D0BCFF; font-weight: 700; }
+    .tag { color: #888; font-size: 11px; font-family: monospace; }
+    .desc { margin-top: 8px; color: #bbb; font-size: 12px; }
+    .meta { margin-top: 8px; color: #888; font-size: 11px; }
+    .sprite { width: 64px; height: 64px; object-fit: contain; background: #141218; border-radius: 8px; border: 1px solid #4A4458; margin-top: 8px; }
+    .bg-grid { grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); }
+    .bg-card { text-align: center; }
+    .bg-card img { width: 100%; max-height: 280px; object-fit: cover; background: #141218; border-radius: 8px; border: 1px solid #4A4458; }
+    .heads { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; }
+    .head { text-align: center; background: #2D2B32; border: 1px solid #4A4458; border-radius: 10px; padding: 14px; }
+    .head img { width: 120px; height: 120px; object-fit: contain; background: #141218; border-radius: 8px; }
+    .head-fallback { width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; margin: 0 auto; font-size: 72px; background: #141218; border-radius: 8px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px; border-bottom: 1px solid #4A4458; text-align: left; font-size: 12px; }
+    .button { padding: 8px 12px; border-radius: 8px; border: 1px solid #4A4458; background: #2D2B32; color: #fff; cursor: pointer; }
+    .button.primary { background: #D0BCFF; color: #381E72; border-color: #D0BCFF; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="panel header">
+      <h1>Rogue JS Asset Viewer</h1>
+      <div class="muted">Build 762. Multi-file asset architecture: Core, Ambient, and Arcade bundles merge into one viewer state.</div>
+      <div class="loader-row">
+        <div class="slot-card">
+          <button class="slot-button" id="slot-core-btn" type="button">🎒</button>
+          <div class="slot-label">Assets</div>
+          <div class="slot-summary" id="slot-core-summary">not loaded</div>
+          <input id="slot-core-input" type="file" accept=".dat,.json" hidden>
+        </div>
+        <div class="slot-card">
+          <button class="slot-button" id="slot-ambient-btn" type="button">🎵</button>
+          <div class="slot-label">Ambient</div>
+          <div class="slot-summary" id="slot-ambient-summary">not loaded</div>
+          <input id="slot-ambient-input" type="file" accept=".dat,.json" hidden>
+        </div>
+        <div class="slot-card">
+          <button class="slot-button" id="slot-arcade-btn" type="button">🕹️</button>
+          <div class="slot-label">Arcade</div>
+          <div class="slot-summary" id="slot-arcade-summary">not loaded</div>
+          <input id="slot-arcade-input" type="file" accept=".dat,.json" hidden>
+        </div>
+        <div class="slot-card" style="width:auto; align-items:flex-start; justify-content:flex-end;">
+          <button class="button" id="reset-btn" type="button">Reset</button>
+          <div class="slot-summary" id="loaded-files">Loaded: none</div>
+        </div>
+      </div>
+      <div class="row">
+        <input id="search" class="search" type="text" placeholder="Search assets...">
+        <div class="chips">
+          <button class="chip active" data-filter="all">All</button>
+          <button class="chip" data-filter="heads">Talking Heads</button>
+          <button class="chip" data-filter="background">Backgrounds</button>
+          <button class="chip" data-filter="monster">Monsters</button>
+          <button class="chip" data-filter="npc">NPCs</button>
+          <button class="chip" data-filter="item">Items</button>
+          <button class="chip" data-filter="tile">Tiles</button>
+          <button class="chip" data-filter="audio">Audio</button>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat">Sprites: <span id="stat-sprites">0</span></div>
+        <div class="stat">GIF Heads: <span id="stat-heads">0</span></div>
+        <div class="stat">Backgrounds: <span id="stat-backgrounds">0</span></div>
+        <div class="stat">Sounds: <span id="stat-sounds">0</span></div>
+        <div class="stat">Arcade files: <span id="stat-arcade">0</span></div>
+      </div>
+    </div>
+
+    <div class="panel section" id="heads-section">
+      <h2>Talking Heads</h2>
+      <div class="heads" id="heads-grid"></div>
+    </div>
+
+    <div class="panel section" id="backgrounds-section">
+      <h2>Backgrounds</h2>
+      <div class="grid bg-grid" id="backgrounds-grid"></div>
+    </div>
+
+    <div class="panel section" id="cards-section">
+      <h2>Catalog</h2>
+      <div class="grid" id="catalog-grid"></div>
+    </div>
+
+    <div class="panel section" id="audio-section">
+      <h2>Audio</h2>
+      <table>
+        <thead><tr><th>Name</th><th>Type</th><th>Size</th><th>Action</th></tr></thead>
+        <tbody id="audio-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const TALKING_HEADS = [
+      { key: 'npc_apu', name: 'Apu / Dave', fallback: '🧔🏿' },
+      { key: 'npc_wizard', name: 'Wizard', fallback: '🧙' },
+      { key: 'npc_chaplain', name: 'Pirate Chaplain', fallback: '⛪' },
+    ];
+
+    const BACKGROUNDS = [
+      { key: 'bg_eagle_s_crag', name: "Eagle's Crag", desc: 'Mountain summit ledge with dizzying views' },
+      { key: 'bg_hall_of_champions', name: 'Hall of Champions', desc: 'Grand trophy hall of fallen heroes' },
+      { key: 'bg_roc_nest', name: "Roc's Nest", desc: 'Giant nest atop the highest peak' },
+    ];
+
+    const CATALOG = {
+      monsters: {
+        slime:{name:'Slime',emoji:'🫧',hp:8,dmg:2,type:'monster'}, bat:{name:'Bat',emoji:'🦇',hp:6,dmg:2,type:'monster'},
+        skeleton:{name:'Skeleton',emoji:'💀',hp:20,dmg:8,type:'monster'}, ghost:{name:'Ghost',emoji:'👻',hp:15,dmg:8,type:'monster'},
+        dragon:{name:'Dragon',emoji:'🐉',hp:150,dmg:30,type:'monster'}, troll:{name:'Troll',emoji:'🧌',hp:60,dmg:15,type:'monster'},
+        shark:{name:'Dungeon Shark',emoji:'🦈',hp:80,dmg:25,type:'monster'}, ifrit:{name:'Ifrit',emoji:'🔥',hp:300,dmg:25,type:'monster'},
+        mouse:{name:'Mouse',emoji:'🐭',hp:3,dmg:0,type:'monster'}, cockroach:{name:'Cockroach',emoji:'🪳',hp:1,dmg:0,type:'monster'},
+        grue:{name:'Grue',emoji:'👁️',hp:0,dmg:999,type:'monster'}, orc:{name:'Orc',emoji:'🧌',hp:40,dmg:10,type:'monster'},
+        chipmunk:{name:'Chipmunk',emoji:'🐿️',hp:10,dmg:3,type:'monster'}, duck:{name:'Duck',emoji:'🦆',hp:8,dmg:2,type:'monster'},
+      },
+      npcs: {
+        cain:{name:'Deckard Cain',emoji:'🧙🏽‍♂️',type:'npc'}, fence:{name:'Fence',emoji:'🧥',type:'npc'}, dennis:{name:'Dennis',emoji:'👨‍🌾',type:'npc'},
+        chaplain:{name:'Pirate Chaplain',emoji:'⛪',type:'npc'}, pacifist_orc:{name:'Grok',emoji:'🧌',type:'npc'}, eagle:{name:'Hungry Eagle',emoji:'🦅',type:'npc'},
+        pirate:{name:'Pirate',emoji:'🏴‍☠️',type:'npc'}, master:{name:'Swordmaster',emoji:'🤺',type:'npc'}, thief:{name:'Thief',emoji:'👤',type:'npc'}
+      },
+      items: {
+        '🗡️':{name:'Sword',type:'weapon'},'🛡️':{name:'Shield',type:'armor'},'🧪':{name:'Health Potion',type:'potion'},'🕯️':{name:'Candle',type:'light'},
+        '📃':{name:'Identify Scroll',type:'scroll'},'🌀':{name:'Town Portal Scroll',type:'scroll'},'⛏️':{name:'Scroll of Tunnel',type:'scroll'},
+        '🎒':{name:'Small Cloth Bag',type:'bag'},'💼🌟':{name:'Bag of Holding',type:'bag'},'🎒🌈':{name:'The Luggage',type:'bag'},
+        '🪗':{name:'Accordion',type:'weapon'},'🏹':{name:'Bow',type:'weapon'},'➶':{name:'Arrows',type:'ammo'},'🪄':{name:'Wand',type:'weapon'},'🦯✨':{name:'Arcane Staff',type:'weapon'}
+      },
+      tiles: {
+        WALL:'Wall 🧱', FLOOR:'Floor ⬜', STORE:'Store 🏪', LEFTYS:'Lefty\'s Bar 🍺', BOOKSTORE:'Bookstore 📚',
+        STAIR_DOWN:'Stairs Down ⬇️', STAIR_UP:'Stairs Up ⬆️', CASTLE_DOOR:'Door 🚪', GRASS:'Grass 🌱', WATER:'Water 💧', ROCK:'Rock 🪨'
+      }
+    };
+
+    const assetData = { sprites: {}, sounds: {}, minigames: {} };
+    const loadedFiles = new Map();
+    let activeFilter = 'all';
+
+    function setSlotState(slot, state, summary) {
+      const btn = document.getElementById(`slot-${slot}-btn`);
+      const label = document.getElementById(`slot-${slot}-summary`);
+      if(state === 'loaded') {
+        btn.classList.add('loaded');
+        btn.textContent = '✓';
+      } else {
+        btn.classList.remove('loaded');
+        btn.textContent = slot === 'core' ? '🎒' : slot === 'ambient' ? '🎵' : '🕹️';
+      }
+      label.textContent = summary || 'not loaded';
+    }
+
+    function updateLoadedFiles() {
+      const names = [...loadedFiles.keys()];
+      document.getElementById('loaded-files').textContent = `Loaded: ${names.length ? names.join(', ') : 'none'}`;
+    }
+
+    function mergeAssetData(data) {
+      Object.assign(assetData.sprites, data.sprites || {});
+      Object.assign(assetData.sounds, data.sounds || {});
+      Object.assign(assetData.minigames, data.minigames || {});
+    }
+
+    function renderHeads() {
+      const grid = document.getElementById('heads-grid');
+      grid.innerHTML = '';
+      let gifCount = 0;
+      for(const head of TALKING_HEADS) {
+        const src = assetData.sprites[head.key];
+        const hasGif = typeof src === 'string' && src.startsWith('data:image/gif');
+        if(hasGif) gifCount++;
+        const el = document.createElement('div');
+        el.className = 'head';
+        el.dataset.type = 'heads';
+        el.innerHTML = hasGif
+          ? `<img src="${src}" alt="${head.name}"><div class="name">${head.name}</div><div class="tag">${head.key}</div>`
+          : `<div class="head-fallback">${head.fallback}</div><div class="name">${head.name}</div><div class="tag">${head.key}</div>`;
+        grid.appendChild(el);
+      }
+      document.getElementById('stat-heads').textContent = gifCount;
+    }
+
+    function renderBackgrounds() {
+      const grid = document.getElementById('backgrounds-grid');
+      grid.innerHTML = '';
+      let bgCount = 0;
+      for(const bg of BACKGROUNDS) {
+        const src = assetData.sprites[bg.key];
+        const hasImg = typeof src === 'string' && src.startsWith('data:image/');
+        if(hasImg) bgCount++;
+        const el = document.createElement('div');
+        el.className = 'card bg-card';
+        el.dataset.type = 'background';
+        el.innerHTML = hasImg
+          ? `<img src="${src}" alt="${bg.name}"><div class="name" style="margin-top:8px">${bg.name}</div><div class="tag">${bg.key}</div><div class="desc">${bg.desc}</div>`
+          : `<div class="head-fallback">🏞️</div><div class="name" style="margin-top:8px">${bg.name}</div><div class="tag">${bg.key}</div><div class="desc">${bg.desc}</div>`;
+        grid.appendChild(el);
+      }
+      document.getElementById('stat-backgrounds').textContent = bgCount;
+    }
+
+    function buildCatalogCards() {
+      const grid = document.getElementById('catalog-grid');
+      grid.innerHTML = '';
+      const pushCard = (type, key, data) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.dataset.type = type;
+        const sprite = assetData.sprites[key] || assetData.sprites[data.emoji];
+        const spriteHtml = typeof sprite === 'string' && sprite.startsWith('data:image/') ? `<img class="sprite" src="${sprite}" alt="">` : '';
+        const emoji = data.emoji || key;
+        const meta = [data.hp != null ? `HP ${data.hp}` : '', data.dmg != null ? `DMG ${data.dmg}` : '', data.type || type].filter(Boolean).join(' · ');
+        card.innerHTML = `<div class="card-head"><div class="emoji">${emoji}</div><div><div class="name">${data.name || key}</div><div class="tag">${type}:${key}</div></div></div><div class="desc">${data.desc || data.description || ''}</div><div class="meta">${meta}</div>${spriteHtml}`;
+        grid.appendChild(card);
+      };
+      Object.entries(CATALOG.monsters).forEach(([k,v]) => pushCard('monster', k, v));
+      Object.entries(CATALOG.npcs).forEach(([k,v]) => pushCard('npc', k, v));
+      Object.entries(CATALOG.items).forEach(([k,v]) => pushCard('item', k, { ...v, emoji: k }));
+      Object.entries(CATALOG.tiles).forEach(([k,v]) => pushCard('tile', k, { name: String(v).replace(/ .*/, ''), emoji: String(v).split(' ').pop() }));
+    }
+
+    function renderAudio() {
+      const body = document.getElementById('audio-body');
+      body.innerHTML = '';
+      Object.entries(assetData.sounds).forEach(([name, data]) => {
+        const row = document.createElement('tr');
+        const size = Math.round(data.length * 0.75 / 1024);
+        row.dataset.type = 'audio';
+        row.innerHTML = `<td>${name}</td><td>${(data.split(';')[0].split(':')[1] || 'audio').replace('audio/','')}</td><td>${size}KB</td><td><button class="button" data-play="${name}">Play</button></td>`;
+        body.appendChild(row);
+      });
+      body.querySelectorAll('[data-play]').forEach(btn => {
+        let currentAudio = null;
+        btn.addEventListener('click', () => {
+          if(currentAudio) {
+            currentAudio.pause();
+            currentAudio.currentTime = 0;
+            currentAudio = null;
+            btn.textContent = 'Play';
+            btn.classList.remove('primary');
+            return;
+          }
+          const audio = new Audio(assetData.sounds[btn.dataset.play]);
+          currentAudio = audio;
+          btn.textContent = 'Stop';
+          btn.classList.add('primary');
+          audio.addEventListener('ended', () => {
+            currentAudio = null;
+            btn.textContent = 'Play';
+            btn.classList.remove('primary');
+          });
+          audio.play().catch(() => {
+            currentAudio = null;
+            btn.textContent = 'Play';
+            btn.classList.remove('primary');
+          });
+        });
+      });
+    }
+
+    function updateStats() {
+      document.getElementById('stat-sprites').textContent = Object.keys(assetData.sprites).length;
+      document.getElementById('stat-sounds').textContent = Object.keys(assetData.sounds).length;
+      document.getElementById('stat-arcade').textContent = Object.keys(assetData.minigames).length;
+    }
+
+    function applyFilter() {
+      const q = document.getElementById('search').value.toLowerCase();
+      document.querySelectorAll('#catalog-grid .card').forEach(card => {
+        const typeMatch = activeFilter === 'all' || card.dataset.type === activeFilter;
+        const textMatch = card.textContent.toLowerCase().includes(q);
+        card.hidden = !(typeMatch && textMatch);
+      });
+      document.querySelectorAll('#heads-grid .head').forEach(card => {
+        const typeMatch = activeFilter === 'all' || activeFilter === 'heads';
+        const textMatch = card.textContent.toLowerCase().includes(q);
+        card.hidden = !(typeMatch && textMatch);
+      });
+      document.querySelectorAll('#backgrounds-grid .card').forEach(card => {
+        const typeMatch = activeFilter === 'all' || activeFilter === 'background';
+        const textMatch = card.textContent.toLowerCase().includes(q);
+        card.hidden = !(typeMatch && textMatch);
+      });
+      document.getElementById('audio-section').style.display = (activeFilter === 'all' || activeFilter === 'audio') ? '' : 'none';
+      document.getElementById('heads-section').style.display = (activeFilter === 'all' || activeFilter === 'heads') ? '' : 'none';
+      document.getElementById('backgrounds-section').style.display = (activeFilter === 'all' || activeFilter === 'background') ? '' : 'none';
+      document.getElementById('cards-section').style.display = (activeFilter === 'all' || (activeFilter !== 'heads' && activeFilter !== 'audio' && activeFilter !== 'background')) ? '' : 'none';
+      document.querySelectorAll('#audio-body tr').forEach(tr => {
+        tr.hidden = !( (activeFilter === 'all' || activeFilter === 'audio') && tr.textContent.toLowerCase().includes(q) );
+      });
+    }
+
+    function loadFile(file, slot) {
+      if(!file) return;
+      if(loadedFiles.has(file.name)) {
+        setSlotState(slot, 'loaded', 'duplicate');
+        return;
+      }
+      const reader = new FileReader();
+      setSlotState(slot, 'idle', 'loading...');
+      reader.onload = (e) => {
+        try {
+          const data = JSON.parse(e.target.result);
+          mergeAssetData(data);
+          loadedFiles.set(file.name, slot);
+          const summary = slot === 'core'
+            ? `${Object.keys(data.sprites || {}).length}/${Object.keys(data.sounds || {}).length}`
+            : slot === 'ambient'
+              ? `${Object.keys(data.sounds || {}).length} amb`
+              : `WASM`;
+          setSlotState(slot, 'loaded', summary);
+          updateLoadedFiles();
+          renderHeads();
+          renderBackgrounds();
+          buildCatalogCards();
+          renderAudio();
+          updateStats();
+          applyFilter();
+        } catch (err) {
+          setSlotState(slot, 'idle', 'error');
+          console.error(err);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function resetAll() {
+      assetData.sprites = {};
+      assetData.sounds = {};
+      assetData.minigames = {};
+      loadedFiles.clear();
+      ['core','ambient','arcade'].forEach(slot => setSlotState(slot, 'idle', 'not loaded'));
+      updateLoadedFiles();
+      renderHeads();
+      renderBackgrounds();
+      buildCatalogCards();
+      renderAudio();
+      updateStats();
+      applyFilter();
+    }
+
+    document.getElementById('slot-core-btn').addEventListener('click', () => document.getElementById('slot-core-input').click());
+    document.getElementById('slot-ambient-btn').addEventListener('click', () => document.getElementById('slot-ambient-input').click());
+    document.getElementById('slot-arcade-btn').addEventListener('click', () => document.getElementById('slot-arcade-input').click());
+    document.getElementById('slot-core-input').addEventListener('change', e => loadFile(e.target.files[0], 'core'));
+    document.getElementById('slot-ambient-input').addEventListener('change', e => loadFile(e.target.files[0], 'ambient'));
+    document.getElementById('slot-arcade-input').addEventListener('change', e => loadFile(e.target.files[0], 'arcade'));
+    document.getElementById('reset-btn').addEventListener('click', resetAll);
+    document.getElementById('search').addEventListener('input', applyFilter);
+    document.querySelectorAll('.chip').forEach(chip => chip.addEventListener('click', () => {
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeFilter = chip.dataset.filter;
+      applyFilter();
+    }));
+
+    renderHeads();
+    renderBackgrounds();
+    buildCatalogCards();
+    renderAudio();
+    updateStats();
+    updateLoadedFiles();
+    applyFilter();
+  </script>
+</body>
+</html>

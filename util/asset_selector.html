@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Asset Selector</title>
+<style>
+body { font-family: sans-serif; margin: 20px; }
+table { border-collapse: collapse; width: 100%; }
+th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+img.thumb { width: 32px; height: 32px; image-rendering: pixelated; }
+.suggestion { cursor: pointer; border: 2px solid transparent; }
+.suggestion.selected { border-color: blue; }
+</style>
+</head><body>
+<h1>Roguelike Asset Selector</h1>
+<p>Click on a suggestion to select it for each asset. Then click Generate Mapping at the bottom.</p>
+<h2>Monsters</h2>
+<table><thead><tr><th>Asset Key</th><th>Current</th><th>LPC Suggestions</th><th>DCSS Suggestions</th><th>Selected</th></tr></thead><tbody>
+<tr data-key="player">
+<td>player</td>
+<td>???</td>
+<td>none</td>
+<td><img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/mon/mon/nonliving/player_shadow.png" data-source="crawl" data-path="mon/mon/nonliving/player_shadow.png" alt="mon/mon/nonliving/player_shadow.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/mon/mon/player/old-serpent-geh.png" data-source="crawl" data-path="mon/mon/player/old-serpent-geh.png" alt="mon/mon/player/old-serpent-geh.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/mon/mon/player/old-serpent-dis.png" data-source="crawl" data-path="mon/mon/player/old-serpent-dis.png" alt="mon/mon/player/old-serpent-dis.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/mon/mon/player/old-serpent-tar.png" data-source="crawl" data-path="mon/mon/player/old-serpent-tar.png" alt="mon/mon/player/old-serpent-tar.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/mon/mon/player/old-serpent-coc.png" data-source="crawl" data-path="mon/mon/player/old-serpent-coc.png" alt="mon/mon/player/old-serpent-coc.png"></td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="slime">
+<td>slime</td>
+<td>???</td>
+<td>none</td>
+<td><img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/floor/slime_overlay_SW.png" data-source="crawl" data-path="dngn/dngn/floor/slime_overlay_SW.png" alt="dngn/dngn/floor/slime_overlay_SW.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/floor/slime_overlay_NE.png" data-source="crawl" data-path="dngn/dngn/floor/slime_overlay_NE.png" alt="dngn/dngn/floor/slime_overlay_NE.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/floor/slime_overlay_SE.png" data-source="crawl" data-path="dngn/dngn/floor/slime_overlay_SE.png" alt="dngn/dngn/floor/slime_overlay_SE.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/floor/slime_overlay_W.png" data-source="crawl" data-path="dngn/dngn/floor/slime_overlay_W.png" alt="dngn/dngn/floor/slime_overlay_W.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/floor/slime_overlay_NW.png" data-source="crawl" data-path="dngn/dngn/floor/slime_overlay_NW.png" alt="dngn/dngn/floor/slime_overlay_NW.png"></td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="skeleton">
+<td>skeleton</td>
+<td>???</td>
+<td><img class="thumb suggestion" src="file://external/lpc-spritesheet/weapons/left hand/either/arrow_skeleton.png" data-source="lpc" data-path="weapons/left hand/either/arrow_skeleton.png" alt="weapons/left hand/either/arrow_skeleton.png"> <img class="thumb suggestion" src="file://external/lpc-spritesheet/weapons/right hand/either/bow_skeleton.png" data-source="lpc" data-path="weapons/right hand/either/bow_skeleton.png" alt="weapons/right hand/either/bow_skeleton.png"> <img class="thumb suggestion" src="file://external/lpc-spritesheet/body/male/skeleton.png" data-source="lpc" data-path="body/male/skeleton.png" alt="body/male/skeleton.png"> <img class="thumb suggestion" src="file://external/lpc-spritesheet/body/male/eyes/casting_eyeglow_skeleton.png" data-source="lpc" data-path="body/male/eyes/casting_eyeglow_skeleton.png" alt="body/male/eyes/casting_eyeglow_skeleton.png"></td>
+<td><img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/vaults/brick_dark_skeleton.png" data-source="crawl" data-path="dngn/dngn/vaults/brick_dark_skeleton.png" alt="dngn/dngn/vaults/brick_dark_skeleton.png"></td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="bat">
+<td>bat</td>
+<td>???</td>
+<td>none</td>
+<td><img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/mon/mon/animals/vampire_bat_orange.png" data-source="crawl" data-path="mon/mon/animals/vampire_bat_orange.png" alt="mon/mon/animals/vampire_bat_orange.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/mon/mon/animals/bat.png" data-source="crawl" data-path="mon/mon/animals/bat.png" alt="mon/mon/animals/bat.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/mon/mon/animals/fire_bat.png" data-source="crawl" data-path="mon/mon/animals/fire_bat.png" alt="mon/mon/animals/fire_bat.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/mon/mon/animals/vampire_bat.png" data-source="crawl" data-path="mon/mon/animals/vampire_bat.png" alt="mon/mon/animals/vampire_bat.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/mon/mon/animals/vampire_bat_blue.png" data-source="crawl" data-path="mon/mon/animals/vampire_bat_blue.png" alt="mon/mon/animals/vampire_bat_blue.png"></td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="ghost">
+<td>ghost</td>
+<td>???</td>
+<td>none</td>
+<td><img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/mon/mon/undead/ghost.png" data-source="crawl" data-path="mon/mon/undead/ghost.png" alt="mon/mon/undead/ghost.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/mon/mon/undead/flayed_ghost.png" data-source="crawl" data-path="mon/mon/undead/flayed_ghost.png" alt="mon/mon/undead/flayed_ghost.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/mon/mon/undead/missing_ghost.png" data-source="crawl" data-path="mon/mon/undead/missing_ghost.png" alt="mon/mon/undead/missing_ghost.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/mon/mon/animals/ghost_moth.png" data-source="crawl" data-path="mon/mon/animals/ghost_moth.png" alt="mon/mon/animals/ghost_moth.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/mon/mon/animals/ghost_crab.png" data-source="crawl" data-path="mon/mon/animals/ghost_crab.png" alt="mon/mon/animals/ghost_crab.png"></td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="robot">
+<td>robot</td>
+<td>???</td>
+<td>none</td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="dragon">
+<td>dragon</td>
+<td>???</td>
+<td><img class="thumb suggestion" src="file://external/lpc-spritesheet/weapons/oversize/two hand/either/dragonspear.png" data-source="lpc" data-path="weapons/oversize/two hand/either/dragonspear.png" alt="weapons/oversize/two hand/either/dragonspear.png"></td>
+<td><img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/statues/statue_dragon.png" data-source="crawl" data-path="dngn/dngn/statues/statue_dragon.png" alt="dngn/dngn/statues/statue_dragon.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/statues/statue_depths_zot_dragon.png" data-source="crawl" data-path="dngn/dngn/statues/statue_depths_zot_dragon.png" alt="dngn/dngn/statues/statue_depths_zot_dragon.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/mon/mon/undead/bone_dragon.png" data-source="crawl" data-path="mon/mon/undead/bone_dragon.png" alt="mon/mon/undead/bone_dragon.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/mon/mon/holy/pearl_dragon.png" data-source="crawl" data-path="mon/mon/holy/pearl_dragon.png" alt="mon/mon/holy/pearl_dragon.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/mon/mon/animals/komodo_dragon.png" data-source="crawl" data-path="mon/mon/animals/komodo_dragon.png" alt="mon/mon/animals/komodo_dragon.png"></td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="snake">
+<td>snake</td>
+<td>???</td>
+<td>none</td>
+<td><img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/floor/snake-c3.png" data-source="crawl" data-path="dngn/dngn/floor/snake-c3.png" alt="dngn/dngn/floor/snake-c3.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/floor/snake-a1.png" data-source="crawl" data-path="dngn/dngn/floor/snake-a1.png" alt="dngn/dngn/floor/snake-a1.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/floor/snake-a2.png" data-source="crawl" data-path="dngn/dngn/floor/snake-a2.png" alt="dngn/dngn/floor/snake-a2.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/floor/snake-a0.png" data-source="crawl" data-path="dngn/dngn/floor/snake-a0.png" alt="dngn/dngn/floor/snake-a0.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/floor/snake-c0.png" data-source="crawl" data-path="dngn/dngn/floor/snake-c0.png" alt="dngn/dngn/floor/snake-c0.png"></td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="troll">
+<td>troll</td>
+<td>???</td>
+<td>none</td>
+<td><img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/mon/mon/vault/deep_troll_monk_ghost.png" data-source="crawl" data-path="mon/mon/vault/deep_troll_monk_ghost.png" alt="mon/mon/vault/deep_troll_monk_ghost.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/mon/mon/vault/moon_troll.png" data-source="crawl" data-path="mon/mon/vault/moon_troll.png" alt="mon/mon/vault/moon_troll.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/mon/mon/humanoids/deep_troll_earth_mage.png" data-source="crawl" data-path="mon/mon/humanoids/deep_troll_earth_mage.png" alt="mon/mon/humanoids/deep_troll_earth_mage.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/mon/mon/humanoids/deep_troll_shaman.png" data-source="crawl" data-path="mon/mon/humanoids/deep_troll_shaman.png" alt="mon/mon/humanoids/deep_troll_shaman.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/mon/mon/humanoids/iron_troll.png" data-source="crawl" data-path="mon/mon/humanoids/iron_troll.png" alt="mon/mon/humanoids/iron_troll.png"></td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="medusa">
+<td>medusa</td>
+<td>???</td>
+<td>none</td>
+<td><img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/mon/mon/panlord/demon_head_medusa.png" data-source="crawl" data-path="mon/mon/panlord/demon_head_medusa.png" alt="mon/mon/panlord/demon_head_medusa.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/item/item/talisman/medusa.png" data-source="crawl" data-path="item/item/talisman/medusa.png" alt="item/item/talisman/medusa.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/player/player/transform/medusa_form_humanoid_front.png" data-source="crawl" data-path="player/player/transform/medusa_form_humanoid_front.png" alt="player/player/transform/medusa_form_humanoid_front.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/player/player/transform/medusa_form_gale_centaur_back.png" data-source="crawl" data-path="player/player/transform/medusa_form_gale_centaur_back.png" alt="player/player/transform/medusa_form_gale_centaur_back.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/player/player/transform/medusa_form_humanoid_back.png" data-source="crawl" data-path="player/player/transform/medusa_form_humanoid_back.png" alt="player/player/transform/medusa_form_humanoid_back.png"></td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="assassin">
+<td>assassin</td>
+<td>???</td>
+<td>none</td>
+<td><img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/item/item/armour/artefact/urand_assassin.png" data-source="crawl" data-path="item/item/armour/artefact/urand_assassin.png" alt="item/item/armour/artefact/urand_assassin.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/item/item/armour/artefact/urand_hood_assassin.png" data-source="crawl" data-path="item/item/armour/artefact/urand_hood_assassin.png" alt="item/item/armour/artefact/urand_hood_assassin.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/player/player/head/hood_assassin.png" data-source="crawl" data-path="player/player/head/hood_assassin.png" alt="player/player/head/hood_assassin.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/player/player/hand1/artefact/blowgun_assassin.png" data-source="crawl" data-path="player/player/hand1/artefact/blowgun_assassin.png" alt="player/player/hand1/artefact/blowgun_assassin.png"></td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="killer_rabbit">
+<td>killer_rabbit</td>
+<td>???</td>
+<td>none</td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="chipmunk">
+<td>chipmunk</td>
+<td>???</td>
+<td>none</td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="duck">
+<td>duck</td>
+<td>???</td>
+<td>none</td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="shark">
+<td>shark</td>
+<td>???</td>
+<td>none</td>
+<td><img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/mon/mon/animals/skyshark.png" data-source="crawl" data-path="mon/mon/animals/skyshark.png" alt="mon/mon/animals/skyshark.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/mon/mon/player/crawling_zombie_skyshark.png" data-source="crawl" data-path="mon/mon/player/crawling_zombie_skyshark.png" alt="mon/mon/player/crawling_zombie_skyshark.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/mon/mon/undead/zombies/zombie_skyshark.png" data-source="crawl" data-path="mon/mon/undead/zombies/zombie_skyshark.png" alt="mon/mon/undead/zombies/zombie_skyshark.png"></td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="wet_rat">
+<td>wet_rat</td>
+<td>???</td>
+<td>none</td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="duck_hunt_dog">
+<td>duck_hunt_dog</td>
+<td>???</td>
+<td>none</td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+</tbody></table>
+<h2>Npcs</h2>
+<table><thead><tr><th>Asset Key</th><th>Current</th><th>LPC Suggestions</th><th>DCSS Suggestions</th><th>Selected</th></tr></thead><tbody>
+<tr data-key="thief">
+<td>thief</td>
+<td>???</td>
+<td>none</td>
+<td><img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/item/item/armour/artefact/urand_thief.png" data-source="crawl" data-path="item/item/armour/artefact/urand_thief.png" alt="item/item/armour/artefact/urand_thief.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/player/player/hand1/sword_thief.png" data-source="crawl" data-path="player/player/hand1/sword_thief.png" alt="player/player/hand1/sword_thief.png"></td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="fence">
+<td>fence</td>
+<td>???</td>
+<td>none</td>
+<td><img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/item/item/armour/artefact/urand_fencer.png" data-source="crawl" data-path="item/item/armour/artefact/urand_fencer.png" alt="item/item/armour/artefact/urand_fencer.png"></td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="fence_flasher">
+<td>fence_flasher</td>
+<td>???</td>
+<td>none</td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="cain">
+<td>cain</td>
+<td>???</td>
+<td>none</td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="pirate">
+<td>pirate</td>
+<td>???</td>
+<td><img class="thumb suggestion" src="file://external/lpc-spritesheet/accessories/necklaces_female_ no_th-sh/pirate_wc_sc_only.png" data-source="lpc" data-path="accessories/necklaces_female_ no_th-sh/pirate_wc_sc_only.png" alt="accessories/necklaces_female_ no_th-sh/pirate_wc_sc_only.png"> <img class="thumb suggestion" src="file://external/lpc-spritesheet/torso/shirts/sleeveless/female/teal_pirate.png" data-source="lpc" data-path="torso/shirts/sleeveless/female/teal_pirate.png" alt="torso/shirts/sleeveless/female/teal_pirate.png"> <img class="thumb suggestion" src="file://external/lpc-spritesheet/torso/shirts/sleeveless/female/maroon_pirate.png" data-source="lpc" data-path="torso/shirts/sleeveless/female/maroon_pirate.png" alt="torso/shirts/sleeveless/female/maroon_pirate.png"> <img class="thumb suggestion" src="file://external/lpc-spritesheet/torso/shirts/sleeveless/female/white_pirate.png" data-source="lpc" data-path="torso/shirts/sleeveless/female/white_pirate.png" alt="torso/shirts/sleeveless/female/white_pirate.png"> <img class="thumb suggestion" src="file://external/lpc-spritesheet/torso/shirts/sleeveless/female/brown_pirate.png" data-source="lpc" data-path="torso/shirts/sleeveless/female/brown_pirate.png" alt="torso/shirts/sleeveless/female/brown_pirate.png"></td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="master">
+<td>master</td>
+<td>???</td>
+<td>none</td>
+<td><img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/mon/mon/vault/master_elementalist.png" data-source="crawl" data-path="mon/mon/vault/master_elementalist.png" alt="mon/mon/vault/master_elementalist.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/mon/mon/humanoids/elves/deep_elf_blademaster.png" data-source="crawl" data-path="mon/mon/humanoids/elves/deep_elf_blademaster.png" alt="mon/mon/humanoids/elves/deep_elf_blademaster.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/mon/mon/humanoids/elves/deep_elf_master_archer.png" data-source="crawl" data-path="mon/mon/humanoids/elves/deep_elf_master_archer.png" alt="mon/mon/humanoids/elves/deep_elf_master_archer.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/mon/mon/humanoids/humans/ironbound_beastmaster.png" data-source="crawl" data-path="mon/mon/humanoids/humans/ironbound_beastmaster.png" alt="mon/mon/humanoids/humans/ironbound_beastmaster.png"></td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="cat">
+<td>cat</td>
+<td>???</td>
+<td>none</td>
+<td><img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/statues/statue_cat.png" data-source="crawl" data-path="dngn/dngn/statues/statue_cat.png" alt="dngn/dngn/statues/statue_cat.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/wall/catacombs1.png" data-source="crawl" data-path="dngn/dngn/wall/catacombs1.png" alt="dngn/dngn/wall/catacombs1.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/wall/catacombs2.png" data-source="crawl" data-path="dngn/dngn/wall/catacombs2.png" alt="dngn/dngn/wall/catacombs2.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/wall/catacombs6.png" data-source="crawl" data-path="dngn/dngn/wall/catacombs6.png" alt="dngn/dngn/wall/catacombs6.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/wall/catacombs7.png" data-source="crawl" data-path="dngn/dngn/wall/catacombs7.png" alt="dngn/dngn/wall/catacombs7.png"></td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="genie">
+<td>genie</td>
+<td>???</td>
+<td>none</td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="king">
+<td>king</td>
+<td>???</td>
+<td>none</td>
+<td><img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/mon/mon/abyss/lurking_horror.png" data-source="crawl" data-path="mon/mon/abyss/lurking_horror.png" alt="mon/mon/abyss/lurking_horror.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/mon/mon/animals/blinking_frog.png" data-source="crawl" data-path="mon/mon/animals/blinking_frog.png" alt="mon/mon/animals/blinking_frog.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/mon/mon/nonliving/walking_alembic.png" data-source="crawl" data-path="mon/mon/nonliving/walking_alembic.png" alt="mon/mon/nonliving/walking_alembic.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/mon/mon/fungi_plants/alderking0.png" data-source="crawl" data-path="mon/mon/fungi_plants/alderking0.png" alt="mon/mon/fungi_plants/alderking0.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/mon/mon/fungi_plants/alderking1.png" data-source="crawl" data-path="mon/mon/fungi_plants/alderking1.png" alt="mon/mon/fungi_plants/alderking1.png"></td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="eagle">
+<td>eagle</td>
+<td>???</td>
+<td>none</td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="gurgi">
+<td>gurgi</td>
+<td>???</td>
+<td>none</td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="erasmus">
+<td>erasmus</td>
+<td>???</td>
+<td>none</td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="cow">
+<td>cow</td>
+<td>???</td>
+<td>none</td>
+<td><img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/mon/mon/panlord/demon_head_cow_skull.png" data-source="crawl" data-path="mon/mon/panlord/demon_head_cow_skull.png" alt="mon/mon/panlord/demon_head_cow_skull.png"></td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="black_knight">
+<td>black_knight</td>
+<td>???</td>
+<td>none</td>
+<td><img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/player/player/barding/black_knight.png" data-source="crawl" data-path="player/player/barding/black_knight.png" alt="player/player/barding/black_knight.png"></td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="black_knight_4limbs">
+<td>black_knight_4limbs</td>
+<td>???</td>
+<td>none</td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="black_knight_3limbs">
+<td>black_knight_3limbs</td>
+<td>???</td>
+<td>none</td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="black_knight_2limbs">
+<td>black_knight_2limbs</td>
+<td>???</td>
+<td>none</td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="black_knight_1limb">
+<td>black_knight_1limb</td>
+<td>???</td>
+<td>none</td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="black_knight_0limbs">
+<td>black_knight_0limbs</td>
+<td>???</td>
+<td>none</td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="french_taunter">
+<td>french_taunter</td>
+<td>???</td>
+<td>none</td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="dennis">
+<td>dennis</td>
+<td>???</td>
+<td>none</td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="bridge_keeper">
+<td>bridge_keeper</td>
+<td>???</td>
+<td>none</td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+</tbody></table>
+<h2>Tiles</h2>
+<table><thead><tr><th>Asset Key</th><th>Current</th><th>LPC Suggestions</th><th>DCSS Suggestions</th><th>Selected</th></tr></thead><tbody>
+<tr data-key="wall">
+<td>wall</td>
+<td>???</td>
+<td>none</td>
+<td><img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/wall/cobalt_stone07.png" data-source="crawl" data-path="dngn/dngn/wall/cobalt_stone07.png" alt="dngn/dngn/wall/cobalt_stone07.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/wall/brick_dark_1_10.png" data-source="crawl" data-path="dngn/dngn/wall/brick_dark_1_10.png" alt="dngn/dngn/wall/brick_dark_1_10.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/wall/crystal_wall11.png" data-source="crawl" data-path="dngn/dngn/wall/crystal_wall11.png" alt="dngn/dngn/wall/crystal_wall11.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/wall/catacombs1.png" data-source="crawl" data-path="dngn/dngn/wall/catacombs1.png" alt="dngn/dngn/wall/catacombs1.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/wall/wall_stone_shadow_mesh3.png" data-source="crawl" data-path="dngn/dngn/wall/wall_stone_shadow_mesh3.png" alt="dngn/dngn/wall/wall_stone_shadow_mesh3.png"></td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="floor">
+<td>floor</td>
+<td>???</td>
+<td>none</td>
+<td><img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/floor/mosaic8.png" data-source="crawl" data-path="dngn/dngn/floor/mosaic8.png" alt="dngn/dngn/floor/mosaic8.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/floor/grey_dirt7.png" data-source="crawl" data-path="dngn/dngn/floor/grey_dirt7.png" alt="dngn/dngn/floor/grey_dirt7.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/floor/spider09.png" data-source="crawl" data-path="dngn/dngn/floor/spider09.png" alt="dngn/dngn/floor/spider09.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/floor/frozen6.png" data-source="crawl" data-path="dngn/dngn/floor/frozen6.png" alt="dngn/dngn/floor/frozen6.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/floor/studio3.png" data-source="crawl" data-path="dngn/dngn/floor/studio3.png" alt="dngn/dngn/floor/studio3.png"></td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="water">
+<td>water</td>
+<td>???</td>
+<td>none</td>
+<td><img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/water/open_sea.png" data-source="crawl" data-path="dngn/dngn/water/open_sea.png" alt="dngn/dngn/water/open_sea.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/water/deep_water_wave_W2.png" data-source="crawl" data-path="dngn/dngn/water/deep_water_wave_W2.png" alt="dngn/dngn/water/deep_water_wave_W2.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/water/shoals_deep_water6.png" data-source="crawl" data-path="dngn/dngn/water/shoals_deep_water6.png" alt="dngn/dngn/water/shoals_deep_water6.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/water/shoals_deep_water4.png" data-source="crawl" data-path="dngn/dngn/water/shoals_deep_water4.png" alt="dngn/dngn/water/shoals_deep_water4.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/water/shoals_shallow_water1.png" data-source="crawl" data-path="dngn/dngn/water/shoals_shallow_water1.png" alt="dngn/dngn/water/shoals_shallow_water1.png"></td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="sand">
+<td>sand</td>
+<td>???</td>
+<td>none</td>
+<td><img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/floor/sand6.png" data-source="crawl" data-path="dngn/dngn/floor/sand6.png" alt="dngn/dngn/floor/sand6.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/floor/sandstone_floor3.png" data-source="crawl" data-path="dngn/dngn/floor/sandstone_floor3.png" alt="dngn/dngn/floor/sandstone_floor3.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/floor/sandstone_floor5.png" data-source="crawl" data-path="dngn/dngn/floor/sandstone_floor5.png" alt="dngn/dngn/floor/sandstone_floor5.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/floor/sand5.png" data-source="crawl" data-path="dngn/dngn/floor/sand5.png" alt="dngn/dngn/floor/sand5.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/floor/sandstone_floor4.png" data-source="crawl" data-path="dngn/dngn/floor/sandstone_floor4.png" alt="dngn/dngn/floor/sandstone_floor4.png"></td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="grass">
+<td>grass</td>
+<td>???</td>
+<td>none</td>
+<td><img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/floor/necropolis_tile_grass_3.png" data-source="crawl" data-path="dngn/dngn/floor/necropolis_tile_grass_3.png" alt="dngn/dngn/floor/necropolis_tile_grass_3.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/floor/necropolis_grass_2.png" data-source="crawl" data-path="dngn/dngn/floor/necropolis_grass_2.png" alt="dngn/dngn/floor/necropolis_grass_2.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/floor/necropolis_square_grass_1.png" data-source="crawl" data-path="dngn/dngn/floor/necropolis_square_grass_1.png" alt="dngn/dngn/floor/necropolis_square_grass_1.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/floor/necropolis_grass_3.png" data-source="crawl" data-path="dngn/dngn/floor/necropolis_grass_3.png" alt="dngn/dngn/floor/necropolis_grass_3.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/floor/necropolis_grass_4.png" data-source="crawl" data-path="dngn/dngn/floor/necropolis_grass_4.png" alt="dngn/dngn/floor/necropolis_grass_4.png"></td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="tree">
+<td>tree</td>
+<td>???</td>
+<td>none</td>
+<td><img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/trees/tree_demonic14.png" data-source="crawl" data-path="dngn/dngn/trees/tree_demonic14.png" alt="dngn/dngn/trees/tree_demonic14.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/trees/tree4.png" data-source="crawl" data-path="dngn/dngn/trees/tree4.png" alt="dngn/dngn/trees/tree4.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/trees/mangrove3.png" data-source="crawl" data-path="dngn/dngn/trees/mangrove3.png" alt="dngn/dngn/trees/mangrove3.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/trees/tree_demonic5.png" data-source="crawl" data-path="dngn/dngn/trees/tree_demonic5.png" alt="dngn/dngn/trees/tree_demonic5.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/trees/dead_tree_of_woe3.png" data-source="crawl" data-path="dngn/dngn/trees/dead_tree_of_woe3.png" alt="dngn/dngn/trees/dead_tree_of_woe3.png"></td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="rock">
+<td>rock</td>
+<td>???</td>
+<td>none</td>
+<td><img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/floor/seismorock0.png" data-source="crawl" data-path="dngn/dngn/floor/seismorock0.png" alt="dngn/dngn/floor/seismorock0.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/floor/seismorock1.png" data-source="crawl" data-path="dngn/dngn/floor/seismorock1.png" alt="dngn/dngn/floor/seismorock1.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/floor/seismorock3.png" data-source="crawl" data-path="dngn/dngn/floor/seismorock3.png" alt="dngn/dngn/floor/seismorock3.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/floor/seismorock2.png" data-source="crawl" data-path="dngn/dngn/floor/seismorock2.png" alt="dngn/dngn/floor/seismorock2.png"> <img class="thumb suggestion" src="file://external/crawl/crawl-ref/source/rltiles/dngn/dngn/wall/rock_wall_crypt2.png" data-source="crawl" data-path="dngn/dngn/wall/rock_wall_crypt2.png" alt="dngn/dngn/wall/rock_wall_crypt2.png"></td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="chest_closed">
+<td>chest_closed</td>
+<td>???</td>
+<td>none</td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="chest_open">
+<td>chest_open</td>
+<td>???</td>
+<td>none</td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="bookstore">
+<td>bookstore</td>
+<td>???</td>
+<td>none</td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+</tbody></table>
+<h2>Items</h2>
+<table><thead><tr><th>Asset Key</th><th>Current</th><th>LPC Suggestions</th><th>DCSS Suggestions</th><th>Selected</th></tr></thead><tbody>
+<tr data-key="💣🌟">
+<td>💣🌟</td>
+<td><span style="font-size: 24px;">💣🌟</span></td>
+<td>none</td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="🧪">
+<td>🧪</td>
+<td><span style="font-size: 24px;">🧪</span></td>
+<td>none</td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="🗡️">
+<td>🗡️</td>
+<td><span style="font-size: 24px;">🗡️</span></td>
+<td>none</td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="🛡️">
+<td>🛡️</td>
+<td><span style="font-size: 24px;">🛡️</span></td>
+<td>none</td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="💰">
+<td>💰</td>
+<td><span style="font-size: 24px;">💰</span></td>
+<td>none</td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+</tbody></table>
+<h2>Backgrounds</h2>
+<table><thead><tr><th>Asset Key</th><th>Current</th><th>LPC Suggestions</th><th>DCSS Suggestions</th><th>Selected</th></tr></thead><tbody>
+<tr data-key="bg_eagle_s_crag">
+<td>bg_eagle_s_crag</td>
+<td>???</td>
+<td>none</td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="bg_hall_of_champions">
+<td>bg_hall_of_champions</td>
+<td>???</td>
+<td>none</td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="bg_roc_nest">
+<td>bg_roc_nest</td>
+<td>???</td>
+<td>none</td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+</tbody></table>
+<h2>Heads</h2>
+<table><thead><tr><th>Asset Key</th><th>Current</th><th>LPC Suggestions</th><th>DCSS Suggestions</th><th>Selected</th></tr></thead><tbody>
+<tr data-key="npc_apu">
+<td>npc_apu</td>
+<td>???</td>
+<td>none</td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="npc_wizard">
+<td>npc_wizard</td>
+<td>???</td>
+<td>none</td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="npc_chaplain">
+<td>npc_chaplain</td>
+<td>???</td>
+<td>none</td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+</tbody></table>
+<h2>Warrior_Sheets</h2>
+<table><thead><tr><th>Asset Key</th><th>Current</th><th>LPC Suggestions</th><th>DCSS Suggestions</th><th>Selected</th></tr></thead><tbody>
+<tr data-key="warrior_walk">
+<td>warrior_walk</td>
+<td>???</td>
+<td>none</td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="warrior_run">
+<td>warrior_run</td>
+<td>???</td>
+<td>none</td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="warrior_sleep">
+<td>warrior_sleep</td>
+<td>???</td>
+<td>none</td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+<tr data-key="warrior_fight">
+<td>warrior_fight</td>
+<td>???</td>
+<td>none</td>
+<td>none</td>
+<td class="selected-cell">-</td>
+</tr>
+</tbody></table>
+<button id="generate">Generate Mapping</button>
+<pre id="output"></pre>
+<script>
+let selections = {};
+document.querySelectorAll(".suggestion").forEach(img => {
+  img.addEventListener("click", function() {
+    let row = this.closest("tr");
+    let key = row.dataset.key;
+    selections[key] = { source: this.dataset.source, path: this.dataset.path };
+    row.querySelector(".selected-cell").textContent = this.dataset.path;
+    // Visual feedback
+    row.querySelectorAll(".suggestion").forEach(i => i.classList.remove("selected"));
+    this.classList.add("selected");
+  });
+});
+document.getElementById("generate").addEventListener("click", () => {
+  let output = JSON.stringify(selections, null, 2);
+  document.getElementById("output").textContent = output;
+});
+</script>
+</body></html>

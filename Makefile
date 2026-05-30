@@ -61,7 +61,7 @@ release: dat
 dat:
 	@if [ ! -f roguelike_assets.dat ] || \
 	  find assets/gifs assets/movies assets/music assets/classes assets/astrochicken \
-	    assets/midi assets/sounds/generated -type f -newer roguelike_assets.dat \
+	    assets/midi assets/sounds -type f -newer roguelike_assets.dat \
 	    -print -quit 2>/dev/null | grep -q . || \
 	  find assets -maxdepth 1 -type f -newer roguelike_assets.dat \
 	    -print -quit 2>/dev/null | grep -q .; then \

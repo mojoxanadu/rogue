@@ -1,0 +1,1971 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>WebGL Effects Demo</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #0a0a0f;
+  color: #ccc;
+  font-family: monospace;
+  display: flex;
+  min-height: 100vh;
+}
+#sidebar {
+  width: 200px;
+  min-width: 200px;
+  background: #0d0d15;
+  border-right: 1px solid #222;
+  padding: 16px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+#sidebar h1 {
+  color: #b8860b;
+  font-size: 13px;
+  border-bottom: 1px solid #333;
+  padding-bottom: 8px;
+  margin-bottom: 4px;
+  letter-spacing: 1px;
+}
+.sidebar-panel {
+  background: #111;
+  border: 1px solid #2a2a3a;
+  border-radius: 6px;
+  padding: 8px;
+}
+.sidebar-panel h3 {
+  color: #b8860b;
+  font-size: 10px;
+  margin-bottom: 6px;
+  letter-spacing: 0.5px;
+}
+.sidebar-panel p {
+  font-size: 9px;
+  color: #888;
+  line-height: 1.4;
+}
+#main {
+  flex: 1;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.effect-cell {
+  background: #0d0d18;
+  border: 1px solid #1e1e30;
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.effect-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.effect-title {
+  font-size: 11px;
+  color: #b8860b;
+  letter-spacing: 0.5px;
+}
+.fps-badge {
+  font-size: 10px;
+  color: #4f4;
+  background: #0a1a0a;
+  border: 1px solid #2a4a2a;
+  border-radius: 3px;
+  padding: 1px 5px;
+}
+canvas {
+  display: block;
+  border-radius: 4px;
+  background: #000;
+}
+.pause-btn {
+  background: #1a1a2a;
+  border: 1px solid #333;
+  color: #aaa;
+  font-family: monospace;
+  font-size: 10px;
+  padding: 3px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  align-self: flex-start;
+}
+.pause-btn:hover { background: #252535; color: #fff; }
+.full-width {
+  width: 100%;
+}
+</style>
+</head>
+<body>
+<div id="sidebar">
+  <h1>FX DEMO</h1>
+  <div class="sidebar-panel">
+    <h3>1. FLUID ORBS</h3>
+    <p>HP &amp; MP orbs sharing one WebGL2 context. Full Navier-Stokes simulation.</p>
+  </div>
+  <div class="sidebar-panel">
+    <h3>2. GRASS</h3>
+    <p>1600 blades, per-blade vertex shader. Mouse parting. WebGL1.</p>
+  </div>
+  <div class="sidebar-panel">
+    <h3>3. LIGHTNING</h3>
+    <p>Recursive midpoint displacement. Canvas 2D only.</p>
+  </div>
+  <div class="sidebar-panel">
+    <h3>4. FIRE / IFRIT</h3>
+    <p>GPU particles. Humanoid SDF spawn. WebGL1.</p>
+  </div>
+  <div class="sidebar-panel">
+    <h3>5. AURA</h3>
+    <p>12-petal electric aura. Canvas 2D only.</p>
+  </div>
+  <div class="sidebar-panel">
+    <h3>6. ICE / FROST</h3>
+    <p>Crystalline shards. Canvas 2D only.</p>
+  </div>
+  <div class="sidebar-panel">
+    <h3>7. PORTAL</h3>
+    <p>Full Navier-Stokes. 256x150 sim grid. WebGL2.</p>
+  </div>
+</div>
+
+<div id="main">
+  <div class="grid-2col">
+    <!-- Effect 1: Fluid Orbs -->
+    <div class="effect-cell">
+      <div class="effect-header">
+        <span class="effect-title">1. FLUID ORBS (HP &amp; MP)</span>
+        <span class="fps-badge" id="fps-orb">-- fps</span>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center;">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <span style="font-size:10px;color:#f44;">HP</span>
+          <canvas id="canvas-hp" width="140" height="140" style="border-radius:50%;background:#080004;"></canvas>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <span style="font-size:10px;color:#44f;">MP</span>
+          <canvas id="canvas-mp" width="140" height="140" style="border-radius:50%;background:#000408;"></canvas>
+        </div>
+      </div>
+      <div style="margin-top:6px;font-size:10px;color:#888;">
+        HP fill: <span id="hp-fill-label">75%</span>
+        <input type="range" id="hp-fill" min="0" max="100" value="75" style="width:80px;"
+          oninput="document.getElementById('hp-fill-label').textContent=this.value+'%'; window._hpFill=this.value/100;">
+        <br>
+        MP fill: <span id="mp-fill-label">50%</span>
+        <input type="range" id="mp-fill" min="0" max="100" value="50" style="width:80px;"
+          oninput="document.getElementById('mp-fill-label').textContent=this.value+'%'; window._mpFill=this.value/100;">
+      </div>
+      <div style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap;justify-content:center;">
+        <span style="font-size:10px;color:#888;width:100%;text-align:center;">Movement perturbation:</span>
+        <button class="pause-btn" onclick="orbMoveEffect(0,-1)" title="Move North">&#8593;</button>
+        <button class="pause-btn" onclick="orbMoveEffect(-1,0)" title="Move West">&#8592;</button>
+        <button class="pause-btn" onclick="orbMoveEffect(1,0)" title="Move East">&#8594;</button>
+        <button class="pause-btn" onclick="orbMoveEffect(0,1)" title="Move South">&#8595;</button>
+        <button class="pause-btn" onclick="orbMoveEffect(1,-1)" title="Run NE">&#8599; Run</button>
+        <span style="font-size:10px;color:#888;width:100%;text-align:center;margin-top:4px;">Combat:</span>
+        <button class="pause-btn" onclick="orbCombatEffect('hit')" style="color:#f88;">&#128165; Take Hit</button>
+        <button class="pause-btn" onclick="orbCombatEffect('big')" style="color:#f44;">&#128128; Heavy Hit</button>
+        <button class="pause-btn" onclick="orbCombatEffect('mana')" style="color:#88f;">&#128302; Mana Use</button>
+      </div>
+      <button class="pause-btn" onclick="togglePause('orb')">Pause</button>
+    </div>
+
+    <!-- Effect 2: Grass -->
+    <div class="effect-cell">
+      <div class="effect-header">
+        <span class="effect-title">2. GRASS FIELD</span>
+        <span class="fps-badge" id="fps-grass">-- fps</span>
+      </div>
+      <div style="display:inline-block;">
+        <canvas id="canvas-grass" width="340" height="200" style="display:none;"></canvas>
+        <canvas id="canvas-grass-overlay" width="340" height="200" style="display:block;border-radius:4px;"></canvas>
+      </div>
+      <button class="pause-btn" onclick="togglePause('grass')">Pause</button>
+    </div>
+
+    <!-- Effect 3: Lightning -->
+    <div class="effect-cell">
+      <div class="effect-header">
+        <span class="effect-title">3. LIGHTNING</span>
+        <span class="fps-badge" id="fps-lightning">-- fps</span>
+      </div>
+      <canvas id="canvas-lightning" width="340" height="200"></canvas>
+      <button class="pause-btn" onclick="togglePause('lightning')">Pause</button>
+    </div>
+
+    <!-- Effect 4: Fire/Ifrit -->
+    <div class="effect-cell">
+      <div class="effect-header">
+        <span class="effect-title">4. FIRE / IFRIT</span>
+        <span class="fps-badge" id="fps-fire">-- fps</span>
+      </div>
+      <canvas id="canvas-fire" width="340" height="200"></canvas>
+      <button class="pause-btn" onclick="togglePause('fire')">Pause</button>
+    </div>
+
+    <!-- Effect 5: Aura -->
+    <div class="effect-cell">
+      <div class="effect-header">
+        <span class="effect-title">5. ELECTRIC AURA</span>
+        <span class="fps-badge" id="fps-aura">-- fps</span>
+      </div>
+      <canvas id="canvas-aura" width="340" height="200"></canvas>
+      <button class="pause-btn" onclick="togglePause('aura')">Pause</button>
+    </div>
+
+    <!-- Effect 6: Ice/Frost -->
+    <div class="effect-cell">
+      <div class="effect-header">
+        <span class="effect-title">6. ICE / FROST</span>
+        <span class="fps-badge" id="fps-ice">-- fps</span>
+      </div>
+      <canvas id="canvas-ice" width="340" height="200"></canvas>
+      <button class="pause-btn" onclick="togglePause('ice')">Pause</button>
+    </div>
+  </div>
+
+  <!-- Effect 7: Portal (full width) -->
+  <div class="effect-cell full-width">
+    <div class="effect-header">
+      <span class="effect-title">7. TOWN PORTAL FLUID</span>
+      <span class="fps-badge" id="fps-portal">-- fps</span>
+    </div>
+    <div style="display:flex;justify-content:center;align-items:center;gap:20px;">
+      <div style="position:relative;display:inline-block;">
+        <canvas id="canvas-portal" width="400" height="400" style="display:block;border-radius:50%;border:3px solid #440088;"></canvas>
+        <canvas id="canvas-portal-2d" width="400" height="400" style="position:absolute;top:0;left:0;pointer-events:none;border-radius:50%;"></canvas>
+        <div id="portal-error" style="display:none;color:#f88;font-size:11px;padding:8px;position:absolute;top:0;left:0;pointer-events:none;"></div>
+      </div>
+    </div>
+    <button class="pause-btn" onclick="togglePause('portal')">Pause</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ─── Global pause state ───────────────────────────────────────────────────────
+const paused = { orb: false, grass: false, lightning: false, fire: false, aura: false, ice: false, portal: false };
+function togglePause(key) {
+  paused[key] = !paused[key];
+  const btns = document.querySelectorAll('.pause-btn');
+  btns.forEach(b => {
+    if (b.getAttribute('onclick') === 'togglePause(\'' + key + '\')') {
+      b.textContent = paused[key] ? 'Resume' : 'Pause';
+    }
+  });
+}
+
+// ─── Shared helpers ───────────────────────────────────────────────────────────
+function createShader(gl, type, src) {
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src);
+  gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+    throw new Error('Shader compile error: ' + gl.getShaderInfoLog(s) + '\nSource:\n' + src);
+  }
+  return s;
+}
+
+function createProgram(gl, vsSrc, fsSrc) {
+  const vs = createShader(gl, gl.VERTEX_SHADER, vsSrc);
+  const fs = createShader(gl, gl.FRAGMENT_SHADER, fsSrc);
+  const prog = gl.createProgram();
+  gl.attachShader(prog, vs);
+  gl.attachShader(prog, fs);
+  gl.linkProgram(prog);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+    throw new Error('Program link error: ' + gl.getProgramInfoLog(prog));
+  }
+  return prog;
+}
+
+function makeQuadVBO(gl) {
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+  return buf;
+}
+
+function fpsCounter(badgeId) {
+  let frames = 0, last = performance.now();
+  const el = document.getElementById(badgeId);
+  return function tick() {
+    frames++;
+    const now = performance.now();
+    if (now - last >= 500) {
+      const fps = Math.round(frames * 1000 / (now - last));
+      if (el) el.textContent = fps + ' fps';
+      frames = 0; last = now;
+    }
+  };
+}
+
+function hsvToRgb(h, s, v) {
+  let r, g, b;
+  const i = Math.floor(h * 6);
+  const f = h * 6 - i;
+  const p = v * (1 - s);
+  const q = v * (1 - f * s);
+  const t = v * (1 - (1 - f) * s);
+  switch (i % 6) {
+    case 0: r=v; g=t; b=p; break;
+    case 1: r=q; g=v; b=p; break;
+    case 2: r=p; g=v; b=t; break;
+    case 3: r=p; g=q; b=v; break;
+    case 4: r=t; g=p; b=v; break;
+    case 5: r=v; g=p; b=q; break;
+  }
+  return [r, g, b];
+}
+
+// ─── Effect 1: Fluid Orbs (WebGL2, shared context) ───────────────────────────
+(function initOrbs() {
+  try {
+    const SIM_W = 128, SIM_H = 128;
+    const DYE_W = 128, DYE_H = 128;
+
+    // One offscreen canvas for both orbs
+    const offscreen = document.createElement('canvas');
+    offscreen.width = SIM_W; offscreen.height = SIM_H;
+    const gl = offscreen.getContext('webgl2');
+    if (!gl) throw new Error('WebGL2 not available for orbs');
+
+    // RGBA16F is color-renderable in WebGL2 without extensions
+    // (EXT_color_buffer_float is only needed for RGBA32F, not RGBA16F)
+    gl.getExtension('EXT_color_buffer_float'); // request if available, but not required
+
+    // ─── Shaders ─────────────────────────────────────────────────────────────
+    const quadVS = `#version 300 es
+precision highp float;
+in vec2 a_pos;
+out vec2 v_uv;
+void main(){v_uv=(a_pos+1.0)*0.5; gl_Position=vec4(a_pos,0,1);}`;
+
+    const advectFS = `#version 300 es
+precision highp float;
+uniform sampler2D u_velocity;
+uniform sampler2D u_source;
+uniform float u_dt;
+uniform float u_dissipation;
+uniform vec2 u_texelSize;
+in vec2 v_uv;
+out vec4 fragColor;
+void main(){
+  vec2 vel = texture(u_velocity, v_uv).xy;
+  vec2 prevUV = v_uv - vel * u_dt;
+  prevUV = clamp(prevUV, u_texelSize, 1.0 - u_texelSize);
+  fragColor = u_dissipation * texture(u_source, prevUV);
+}`;
+
+    const divergenceFS = `#version 300 es
+precision highp float;
+uniform sampler2D u_velocity;
+uniform vec2 u_texelSize;
+in vec2 v_uv;
+out vec4 fragColor;
+void main(){
+  float L = texture(u_velocity, v_uv - vec2(u_texelSize.x,0)).x;
+  float R = texture(u_velocity, v_uv + vec2(u_texelSize.x,0)).x;
+  float T = texture(u_velocity, v_uv + vec2(0,u_texelSize.y)).y;
+  float B = texture(u_velocity, v_uv - vec2(0,u_texelSize.y)).y;
+  fragColor = vec4((R - L + T - B) * 0.5, 0, 0, 1);
+}`;
+
+    const pressureFS = `#version 300 es
+precision highp float;
+uniform sampler2D u_pressure;
+uniform sampler2D u_divergence;
+uniform vec2 u_texelSize;
+in vec2 v_uv;
+out vec4 fragColor;
+void main(){
+  float L = texture(u_pressure, v_uv - vec2(u_texelSize.x,0)).x;
+  float R = texture(u_pressure, v_uv + vec2(u_texelSize.x,0)).x;
+  float T = texture(u_pressure, v_uv + vec2(0,u_texelSize.y)).x;
+  float B = texture(u_pressure, v_uv - vec2(0,u_texelSize.y)).x;
+  float div = texture(u_divergence, v_uv).x;
+  fragColor = vec4((L+R+T+B - div) * 0.25, 0, 0, 1);
+}`;
+
+    const gradSubFS = `#version 300 es
+precision highp float;
+uniform sampler2D u_pressure;
+uniform sampler2D u_velocity;
+uniform vec2 u_texelSize;
+in vec2 v_uv;
+out vec4 fragColor;
+void main(){
+  float L = texture(u_pressure, v_uv - vec2(u_texelSize.x,0)).x;
+  float R = texture(u_pressure, v_uv + vec2(u_texelSize.x,0)).x;
+  float T = texture(u_pressure, v_uv + vec2(0,u_texelSize.y)).x;
+  float B = texture(u_pressure, v_uv - vec2(0,u_texelSize.y)).x;
+  vec2 vel = texture(u_velocity, v_uv).xy;
+  vel -= vec2(R-L, T-B) * 0.5;
+  fragColor = vec4(vel, 0, 1);
+}`;
+
+    const splatFS = `#version 300 es
+precision highp float;
+uniform sampler2D u_base;
+uniform vec2 u_point;
+uniform vec3 u_color;
+uniform float u_radius;
+in vec2 v_uv;
+out vec4 fragColor;
+void main(){
+  vec2 d = v_uv - u_point;
+  d.x *= 1.0; // aspect correction done via radius
+  float spl = exp(-dot(d,d) / u_radius);
+  fragColor = texture(u_base, v_uv) + vec4(u_color * spl, 0);
+}`;
+
+    const orbDisplayFS = `#version 300 es
+precision highp float;
+uniform sampler2D u_dye;
+uniform vec3 u_baseColor;
+uniform float u_bloom;
+uniform float u_fillPct;
+uniform float u_time;
+in vec2 v_uv;
+out vec4 fragColor;
+void main(){
+  vec2 uvc = v_uv * 2.0 - 1.0;
+  float dist = length(uvc);
+  if(dist > 1.0) { fragColor = vec4(0); return; }
+  vec3 dye = texture(u_dye, v_uv).rgb;
+  vec3 col = u_baseColor + dye * 1.8;
+  // In GL UV, y=0=bottom, y=1=top. drawImage flips, so fill=100% means top is full.
+  // We want fill from bottom UP: empty region is the TOP (high y in UV = top, but drawImage flips so high y UV -> low y screen).
+  // After drawImage flip: UV y -> screen (1-y). So "bottom of screen" = UV y=1.
+  // Fill from bottom: filled if screen_y < fillPct, i.e., (1-uv_y) < fillPct, i.e., uv_y > 1-fillPct.
+  float waterY = u_fillPct;  // above this UV y value = filled (will appear as BOTTOM after flip)
+  if (v_uv.y > waterY) {     // above waterline = empty (top of orb after flip)
+    col = u_baseColor * 0.3;
+    fragColor = vec4(col, 1.0);
+    return;
+  }
+  // Slight wave at waterline
+  float wave = sin(v_uv.x * 20.0 + u_time * 5.0) * 0.008;
+  if (v_uv.y > waterY - 0.01 - wave && v_uv.y < waterY + 0.005) {
+    col = mix(col, vec3(1.0), 0.3); // bright edge at waterline
+  }
+  // Rim darkening
+  col *= 1.0 - smoothstep(0.68, 1.0, dist) * 0.65;
+  // Specular highlight
+  vec2 specUV = uvc + vec2(-0.3, 0.35);
+  float spec = exp(-dot(specUV, specUV) / 0.06) * 0.45;
+  col += vec3(spec * (1.0 + u_bloom * 0.3));
+  // Bloom glow
+  float glow = smoothstep(0.6, 0.0, dist) * u_bloom * 0.15;
+  col += u_baseColor * glow;
+  fragColor = vec4(col, 1.0);
+}`;
+
+    // ─── Programs ─────────────────────────────────────────────────────────────
+    const progAdvect   = createProgram(gl, quadVS, advectFS);
+    const progDiverg   = createProgram(gl, quadVS, divergenceFS);
+    const progPressure = createProgram(gl, quadVS, pressureFS);
+    const progGradSub  = createProgram(gl, quadVS, gradSubFS);
+    const progSplat    = createProgram(gl, quadVS, splatFS);
+    const progDisplay  = createProgram(gl, quadVS, orbDisplayFS);
+
+    const quadBuf = makeQuadVBO(gl);
+
+    function bindQuad(prog) {
+      const loc = gl.getAttribLocation(prog, 'a_pos');
+      gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+      gl.enableVertexAttribArray(loc);
+      gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    }
+
+    // ─── FBO helpers ─────────────────────────────────────────────────────────
+    function makeFBO(w, h) {
+      const tex = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, w, h, 0, gl.RGBA, gl.HALF_FLOAT, null);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      const fbo = gl.createFramebuffer();
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      return { tex, fbo, w, h };
+    }
+
+    function makeDoubleFBO(w, h) {
+      return { read: makeFBO(w, h), write: makeFBO(w, h),
+        swap() { const t = this.read; this.read = this.write; this.write = t; } };
+    }
+
+    // ─── Per-orb state ────────────────────────────────────────────────────────
+    function makeOrbState() {
+      return {
+        vel: makeDoubleFBO(SIM_W, SIM_H),
+        dye: makeDoubleFBO(DYE_W, DYE_H),
+        div: makeFBO(SIM_W, SIM_H),
+        prs: makeDoubleFBO(SIM_W, SIM_H),
+        hue: Math.random(),
+        lastSplat: 0,
+        mouse: null,
+        // Energy drives turbulence intensity. 1.0 = fully active, 0.0 = still.
+        // Decays naturally each frame; bumped by interaction events.
+        energy: 0.55
+      };
+    }
+
+    function makeOrbConfig(baseColor, bloom, dyeDissipation, velocityDissipation, splatRadius, colorful) {
+      return { baseColor, bloom, dyeDissipation, velocityDissipation, splatRadius, colorful };
+    }
+
+    const orbHP = makeOrbState();
+    const orbMP = makeOrbState();
+    orbHP.hue = 0.02;  // red-orange
+    orbMP.hue = 0.65;  // blue
+
+    orbHP.config = makeOrbConfig(
+      [0.25, 0.01, 0.02],  // blood red base
+      0.3,                  // bloom
+      0.997,                // dye dissipation
+      0.99,                 // velocity dissipation
+      0.003,                // splat radius
+      false                 // colorful? no — HP orb is always red tones
+    );
+    orbMP.config = makeOrbConfig(
+      [0.01, 0.03, 0.35],  // royal blue base
+      0.6,                  // bloom (more than HP)
+      0.998,                // dye dissipation (slightly more persistent)
+      0.985,                // velocity dissipation (slightly more turbulent)
+      0.004,                // slightly larger splats
+      true                  // colorful — MP orb shifts hues
+    );
+
+    const canvasHP = document.getElementById('canvas-hp');
+    const canvasMP = document.getElementById('canvas-mp');
+    const ctx2dHP  = canvasHP.getContext('2d');
+    const ctx2dMP  = canvasMP.getContext('2d');
+
+    // Mouse interactions with delta velocity — also energise the orb on contact
+    function setupOrbMouse(canvas, orb) {
+      let lastMousePos = null;
+      canvas.addEventListener('mousemove', e => {
+        const rect = canvas.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / canvas.clientWidth;
+        const y = 1.0 - (e.clientY - rect.top) / canvas.clientHeight;
+        if (lastMousePos) {
+          const dx = (x - lastMousePos.x) * 80;
+          const dy = (y - lastMousePos.y) * 80;
+          if (Math.abs(dx) + Math.abs(dy) > 0.001) {
+            orb.mouse = { x, y, vx: dx, vy: dy };
+            orb.energy = Math.min(1.0, orb.energy + 0.35); // mouse drag energises
+          }
+        }
+        lastMousePos = { x, y };
+      });
+      canvas.addEventListener('mouseleave', () => { lastMousePos = null; orb.mouse = null; });
+      canvas.addEventListener('touchstart', e => {
+        e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        const touch = e.touches[0];
+        const x = (touch.clientX - rect.left) / canvas.clientWidth;
+        const y = 1.0 - (touch.clientY - rect.top) / canvas.clientHeight;
+        lastMousePos = { x, y };
+        orb.mouse = { x, y, vx: 0, vy: 0 };
+        orb.energy = Math.min(1.0, orb.energy + 0.25);
+      }, { passive: false });
+      canvas.addEventListener('touchmove', e => {
+        e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        const touch = e.touches[0];
+        const x = (touch.clientX - rect.left) / canvas.clientWidth;
+        const y = 1.0 - (touch.clientY - rect.top) / canvas.clientHeight;
+        if (lastMousePos) {
+          const dx = (x - lastMousePos.x) * 80;
+          const dy = (y - lastMousePos.y) * 80;
+          if (Math.abs(dx) + Math.abs(dy) > 0.001) {
+            orb.mouse = { x, y, vx: dx, vy: dy };
+            orb.energy = Math.min(1.0, orb.energy + 0.3);
+          }
+        }
+        lastMousePos = { x, y };
+      }, { passive: false });
+      canvas.addEventListener('touchend', () => { lastMousePos = null; orb.mouse = null; });
+    }
+    setupOrbMouse(canvasHP, orbHP);
+    setupOrbMouse(canvasMP, orbMP);
+
+    // ─── Simulation step ──────────────────────────────────────────────────────
+    const texelSize = [1.0 / SIM_W, 1.0 / SIM_H];
+
+    function setTex(prog, name, unit, tex) {
+      gl.activeTexture(gl.TEXTURE0 + unit);
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.uniform1i(gl.getUniformLocation(prog, name), unit);
+    }
+
+    function drawQuadToFBO(fbo, w, h) {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+      gl.viewport(0, 0, w, h);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
+
+    function advect(vel, source, dst, dt, dissipation) {
+      gl.useProgram(progAdvect);
+      bindQuad(progAdvect);
+      setTex(progAdvect, 'u_velocity', 0, vel.read.tex);
+      setTex(progAdvect, 'u_source',   1, source.read.tex);
+      gl.uniform1f(gl.getUniformLocation(progAdvect, 'u_dt'), dt);
+      gl.uniform1f(gl.getUniformLocation(progAdvect, 'u_dissipation'), dissipation);
+      gl.uniform2fv(gl.getUniformLocation(progAdvect, 'u_texelSize'), texelSize);
+      drawQuadToFBO(dst.write.fbo, dst.write.w, dst.write.h);
+      dst.swap();
+    }
+
+    function computeDivergence(vel, div) {
+      gl.useProgram(progDiverg);
+      bindQuad(progDiverg);
+      setTex(progDiverg, 'u_velocity', 0, vel.read.tex);
+      gl.uniform2fv(gl.getUniformLocation(progDiverg, 'u_texelSize'), texelSize);
+      drawQuadToFBO(div.fbo, div.w, div.h);
+    }
+
+    function pressureSolve(prs, div, iters) {
+      gl.useProgram(progPressure);
+      bindQuad(progPressure);
+      gl.uniform2fv(gl.getUniformLocation(progPressure, 'u_texelSize'), texelSize);
+      setTex(progPressure, 'u_divergence', 1, div.tex);
+      for (let i = 0; i < iters; i++) {
+        setTex(progPressure, 'u_pressure', 0, prs.read.tex);
+        drawQuadToFBO(prs.write.fbo, prs.write.w, prs.write.h);
+        prs.swap();
+      }
+    }
+
+    function gradientSubtract(prs, vel) {
+      gl.useProgram(progGradSub);
+      bindQuad(progGradSub);
+      setTex(progGradSub, 'u_pressure', 0, prs.read.tex);
+      setTex(progGradSub, 'u_velocity', 1, vel.read.tex);
+      gl.uniform2fv(gl.getUniformLocation(progGradSub, 'u_texelSize'), texelSize);
+      drawQuadToFBO(vel.write.fbo, vel.write.w, vel.write.h);
+      vel.swap();
+    }
+
+    function splat(orb, cx, cy, vx, vy, color) {
+      const cfg = orb.config;
+      const velRadius = cfg ? cfg.splatRadius * 0.833 : 0.0025;
+      const dyeRadius = cfg ? cfg.splatRadius : 0.003;
+      // Velocity splat
+      gl.useProgram(progSplat);
+      bindQuad(progSplat);
+      setTex(progSplat, 'u_base', 0, orb.vel.read.tex);
+      gl.uniform2f(gl.getUniformLocation(progSplat, 'u_point'), cx, cy);
+      gl.uniform3f(gl.getUniformLocation(progSplat, 'u_color'), vx, vy, 0);
+      gl.uniform1f(gl.getUniformLocation(progSplat, 'u_radius'), velRadius);
+      drawQuadToFBO(orb.vel.write.fbo, SIM_W, SIM_H);
+      orb.vel.swap();
+
+      // Dye splat
+      setTex(progSplat, 'u_base', 0, orb.dye.read.tex);
+      gl.uniform3f(gl.getUniformLocation(progSplat, 'u_color'), color[0], color[1], color[2]);
+      gl.uniform1f(gl.getUniformLocation(progSplat, 'u_radius'), dyeRadius);
+      drawQuadToFBO(orb.dye.write.fbo, DYE_W, DYE_H);
+      orb.dye.swap();
+    }
+
+    function doAutoSplat(orb) {
+      const angle = Math.random() * Math.PI * 2;
+      const r = 0.1 + Math.random() * 0.3;
+      const cx = 0.5 + Math.cos(angle) * r;
+      const cy = 0.5 + Math.sin(angle) * r;
+      const vx = (0.5-cx) * 18;
+      const vy = (0.5-cy) * 18;
+      let col;
+      if (orb.config.colorful) {
+        // MP: full rainbow cycling
+        orb.hue = (orb.hue + 0.137) % 1.0;
+        col = hsvToRgb(orb.hue, 1.0, 0.9);
+      } else {
+        // HP: red-only tones
+        orb.hue = (orb.hue + 0.05) % 0.12; // stay in red-orange range
+        col = hsvToRgb(orb.hue, 1.0, 0.8);
+      }
+      splat(orb, cx, cy, vx, vy, col);
+    }
+
+    function stepOrb(orb, dt, now) {
+      // ── Energy decay — calms down naturally when idle ──────────────────────
+      // Half-life ~2 seconds (0.994^120 ≈ 0.49). Minimum 0.08 keeps a faint
+      // living shimmer even at rest — the orb never goes completely still.
+      orb.energy = Math.max(0.08, orb.energy * 0.994);
+      const e = orb.energy; // shorthand
+
+      // ── Auto colour splat every 1s — tiny energy nudge so base life persists
+      const SPLAT_INTERVAL = 1.0;
+      if (now - orb.lastSplat > SPLAT_INTERVAL) {
+        doAutoSplat(orb);
+        orb.lastSplat = now;
+        // Keep a gentle baseline alive — doesn't prevent calming, just prevents death
+        orb.energy = Math.max(orb.energy, 0.12);
+      }
+
+      // ── Mouse / touch interaction ────────────────────────────────────────────
+      if (orb.mouse) {
+        const rgb = hsvToRgb(orb.hue, 0.8, 1.0);
+        splat(orb, orb.mouse.x, orb.mouse.y, orb.mouse.vx, orb.mouse.vy, rgb);
+      }
+
+      // ── Energy-scaled turbulence ─────────────────────────────────────────────
+      // When energy > ~0.15 the surface actively sloshes. Below that threshold
+      // the turbulence is too weak to displace dye visibly → surface looks calm.
+      if (e > 0.09) {
+        const burstCount = orb.config && orb.config.colorful ? 3 : 2;
+        for (let b = 0; b < burstCount; b++) {
+          const bx = 0.15 + Math.random() * 0.70;
+          const by = 0.15 + Math.random() * 0.70;
+          const rx = bx - 0.5, ry = by - 0.5;
+          let vx, vy;
+          if (b % 2 === 0) {
+            // Tangential swirl — scaled by energy
+            const speed = (10 + Math.random() * 12) * e;
+            vx = -ry * speed + (Math.random() - 0.5) * 3 * e;
+            vy =  rx * speed + (Math.random() - 0.5) * 3 * e;
+          } else {
+            // Radial bubble — scaled by energy
+            const len = Math.sqrt(rx*rx + ry*ry) + 0.001;
+            const speed = (8 + Math.random() * 10) * e;
+            vx = (rx / len) * speed;
+            vy = (ry / len) * speed;
+          }
+          const r = (0.035 + Math.random() * 0.025) * (0.5 + e * 0.5);
+          gl.useProgram(progSplat);
+          bindQuad(progSplat);
+          setTex(progSplat, 'u_base', 0, orb.vel.read.tex);
+          gl.uniform2f(gl.getUniformLocation(progSplat, 'u_point'), bx, by);
+          gl.uniform3f(gl.getUniformLocation(progSplat, 'u_color'), vx, vy, 0);
+          gl.uniform1f(gl.getUniformLocation(progSplat, 'u_radius'), r);
+          drawQuadToFBO(orb.vel.write.fbo, SIM_W, SIM_H);
+          orb.vel.swap();
+        }
+      }
+
+      // ── NS solve — velocity dissipation increases as energy drops ─────────────
+      // At full energy: dissipation = config value (e.g. 0.99 → fluid keeps moving)
+      // At rest: dissipation = 0.96 → existing velocity bleeds off in ~0.7s
+      const cfgVelDiss = orb.config ? orb.config.velocityDissipation : 0.99;
+      const cfgDyeDiss = orb.config ? orb.config.dyeDissipation : 0.997;
+      const velDiss = cfgVelDiss * e + 0.96 * (1 - e); // lerp toward 0.96 when calm
+      const dyeDiss = cfgDyeDiss; // dye persists regardless — we want colour to stay
+      advect(orb.vel, orb.vel, orb.vel, dt, velDiss);
+      computeDivergence(orb.vel, orb.div);
+      pressureSolve(orb.prs, orb.div, 20);
+      gradientSubtract(orb.prs, orb.vel);
+      advect(orb.vel, orb.dye, orb.dye, dt, dyeDiss);
+    }
+
+    function renderOrb(orb, ctx2d, canvas, simT) {
+      // Draw dye onto offscreen via display shader
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.viewport(0, 0, SIM_W, SIM_H);
+      gl.useProgram(progDisplay);
+      bindQuad(progDisplay);
+      setTex(progDisplay, 'u_dye', 0, orb.dye.read.tex);
+      const cfg = orb.config;
+      gl.uniform3f(gl.getUniformLocation(progDisplay, 'u_baseColor'), cfg.baseColor[0], cfg.baseColor[1], cfg.baseColor[2]);
+      gl.uniform1f(gl.getUniformLocation(progDisplay, 'u_bloom'), cfg.bloom);
+      gl.uniform1f(gl.getUniformLocation(progDisplay, 'u_fillPct'), orb.fillPct !== undefined ? orb.fillPct : 0.75);
+      gl.uniform1f(gl.getUniformLocation(progDisplay, 'u_time'), simT);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+      // Blit to visible canvas via 2D
+      ctx2d.clearRect(0, 0, canvas.width, canvas.height);
+      ctx2d.drawImage(offscreen, 0, 0, canvas.width, canvas.height);
+    }
+
+    // Init fill pct
+    orbHP.fillPct = 0.75;
+    orbMP.fillPct = 0.50;
+    window._hpFill = 0.75;
+    window._mpFill = 0.50;
+
+    // Movement perturbation — slosh opposite direction of movement
+    window.orbMoveEffect = function(dx, dy) {
+      // Fluid sloshes OPPOSITE to movement direction — like liquid lagging behind
+      const isRun = Math.abs(dx) + Math.abs(dy) > 1.2;
+      const velScale = isRun ? 55 : 35;
+      // Bump energy — run bumps more than walk
+      orbHP.energy = Math.min(1.0, orbHP.energy + (isRun ? 0.45 : 0.30));
+      orbMP.energy = Math.min(1.0, orbMP.energy + (isRun ? 0.40 : 0.25));
+
+      // Liquid inertia: 3 splats spread across the orb interior, all moving in opposite direction
+      for (let i = 0; i < 3; i++) {
+        // Scatter splat positions across horizontal/vertical band opposite to movement
+        const jitter = (Math.random() - 0.5) * 0.3;
+        const cx = 0.5 + (dx !== 0 ? -dx * (0.15 + Math.random()*0.15) : jitter);
+        const cy = 0.5 + (dy !== 0 ? -dy * (0.15 + Math.random()*0.15) : jitter);
+        // Velocity: in the opposite direction — fluid "piles up" on the side opposite movement
+        const vx = -dx * (velScale + Math.random() * 20);
+        const vy = -dy * (velScale + Math.random() * 20);
+        const hpCol = hsvToRgb((orbHP.hue + i * 0.05) % 1.0, 0.9, 0.85);
+        const mpCol = hsvToRgb((orbMP.hue + i * 0.05) % 1.0, 0.9, 0.85);
+        splat(orbHP, cx, cy, vx, vy, hpCol);
+        splat(orbMP, cx, cy, vx * 0.8, vy * 0.8, mpCol);
+      }
+    };
+
+    // Combat effects
+    window.orbCombatEffect = function(type) {
+      if (type === 'hit') {
+        const cx = 0.3 + Math.random() * 0.4;
+        splat(orbHP, cx, 0.4 + Math.random()*0.2, (Math.random()-0.5)*20, (Math.random()-0.5)*20, [1.0, 0.1, 0.0]);
+        orbHP.hue = 0.0;
+        orbHP.energy = 1.0; // damage = full energy spike
+      } else if (type === 'big') {
+        for (let i = 0; i < 4; i++) {
+          const cx = 0.2 + Math.random()*0.6, cy = 0.2 + Math.random()*0.6;
+          splat(orbHP, cx, cy, (0.5-cx)*30, (0.5-cy)*30, [1.0, 0.0, 0.0]);
+        }
+        orbHP.energy = 1.0; // heavy hit = maximum spike
+      } else if (type === 'mana') {
+        const cx = 0.5 + (Math.random()-0.5)*0.3;
+        splat(orbMP, cx, 0.6, (Math.random()-0.5)*15, -8, hsvToRgb(0.65, 1, 1));
+        orbMP.energy = Math.min(1.0, orbMP.energy + 0.5); // mana use energises MP orb
+      }
+    };
+
+    const tickOrb = fpsCounter('fps-orb');
+    let orbSimT = 0;
+
+    function loopOrbs(now) {
+      if (!paused.orb) {
+        orbSimT += 0.016;
+        const dt = 0.016;
+        const nowSec = now / 1000;
+        // Sync fill from sliders
+        orbHP.fillPct = (window._hpFill !== undefined) ? window._hpFill : 0.75;
+        orbMP.fillPct = (window._mpFill !== undefined) ? window._mpFill : 0.50;
+        stepOrb(orbHP, dt, nowSec);
+        renderOrb(orbHP, ctx2dHP, canvasHP, orbSimT);
+        stepOrb(orbMP, dt, nowSec);
+        renderOrb(orbMP, ctx2dMP, canvasMP, orbSimT);
+        tickOrb();
+      }
+      requestAnimationFrame(loopOrbs);
+    }
+    requestAnimationFrame(loopOrbs);
+
+  } catch(e) {
+    console.error('Effect Orbs failed:', e);
+    ['canvas-hp','canvas-mp'].forEach(id => {
+      const c = document.getElementById(id);
+      if(c){const x=c.getContext('2d');x.fillStyle='#f88';x.font='11px monospace';x.fillText('Error: '+e.message,4,20);}
+    });
+  }
+})();
+
+// ─── Effect 2: Grass — Pure Canvas 2D (reliable across all browsers) ─────────
+(function initGrass() {
+  try {
+    // Use the overlay canvas for all drawing — guaranteed 2D context, no WebGL needed.
+    // The base canvas stays transparent (invisible) beneath.
+    const overlay = document.getElementById('canvas-grass-overlay');
+    const ctx = overlay.getContext('2d');
+    const W = overlay.width, H = overlay.height;  // 340 × 200
+
+    // Pre-generate blade data for consistent appearance
+    const BLADE_COUNT = 1200;
+    const blades = [];
+    for (let i = 0; i < BLADE_COUNT; i++) {
+      blades.push({
+        x:     Math.random() * W,               // pixel x base
+        y:     20 + Math.random() * (H - 30),   // pixel y base, spread across canvas
+        h:     9 + Math.random() * 11,            // height in pixels (9–20px, half original)
+        w:     1.8 + Math.random() * 1.4,        // base half-width in pixels
+        phase: Math.random() * Math.PI * 2,      // sway phase offset
+        speed: 0.7 + Math.random() * 0.8,        // individual sway speed
+        green: 0.35 + Math.random() * 0.35,      // base green channel (0.35–0.70)
+      });
+    }
+
+    // Sort by y so near blades draw on top of far blades (painter's algorithm)
+    blades.sort((a, b) => a.y - b.y);
+
+    let mx = -1, my = -1; // mouse in pixel coords (y=0 at top)
+    overlay.addEventListener('mousemove', ev => {
+      const r = overlay.getBoundingClientRect();
+      mx = (ev.clientX - r.left) * (W / r.width);
+      my = (ev.clientY - r.top)  * (H / r.height);
+    });
+    overlay.addEventListener('mouseleave', () => { mx = -1; my = -1; });
+
+    const tick = fpsCounter('fps-grass');
+    let t = 0;
+
+    function loopGrass() {
+      if (!paused.grass) {
+        t += 0.016;
+
+        // Ground fill
+        ctx.fillStyle = '#020a01';
+        ctx.fillRect(0, 0, W, H);
+
+        // Subtle ground shading — darker at top, lighter at bottom
+        const groundGrad = ctx.createLinearGradient(0, 0, 0, H);
+        groundGrad.addColorStop(0,   'rgba(0,0,0,0.5)');
+        groundGrad.addColorStop(0.6, 'rgba(0,0,0,0)');
+        ctx.fillStyle = groundGrad;
+        ctx.fillRect(0, 0, W, H);
+
+        // Auto-walking avatar position (figure-8 path)
+        const walkX = W * (0.5 + Math.sin(t * 0.7) * 0.32);
+        const walkY = H * (0.5 + Math.sin(t * 1.4) * 0.22);
+        const avX = (mx >= 0) ? mx : walkX;
+        const avY = (my >= 0) ? my : walkY;
+        const avR = 18; // avatar radius for parting effect
+
+        // Draw all blades
+        ctx.lineCap = 'round';
+        for (let i = 0; i < blades.length; i++) {
+          const b = blades[i];
+
+          // Sway: sine wave, tip sways more than base
+          const rawSway = Math.sin(t * b.speed * 1.2 + b.phase) * 2.8;
+
+          // Avatar parting: blades near avatar lean away
+          const dx = b.x - avX;
+          const dy = b.y - avY;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          const partAmt = Math.max(0, 1 - dist / (avR * 3.5));
+          const partSway = (dx >= 0 ? 1 : -1) * partAmt * 12;
+
+          const totalSway = rawSway + partSway;
+
+          // Tip position
+          const tipX = b.x + totalSway;
+          const tipY = b.y - b.h;
+
+          // Color: dark green at base → bright yellow-green at tip
+          // Use per-blade green variance for natural look
+          const baseG = Math.floor(b.green * 160);
+          const baseColor = `rgb(8,${baseG},4)`;
+          const tipColor  = `rgb(${Math.floor(100 + b.green*80)},${Math.floor(190 + b.green*50)},${Math.floor(20 + b.green*30)})`;
+
+          const grad = ctx.createLinearGradient(b.x, b.y, tipX, tipY);
+          grad.addColorStop(0, baseColor);
+          grad.addColorStop(1, tipColor);
+
+          // Draw blade as a tapered triangle: wide base, pointed tip
+          const baseW = b.w * (1 - partAmt * 0.5); // blades compress when parted
+          ctx.beginPath();
+          ctx.moveTo(b.x - baseW, b.y);          // base left
+          ctx.lineTo(b.x + baseW, b.y);          // base right
+          ctx.lineTo(tipX, tipY);                // tip
+          ctx.closePath();
+          ctx.fillStyle = grad;
+          ctx.fill();
+
+          // Thin bright highlight line up the center for 3D feel
+          if (b.h > 13) {
+            ctx.strokeStyle = `rgba(180,255,100,0.18)`;
+            ctx.lineWidth = 0.6;
+            ctx.beginPath();
+            ctx.moveTo(b.x, b.y);
+            ctx.quadraticCurveTo(b.x + totalSway * 0.4, b.y - b.h * 0.55, tipX, tipY);
+            ctx.stroke();
+          }
+        }
+
+        // Avatar — drawn AFTER grass so it appears on top
+        const avatarPx = Math.floor(H * 0.22); // ~44px
+        ctx.font = `${avatarPx}px serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🧍', avX, avY);
+
+        tick();
+      }
+      requestAnimationFrame(loopGrass);
+    }
+    requestAnimationFrame(loopGrass);
+
+  } catch(e) {
+    console.error('Effect Grass failed:', e);
+    const ov = document.getElementById('canvas-grass-overlay');
+    if (ov) {
+      const x = ov.getContext('2d');
+      if (x) { x.fillStyle='#f88'; x.font='11px monospace'; x.fillText('Grass error: '+e.message, 4, 20); }
+    }
+  }
+})();
+
+// ─── Effect 3: Lightning — Canvas 2D only ────────────────────────────────────
+(function initLightning() {
+  try {
+    const canvas = document.getElementById('canvas-lightning');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+
+    function buildLightning(x1, y1, x2, y2, depth, segs) {
+      if (depth === 0) { segs.push([x1,y1,x2,y2,1.0]); return; }
+      const mx = (x1+x2)/2 + (Math.random()-0.5)*depth*0.15*W;
+      const my = (y1+y2)/2 + (Math.random()-0.5)*depth*0.08*H;
+      buildLightning(x1,y1,mx,my,depth-1,segs);
+      buildLightning(mx,my,x2,y2,depth-1,segs);
+      if(depth>1 && Math.random()<0.4){
+        const bx=mx+(Math.random()-0.5)*0.3*W;
+        const by=my+(Math.random()-0.5)*0.2*H;
+        buildLightning(mx,my,bx,by,depth-2,segs);
+      }
+    }
+
+    let segs = [];
+    let x1 = W*0.3, y1 = 10, x2 = W*0.7, y2 = H-10;
+    let nextRegen = 0;
+
+    function regen(now) {
+      x1 = W*(0.2 + Math.random()*0.6); y1 = 5;
+      x2 = W*(0.2 + Math.random()*0.6); y2 = H - 5;
+      segs = [];
+      buildLightning(x1,y1,x2,y2,4,segs);
+      nextRegen = now + 80 + Math.random()*70;
+    }
+
+    const tick = fpsCounter('fps-lightning');
+
+    function loopLightning(now) {
+      if (!paused.lightning) {
+        if (now > nextRegen) regen(now);
+
+        ctx.fillStyle = 'rgba(0,0,8,0.85)';
+        ctx.fillRect(0, 0, W, H);
+        ctx.globalCompositeOperation = 'lighter';
+
+        // Pass 1: glow
+        ctx.lineWidth = 6;
+        ctx.strokeStyle = 'rgba(40,60,255,0.12)';
+        for (const [ax,ay,bx,by] of segs) {
+          ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(bx,by); ctx.stroke();
+        }
+        // Pass 2: mid
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(150,180,255,0.4)';
+        for (const [ax,ay,bx,by] of segs) {
+          ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(bx,by); ctx.stroke();
+        }
+        // Pass 3: core
+        ctx.lineWidth = 0.8;
+        ctx.strokeStyle = 'rgba(240,245,255,0.9)';
+        for (const [ax,ay,bx,by] of segs) {
+          ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(bx,by); ctx.stroke();
+        }
+
+        // Endpoint flashes
+        [[x1,y1],[x2,y2]].forEach(([fx,fy]) => {
+          const g = ctx.createRadialGradient(fx,fy,0,fx,fy,20);
+          g.addColorStop(0,'rgba(200,220,255,0.7)');
+          g.addColorStop(1,'rgba(60,80,255,0)');
+          ctx.fillStyle = g;
+          ctx.beginPath(); ctx.arc(fx,fy,20,0,Math.PI*2); ctx.fill();
+        });
+
+        ctx.globalCompositeOperation = 'source-over';
+        tick();
+      }
+      requestAnimationFrame(loopLightning);
+    }
+    requestAnimationFrame(loopLightning);
+
+  } catch(e) {
+    console.error('Effect Lightning failed:', e);
+    const c = document.getElementById('canvas-lightning');
+    if(c){const x=c.getContext('2d');x.fillStyle='#f88';x.font='11px monospace';x.fillText('Error: '+e.message,10,30);}
+  }
+})();
+
+// ─── Effect 4: Fire/Ifrit — WebGL1, dedicated context ────────────────────────
+(function initFire() {
+  try {
+    const canvas = document.getElementById('canvas-fire');
+    const gl = canvas.getContext('webgl');
+    if (!gl) throw new Error('WebGL not available for fire');
+
+    const W = canvas.width, H = canvas.height;
+
+    const fireVS = `
+attribute vec2 a_pos;
+attribute float a_age;
+attribute float a_life;
+attribute float a_size;
+uniform vec2 u_resolution;
+void main(){
+  gl_PointSize = a_size * (1.0 - a_age/a_life) + 2.0;
+  gl_Position = vec4(a_pos.x * 2.0 - 1.0, a_pos.y * 2.0 - 1.0, 0, 1);
+}`;
+
+    const fireFS = `
+precision mediump float;
+attribute float a_age;
+void main(){
+  vec2 uv = gl_PointCoord - 0.5;
+  float d = length(uv);
+  if(d > 0.5) discard;
+  float alpha = (1.0 - d * 2.0);
+  alpha *= alpha;
+  gl_FragColor = vec4(1, 0.5, 0.1, alpha * 0.8);
+}`;
+
+    // We'll use a simpler approach: store particle data in JS, upload per frame
+    // Actual heat gradient in FS via a varying passed from VS
+    const fireVS2 = `
+attribute vec2 a_pos;
+attribute float a_t; // normalized age 0=new, 1=dead
+attribute float a_sz;
+void main(){
+  gl_PointSize = a_sz * (1.0 - a_t * 0.7);
+  gl_Position = vec4(a_pos.x * 2.0 - 1.0, a_pos.y * 2.0 - 1.0, 0, 1);
+}`;
+
+    const fireFS2 = `
+precision mediump float;
+void main(){
+  vec2 uv = gl_PointCoord - 0.5;
+  float d = length(uv);
+  if(d > 0.5) discard;
+  float alpha = max(0.0, 1.0 - d * 2.0);
+  alpha *= alpha;
+  // heat color via gl_FragCoord.y — use a uniform instead
+  gl_FragColor = vec4(1, 1, 1, alpha);
+}`;
+
+    // Better: pass t as varying
+    const vsrc = `
+attribute vec2 a_pos;
+attribute float a_t;
+attribute float a_sz;
+varying float v_t;
+void main(){
+  v_t = a_t;
+  float sz = a_sz * max(0.1, 1.0 - a_t * 0.6);
+  gl_PointSize = sz;
+  gl_Position = vec4(a_pos.x * 2.0 - 1.0, a_pos.y * 2.0 - 1.0, 0, 1);
+}`;
+
+    const fsrc = `
+precision mediump float;
+varying float v_t;
+void main(){
+  vec2 uv = gl_PointCoord - 0.5;
+  float d = length(uv);
+  if(d > 0.5) discard;
+  float alpha = max(0.0, 1.0 - d * 2.0);
+  alpha *= alpha;
+  // white->yellow->orange->red as t increases
+  vec3 col;
+  if(v_t < 0.2){ col = mix(vec3(1,1,0.9), vec3(1,0.9,0.2), v_t/0.2); }
+  else if(v_t < 0.5){ col = mix(vec3(1,0.9,0.2), vec3(1,0.4,0.05), (v_t-0.2)/0.3); }
+  else { col = mix(vec3(1,0.4,0.05), vec3(0.5,0,0), (v_t-0.5)/0.5); }
+  gl_FragColor = vec4(col, alpha * (1.0 - v_t * 0.7));
+}`;
+
+    const prog = createProgram(gl, vsrc, fsrc);
+    gl.useProgram(prog);
+
+    // ─── Ifrit state machine ──────────────────────────────────────────────────
+    let ifritState = 'idle';
+    let ifritX = 0.125;
+    let ifritVX = 0.0;
+    let ifritVY = 0.0;
+    let ifritFacing = 0;
+    let ifritActionDuration = 0;
+    let stateTimer = 0;
+    let fireballProj = null; // { x, y, vx, vy, life }
+
+    function updateIfritState(dt) {
+      stateTimer += dt;
+
+      if (ifritState === 'idle' && stateTimer > 1.5) {
+        const r = Math.random();
+        if (r < 0.4) {
+          ifritState = 'walk';
+          const angle = Math.floor(Math.random() * 8) * Math.PI / 4;
+          ifritFacing = angle;
+          ifritVX = Math.cos(angle) * 0.008;
+          ifritVY = Math.sin(angle) * 0.003;
+          ifritActionDuration = 1.0 + Math.random() * 1.5;
+          stateTimer = 0;
+        } else if (r < 0.65) {
+          ifritState = 'fireball';
+          ifritVX = 0; ifritVY = 0;
+          ifritActionDuration = 0.8;
+          stateTimer = 0;
+          const angle = Math.floor(Math.random() * 8) * Math.PI / 4;
+          fireballProj = {
+            x: ifritX + Math.cos(angle) * 0.02,
+            y: 0.65 + Math.sin(angle) * 0.01,
+            vx: Math.cos(angle) * 0.018,
+            vy: Math.sin(angle) * 0.006,
+            life: 1.0
+          };
+        } else {
+          ifritState = 'sit';
+          ifritVX = 0; ifritVY = 0;
+          ifritActionDuration = 2.0 + Math.random();
+          stateTimer = 0;
+        }
+      }
+
+      if (ifritState === 'walk') {
+        ifritX += ifritVX;
+        ifritX = Math.max(0.04, Math.min(0.21, ifritX));
+        if (ifritX <= 0.04 || ifritX >= 0.21) ifritVX *= -1;
+        if (stateTimer > ifritActionDuration) {
+          ifritState = 'idle';
+          ifritVX = 0;
+          stateTimer = 0;
+        }
+      }
+
+      if (ifritState === 'fireball' && stateTimer > ifritActionDuration) {
+        ifritState = 'idle';
+        stateTimer = 0;
+      }
+
+      if (ifritState === 'sit' && stateTimer > ifritActionDuration) {
+        ifritState = 'idle';
+        stateTimer = 0;
+      }
+
+      // Update fireball projectile
+      if (fireballProj) {
+        fireballProj.x += fireballProj.vx;
+        fireballProj.y += fireballProj.vy;
+        fireballProj.life -= dt * 0.8;
+        if (fireballProj.life <= 0 || fireballProj.x > 0.95 || fireballProj.x < 0.02) {
+          fireballProj = null;
+        }
+      }
+    }
+
+    // Ifrit density SDF — accepts cx parameter for horizontal position
+    function ifritDensity(x, y, cx) {
+      cx = (cx !== undefined) ? cx : 0.125;
+      const lx = (x - cx) * 8.0;
+      const ly = y;
+      function smin(a,b,k){const h=Math.max(k-Math.abs(a-b),0)/k; return Math.min(a,b)-h*h*k*0.25;}
+      function ell(px,py,ecx,ecy,rx,ry){const dx=(px-ecx)/rx,dy=(py-ecy)/ry; return Math.sqrt(dx*dx+dy*dy);}
+
+      if (ifritState === 'sit') {
+        // Crouched/sitting pose — compressed vertically, legs spread wider
+        let d=ell(lx,ly,0,0.62,0.28,0.10);           // head lower
+        d=smin(d,ell(lx,ly,0,0.50,0.38,0.14),0.15);  // torso shorter
+        d=smin(d,ell(lx,ly,0,0.42,0.30,0.07),0.12);  // waist
+        d=smin(d,ell(lx,ly,-0.32,0.35,0.15,0.10),0.10); // lleg spread
+        d=smin(d,ell(lx,ly,0.32,0.35,0.15,0.10),0.10);  // rleg spread
+        d=smin(d,ell(lx,ly,-0.48+ly*0.1,0.57,0.12,0.13),0.08); // larm
+        d=smin(d,ell(lx,ly,0.48-ly*0.1,0.57,0.12,0.13),0.08);  // rarm
+        return Math.max(0,1.0-d);
+      } else {
+        // Standing pose
+        let d=ell(lx,ly,0,0.82,0.28,0.10);
+        d=smin(d,ell(lx,ly,0,0.655,0.38,0.16),0.15);
+        d=smin(d,ell(lx,ly,0,0.54,0.30,0.07),0.12);
+        d=smin(d,ell(lx,ly,-0.22,0.40,0.13,0.14),0.10);
+        d=smin(d,ell(lx,ly,0.22,0.40,0.13,0.14),0.10);
+        d=smin(d,ell(lx,ly,-0.48+ly*0.1,0.67,0.12,0.13),0.08);
+        d=smin(d,ell(lx,ly,0.48-ly*0.1,0.67,0.12,0.13),0.08);
+        d=smin(d,ell(lx,ly,-0.12,0.935,0.04,0.07),0.05);
+        d=smin(d,ell(lx,ly,0.12,0.935,0.04,0.07),0.05);
+        return Math.max(0,1.0-d);
+      }
+    }
+
+    // Particle pool
+    const MAX_P = 3000;
+    const px   = new Float32Array(MAX_P);
+    const py   = new Float32Array(MAX_P);
+    const pvx  = new Float32Array(MAX_P);
+    const pvy  = new Float32Array(MAX_P);
+    const page = new Float32Array(MAX_P);
+    const plife= new Float32Array(MAX_P);
+    const ptype= new Uint8Array(MAX_P);   // 0=ifrit, 1=fireball trail
+    const psz  = new Float32Array(MAX_P);
+
+    function spawnIfrit(i) {
+      let sx, sy, tries = 0;
+      const walkBounceY = ifritState === 'walk' ? Math.sin(stateTimer * 8) * 0.005 : 0;
+      do {
+        sx = ifritX - 0.125 + Math.random() * 0.25;
+        sy = Math.random();
+        tries++;
+      } while (ifritDensity(sx, sy + walkBounceY, ifritX) < Math.random() && tries < 50);
+      px[i] = sx; py[i] = sy;
+      pvx[i] = (Math.random()-0.5)*0.003;
+      pvy[i] = 0.003 + Math.random()*0.008;
+      page[i] = 0;
+      plife[i] = 0.5 + Math.random()*0.8;
+      ptype[i] = 0;
+      psz[i] = 4 + Math.random()*10;
+    }
+
+    function spawnFireballParticle(i) {
+      const fb = fireballProj;
+      if (!fb) { spawnIfrit(i); return; }
+      px[i] = fb.x + (Math.random()-0.5)*0.025;
+      py[i] = fb.y + (Math.random()-0.5)*0.025;
+      pvx[i] = fb.vx * 0.5 + (Math.random()-0.5)*0.005;
+      pvy[i] = fb.vy * 0.5 + (Math.random()-0.5)*0.005;
+      page[i] = 0;
+      plife[i] = 0.2 + Math.random()*0.25;
+      ptype[i] = 1;
+      psz[i] = 8 + Math.random()*12;
+    }
+
+    // Init
+    for (let i = 0; i < MAX_P * 0.7; i++) spawnIfrit(i);
+    for (let i = Math.floor(MAX_P * 0.7); i < MAX_P; i++) {
+      px[i] = 0.65 + Math.random()*0.2;
+      py[i] = 0.2 + Math.random()*0.6;
+      pvx[i] = (Math.random()-0.5)*0.005;
+      pvy[i] = 0.004 + Math.random()*0.01;
+      page[i] = Math.random(); // stagger initial ages
+      plife[i] = 0.3 + Math.random()*0.4;
+      ptype[i] = 1;
+      psz[i] = 3 + Math.random()*7;
+    }
+
+    const vbo = gl.createBuffer();
+    const uploadData = new Float32Array(MAX_P * 4); // x,y,t,sz
+
+    const aPos = gl.getAttribLocation(prog, 'a_pos');
+    const aT   = gl.getAttribLocation(prog, 'a_t');
+    const aSz  = gl.getAttribLocation(prog, 'a_sz');
+
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+
+    const tick = fpsCounter('fps-fire');
+    let simT = 0;
+
+    function loopFire(now) {
+      if (!paused.fire) {
+        const dt = 0.016;
+        simT += dt;
+
+        // Update Ifrit state machine
+        updateIfritState(dt);
+
+        // Update particles
+        const walkBounce = ifritState === 'walk' ? Math.sin(stateTimer * 8) * 0.005 : 0;
+        let extraFBCount = (fireballProj) ? 15 : 0;
+        let extraFBSpawned = 0;
+
+        for (let i = 0; i < MAX_P; i++) {
+          page[i] += dt;
+          if (page[i] >= plife[i]) {
+            if (ptype[i] === 0) {
+              spawnIfrit(i);
+            } else {
+              // Fireball trail: respawn as fireball particles if projectile exists, else as background fire
+              if (fireballProj && extraFBSpawned < extraFBCount) {
+                spawnFireballParticle(i);
+                extraFBSpawned++;
+              } else {
+                // Ambient right-side fire
+                px[i] = 0.5 + Math.random() * 0.45;
+                py[i] = 0.1 + Math.random() * 0.5;
+                pvx[i] = (Math.random()-0.5)*0.004;
+                pvy[i] = 0.003 + Math.random()*0.008;
+                page[i] = 0;
+                plife[i] = 0.3 + Math.random()*0.4;
+                ptype[i] = 1;
+                psz[i] = 3 + Math.random()*7;
+              }
+            }
+            continue;
+          }
+          // Turbulence
+          pvx[i] += Math.sin(py[i]*25 + simT*2)*0.0003;
+          pvy[i] += 0.0001; // slight upward acceleration
+          // Centerline pull for ifrit particles
+          if (ptype[i] === 0 && py[i] < 0.2) pvx[i] += (ifritX - px[i]) * 0.01;
+          // Walk bounce for ifrit particles
+          if (ptype[i] === 0) py[i] += walkBounce * dt * 2;
+          px[i] += pvx[i];
+          py[i] += pvy[i];
+        }
+
+        // Upload
+        let n = 0;
+        for (let i = 0; i < MAX_P; i++) {
+          const t = Math.min(1, page[i] / plife[i]);
+          uploadData[n++] = px[i];
+          uploadData[n++] = py[i];
+          uploadData[n++] = t;
+          uploadData[n++] = psz[i];
+        }
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+        gl.bufferData(gl.ARRAY_BUFFER, uploadData, gl.DYNAMIC_DRAW);
+
+        const stride = 4 * 4;
+        gl.enableVertexAttribArray(aPos);
+        gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, stride, 0);
+        gl.enableVertexAttribArray(aT);
+        gl.vertexAttribPointer(aT, 1, gl.FLOAT, false, stride, 8);
+        gl.enableVertexAttribArray(aSz);
+        gl.vertexAttribPointer(aSz, 1, gl.FLOAT, false, stride, 12);
+
+        gl.viewport(0, 0, W, H);
+        gl.clearColor(0.01, 0.005, 0.01, 1);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.drawArrays(gl.POINTS, 0, MAX_P);
+
+        tick();
+      }
+      requestAnimationFrame(loopFire);
+    }
+    requestAnimationFrame(loopFire);
+
+  } catch(e) {
+    console.error('Effect Fire failed:', e);
+    const c = document.getElementById('canvas-fire');
+    if(c){const x=c.getContext('2d');x.fillStyle='#f88';x.font='11px monospace';x.fillText('Error: '+e.message,10,30);}
+  }
+})();
+
+// ─── Effect 5: Electric Aura — Canvas 2D only ─────────────────────────────────
+(function initAura() {
+  try {
+    const canvas = document.getElementById('canvas-aura');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    const N_PETALS = 12;
+
+    function drawPetal(ctx, i, t) {
+      const angleBase = (i / N_PETALS) * Math.PI * 2 + t * 0.7;
+      const pulse = 0.28 + 0.08 * Math.sin(t * 2.1 + i * 1.3);
+
+      for (let pass = 0; pass < 3; pass++) {
+        const lws = [1, 3, 8];
+        const alps = [0.8, 0.4, 0.15];
+        const hue = ((i / N_PETALS) * 60 + t * 30) % 360;
+        ctx.beginPath();
+        for (let j = 0; j <= 40; j++) {
+          const s = j / 40;
+          const r = Math.sin(s * Math.PI) * pulse;
+          const angle = angleBase + s * Math.PI * 0.9 * Math.sin(t * 0.6 + i * 0.5);
+          const ppx = W/2 + Math.cos(angle) * r * W/2;
+          const ppy = H/2 + Math.sin(angle) * r * H/2;
+          j === 0 ? ctx.moveTo(ppx, ppy) : ctx.lineTo(ppx, ppy);
+        }
+        ctx.strokeStyle = `hsla(${200 + hue * 0.3}, 90%, 75%, ${alps[pass]})`;
+        ctx.lineWidth = lws[pass];
+        ctx.stroke();
+      }
+    }
+
+    const tick = fpsCounter('fps-aura');
+    let t = 0;
+
+    function loopAura() {
+      if (!paused.aura) {
+        t += 0.016;
+        ctx.fillStyle = 'rgba(0,0,8,0.25)';
+        ctx.fillRect(0, 0, W, H);
+        ctx.globalCompositeOperation = 'lighter';
+
+        for (let i = 0; i < N_PETALS; i++) drawPetal(ctx, i, t);
+
+        // Center orb
+        const pulse = 0.15 + 0.05 * Math.sin(t * 3.5);
+        const g = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, W * pulse);
+        g.addColorStop(0, `rgba(200,230,255,${0.8 + 0.15*Math.sin(t*4)})`);
+        g.addColorStop(0.3, `rgba(100,160,255,0.4)`);
+        g.addColorStop(1, 'rgba(50,80,200,0)');
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(W/2, H/2, W*pulse, 0, Math.PI*2); ctx.fill();
+
+        ctx.globalCompositeOperation = 'source-over';
+        tick();
+      }
+      requestAnimationFrame(loopAura);
+    }
+    requestAnimationFrame(loopAura);
+
+  } catch(e) {
+    console.error('Effect Aura failed:', e);
+    const c = document.getElementById('canvas-aura');
+    if(c){const x=c.getContext('2d');x.fillStyle='#f88';x.font='11px monospace';x.fillText('Error: '+e.message,10,30);}
+  }
+})();
+
+// ─── Effect 6: Ice/Frost — Canvas 2D only ────────────────────────────────────
+(function initIce() {
+  try {
+    const canvas = document.getElementById('canvas-ice');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+
+    function drawIce(t) {
+      ctx.clearRect(0, 0, W, H);
+      const cx = W/2, cy = H/2, R = Math.min(W, H)/2 - 4;
+
+      ctx.save();
+      ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI*2); ctx.clip();
+
+      // Background dark blue
+      ctx.fillStyle = '#010812';
+      ctx.fillRect(0, 0, W, H);
+
+      // Core glow
+      const coreGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, R*0.7);
+      coreGrad.addColorStop(0, `rgba(200,235,255,${0.4 + 0.1*Math.sin(t*3)})`);
+      coreGrad.addColorStop(0.4, 'rgba(80,160,220,0.25)');
+      coreGrad.addColorStop(1, 'rgba(20,60,120,0)');
+      ctx.fillStyle = coreGrad; ctx.fillRect(0,0,W,H);
+
+      // Crystalline shards
+      ctx.globalCompositeOperation = 'lighter';
+      for (let i = 0; i < 12; i++) {
+        const angle = (i/12)*Math.PI*2 + t*0.1;
+        const len = R * (0.4 + 0.3*Math.abs(Math.sin(i*1.37 + t*0.3)));
+        const x2 = cx + Math.cos(angle)*len, y2 = cy + Math.sin(angle)*len;
+        const grad = ctx.createLinearGradient(cx, cy, x2, y2);
+        grad.addColorStop(0, `rgba(220,245,255,${0.6 + 0.2*Math.sin(t*2+i)})`);
+        grad.addColorStop(1, 'rgba(80,160,220,0)');
+        ctx.strokeStyle = grad; ctx.lineWidth = 1.5*(1-i%2*0.3);
+        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(x2, y2); ctx.stroke();
+        if (i % 3 === 0) {
+          const mid = 0.6;
+          const mx2 = cx + Math.cos(angle)*len*mid, my2 = cy + Math.sin(angle)*len*mid;
+          const sub = len * 0.35;
+          const a2 = angle + 0.5;
+          ctx.strokeStyle = 'rgba(180,220,255,0.4)'; ctx.lineWidth = 0.8;
+          ctx.beginPath(); ctx.moveTo(mx2, my2); ctx.lineTo(mx2+Math.cos(a2)*sub, my2+Math.sin(a2)*sub); ctx.stroke();
+        }
+      }
+      ctx.globalCompositeOperation = 'source-over';
+
+      // White center flash
+      const flash = ctx.createRadialGradient(cx, cy, 0, cx, cy, R*0.15);
+      flash.addColorStop(0, `rgba(255,255,255,${0.7+0.2*Math.sin(t*4)})`);
+      flash.addColorStop(1, 'rgba(200,240,255,0)');
+      ctx.fillStyle = flash; ctx.fillRect(0,0,W,H);
+
+      // Rim darkening
+      const rim = ctx.createRadialGradient(cx, cy, R*0.7, cx, cy, R);
+      rim.addColorStop(0, 'rgba(0,0,0,0)');
+      rim.addColorStop(1, 'rgba(0,5,20,0.7)');
+      ctx.fillStyle = rim; ctx.fillRect(0,0,W,H);
+
+      ctx.restore();
+    }
+
+    const tick = fpsCounter('fps-ice');
+    let t = 0;
+
+    function loopIce() {
+      if (!paused.ice) {
+        t += 0.016;
+        drawIce(t);
+        tick();
+      }
+      requestAnimationFrame(loopIce);
+    }
+    requestAnimationFrame(loopIce);
+
+  } catch(e) {
+    console.error('Effect Ice failed:', e);
+    const c = document.getElementById('canvas-ice');
+    if(c){const x=c.getContext('2d');x.fillStyle='#f88';x.font='11px monospace';x.fillText('Error: '+e.message,10,30);}
+  }
+})();
+
+// ─── Effect 7: Portal — WebGL2, dedicated context ────────────────────────────
+(function initPortal() {
+  try {
+    const canvas = document.getElementById('canvas-portal');
+    const canvas2d = document.getElementById('canvas-portal-2d');
+    const ctx2d = canvas2d.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+
+    const SIM_W = 256, SIM_H = 256;
+
+    const gl = canvas.getContext('webgl2');
+    if (!gl) throw new Error('WebGL2 not available for portal');
+    gl.getExtension('EXT_color_buffer_float'); // optional — RGBA16F is renderable in WebGL2 without it
+
+    // ─── Shaders ─────────────────────────────────────────────────────────────
+    const quadVS = `#version 300 es
+precision highp float;
+in vec2 a_pos;
+out vec2 v_uv;
+void main(){v_uv=(a_pos+1.0)*0.5; gl_Position=vec4(a_pos,0,1);}`;
+
+    const advectFS = `#version 300 es
+precision highp float;
+uniform sampler2D u_velocity;
+uniform sampler2D u_source;
+uniform float u_dt;
+uniform float u_dissipation;
+uniform vec2 u_texelSize;
+in vec2 v_uv;
+out vec4 fragColor;
+void main(){
+  vec2 vel = texture(u_velocity, v_uv).xy;
+  vec2 prevUV = v_uv - vel * u_dt;
+  prevUV = clamp(prevUV, u_texelSize, 1.0 - u_texelSize);
+  fragColor = u_dissipation * texture(u_source, prevUV);
+}`;
+
+    const divergFS = `#version 300 es
+precision highp float;
+uniform sampler2D u_velocity;
+uniform vec2 u_texelSize;
+in vec2 v_uv;
+out vec4 fragColor;
+void main(){
+  float L = texture(u_velocity, v_uv - vec2(u_texelSize.x,0)).x;
+  float R = texture(u_velocity, v_uv + vec2(u_texelSize.x,0)).x;
+  float T = texture(u_velocity, v_uv + vec2(0,u_texelSize.y)).y;
+  float B = texture(u_velocity, v_uv - vec2(0,u_texelSize.y)).y;
+  fragColor = vec4((R-L+T-B)*0.5, 0, 0, 1);
+}`;
+
+    const pressFS = `#version 300 es
+precision highp float;
+uniform sampler2D u_pressure;
+uniform sampler2D u_divergence;
+uniform vec2 u_texelSize;
+in vec2 v_uv;
+out vec4 fragColor;
+void main(){
+  float L = texture(u_pressure, v_uv - vec2(u_texelSize.x,0)).x;
+  float R = texture(u_pressure, v_uv + vec2(u_texelSize.x,0)).x;
+  float T = texture(u_pressure, v_uv + vec2(0,u_texelSize.y)).x;
+  float B = texture(u_pressure, v_uv - vec2(0,u_texelSize.y)).x;
+  float div = texture(u_divergence, v_uv).x;
+  fragColor = vec4((L+R+T+B-div)*0.25, 0, 0, 1);
+}`;
+
+    const gradFS = `#version 300 es
+precision highp float;
+uniform sampler2D u_pressure;
+uniform sampler2D u_velocity;
+uniform vec2 u_texelSize;
+in vec2 v_uv;
+out vec4 fragColor;
+void main(){
+  float L = texture(u_pressure, v_uv - vec2(u_texelSize.x,0)).x;
+  float R = texture(u_pressure, v_uv + vec2(u_texelSize.x,0)).x;
+  float T = texture(u_pressure, v_uv + vec2(0,u_texelSize.y)).x;
+  float B = texture(u_pressure, v_uv - vec2(0,u_texelSize.y)).x;
+  vec2 vel = texture(u_velocity, v_uv).xy;
+  vel -= vec2(R-L, T-B)*0.5;
+  fragColor = vec4(vel, 0, 1);
+}`;
+
+    const splatFS = `#version 300 es
+precision highp float;
+uniform sampler2D u_base;
+uniform vec2 u_point;
+uniform vec3 u_color;
+uniform float u_radius;
+in vec2 v_uv;
+out vec4 fragColor;
+void main(){
+  vec2 d = v_uv - u_point;
+  float spl = exp(-dot(d,d)/u_radius);
+  fragColor = texture(u_base, v_uv) + vec4(u_color*spl, 0);
+}`;
+
+    const displayFS = `#version 300 es
+precision highp float;
+uniform sampler2D u_dye;
+uniform float u_time;
+in vec2 v_uv;
+out vec4 fragColor;
+void main(){
+  vec3 dye = texture(u_dye, v_uv).rgb;
+  // Rainbow shimmer based on position + time
+  float hue = mod(u_time * 0.2 + v_uv.x * 2.0 + v_uv.y * 1.5, 1.0);
+  vec3 c = abs(mod(hue * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0;
+  vec3 rainbow = clamp(c, 0.0, 1.0);
+  // Dark purple base
+  vec3 base = vec3(0.06, 0.0, 0.15);
+  vec3 col = base + dye * 2.0 + rainbow * 0.15;
+  // Vignette
+  vec2 p = v_uv * 2.0 - 1.0;
+  col *= 1.0 - smoothstep(0.5, 1.0, length(p) * 0.8) * 0.4;
+  fragColor = vec4(col, 1.0);
+}`;
+
+    const progAdvect   = createProgram(gl, quadVS, advectFS);
+    const progDiverg   = createProgram(gl, quadVS, divergFS);
+    const progPressure = createProgram(gl, quadVS, pressFS);
+    const progGradSub  = createProgram(gl, quadVS, gradFS);
+    const progSplat    = createProgram(gl, quadVS, splatFS);
+    const progDisplay  = createProgram(gl, quadVS, displayFS);
+
+    if (!progAdvect || !progDiverg || !progPressure || !progGradSub || !progSplat || !progDisplay) {
+      throw new Error('Portal: one or more shader programs failed to compile/link');
+    }
+
+    const quadBuf = makeQuadVBO(gl);
+
+    function bindQ(prog) {
+      const loc = gl.getAttribLocation(prog, 'a_pos');
+      gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+      gl.enableVertexAttribArray(loc);
+      gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    }
+
+    function makeFBO(w, h) {
+      const tex = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, w, h, 0, gl.RGBA, gl.HALF_FLOAT, null);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      const fbo = gl.createFramebuffer();
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      return { tex, fbo, w, h };
+    }
+
+    function makeDouble(w, h) {
+      return { read: makeFBO(w,h), write: makeFBO(w,h),
+        swap(){ const t=this.read; this.read=this.write; this.write=t; } };
+    }
+
+    const vel = makeDouble(SIM_W, SIM_H);
+    const dye = makeDouble(SIM_W, SIM_H);
+    const div = makeFBO(SIM_W, SIM_H);
+    const prs = makeDouble(SIM_W, SIM_H);
+
+    const texelSize = [1.0/SIM_W, 1.0/SIM_H];
+
+    function setTex(prog, name, unit, tex) {
+      gl.activeTexture(gl.TEXTURE0 + unit);
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.uniform1i(gl.getUniformLocation(prog, name), unit);
+    }
+
+    function drawTo(fbo, w, h) {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+      gl.viewport(0, 0, w, h);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
+
+    // Orbit sources
+    const orbitSources = [
+      { hue: 0.0,  speed: 0.4, r: 0.3 },
+      { hue: 0.33, speed: 0.7, r: 0.25 },
+      { hue: 0.66, speed: 0.55, r: 0.35 }
+    ];
+    let lastSplat = 0;
+    let portalHue = 0;
+
+    let portalMouse = null;
+    canvas.addEventListener('mousemove', e => {
+      const r = canvas.getBoundingClientRect();
+      portalMouse = { x: (e.clientX-r.left)/canvas.width, y: 1-(e.clientY-r.top)/canvas.height };
+    });
+    canvas.addEventListener('mouseleave', () => { portalMouse = null; });
+
+    const tick = fpsCounter('fps-portal');
+    let simT = 0;
+
+    function doSplat(cx, cy, vx, vy, color) {
+      gl.useProgram(progSplat);
+      bindQ(progSplat);
+      setTex(progSplat, 'u_base', 0, vel.read.tex);
+      gl.uniform2f(gl.getUniformLocation(progSplat,'u_point'), cx, cy);
+      gl.uniform3f(gl.getUniformLocation(progSplat,'u_color'), vx, vy, 0);
+      gl.uniform1f(gl.getUniformLocation(progSplat,'u_radius'), 0.0025);
+      drawTo(vel.write.fbo, SIM_W, SIM_H);
+      vel.swap();
+
+      setTex(progSplat, 'u_base', 0, dye.read.tex);
+      gl.uniform3f(gl.getUniformLocation(progSplat,'u_color'), color[0], color[1], color[2]);
+      gl.uniform1f(gl.getUniformLocation(progSplat,'u_radius'), 0.003);
+      drawTo(dye.write.fbo, SIM_W, SIM_H);
+      dye.swap();
+    }
+
+    function loopPortal(now) {
+      if (!paused.portal) {
+        simT += 0.016;
+        const dt = 0.016;
+        const nowSec = now / 1000;
+
+        // Orbit splats every 0.8s
+        if (nowSec - lastSplat > 0.8) {
+          orbitSources.forEach((src, i) => {
+            const angle = nowSec * src.speed * Math.PI * 2 + i * 2.094;
+            const cx = 0.5 + Math.cos(angle) * src.r * 0.5;
+            const cy = 0.5 + Math.sin(angle) * src.r * 0.5;
+            src.hue = (src.hue + 0.15) % 1.0;
+            const rgb = hsvToRgb(src.hue, 0.9, 1.0);
+            const vx = (0.5 - cx) * 15.0;
+            const vy = (0.5 - cy) * 15.0;
+            doSplat(cx, cy, vx, vy, rgb);
+          });
+          lastSplat = nowSec;
+        }
+
+        if (portalMouse) {
+          const rgb = hsvToRgb(portalHue, 0.9, 1.0);
+          portalHue = (portalHue + 0.01) % 1.0;
+          doSplat(portalMouse.x, portalMouse.y,
+            (0.5-portalMouse.x)*10, (0.5-portalMouse.y)*10, rgb);
+        }
+
+        // Advect velocity
+        gl.useProgram(progAdvect);
+        bindQ(progAdvect);
+        setTex(progAdvect,'u_velocity',0,vel.read.tex);
+        setTex(progAdvect,'u_source',1,vel.read.tex);
+        gl.uniform1f(gl.getUniformLocation(progAdvect,'u_dt'),dt);
+        gl.uniform1f(gl.getUniformLocation(progAdvect,'u_dissipation'),0.999);
+        gl.uniform2fv(gl.getUniformLocation(progAdvect,'u_texelSize'),texelSize);
+        drawTo(vel.write.fbo, SIM_W, SIM_H);
+        vel.swap();
+
+        // Divergence
+        gl.useProgram(progDiverg);
+        bindQ(progDiverg);
+        setTex(progDiverg,'u_velocity',0,vel.read.tex);
+        gl.uniform2fv(gl.getUniformLocation(progDiverg,'u_texelSize'),texelSize);
+        drawTo(div.fbo, SIM_W, SIM_H);
+
+        // Pressure
+        gl.useProgram(progPressure);
+        bindQ(progPressure);
+        gl.uniform2fv(gl.getUniformLocation(progPressure,'u_texelSize'),texelSize);
+        setTex(progPressure,'u_divergence',1,div.tex);
+        for(let i=0;i<20;i++){
+          setTex(progPressure,'u_pressure',0,prs.read.tex);
+          drawTo(prs.write.fbo, SIM_W, SIM_H);
+          prs.swap();
+        }
+
+        // Gradient subtract
+        gl.useProgram(progGradSub);
+        bindQ(progGradSub);
+        setTex(progGradSub,'u_pressure',0,prs.read.tex);
+        setTex(progGradSub,'u_velocity',1,vel.read.tex);
+        gl.uniform2fv(gl.getUniformLocation(progGradSub,'u_texelSize'),texelSize);
+        drawTo(vel.write.fbo, SIM_W, SIM_H);
+        vel.swap();
+
+        // Advect dye
+        gl.useProgram(progAdvect);
+        bindQ(progAdvect);
+        setTex(progAdvect,'u_velocity',0,vel.read.tex);
+        setTex(progAdvect,'u_source',1,dye.read.tex);
+        gl.uniform1f(gl.getUniformLocation(progAdvect,'u_dt'),dt);
+        gl.uniform1f(gl.getUniformLocation(progAdvect,'u_dissipation'),0.997);
+        gl.uniform2fv(gl.getUniformLocation(progAdvect,'u_texelSize'),texelSize);
+        drawTo(dye.write.fbo, SIM_W, SIM_H);
+        dye.swap();
+
+        // Display
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.viewport(0, 0, W, H);
+        gl.useProgram(progDisplay);
+        bindQ(progDisplay);
+        setTex(progDisplay,'u_dye',0,dye.read.tex);
+        gl.uniform1f(gl.getUniformLocation(progDisplay,'u_time'),simT);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+        // 2D overlay — draw fluid clipped to spiral portal shape
+        ctx2d.clearRect(0, 0, W, H);
+
+        // Create spiral/circular portal mask
+        const cx = W / 2, cy = H / 2;
+        const R = Math.min(W, H) * 0.45;
+
+        // Draw concentric glowing rings for portal frame
+        ctx2d.save();
+        ctx2d.beginPath();
+        ctx2d.arc(cx, cy, R, 0, Math.PI * 2);
+        ctx2d.clip();
+        for (let ring = 3; ring >= 0; ring--) {
+          const rr = R * (0.85 + ring * 0.05);
+          const alpha = 0.12 + ring * 0.05;
+          const hue = (simT * 40 + ring * 30) % 360;
+          ctx2d.strokeStyle = `hsla(${hue}, 100%, 65%, ${alpha})`;
+          ctx2d.lineWidth = 3 - ring * 0.5;
+          ctx2d.beginPath();
+          ctx2d.arc(cx, cy, rr, 0, Math.PI * 2);
+          ctx2d.stroke();
+        }
+        ctx2d.restore();
+
+        // 🌀 emoji at center, pulsing
+        ctx2d.save();
+        ctx2d.globalAlpha = 0.35 + 0.15 * Math.sin(simT * 2.5);
+        ctx2d.font = `${Math.floor(R * 1.1)}px serif`;
+        ctx2d.textAlign = 'center';
+        ctx2d.textBaseline = 'middle';
+        ctx2d.fillText('\uD83C\uDF00', cx, cy);
+        ctx2d.restore();
+
+        // Outer glow
+        ctx2d.save();
+        const grad = ctx2d.createRadialGradient(cx, cy, R * 0.7, cx, cy, R * 1.3);
+        grad.addColorStop(0, 'rgba(120,0,255,0)');
+        grad.addColorStop(0.5, `rgba(80,0,200,${0.15 + 0.08 * Math.sin(simT * 1.8)})`);
+        grad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx2d.fillStyle = grad;
+        ctx2d.fillRect(cx - R*1.4, cy - R*1.4, R*2.8, R*2.8);
+        ctx2d.restore();
+
+        tick();
+      }
+      requestAnimationFrame(loopPortal);
+    }
+    requestAnimationFrame(loopPortal);
+    // Seed initial splats after first frame so portal is visible immediately
+    setTimeout(() => {
+      for (let i = 0; i < 12; i++) {
+        const angle = (i / 12) * Math.PI * 2;
+        const r = 0.15 + (i % 3) * 0.1;
+        const cx = 0.5 + Math.cos(angle) * r;
+        const cy = 0.5 + Math.sin(angle) * r;
+        const rgb = hsvToRgb(i / 12, 1.0, 1.0);
+        doSplat(cx, cy, (0.5-cx)*25, (0.5-cy)*25, rgb);
+      }
+    }, 100);
+
+  } catch(e) {
+    console.error('Effect Portal failed:', e);
+    const errDiv = document.getElementById('portal-error');
+    if (errDiv) { errDiv.style.display='block'; errDiv.textContent = 'Portal error: '+e.message; }
+  }
+})();
+</script>
+</body>
+</html>

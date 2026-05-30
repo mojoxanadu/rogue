@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<paths xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Exposes the log export file (in filesDir) to receiving apps as
-         a content:// URI. Scoped to files-path so only files under
-         getFilesDir() are reachable. -->
-    <files-path name="logs" path="." />
-</paths>

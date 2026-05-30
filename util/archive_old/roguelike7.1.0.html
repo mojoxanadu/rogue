@@ -1,0 +1,1997 @@
+<!-- SOURCE: src/header.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Dungeon Descent v7.0.1</title>
+<style>
+  :root {
+    --bg: #141218; --surface: #1D1B20; --surface-container: #4A4458;
+    --primary: #D0BCFF; --on-primary: #381E72; --secondary: #CCC2DC; 
+    --error: #F2B8B5; --warning: #ffb74d; --success: #81c784;
+    --radius-lg: 12px;
+  }
+  body, html { 
+    margin: 0; padding: 0; overflow: hidden; background: #000; 
+    font-family: 'Segoe UI', sans-serif; color: var(--secondary); user-select: none;
+    width: 100vw; height: 100vh;
+  }
+  
+  canvas { 
+    position: absolute; top: 0; left: 0; z-index: 1; display: block;
+  }
+
+  #hud {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none;
+  }
+
+  .interactive { pointer-events: auto; }
+
+  /* Top Left Stats */
+  #top-left-stats {
+    position: absolute; top: 16px; left: 60px; display: flex; gap: 8px;
+  }
+  .chip {
+    background: rgba(29, 27, 32, 0.8); padding: 8px 12px;
+    border-radius: 999px; font-size: 14px; font-weight: 600;
+    border: 1px solid var(--surface-container);
+  }
+  .chip.danger { color: var(--error); border-color: var(--error); }
+
+  /* Left Bar */
+  #left-bar {
+    position: absolute; top: 16px; left: 16px; display: flex; flex-direction: column; gap: 8px;
+  }
+  .icon-btn {
+    width: 40px; height: 40px; border-radius: 50%; background: rgba(29, 27, 32, 0.9);
+    border: 2px solid var(--secondary); color: #fff; font-size: 18px;
+    display: flex; justify-content: center; align-items: center; cursor: pointer;
+  }
+  .icon-btn:hover { background: var(--surface-container); }
+  .icon-btn .badge {
+    position: absolute; top: -5px; right: -5px; background: var(--error); color: #000;
+    font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 10px;
+  }
+
+  /* Bottom Bar (Items, HP, MP, XP) */
+  #bottom-bar {
+    position: absolute; bottom: 16px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  #xp-container {
+    width: 500px; height: 12px; background: rgba(0,0,0,0.6); border: 1px solid #555; border-radius: 6px; position: relative;
+  }
+  #xp-bar-fill {
+    height: 100%; background: var(--primary); border-radius: 5px; transition: width 0.3s;
+  }
+  #xp-text {
+    position: absolute; top: -2px; left: 50%; transform: translateX(-50%); font-size: 10px; font-weight: bold; color: #fff; text-shadow: 1px 1px 0 #000;
+  }
+  
+  #resource-row {
+    display: flex; align-items: center; gap: 16px;
+  }
+  .orb {
+    width: 60px; height: 60px; border-radius: 50%; border: 2px solid #555; display: flex; justify-content: center; align-items: center;
+    font-weight: bold; font-size: 14px; text-shadow: 1px 1px 2px #000; box-shadow: inset 0 -10px 20px rgba(0,0,0,0.8);
+  }
+  #hp-orb { background: radial-gradient(circle at 30% 30%, #ff4d4d, #800000); }
+  #mp-orb { background: radial-gradient(circle at 30% 30%, #4da6ff, #000080); }
+  
+  #inventoryUI {
+    display: flex; gap: 4px; background: rgba(0,0,0,0.5); padding: 8px; border-radius: 12px;
+  }
+  .inv-slot {
+    width: 40px; height: 40px; background: rgba(29, 27, 32, 0.9);
+    border: 2px solid #555; border-radius: 6px;
+    display: flex; justify-content: center; align-items: center;
+    font-size: 20px; position: relative; cursor: grab;
+  }
+  .inv-slot:hover { border-color: var(--primary); }
+  .inv-slot .qty {
+    position: absolute; bottom: -4px; right: -4px; color: #fff; background: var(--on-primary);
+    font-size: 10px; font-weight: bold; border-radius: 50%; padding: 1px 4px;
+  }
+  .inv-slot .hotkey { position: absolute; top: 0px; left: 2px; color: #888; font-size: 10px; }
+
+  /* Log Overlay */
+  #log-overlay {
+    position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%);
+    width: 600px; height: 120px; background: rgba(0,0,0,0.4); border-radius: 8px;
+    padding: 8px; overflow-y: auto; font-family: monospace; font-size: 12px;
+    mask-image: linear-gradient(to bottom, transparent, black 10%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent, black 10%);
+  }
+  .log-entry { margin-bottom: 2px; }
+  .log-time { color: #888; margin-right: 8px; }
+
+  /* Minimap */
+  #minimap-container {
+    position: absolute; top: 16px; right: 16px; background: rgba(0,0,0,0.6);
+    border: 2px solid #555; border-radius: 8px; padding: 4px; text-align: center;
+  }
+  #minimap-label { font-size: 12px; font-weight: bold; margin-bottom: 4px; color: var(--primary); }
+  #minimap { width: 150px; height: 150px; background: #000; }
+
+  /* Draggable Modals */
+  .draggable-modal {
+    position: absolute; background: rgba(29, 27, 32, 0.95); border: 2px solid var(--secondary);
+    border-radius: 8px; z-index: 100; pointer-events: auto; display: none; flex-direction: column;
+    min-width: 250px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+  }
+  .modal-header {
+    background: var(--surface-container); padding: 8px 12px; border-radius: 6px 6px 0 0;
+    display: flex; justify-content: space-between; align-items: center; cursor: move;
+    font-weight: bold; color: var(--primary);
+  }
+  .modal-close { cursor: pointer; color: #fff; background: transparent; border: none; font-size: 16px; }
+  .modal-body { padding: 16px; }
+
+  /* Equip Layout inside Modal */
+  .equip-container {
+    position: relative; height: 200px; width: 100%; display: flex; justify-content: center; align-items: center;
+  }
+  .equip-slot {
+    width: 48px; height: 48px; background: rgba(0,0,0,0.5);
+    border: 2px dashed #555; border-radius: 8px;
+    display: flex; justify-content: center; align-items: center; font-size: 24px;
+    position: absolute; cursor: drop;
+  }
+  .equip-label { position: absolute; top: -14px; font-size: 10px; color: #aaa; text-shadow: 1px 1px 0 #000;}
+
+  /* Keybind hints */
+  .keybind-hint {
+    display: none; position: absolute; top: -15px; left: 50%; transform: translateX(-50%);
+    background: #ff0; color: #000; font-size: 10px; font-weight: bold; padding: 2px 4px; border-radius: 4px;
+  }
+  body.show-keybinds .keybind-hint { display: block; }
+
+  /* Misc */
+  .egg-btn, button { background: var(--surface-container); color: #fff; border: 1px solid #555; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+  button:hover { filter: brightness(1.2); }
+  
+  @keyframes rockViewport {
+    0% { transform: rotate(0deg); }
+    25% { transform: rotate(-3deg); }
+    75% { transform: rotate(3deg); }
+    100% { transform: rotate(0deg); }
+  }
+
+  /* Start Screen */
+  #start-screen {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000;
+    display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000;
+  }
+  .ascii-art { font-family: monospace; white-space: pre; color: var(--primary); font-size: 10px; line-height: 10px; margin-bottom: 20px; }
+</style>
+</head>
+<!-- SOURCE: src/ui_layout.html -->
+<body>
+
+<canvas id="game"></canvas>
+
+<div id="hud">
+  
+  <div id="top-left-stats" class="interactive">
+    <div class="chip" id="gpUI">💰 0</div>
+    <div class="chip" id="hungerUI">Hunger: 0%</div>
+    <div class="chip" id="statusUI" style="display:none;"></div>
+  </div>
+
+  <div id="minimap-container" class="interactive">
+    <div id="minimap-label">Floor 1</div>
+    <canvas id="minimap" width="150" height="150"></canvas>
+  </div>
+
+  <div id="left-bar" class="interactive">
+    <div class="icon-btn" onclick="toggleMenu()" title="Menu (ESC)"><div class="keybind-hint">ESC</div>&#9776;</div>
+    <div class="icon-btn" onclick="toggleModal('inv-modal')" title="Inventory (I)"><div class="keybind-hint">I</div>🎒</div>
+    <div class="icon-btn" onclick="toggleModal('pouch-modal')" title="Pouch (P)"><div class="keybind-hint">P</div>🛍️</div>
+    <div class="icon-btn" onclick="toggleModal('equip-modal')" title="Equipment (E)"><div class="keybind-hint">E</div>🛡️</div>
+    <div class="icon-btn" onclick="toggleModal('stats-modal')" title="Stats & Talents (C)"><div class="keybind-hint">C</div>📊<div class="badge" id="stat-badge" style="display:none;">0</div></div>
+    <div class="icon-btn" onclick="toggleModal('magic-modal')" title="Magic (M)"><div class="keybind-hint">M</div>✨</div>
+    <div class="icon-btn" onclick="toggleModal('achieve-modal')" title="Achievements (Y)"><div class="keybind-hint">Y</div>🏆</div>
+    <div class="icon-btn" onclick="listenAction()" title="Listen (L)"><div class="keybind-hint">L</div>👂</div>
+    <div class="icon-btn" onclick="kneelAction()" title="Kneel (K)" id="kneelBtn"><div class="keybind-hint">K</div>🙇</div>
+    
+    <div style="flex-grow:1; min-height: 20px;"></div>
+    
+    <div class="icon-btn" onclick="restPlayer()" title="Sleep (Z)"><div class="keybind-hint">Z</div>💤</div>
+    <div class="icon-btn" onclick="meleeAttack()" title="Melee Attack (Space)"><div class="keybind-hint">SPC</div><span id="melee-icon">🗡️</span></div>
+    <div class="icon-btn" onclick="castEquippedSpell()" title="Cast Spell (F)"><div class="keybind-hint">F</div><span id="spell-icon">✨</span></div>
+  </div>
+
+  <div id="log-overlay" class="interactive">
+    <div id="log"></div>
+  </div>
+
+  <div id="bottom-bar" class="interactive">
+    <div id="xp-container" title="Experience">
+      <div id="xp-bar-fill" style="width: 0%;"></div>
+      <div id="xp-text">Lvl 1 - 0/100 XP</div>
+    </div>
+    
+    <div id="resource-row">
+      <div class="orb" id="hp-orb" title="Health">50/50</div>
+      
+      <div id="inventoryUI">
+        <!-- Slots generated by JS -->
+      </div>
+      
+      <div class="orb" id="mp-orb" title="Mana">20/20</div>
+    </div>
+  </div>
+
+</div> <!-- End HUD -->
+
+<!-- Modals -->
+<div id="overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); display:none; justify-content:center; align-items:center; z-index:200;">
+  <div class="modal" id="modal-content" style="background:var(--surface); border:2px solid var(--secondary); padding:24px; border-radius:8px; text-align:center;"></div>
+</div>
+
+<div class="draggable-modal" id="equip-modal" style="top: 100px; left: 100px; width: 220px;">
+  <div class="modal-header"><span>🛡️ Equipment</span><button class="modal-close" onclick="toggleModal('equip-modal')">✖</button></div>
+  <div class="modal-body">
+    <div class="equip-container">
+      <div class="equip-slot" id="eqhead" style="top: 5px;"><div class="equip-label">Head</div></div>
+      <div class="equip-slot" id="eqchest" style="top: 55px;"><div class="equip-label">Chest</div></div>
+      <div class="equip-slot" id="eqleftHand" style="top: 55px; left: 20px;"><div class="equip-label">L-Hand</div></div>
+      <div class="equip-slot" id="eqrightHand" style="top: 55px; right: 20px;"><div class="equip-label">R-Hand</div></div>
+      <div class="equip-slot" id="eqlegs" style="top: 105px;"><div class="equip-label">Legs</div></div>
+      <div class="equip-slot" id="eqfeet" style="top: 130px; scale: 0.7;"><div class="equip-label">Feet</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="draggable-modal" id="pouch-modal" style="top: 100px; left: 300px; width: 280px;">
+  <div class="modal-header"><span>🛍️ Pouch</span><button class="modal-close" onclick="toggleModal('pouch-modal')">✖</button></div>
+  <div class="modal-body">
+    <div id="pouchUI" style="display:grid; grid-template-columns: repeat(5, 1fr); gap:4px;"></div>
+  </div>
+</div>
+
+<div class="draggable-modal" id="stats-modal" style="top: 100px; left: 300px; width: 500px;">
+  <div class="modal-header"><span>📊 Stats & Talents</span><button class="modal-close" onclick="toggleModal('stats-modal')">✖</button></div>
+  <div class="modal-body">
+    <div style="display:flex; gap:16px;">
+      <div id="stats-body" style="flex:1;"></div>
+      <div id="talents-body" style="flex:2; border-left:1px solid #555; padding-left:16px; height: 350px; overflow-y: auto;"></div>
+    </div>
+  </div>
+</div>
+
+<div class="draggable-modal" id="menu-modal" style="top: 60px; left: 60px;">
+  <div class="modal-header"><span>&#9776; Menu</span><button class="modal-close" onclick="toggleModal('menu-modal')">✖</button></div>
+  <div class="modal-body" style="display:flex; flex-direction:column; gap:8px;">
+    <button onclick="saveGame()">💾 Save Game</button>
+    <button onclick="loadGame()">📂 Load Game</button>
+    <button onclick="toggleModal('settings-modal')">⚙️ Settings</button>
+    <button onclick="toggleModal('debug-modal')">🐛 Debug Menu</button>
+  </div>
+</div>
+
+<div id="start-screen">
+  <div class="ascii-art">
+   /\                                                        /\
+  |  |                                                      |  |
+ /____\                                                    /____\
+[      ]                                                  [      ]
+|      |                                                  |      |
+|      |        DUNGEON DESCENT: THE ULTIMATE QUEST       |      |
+|______|                                                  |______|
+  </div>
+  <h1 style="color:var(--primary); text-shadow: 2px 2px #000;">DUNGEON DESCENT v7.1.0</h1>
+  <p style="color:#aaa; max-width: 600px; text-align:center; line-height: 1.5;">"I've faced dragons, ogres, and the dreaded math homework."</p>
+  <div style="margin: 24px; padding: 16px; border: 1px dashed var(--secondary); border-radius: 8px; text-align:center; background: rgba(0,0,0,0.5);">
+    <p style="color:var(--warning); font-weight:bold; margin-top:0;">Asset File Required</p>
+    <input type="file" id="asset-loader" accept=".dat" style="margin-bottom: 12px; color: #fff;">
+  </div>
+  <button id="startBtn" style="padding: 16px 32px; font-size: 24px; background: var(--success); color: #000; border:none; border-radius: 8px; cursor:pointer; font-weight:bold;">ENTER THE DUNGEON</button>
+</div>
+
+<script>
+
+  // SOURCE: src/audio.js
+  // === Audio Synthesizer (FM / OPL style) ===
+  const Sound = {
+    ctx: null,
+    tracks: {},
+    currentTrack: null,
+    musicTimer: null,
+
+    init: () => {
+      if(!Sound.ctx && (window.AudioContext || window.webkitAudioContext)) {
+        try { Sound.ctx = new (window.AudioContext || window.webkitAudioContext)(); }
+        catch(e) { Sound.ctx = 'failed'; }
+      }
+    },
+
+    // FM Operator - The core of the OPL sound
+    playFM: (freq, duration, vol=0.1, ratio=2, modulatorIndex=5) => {
+      if(!Sound.ctx || Sound.ctx === 'failed') return;
+      const t = Sound.ctx.currentTime;
+      
+      const carrier = Sound.ctx.createOscillator();
+      const modulator = Sound.ctx.createOscillator();
+      const modGain = Sound.ctx.createGain();
+      const mainGain = Sound.ctx.createGain();
+
+      carrier.frequency.value = freq;
+      modulator.frequency.value = freq * ratio;
+      modGain.gain.value = freq * modulatorIndex;
+
+      modulator.connect(modGain);
+      modGain.connect(carrier.frequency);
+      carrier.connect(mainGain);
+      mainGain.connect(Sound.ctx.destination);
+
+      mainGain.gain.setValueAtTime(0, t);
+      mainGain.gain.linearRampToValueAtTime(vol, t + 0.05);
+      mainGain.gain.exponentialRampToValueAtTime(0.01, t + duration);
+
+      carrier.start(t); modulator.start(t);
+      carrier.stop(t + duration); modulator.stop(t + duration);
+    },
+
+    // Play a pre-loaded AudioBuffer (v6.2.0)
+    playSample: (name, vol=0.2) => {
+      if(!Sound.ctx || Sound.ctx === 'failed' || !assets.sounds[name]) return;
+      try {
+        const source = Sound.ctx.createBufferSource();
+        const gain = Sound.ctx.createGain();
+        source.buffer = assets.sounds[name];
+        source.connect(gain);
+        gain.connect(Sound.ctx.destination);
+        gain.gain.value = vol;
+        source.start(0);
+      } catch(e) { console.error("Sample error:", e); }
+    },
+
+    step: () => assets.sounds['step'] ? Sound.playSample('step') : Sound.playTone(150, 'square', 0.05, 0.05, 50),
+    grunt: () => assets.sounds['grunt'] ? Sound.playSample('grunt') : Sound.playTone(200, 'triangle', 0.2, 0.2, 80),
+    scream: () => assets.sounds['scream'] ? Sound.playSample('scream') : Sound.playTone(400, 'sawtooth', 0.6, 0.3, 50),
+    clink: () => assets.sounds['clink'] ? Sound.playSample('clink') : Sound.playTone(1200, 'sine', 0.1, 0.1, 2000),
+    sword: () => { 
+      if(assets.sounds['sword']) Sound.playSample('sword');
+      else { Sound.playTone(400, 'square', 0.1, 0.2, 1200); setTimeout(() => Sound.playTone(800, 'triangle', 0.05, 0.1, 200), 50); }
+    },
+    splash: () => assets.sounds['splash'] ? Sound.playSample('splash') : Sound.playTone(100, 'triangle', 0.2, 0.2, 40),
+    quack: () => assets.sounds['quack'] ? Sound.playSample('quack') : { Sound.playTone(400, 'sawtooth', 0.1, 0.1, 600); setTimeout(() => Sound.playTone(400, 'sawtooth', 0.1, 0.1, 600), 120); },
+    squeak: () => assets.sounds['squeak'] ? Sound.playSample('squeak') : Sound.playTone(1800, 'sine', 0.05, 0.1, 2000),
+    gurgle: () => { for(let i=0; i<4; i++) setTimeout(() => Sound.playTone(100 + Math.random()*100, 'sine', 0.2, 0.1, 50), i*150); },
+    oof: () => assets.sounds['oof'] ? Sound.playSample('oof') : Sound.playTone(120, 'sawtooth', 0.1, 0.2, 60),
+    
+    playTone: (freq, type, duration, vol=0.1, slideFreq=null) => {
+      if(!Sound.ctx || Sound.ctx === 'failed') return;
+      const osc = Sound.ctx.createOscillator();
+      const gain = Sound.ctx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, Sound.ctx.currentTime);
+      if(slideFreq) osc.frequency.exponentialRampToValueAtTime(slideFreq, Sound.ctx.currentTime + duration);
+      gain.gain.setValueAtTime(vol, Sound.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, Sound.ctx.currentTime + duration);
+      osc.connect(gain); gain.connect(Sound.ctx.destination);
+      osc.start(); osc.stop(Sound.ctx.currentTime + duration);
+    },
+
+    // Sequencer for JSON music tracks
+    playMusic: (name) => {
+      if(Sound.currentTrack === name) return;
+      Sound.stopMusic();
+      Sound.currentTrack = name;
+      
+      const track = Sound.tracks[name];
+      if(!track) return;
+
+      let step = 0;
+      const nextNote = () => {
+        if(Sound.currentTrack !== name) return;
+        const note = track[step];
+        if(note.f > 0) Sound.playFM(note.f, note.d, 0.02, note.r || 2, note.i || 5);
+        step = (step + 1) % track.length;
+        Sound.musicTimer = setTimeout(nextNote, note.d * 1000);
+      };
+      nextNote();
+    },
+
+    stopMusic: () => {
+      Sound.currentTrack = null;
+      if(Sound.musicTimer) clearTimeout(Sound.musicTimer);
+    }
+  };
+
+  // SOURCE: src/music_data.js
+  // === Music Track Data (Monkey Island & KQ5) ===
+  Sound.tracks = {
+    'monkey': [
+      // Verse
+      {f: 440, d: 0.2, r: 2}, {f: 440, d: 0.2}, {f: 587, d: 0.4, r: 1.5}, {f: 440, d: 0.4},
+      {f: 659, d: 0.4, r: 3}, {f: 440, d: 0.4}, {f: 587, d: 0.4}, {f: 523, d: 0.4},
+      {f: 440, d: 0.2}, {f: 440, d: 0.2}, {f: 587, d: 0.4}, {f: 440, d: 0.4},
+      {f: 392, d: 0.4}, {f: 349, d: 0.4}, {f: 329, d: 0.8},
+      // Bridge (Expanded v6.4.0)
+      {f: 523, d: 0.2, r: 2.5}, {f: 587, d: 0.2}, {f: 659, d: 0.4}, {f: 523, d: 0.4},
+      {f: 440, d: 0.4}, {f: 392, d: 0.4}, {f: 440, d: 0.8},
+      {f: 523, d: 0.2, r: 2}, {f: 587, d: 0.2}, {f: 659, d: 0.4}, {f: 784, d: 0.4},
+      {f: 659, d: 0.4}, {f: 587, d: 0.4}, {f: 523, d: 0.8}
+    ],
+    'bandit': [
+      {f: 164, d: 0.8, r: 0.5, i: 10}, {f: 146, d: 0.8}, {f: 164, d: 0.8}, {f: 196, d: 0.8},
+      {f: 164, d: 0.8}, {f: 146, d: 0.8}, {f: 130, d: 1.6},
+      {f: 123, d: 0.8}, {f: 110, d: 0.8}, {f: 98, d: 1.6},
+      // Bridge
+      {f: 110, d: 0.8, r: 0.8}, {f: 130, d: 0.8}, {f: 146, d: 0.8}, {f: 164, d: 1.6}
+    ],
+    'lechuck': [
+      {f: 110, d: 0.4, r: 4, i: 20}, {f: 116, d: 0.4}, {f: 123, d: 0.4}, {f: 110, d: 0.8},
+      {f: 82, d: 0.4}, {f: 87, d: 0.4}, {f: 92, d: 0.4}, {f: 82, d: 0.8},
+      {f: 55, d: 0.4, r: 5}, {f: 62, d: 0.4}, {f: 65, d: 0.4}, {f: 55, d: 0.8}
+    ],
+    'leftys': [
+      {f: 130, d: 0.2, r: 2}, {f: 155, d: 0.2}, {f: 174, d: 0.2}, {f: 185, d: 0.2}, 
+      {f: 196, d: 0.4}, {f: 0, d: 0.2}, {f: 196, d: 0.2}, {f: 233, d: 0.2}, {f: 261, d: 0.4},
+      {f: 130, d: 0.2}, {f: 155, d: 0.2}, {f: 174, d: 0.2}, {f: 185, d: 0.2}, 
+      {f: 196, d: 0.4}, {f: 174, d: 0.2}, {f: 155, d: 0.2}, {f: 130, d: 0.4}
+    ]
+  };
+
+  // SOURCE: src/state.js
+  // === Game Constants & State ===
+  const CONSTANTS = {
+    HUNGER_RATE: 0.005,
+    HUNGER_DAMAGE: 0.5,
+    HUNGER_HEAL: 0.2,
+    SPAWN_RATE: 0.02,
+    DISEASE_DAMAGE: 1,
+    SUGAR_RUSH_SPEED: 100,
+    NORMAL_SPEED: 166,
+    RUN_SPEED: 80,
+    XP_BASE: 100,
+    XP_MULT: 1.5,
+    BASE_MP: 0,
+    BASE_HP: 25,
+    DIZZY_TURNS: 15,
+    FREEZE_TURNS: 40,
+    RESPEC_BASE_COST: 100
+  };
+
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const TILE_SIZE = 32;
+  let VIEW_COLS = Math.floor(canvas.width / TILE_SIZE); 
+  let VIEW_ROWS = Math.floor(canvas.height / TILE_SIZE); 
+  
+  const TILES = { 
+    WALL: 1, FLOOR: 2, STAIR_DOWN: 3, STAIR_UP: 4, CHEST: 5, STORE: 6, WATER: 7, LEFTYS: 8, BOOKSTORE: 9,
+    TREE: 10, BUSH: 11, ROCK: 12, SAND: 13, DEEP_WATER: 14, GRASS: 15, MOAT: 16, BRIDGE: 17, 
+    ANTIQUE_SHOP: 18, STANS_SHOP: 19, SCUMM_BAR: 20, WILLOW: 21, NEST: 22, PIT: 23, BOULDER: 24, TIGHTROPE: 25,
+    ARCADE: 26, BOAT: 27, HUT: 28, CASTLE_DOOR: 29, 
+    PORTAL: 30, BLADE: 31, LETTER: 32, FORGE: 33, COW: 34, CHICKEN: 35 // v7.0.0 Phase 4
+  };
+
+  const TALENT_TREES = {
+    assassination: {
+      name: "Assassination",
+      talents: [
+        { id: "crit1", name: "Malice", desc: "+5% Crit Chance", max: 5, bonus: { critRate: 0.01 } },
+        { id: "dmg1", name: "Murder", desc: "+2 Base Damage", max: 3, bonus: { baseDmg: 2 } },
+        { id: "pois1", name: "Vile Poisons", desc: "Melee hits deal poison", max: 1, req: 5 }
+      ]
+    },
+    combat: {
+      name: "Combat",
+      talents: [
+        { id: "hp1", name: "Toughness", desc: "+10 Max HP", max: 5, bonus: { maxHp: 10 } },
+        { id: "evade1", name: "Lightning Reflexes", desc: "+5% Evade", max: 5, bonus: { dodgeRate: 0.01 } },
+        { id: "haste1", name: "Adrenaline Rush", desc: "Reduce run exhaustion", max: 3, req: 10 }
+      ]
+    },
+    subtlety: {
+      name: "Subtlety",
+      talents: [
+        { id: "stealth1", name: "Camouflage", desc: "-1 Monster Aggro Range", max: 3 },
+        { id: "mana1", name: "Master of Deception", desc: "+10 Max MP", max: 5, bonus: { maxMp: 10 } },
+        { id: "blink1", name: "Shadowstep", desc: "Magical 3-tile dash", max: 1, req: 10 }
+      ]
+    }
+  };
+
+  let currentLevel = 1, mapW = 0, mapH = 0;
+  let currentScene = 'dungeon'; 
+  let theMap = [], explored = [], visible = [], enemies = [], itemsOnGround = [], darkMap = [];
+  let isDead = false, dropMode = false, isIdentifying = false, damageTint = 0;
+  let lightTurns = 0, lastMoveTime = 0;
+  let floatingTexts = []; 
+  let questTimer = { active: false, time: 0, label: "", callback: null }; 
+  let levelCache = {}; 
+  const logInfo = { count: 0 };
+  const inventory = new Array(10).fill(null);
+  const pouch = new Array(30).fill(null); 
+  const assets = { sprites: {}, sounds: {} };
+  let activeEffects = []; 
+  let useSprites = false; 
+  let debugFlags = { revealMap: false, fullLight: false, godMode: false };
+  let stolenItems = []; // Registry for the Thief's hoard
+
+  const player = {
+    x: 0, y: 0, facing: {dx: 0, dy: 1},
+    hp: 25, maxHp: 25, mp: 0, maxMp: 20, gp: 0,
+    xp: 0, level: 1, statPoints: 0, talentPoints: 0, respecs: 0,
+    stats: { str: 10, dex: 10, int: 10 },
+    talents: {}, // { talentId: points }
+    hunger: 0.0, darkSteps: 0, 
+    exhaustion: 0, isRunning: false, isKneeling: false,
+    healOverTime: 0, totalHealPending: 0,
+    storesVisited: 0, lastStoreFloor: -1,
+    savedRat: false, hasBottle: false, masterDefeated: false, fedEagle: false,
+    boatRepaired: false, playingAstro: false, grogTurns: 0,
+    astroScore: 0, skillChecks: { boulder: false, rope: false },
+    equippedSpell: null,
+    baseDmg: 2, hitRate: 0.50, critRate: 0.10, dodgeRate: 0.15,
+    statusTurns: 0, statusType: null,
+    spells: {},
+    equipped: { head: null, chest: '🎽', legs: '𩲩', feet: '🩴', leftHand: null, rightHand: null }
+  };
+
+  const MONSTER_DEF = {
+    "chipmunk": { icon: '🐿️', hp: 10, dmg: 3, hit: 0.5, crit: 0.05, dodge: 0.3, speed: 0.34, throughWalls: false },
+    "slime":    { icon: '🫧', hp: 8, dmg: 2, hit: 0.4, crit: 0.0, dodge: 0.1, speed: 0.2, throughWalls: false },
+    "bat":      { icon: '🦇', hp: 6, dmg: 2, hit: 0.4, crit: 0.05, dodge: 0.6, speed: 0.8, throughWalls: false },
+    "skeleton": { icon: '💀', hp: 20, dmg: 8, hit: 0.5, crit: 0.1, dodge: 0.2, speed: 0.4, throughWalls: false },
+    "ghost":    { icon: '👻', hp: 15, dmg: 8, hit: 0.4, crit: 0.20, dodge: 0.5, speed: 0.50, throughWalls: true },
+    "robot":    { icon: '🤖', hp: 40, dmg: 12, hit: 0.6, crit: 0.15, dodge: 0.0, speed: 1.00, throughWalls: false },
+    "thief":    { icon: '👤', hp: 40, dmg: 2, hit: 0.9, crit: 0.0, dodge: 0.6, speed: 1.2, throughWalls: false, quest: true },
+    "fence":    { icon: '🧥', hp: 100, dmg: 5, hit: 0.5, crit: 0.0, dodge: 0.1, speed: 0.0, throughWalls: false, quest: true },
+    "cain":     { icon: '🧔', hp: 999, dmg: 0, hit: 0.0, crit: 0.0, dodge: 0.0, speed: 0.0, throughWalls: false, quest: true },
+    "dragon":   { icon: '🐉', hp: 150, dmg: 30, hit: 0.6, crit: 0.2, dodge: 0.2, speed: 0.5, throughWalls: false },
+    "snake":    { icon: '🐍', hp: 15, dmg: 4, hit: 0.5, crit: 0.10, dodge: 0.4, speed: 0.50, throughWalls: false, effect: 'dizzy', effectChance: 0.05 },
+    "troll":    { icon: '🧌', hp: 60, dmg: 15, hit: 0.4, crit: 0.05, dodge: 0.0, speed: 0.25, throughWalls: false, effect: 'dizzy', effectChance: 0.05 },
+    "medusa":   { icon: '🐍👩', hp: 45, dmg: 8, hit: 0.5, crit: 0.10, dodge: 0.2, speed: 0.40, throughWalls: false, effect: 'freeze', effectChance: 0.10 },
+    "pirate":   { icon: '🏴‍☠️', hp: 30, dmg: 10, hit: 0.5, crit: 0.10, dodge: 0.3, speed: 0.50, throughWalls: false, quest: true },
+    "master":   { icon: '🤺', hp: 120, dmg: 20, hit: 0.7, crit: 0.20, dodge: 0.5, speed: 0.80, throughWalls: false, isBoss: true, quest: true },
+    "cat":      { icon: '🐱', hp: 20, dmg: 5, hit: 0.5, crit: 0.1, dodge: 0.4, speed: 0.6, throughWalls: false, quest: true },
+    "genie":    { icon: '🧞', hp: 999, dmg: 50, hit: 0.8, crit: 0.5, dodge: 0.9, speed: 1.0, throughWalls: true, isBoss: true, quest: true },
+    "king":     { icon: '🤴', hp: 60, dmg: 5, hit: 0.5, crit: 0.05, dodge: 0.2, speed: 0.4, rare: true },
+    "eagle":    { icon: '🦅', hp: 50, dmg: 10, hit: 0.8, crit: 0.1, dodge: 0.6, speed: 1.0, throughWalls: false, quest: true },
+    "gurgi":    { icon: '🐵', hp: 30, dmg: 2, hit: 0.4, crit: 0.0, dodge: 0.5, speed: 0.5, throughWalls: false, quest: true },
+    "erasmus":  { icon: '🧙‍♂️', hp: 999, dmg: 0, hit: 1.0, crit: 0.0, dodge: 1.0, speed: 1.0, throughWalls: false, quest: true }
+  };
+
+  const ITEM_DEF = {
+    "💎💠": { name: "Resurrection Crystal", type: "misc", stackable: false, maxGP: 5000 },
+    "📿": { name: "Orichalcum Bead", type: "quest", stackable: true, maxGP: 0 },
+    "🪙": { name: "Unique Coin", type: "quest", stackable: false, maxGP: 0 },
+    "🏅": { name: "Gold Locket", type: "quest", stackable: false, maxGP: 0 },
+    "🪕": { name: "Harp", type: "quest", stackable: false, maxGP: 0 },
+    "🍲": { name: "Black Cauldron", type: "quest", stackable: false, maxGP: 0 },
+    "🐔": { name: "Rubber Chicken", type: "quest", stackable: false, maxGP: 0 },
+    "⚙️": { name: "Pulley", type: "quest", stackable: false, maxGP: 0 },
+    "💍": { name: "Ring of Midas", type: "armor", slot: "rightHand", stackable: false, evadePercent: -20, maxGP: 500 },
+    "🥾": { name: "Old Boot", type: "misc", stackable: false, maxGP: 2 },
+    "🦯": { name: "Staff", type: "weapon", stackable: false, maxDamage: 2, maxGP: 5 },
+    "🏺": { name: "Brass Bottle", type: "misc", stackable: false, maxGP: 100 },
+    "🧪": { name: "Health Potion", type: "potion", stackable: true, maxHeal: 25, maxGP: 50 },
+    "🕯️": { name: "Candle", type: "light", stackable: true, lightRange: 15, maxGP: 15 },
+    "📃": { name: "Identify Scroll", type: "scroll", stackable: true, maxGP: 15 },
+    "🌀": { name: "Town Portal Scroll", type: "scroll", spell: "portal", stackable: true, maxGP: 100 },
+    "🍕": { name: "Pizza", type: "food", stackable: true, maxHeal: 10, foodValue: 30, maxGP: 15 },
+    "💰": { name: "Gold Bag", type: "wealth", stackable: false, maxGP: 50 },
+    "🗡️": { name: "Sword", type: "weapon", stackable: false, maxDamage: 8, maxGP: 100 },
+    "🛡️": { name: "Shield", type: "armor", slot: "rightHand", stackable: false, evadePercent: 15, maxGP: 150 },
+    "🎽": { name: "Running Shirt", type: "armor", slot: "chest", stackable: false, evadePercent: 0, maxGP: 2 },
+    "𩲩": { name: "Briefs", type: "armor", slot: "legs", stackable: false, evadePercent: 0, maxGP: 2 },
+    "🩴": { name: "Sandals", type: "armor", slot: "feet", stackable: false, evadePercent: 0, maxGP: 2 }
+  };
+
+  const APU_LINES = ["Thank you, come again!", "I have eight brothers and a cousin named Dave."];
+
+  window.addFloatingText = (x, y, text, color, size = 16) => {
+    floatingTexts.push({ x, y, text, color, life: 1.0, maxLife: 1.0, size });
+  };
+
+  // SOURCE: src/ui_logic.js
+  // === Core UI & Layout Control ===
+  function logMsg(msg) {
+    const logDiv = document.getElementById('log');
+    if(!logDiv) return;
+    logInfo.count++;
+    const now = new Date();
+    const ts = `[${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}]`;
+    logDiv.innerHTML += `<div class="log-entry"><span class="log-time">${ts}</span><span class="log-new">${msg}</span></div>`;
+    logDiv.scrollTop = logDiv.scrollHeight;
+  }
+
+  function updateUI() {
+    const hpOrb = document.getElementById('hp-orb');
+    if(hpOrb) hpOrb.innerText = `${Math.floor(player.hp)}/${player.maxHp}`;
+    const mpOrb = document.getElementById('mp-orb');
+    if(mpOrb) mpOrb.innerText = `${Math.floor(player.mp)}/${player.maxMp}`;
+
+    const xpBar = document.getElementById('xp-bar-fill');
+    const xpText = document.getElementById('xp-text');
+    if (xpBar && xpText) {
+      let requiredXp = CONSTANTS.XP_BASE * Math.pow(CONSTANTS.XP_MULT, player.level - 1);
+      xpBar.style.width = Math.min(100, (player.xp / requiredXp) * 100) + '%';
+      xpText.innerText = `Lvl ${player.level} - ${Math.floor(player.xp)}/${Math.floor(requiredXp)} XP`;
+    }
+
+    const gpUI = document.getElementById('gpUI');
+    if(gpUI) gpUI.innerText = `💰 ${player.gp}`;
+    
+    const hgUI = document.getElementById('hungerUI');
+    if(hgUI) hgUI.innerText = `Hunger: ${Math.floor(player.hunger)}%`;
+
+    const statusUI = document.getElementById('statusUI');
+    if(statusUI) {
+      if(player.statusType) {
+        statusUI.style.display = 'block';
+        statusUI.innerText = player.statusType.toUpperCase();
+        statusUI.className = "chip danger";
+      } else { statusUI.style.display = 'none'; }
+    }
+
+    const badge = document.getElementById('stat-badge');
+    if(badge) {
+       let totalPts = player.statPoints + player.talentPoints;
+       badge.innerText = totalPts;
+       badge.style.display = totalPts > 0 ? 'block' : 'none';
+    }
+    
+    Object.keys(player.equipped).forEach(slot => {
+      const el = document.getElementById(`eq${slot}`);
+      if(el) {
+        const icon = player.equipped[slot];
+        el.innerHTML = `<div class="equip-label">${slot}</div>${icon || ''}`;
+      }
+    });
+
+    if(document.getElementById('stats-modal').style.display === 'flex') { showStats(); showTalents(); }
+    if(document.getElementById('magic-modal').style.display === 'flex') showMagic();
+  }
+
+  // === Save/Load System ===
+  const SAVE_KEY = "DungeonDescentSecret";
+  function obfuscate(str) { return btoa(str.split('').map((char, i) => String.fromCharCode(char.charCodeAt(0) ^ SAVE_KEY.charCodeAt(i % SAVE_KEY.length))).join('')); }
+  function deobfuscate(str) { const raw = atob(str); return raw.split('').map((char, i) => String.fromCharCode(char.charCodeAt(0) ^ SAVE_KEY.charCodeAt(i % SAVE_KEY.length))).join(''); }
+
+  window.saveGame = () => {
+    const state = { player, currentLevel, currentScene, mapW, mapH, theMap, explored, itemsOnGround, enemies, levelCache, stolenItems };
+    const blob = obfuscate(JSON.stringify(state));
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([blob], {type: 'application/json'}));
+    a.download = `dungeon_save.json`; a.click();
+  };
+
+  window.loadGame = () => {
+    const input = document.createElement('input'); input.type = 'file'; input.accept = '.json';
+    input.onchange = (e) => {
+      const file = e.target.files[0]; const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const data = JSON.parse(deobfuscate(ev.target.result));
+          Object.assign(player, data.player); currentLevel = data.currentLevel; currentScene = data.currentScene;
+          theMap = data.theMap; explored = data.explored; itemsOnGround = data.itemsOnGround; enemies = data.enemies;
+          levelCache = data.levelCache; stolenItems = data.stolenItems || [];
+          logMsg("Save loaded!"); toggleModal('menu-modal'); calculateFOV(); drawMap(); updateUI();
+        } catch(err) { alert("Invalid save!"); }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  };
+
+  // === Draggable Modals ===
+  let activeModal = null, isDragging = false, dragOffset = {x: 0, y: 0};
+  window.draggedItemIdx = null; window.draggedSource = null;
+
+  window.toggleModal = (id) => {
+    let el = document.getElementById(id);
+    if(!el) return;
+    el.style.display = (el.style.display === 'none' || el.style.display === '') ? 'flex' : 'none';
+    if(el.style.display === 'flex') {
+      if(id === 'stats-modal') { showStats(); showTalents(); }
+      if(id === 'magic-modal') showMagic();
+      if(id === 'pouch-modal') renderPouch();
+      if(id === 'asset-viewer-modal') showAssetViewer();
+    }
+  };
+
+  document.addEventListener('mousedown', (e) => {
+    const header = e.target.closest('.modal-header');
+    if(header) {
+      isDragging = true; activeModal = header.closest('.draggable-modal');
+      let rect = activeModal.getBoundingClientRect();
+      dragOffset = {x: e.clientX - rect.left, y: e.clientY - rect.top};
+    }
+  });
+  document.addEventListener('mousemove', (e) => {
+    if(isDragging && activeModal) {
+      activeModal.style.left = (e.clientX - dragOffset.x) + 'px';
+      activeModal.style.top = (e.clientY - dragOffset.y) + 'px';
+    }
+  });
+  document.addEventListener('mouseup', () => { isDragging = false; activeModal = null; });
+
+  // === Inventory and Pouch Rendering ===
+  window.renderInventory = () => {
+    const grid = document.getElementById('inventoryUI'); if(!grid) return;
+    grid.innerHTML = '';
+    for(let i=0; i<10; i++) {
+      let item = inventory[i], slot = document.createElement('div');
+      slot.className = isIdentifying ? 'inv-slot selected' : 'inv-slot';
+      slot.draggable = item ? true : false;
+      if(item) slot.addEventListener('dragstart', (e) => handleDragStart(e, 'inv', i));
+      slot.addEventListener('dragover', allowDrop);
+      slot.addEventListener('drop', (e) => handleDropItem(e, 'inv', i));
+      slot.innerHTML = `<span class="hotkey">${i===9?0:i+1}</span>`;
+      if(item) { slot.innerHTML += item.icon; if(item.qty > 1) slot.innerHTML += `<span class="qty">${item.qty}</span>`; }
+      slot.onclick = () => handleItemClick(i); grid.appendChild(slot);
+    }
+  };
+
+  window.renderPouch = () => {
+    const grid = document.getElementById('pouchUI'); if(!grid) return;
+    grid.innerHTML = '';
+    for(let i=0; i<30; i++) {
+      let item = pouch[i], slot = document.createElement('div');
+      slot.className = 'inv-slot'; slot.style.width='32px'; slot.style.height='32px'; slot.style.fontSize='16px';
+      slot.draggable = item ? true : false;
+      if(item) slot.addEventListener('dragstart', (e) => handleDragStart(e, 'pouch', i));
+      slot.addEventListener('dragover', allowDrop);
+      slot.addEventListener('drop', (e) => handleDropItem(e, 'pouch', i));
+      if(item) { slot.innerHTML = item.icon; if(item.qty > 1) slot.innerHTML += `<span class="qty" style="font-size:8px;">${item.qty}</span>`; }
+      grid.appendChild(slot);
+    }
+  };
+
+  window.handleDragStart = (e, source, idx) => { window.draggedSource = source; window.draggedItemIdx = idx; e.dataTransfer.setData('text/plain', idx); };
+  window.allowDrop = (e) => { e.preventDefault(); };
+  window.handleDropItem = (e, targetSource, targetIdx) => {
+    e.preventDefault();
+    if(window.draggedItemIdx !== null && window.draggedSource !== null) {
+      let srcArr = window.draggedSource === 'inv' ? inventory : pouch;
+      let tgtArr = targetSource === 'inv' ? inventory : pouch;
+      let temp = tgtArr[targetIdx]; tgtArr[targetIdx] = srcArr[window.draggedItemIdx]; srcArr[window.draggedItemIdx] = temp;
+      window.draggedItemIdx = null; window.draggedSource = null;
+      renderInventory(); renderPouch(); updateUI();
+    }
+  };
+
+  window.handleDrop = (e, slot) => {
+    e.preventDefault();
+    if(window.draggedItemIdx !== null && window.draggedSource === 'inv') { swapEquip(window.draggedItemIdx, slot); window.draggedItemIdx = null; window.draggedSource = null; }
+  };
+
+  // === Stats and Talents (v7.1.0) ===
+  window.allocateStat = (stat) => { if(player.statPoints > 0) { player.stats[stat]++; player.statPoints--; 
+    if(stat==='str'){player.maxHp+=5;player.hp+=5;} if(stat==='int'){player.maxMp+=5;player.mp+=5;}
+    showStats(); updateUI(); } 
+  };
+
+  window.showStats = () => {
+    let html = `<p>Level ${player.level}</p><p>Points: <span style="color:var(--warning)">${player.statPoints}</span></p>
+      <div style="text-align:left; font-size:12px;">
+        <p>STR: ${player.stats.str} <button onclick="allocateStat('str')">+</button></p>
+        <p>DEX: ${player.stats.dex} <button onclick="allocateStat('dex')">+</button></p>
+        <p>INT: ${player.stats.int} <button onclick="allocateStat('int')">+</button></p>
+      </div>`;
+    document.getElementById('stats-body').innerHTML = html;
+  };
+
+  window.buyTalent = (tree, idx) => {
+    const t = TALENT_TREES[tree].talents[idx];
+    const current = player.talents[t.id] || 0;
+    if(player.talentPoints > 0 && current < t.max) {
+      player.talents[t.id] = current + 1;
+      player.talentPoints--;
+      if(t.bonus) Object.keys(t.bonus).forEach(k => player[k] += t.bonus[k]);
+      showTalents(); updateUI();
+    }
+  };
+
+  window.showTalents = () => {
+    let html = `<p>Talent Points: <span style="color:var(--primary)">${player.talentPoints}</span></p>`;
+    Object.keys(TALENT_TREES).forEach(key => {
+      let tree = TALENT_TREES[key];
+      html += `<div style="margin-bottom:10px;"><strong style="color:var(--primary)">${tree.name}</strong>`;
+      tree.talents.forEach((t, i) => {
+        let pts = player.talents[t.id] || 0;
+        html += `<div style="font-size:11px; display:flex; justify-content:space-between; margin-top:4px;">
+          <span>${t.name} (${pts}/${t.max})</span>
+          <button onclick="buyTalent('${key}', ${i})" style="font-size:9px; padding:1px 4px;" ${player.talentPoints===0 || pts===t.max ? 'disabled':''}>+</button>
+        </div>`;
+      });
+      html += `</div>`;
+    });
+    document.getElementById('talents-body').innerHTML = html;
+  };
+
+  window.showMagic = () => {
+    let keys = Object.keys(player.spells);
+    let html = keys.length === 0 ? "<p>No spells.</p>" : "<div style='display:flex; flex-direction:column; gap:4px;'>";
+    keys.forEach(k => {
+      let sp = player.spells[k], isEq = player.equippedSpell === k;
+      html += `<div style="background:var(--surface-container); padding:6px; border-radius:4px; display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:12px;">${k.toUpperCase()} (Lv${sp.level})</span>
+        <button onclick="window.player.equippedSpell='${k}';showMagic();updateUI();" style="font-size:10px; background:${isEq?'var(--success)':'#444'}">${isEq?'Eq':'Equip'}</button>
+      </div>`;
+    });
+    document.getElementById('magic-body').innerHTML = html + "</div>";
+  };
+
+  // === Quest Actions ===
+  window.listenAction = () => {
+    if(darkMap[player.y] && darkMap[player.y][player.x] && lightTurns <= 0) {
+      logMsg("<span style='color:var(--warning)'>You hear faint, scuttling footsteps... something is near.</span>");
+      Sound.playTone(100, 'sine', 0.5, 0.05, 50);
+    } else { logMsg("You hear nothing but your own breath."); }
+  };
+
+  window.kneelAction = () => {
+    player.isKneeling = true; logMsg("You kneel low to the ground.");
+    document.getElementById('kneelBtn').style.background = 'var(--success)';
+    setTimeout(() => { player.isKneeling = false; document.getElementById('kneelBtn').style.background = ''; }, 1000);
+  };
+
+  // Action Buttons
+  window.meleeAttack = () => { movePlayer(player.facing.dx, player.facing.dy); };
+  window.castEquippedSpell = () => { if(player.equippedSpell) castSpell(player.equippedSpell); else logMsg("No spell equipped!"); };
+  window.toggleMenu = () => { toggleModal('menu-modal'); };
+  window.toggleFog = () => { debugFlags.revealMap = !debugFlags.revealMap; drawMap(); };
+  window.toggleLight = () => { debugFlags.fullLight = !debugFlags.fullLight; calculateFOV(); drawMap(); };
+
+  // SOURCE: src/map.js
+  // === Map Generation ===
+  function getDeadEndWall() {
+    let candidates = [];
+    for(let y=1; y<mapH-1; y++) {
+      for(let x=1; x<mapW-1; x++) {
+        if(theMap[y][x] === TILES.WALL) {
+          let floors = 0;
+          if(theMap[y-1][x] === TILES.FLOOR || theMap[y-1][x] === TILES.STORE || theMap[y-1][x] === TILES.BOOKSTORE || theMap[y-1][x] === TILES.LEFTYS) floors++;
+          if(theMap[y+1][x] === TILES.FLOOR || theMap[y+1][x] === TILES.STORE || theMap[y+1][x] === TILES.BOOKSTORE || theMap[y+1][x] === TILES.LEFTYS) floors++;
+          if(theMap[y][x-1] === TILES.FLOOR || theMap[y][x-1] === TILES.STORE || theMap[y][x-1] === TILES.BOOKSTORE || theMap[y][x-1] === TILES.LEFTYS) floors++;
+          if(theMap[y][x+1] === TILES.FLOOR || theMap[y][x+1] === TILES.STORE || theMap[y][x+1] === TILES.BOOKSTORE || theMap[y][x+1] === TILES.LEFTYS) floors++;
+          if(floors === 1) candidates.push({x,y});
+        }
+      }
+    }
+    if(candidates.length > 0) return candidates[Math.floor(Math.random()*candidates.length)];
+    let backup;
+    do { 
+      backup = {x: 1+Math.floor(Math.random()*(mapW-2)), y: 1+Math.floor(Math.random()*(mapH-2))}; 
+    } while(theMap[backup.y][backup.x] !== TILES.FLOOR);
+    return backup;
+  }
+
+  function initMap(baseSize) {
+    if (currentLevel > 10) {
+      if (currentLevel === 11) currentScene = 'mountain';
+      else if (currentLevel === 12) currentScene = 'beach';
+      else if (currentLevel === 13) currentScene = 'forest';
+      else if (currentLevel >= 14) currentScene = 'castle';
+    } else {
+      currentScene = 'dungeon';
+    }
+
+    let scaledSize = Math.floor(baseSize * Math.pow(1.1, currentLevel - 1));
+    if(scaledSize % 2 === 0) scaledSize++;
+    mapW = scaledSize; mapH = scaledSize;
+    
+    let defaultTile = currentScene === 'dungeon' ? TILES.WALL : (currentScene === 'beach' ? TILES.SAND : TILES.GRASS);
+    theMap = Array(mapH).fill().map(()=>Array(mapW).fill(defaultTile));
+    darkMap = Array(mapH).fill().map(()=>Array(mapW).fill(false));
+    explored = Array(mapH).fill().map(()=>Array(mapW).fill(false));
+    visible = Array(mapH).fill().map(()=>Array(mapW).fill(false));
+    enemies = []; itemsOnGround = []; lightTurns = 0; player.darkSteps = 0;
+
+    let downStairPos = {x: 0, y: 0};
+
+    if (currentScene === 'dungeon') {
+      let rooms = [];
+      function splitArea(x, y, w, h, iter) {
+        if(iter === 0 || (w < 12 && h < 12)) {
+          rooms.push({x, y, w, h, cx: Math.floor(x+w/2), cy: Math.floor(y+h/2)});
+          return;
+        }
+        let splitHoriz = Math.random() > 0.5;
+        if(w > h*1.5) splitHoriz = false; else if(h > w*1.5) splitHoriz = true;
+        
+        if(splitHoriz) {
+          let split = Math.floor(h/2) + (Math.floor(Math.random()*3)-1);
+          splitArea(x, y, w, split, iter-1);
+          splitArea(x, y+split, w, h-split, iter-1);
+        } else {
+          let split = Math.floor(w/2) + (Math.floor(Math.random()*3)-1);
+          splitArea(x, y, split, h, iter-1);
+          splitArea(x+split, y, w-split, h, iter-1);
+        }
+      }
+      splitArea(1, 1, mapW-2, mapH-2, 4);
+
+      for(let r of rooms) {
+        let type = Math.random();
+        if(type < 0.25) {
+          theMap[r.cy][r.cx] = TILES.FLOOR;
+        } else if (type < 0.6) {
+          let rw = Math.max(3, Math.floor(r.w * 0.7));
+          let rh = Math.max(3, Math.floor(r.h * 0.7));
+          let rx = r.x + Math.floor((r.w - rw)/2);
+          let ry = r.y + Math.floor((r.h - rh)/2);
+          for(let cy=ry; cy<ry+rh; cy++) for(let cx=rx; cx<rx+rw; cx++) theMap[cy][cx] = TILES.FLOOR;
+        } else {
+          let cx=r.cx, cy=r.cy, steps=r.w*r.h;
+          for(let i=0; i<steps; i++) {
+            theMap[cy][cx] = TILES.FLOOR;
+            let dirs = [[0,-1],[1,0],[0,1],[-1,0]];
+            let d = dirs[Math.floor(Math.random()*4)];
+            if(cx+d[0]>r.x && cx+d[0]<r.x+r.w-1) cx+=d[0];
+            if(cy+d[1]>r.y && cy+d[1]<r.y+r.h-1) cy+=d[1];
+          }
+        }
+      }
+
+      for(let i=0; i<rooms.length-1; i++) {
+        let p1 = rooms[i], p2 = rooms[i+1];
+        let cx = p1.cx, cy = p1.cy;
+        while(cx !== p2.cx) { theMap[cy][cx] = TILES.FLOOR; cx += Math.sign(p2.cx - cx); }
+        while(cy !== p2.cy) { theMap[cy][cx] = TILES.FLOOR; cy += Math.sign(p2.cy - cy); }
+      }
+
+      if(currentLevel % 2 === 0) theMap[getDeadEndWall().y][getDeadEndWall().x] = TILES.STORE;
+      if(currentLevel === 3) theMap[getDeadEndWall().y][getDeadEndWall().x] = TILES.LEFTYS;
+      if(currentLevel === 4) theMap[getDeadEndWall().y][getDeadEndWall().x] = TILES.BOOKSTORE;
+      if(currentLevel === 5) theMap[getDeadEndWall().y][getDeadEndWall().x] = TILES.ANTIQUE_SHOP;
+      if(currentLevel === 7) theMap[getDeadEndWall().y][getDeadEndWall().x] = TILES.STANS_SHOP;
+
+      for(let i=0; i<2; i++) {
+        let rm = rooms[Math.floor(Math.random()*rooms.length)];
+        let cx = Math.floor(rm.x + rm.w/2);
+        let cy = Math.floor(rm.y + rm.h/2);
+        if(theMap[cy][cx] === TILES.FLOOR) theMap[cy][cx] = TILES.CHEST;
+      }
+
+      let upStairPos = getDeadEndWall();
+      player.x = upStairPos.x; player.y = upStairPos.y;
+      theMap[player.y][player.x] = currentLevel > 1 ? TILES.STAIR_UP : TILES.FLOOR;
+
+      downStairPos = getDeadEndWall();
+      while(downStairPos.x === upStairPos.x && downStairPos.y === upStairPos.y) downStairPos = getDeadEndWall();
+      theMap[downStairPos.y][downStairPos.x] = TILES.STAIR_DOWN;
+
+      let safeDist = (r) => Math.abs(r.cx - player.x) + Math.abs(r.cy - player.y) > 10 && 
+                           Math.abs(r.cx - downStairPos.x) + Math.abs(r.cy - downStairPos.y) > 10;
+      
+      if(Math.random() < 0.50) {
+        let candidates = rooms.filter(safeDist);
+        if(candidates.length > 0) {
+          let r = candidates[Math.floor(Math.random()*candidates.length)];
+          for(let y=r.y; y<r.y+r.h; y++) for(let x=r.x; x<r.x+r.w; x++) {
+            if(theMap[y][x] === TILES.FLOOR) darkMap[y][x] = true;
+          }
+        }
+      }
+      if(Math.random() < 0.10) {
+        let candidates = rooms.filter(safeDist);
+        if(candidates.length > 0) {
+          let r = candidates[Math.floor(Math.random()*candidates.length)];
+          for(let y=r.y; y<r.y+r.h; y++) for(let x=r.x; x<r.x+r.w; x++) {
+            if(theMap[y][x] === TILES.FLOOR) theMap[y][x] = TILES.WATER;
+          }
+        }
+      }
+
+      if(currentLevel === 2) {
+        itemsOnGround.push({ x: player.x + 1, y: player.y, icon: '🥾' });
+        let eventRoom = rooms[rooms.length-1];
+        enemies.push({ x: eventRoom.cx, y: eventRoom.cy, type: "cat", stats: {...MONSTER_DEF["cat"]}, actionTimer: 0 });
+        enemies.push({ x: eventRoom.cx + 1, y: eventRoom.cy, type: "wet_rat", stats: {...MONSTER_DEF["wet_rat"]}, actionTimer: 0 });
+      }
+      
+      if(currentLevel === 1 || currentLevel === 3) itemsOnGround.push({ x: getRandomFloor().x, y: getRandomFloor().y, icon: '🪵' });
+      if(currentLevel === 3) {
+         let r = rooms[Math.floor(rooms.length/2)];
+         enemies.push({ x: r.cx, y: r.cy, type: "eagle", stats: {...MONSTER_DEF["eagle"]}, actionTimer: 0 });
+      }
+
+      if(currentLevel === 3) Sound.playMusic('leftys');
+      else if(currentLevel >= 5 && currentLevel <= 6) Sound.playMusic('monkey');
+      else if(currentLevel === 9) {
+        Sound.playMusic('bandit');
+        let camp = rooms[rooms.length-1];
+        for(let y=camp.y; y<camp.y+camp.h; y++) for(let x=camp.x; x<camp.x+camp.w; x++) {
+          if(theMap[y][x] === TILES.FLOOR) {
+            if(x === camp.cx && y === camp.cy) itemsOnGround.push({ x, y, icon: '🦯' }); // bandit staff
+            else if(Math.random() < 0.2) theMap[y][x] = TILES.PIT; // rug/carpet trap
+            else if(Math.random() < 0.3) enemies.push({ x, y, type: "pirate", stats: {...MONSTER_DEF["pirate"], icon: '💤'}, actionTimer: -100 });
+          }
+        }
+        // Temple Cavern
+        let temple = rooms[0];
+        for(let y=temple.y; y<temple.y+temple.h; y++) for(let x=temple.x; x<temple.x+temple.w; x++) {
+          if(theMap[y][x] === TILES.FLOOR) {
+            if(x === temple.cx && y === temple.cy) itemsOnGround.push({ x, y, icon: '🏺' });
+            else if(y < temple.y + 3) itemsOnGround.push({ x, y, icon: (Math.random() < 0.5 ? '💎' : '💰'), greedTrap: true });
+          }
+        }
+        theMap[temple.cy][temple.x-1] = TILES.WALL; // Locked door
+      } else if(currentLevel === 10) {
+        enemies.push({ x: downStairPos.x, y: downStairPos.y, type: "genie", stats: {...MONSTER_DEF["genie"]}, actionTimer: 0 });
+      } else { Sound.stopMusic(); }
+
+      if(currentLevel === 6) {
+        let bossRoom = rooms[1];
+        theMap[bossRoom.cy][bossRoom.cx] = TILES.CHEST;
+        enemies.push({ x: bossRoom.cx + 1, y: bossRoom.cy, type: "master", stats: {...MONSTER_DEF["master"]}, actionTimer: 0 });
+      }
+
+      spawnMonsters(Math.floor(6 * Math.pow(1.2, currentLevel - 1)));
+      
+      for(let i=0; i<5; i++) {
+        let pos = getRandomFloor();
+        spawnLoot(pos.x, pos.y, false, false);
+      }
+    } else {
+      // Overworld Generation (v7.0.0)
+      for(let i=0; i<(mapW*mapH)*0.1; i++) {
+        let x = Math.floor(Math.random()*mapW), y = Math.floor(Math.random()*mapH);
+        if(currentScene === 'mountain') theMap[y][x] = TILES.ROCK;
+        if(currentScene === 'forest') theMap[y][x] = Math.random() < 0.5 ? TILES.TREE : TILES.BUSH;
+        if(currentScene === 'beach') theMap[y][x] = Math.random() < 0.3 ? TILES.WATER : TILES.SAND;
+      }
+
+      player.x = 2; player.y = 2;
+      downStairPos = {x: mapW-3, y: mapH-3};
+      theMap[downStairPos.y][downStairPos.x] = TILES.STAIR_DOWN;
+
+      if(currentScene === 'mountain') {
+        theMap[mapH-5][mapW-5] = TILES.NEST;
+      } else if(currentScene === 'beach') {
+        theMap[5][5] = TILES.BOAT;
+        theMap[10][10] = TILES.SCUMM_BAR;
+        theMap[mapH-5][mapW-5] = TILES.WILLOW;
+        itemsOnGround.push({ x: 6, y: 6, icon: '🪵' });
+        itemsOnGround.push({ x: 7, y: 7, icon: '🪢' });
+      } else if(currentScene === 'forest') {
+        enemies.push({ x: 10, y: 10, type: "antwerp", stats: {...MONSTER_DEF["antwerp"]}, actionTimer: 0 });
+        enemies.push({ x: 15, y: 15, type: "gurgi", stats: {...MONSTER_DEF["gurgi"]}, actionTimer: 0 });
+        theMap[mapH-5][mapW-5] = TILES.HUT; // Morva Witches
+        theMap[mapH-3][mapW-3] = TILES.CASTLE_DOOR;
+      } else if(currentScene === 'castle') {
+        for(let i=0; i<10; i++) enemies.push({ x: Math.floor(Math.random()*mapW), y: Math.floor(Math.random()*mapH), type: "castle_rat", stats: {...MONSTER_DEF["castle_rat"]}, actionTimer: 0 });
+      }
+    }
+  }
+
+  function getRandomFloor() {
+    let x,y, escapes = 0;
+    do { 
+      x = 1+Math.floor(Math.random()*(mapW-2)); 
+      y = 1+Math.floor(Math.random()*(mapH-2)); 
+      escapes++;
+    } while(theMap[y][x] !== TILES.FLOOR && theMap[y][x] !== TILES.WATER && escapes < 1000);
+    return {x,y};
+  }
+
+  function spawnMonsters(count) {
+    for(let i=0; i<count; i++) {
+      let pos = {x: 1+Math.floor(Math.random()*(mapW-2)), y: 1+Math.floor(Math.random()*(mapH-2))};
+      let tile = theMap[pos.y][pos.x];
+      if(tile !== TILES.FLOOR && tile !== TILES.WATER) { i--; continue; }
+      
+      let typeStr = "chipmunk";
+      if(tile === TILES.WATER) {
+        let roll = Math.random();
+        if(roll < 0.6) { typeStr = "duck"; }
+        else if(roll < 0.9) { typeStr = "wet_rat"; }
+        else typeStr = "shark";
+      } else {
+        let types = ["chipmunk", "slime"];
+        if(currentLevel >= 2) types.push("bat", "goat");
+        if(currentLevel >= 3) types.push("snake", "skeleton");
+        if(currentLevel >= 4) types.push("ghost", "troll", "spider");
+        if(currentLevel >= 5) types.push("medusa", "pirate", "ogre");
+        if(currentLevel >= 7) types.push("robot", "dragon");
+        
+        if(currentLevel > 2 && Math.random() < 0.05) { // 5% chance for a rare spawn to replace a normal one
+           typeStr = "king";
+        } else {
+           typeStr = types[Math.floor(Math.random() * types.length)];
+        }
+      }
+      enemies.push({ x: pos.x, y: pos.y, type: typeStr, stats: {...MONSTER_DEF[typeStr]}, actionTimer: 0 });
+    }
+  }
+
+  function spawnLoot(x, y, isChest, forceStandard) {
+    if(!forceStandard && Math.random() < 0.01) {
+      let rares = ['👗','🦠','🐓','🧦','💎'];
+      itemsOnGround.push({x, y, icon: rares[Math.floor(Math.random()*rares.length)]});
+      return;
+    }
+    
+    let roll = Math.random();
+    let keys = Object.keys(ITEM_DEF);
+    if(isChest) {
+       if(roll < 0.15) { enemies.push({ x, y, type: "goat", stats: {...MONSTER_DEF["goat"]}, actionTimer: 0 }); return; }
+       else if(roll < 0.50) itemsOnGround.push({x, y, icon: '🕯️'});
+       else if(roll < 0.60) { player.gp+=100; Sound.clink(); return; }
+       else if(roll < 0.70) itemsOnGround.push({x, y, icon: '🧪'});
+       else if(roll < 0.80) itemsOnGround.push({x, y, icon: '🐡'});
+       else if(roll < 0.90) itemsOnGround.push({x, y, icon: '🗡️'});
+       else itemsOnGround.push({x, y, icon: '🛡️'});
+    } else {
+       if(!forceStandard && roll < 0.2) return;
+       let icon = keys[Math.floor(Math.random() * keys.length)];
+       const exclude = ['◾','🪫','🍛','🥤','🎩','🔦','🔮','👗','🦠','🐓','🧦','💎','🧴','🕴️','🦷','🏺','🥾','🔥📘','⚡📘','❄️📘','💪📘','🛡️📘','💖📘','👟📘'];
+       if(!exclude.includes(icon)) {
+           itemsOnGround.push({x, y, icon});
+       }
+    }
+  }
+
+  // SOURCE: src/mechanics.js
+  // === Inventory & Shop Actions ===
+  function toggleDropMode() { dropMode = !dropMode; updateUI(); }
+
+  function handleItemClick(idx) {
+    let itemObj = inventory[idx];
+    if(!itemObj) return;
+
+    if(isIdentifying) {
+      let def = ITEM_DEF[itemObj.icon];
+      logMsg(`[ID] ${def.name}: Dmg:${def.maxDamage || 0} Heal:${def.maxHeal || 0} Evade:${def.evadePercent || 0}%`);
+      isIdentifying = false; renderInventory(); return;
+    }
+
+    if(dropMode) {
+      itemsOnGround.push({ x: player.x, y: player.y, icon: itemObj.icon });
+      logMsg(`Dropped ${ITEM_DEF[itemObj.icon].name}`);
+      decrementItem(idx); dropMode = false; updateUI(); return;
+    }
+
+    if(itemObj.icon === '🥾') {
+      let nearestCat = enemies.findIndex(e => e.type === 'cat' && Math.abs(e.x - player.x) + Math.abs(e.y - player.y) <= 3);
+      if(nearestCat !== -1) {
+        logMsg("<span style='color:var(--success)'>ACHIEVEMENT: Feline Flinger! (250 XP)</span>");
+        let cat = enemies[nearestCat];
+        let bx = player.x, by = player.y;
+        const throwAnim = setInterval(() => {
+          bx += Math.sign(cat.x - bx) * 0.5; by += Math.sign(cat.y - by) * 0.5;
+          addFloatingText(bx, by, '🥾', "#fff", 20); drawMap();
+          if (Math.abs(bx - cat.x) < 0.6 && Math.abs(by - cat.y) < 0.6) {
+            clearInterval(throwAnim); logMsg("Cat: 'Nyan!'"); enemies.splice(nearestCat, 1);
+            let ratIdx = enemies.findIndex(e => e.type === 'wet_rat' && Math.abs(e.x - player.x) + Math.abs(e.y - player.y) <= 5);
+            if(ratIdx !== -1) { logMsg("Rat: 'Thank you for saving me! Squeek squeek!'"); enemies.splice(ratIdx, 1); }
+            player.savedRat = true; player.xp += 250; checkLevelUp(); decrementItem(idx);
+          }
+        }, 50);
+      } else { logMsg("Nothing to throw the boot at."); }
+      return;
+    }
+
+    if(itemObj.icon === '🦯') {
+      let found = false;
+      for(let dy=-1; dy<=1; dy++) for(let dx=-1; dx<=1; dx++) {
+        if(theMap[player.y+dy] && theMap[player.y+dy][player.x+dx] === TILES.WALL && currentLevel === 9) {
+          logMsg("The Staff glows and the wall vanishes! The Temple is open.");
+          theMap[player.y+dy][player.x+dx] = TILES.FLOOR; found = true;
+        }
+      }
+      if(found) { decrementItem(idx); calculateFOV(); drawMap(); }
+      else { logMsg("The staff pulses with power, but nothing happens here."); }
+      return;
+    }
+
+    if(itemObj.icon === '🪕') {
+      let harpies = enemies.filter(e => e.type === 'harpy' && Math.abs(e.x - player.x) + Math.abs(e.y - player.y) <= 5);
+      if(harpies.length > 0) {
+        stopQuestTimer();
+        logMsg("<span style='color:var(--success)'>You play a jaunty tune. The Harpies are entranced!</span>");
+        enemies = enemies.filter(e => e.type !== 'harpy');
+        player.xp += 1000; checkLevelUp(); drawMap();
+      } else { logMsg("You play a few notes. Sounds nice."); }
+      return;
+    }
+
+    if(itemObj.icon === '🏅') {
+       let willow = false;
+       for(let dy=-1; dy<=1; dy++) for(let dx=-1; dx<=1; dx++) {
+         if(theMap[player.y+dy] && theMap[player.y+dy][player.x+dx] === TILES.WILLOW) {
+           theMap[player.y+dy][player.x+dx] = TILES.FLOOR; willow = true;
+         }
+       }
+       if(willow) {
+         logMsg("<span style='color:var(--success)'>The locket breaks the curse! The princess is free!</span>");
+         logMsg("She leaves behind a GOLDEN HARP.");
+         itemsOnGround.push({ x: player.x, y: player.y, icon: '🪕' });
+         player.xp += 500; checkLevelUp(); decrementItem(idx); drawMap();
+       } else { logMsg("You look at the locket. It's beautiful."); }
+       return;
+    }
+
+    if(itemObj.icon === '🏺') {
+      let nearestGenie = enemies.findIndex(e => e.type === 'genie' && Math.abs(e.x - player.x) + Math.abs(e.y - player.y) <= 3);
+      if(nearestGenie !== -1) {
+        logMsg("<span style='color:var(--success)'>ACHIEVEMENT: Bottle Service! (1000 XP)</span>");
+        enemies.splice(nearestGenie, 1); player.xp += 1000; checkLevelUp();
+        decrementItem(idx); theMap[player.y][player.x] = TILES.STAIR_DOWN; drawMap();
+      } else {
+        logMsg("<span style='color:var(--error)'>ASHES TO ASHES!</span>"); isDead = true; Sound.scream();
+      }
+      return;
+    }
+
+    let def = ITEM_DEF[itemObj.icon];
+    if(def.type === "bag") { openBag(idx); return; }
+    if(def.type === "weapon") { swapEquip(idx, 'leftHand'); return; }
+    if(def.type === "armor") { swapEquip(idx, def.slot || 'chest'); return; }
+    
+    if(def.type === "food" || def.type === "potion") {
+      let nearestEagle = enemies.findIndex(e => e.type === 'eagle' && Math.abs(e.x - player.x) + Math.abs(e.y - player.y) <= 2);
+      let nearestGurgi = enemies.findIndex(e => e.type === 'gurgi' && Math.abs(e.x - player.x) + Math.abs(e.y - player.y) <= 2);
+      if(nearestEagle !== -1 && itemObj.icon === '🍖') {
+        logMsg("Eagle fed!"); enemies.splice(nearestEagle, 1); player.fedEagle = true; player.xp += 200; decrementItem(idx); return;
+      }
+      if(nearestGurgi !== -1) {
+        logMsg("Gurgi fed!"); enemies.splice(nearestGurgi, 1); player.xp += 300; decrementItem(idx); return;
+      }
+      if(def.maxHeal > 0) {
+        if(def.type === "potion") { player.hp = Math.min(player.maxHp, player.hp + def.maxHeal); addFloatingText(player.x, player.y, `+${def.maxHeal}`, "#0f0", 24); }
+        else { player.totalHealPending += def.maxHeal; }
+      }
+      if(def.foodValue > 0) player.hunger = Math.max(0, player.hunger - def.foodValue);
+      decrementItem(idx);
+    }
+    else if(def.type === "scroll") {
+      if(itemObj.icon === '📃') { isIdentifying = true; logMsg("Select an item to identify."); decrementItem(idx); renderInventory(); return;}
+      if(def.spell) { castSpell(def.spell, true); decrementItem(idx); }
+    }
+    updateUI();
+  }
+
+  window.castSpell = (spellKey, isScroll = false) => {
+    let sp = player.spells[spellKey] || { level: 1, uses: 0 };
+    let cost = Math.floor(10 * Math.pow(1.1, sp.level - 1));
+    if(!isScroll) {
+      if(!player.spells[spellKey]) return;
+      if(player.mp < cost) { logMsg("Not enough MP!"); return; }
+      player.mp -= cost;
+      sp.uses++; if(sp.uses >= 100) { sp.uses = 0; sp.level++; logMsg(`${spellKey.toUpperCase()} reached Level ${sp.level}!`); }
+      document.getElementById('overlay').style.display = 'none';
+    }
+    
+    if(spellKey === 'fireball') {
+      let target = enemies.find(e => visible[e.y][e.x]);
+      if(target) { target.stats.hp -= 20; logMsg(`Blasted ${target.stats.icon}!`); if(target.stats.hp <= 0) doCombat(enemies.indexOf(target)); }
+    } else if (spellKey === 'lightning') {
+      enemies.forEach((e, i) => { if(Math.abs(e.x-player.x)+Math.abs(e.y-player.y) <= 5 && visible[e.y][e.x]) { e.stats.hp -= 25; if(e.stats.hp <= 0) doCombat(i); } });
+    } else if (spellKey === 'tunnel') {
+      let cx = player.x, cy = player.y;
+      for(let i=0; i<10; i++) { cx += player.facing.dx; cy += player.facing.dy; if(theMap[cy] && theMap[cy][cx] === TILES.WALL) theMap[cy][cx] = TILES.FLOOR; else break; }
+      document.getElementById('game').style.animation = 'rockViewport 1s';
+      calculateFOV(); drawMap();
+    }
+    updateUI();
+  };
+
+  function swapEquip(idx, slot) {
+    let item = inventory[idx], cur = player.equipped[slot];
+    player.equipped[slot] = item.icon; inventory[idx] = cur ? { icon: cur, qty: 1 } : null;
+    let totalDmg = 2, totalEvade = 15;
+    Object.values(player.equipped).forEach(ic => { if(ic) { let d = ITEM_DEF[ic]; totalDmg += (d.maxDamage||0); totalEvade += (d.evadePercent||0); } });
+    player.baseDmg = totalDmg; player.dodgeRate = totalEvade / 100;
+    renderInventory(); updateUI();
+  }
+
+  function openBag(bagIdx) {
+    let bag = inventory[bagIdx], def = ITEM_DEF[bag.icon];
+    if(!bag.contents) bag.contents = new Array(def.slots).fill(null);
+    let html = `<h2>${def.name}</h2><div style="display:grid; grid-template-columns: repeat(5, 1fr); gap:8px; margin-bottom:16px; justify-items: center;">`;
+    bag.contents.forEach((item, i) => { html += `<div class="inv-slot" style="width:48px; height:48px;" onclick="handleBagItem(${bagIdx}, ${i})">${item ? item.icon : ''}</div>`; });
+    document.getElementById('modal-content').innerHTML = html + `</div><button onclick="document.getElementById('overlay').style.display='none'">Close</button>`;
+    document.getElementById('overlay').style.display = 'flex';
+  }
+
+  window.handleBagItem = (bagIdx, itemIdx) => {
+    let bag = inventory[bagIdx], item = bag.contents[itemIdx];
+    if(item) { let empty = inventory.findIndex(s => s === null); if(empty !== -1) { inventory[empty] = item; bag.contents[itemIdx] = null; openBag(bagIdx); renderInventory(); } }
+  };
+
+  function decrementItem(idx) { if(!inventory[idx]) return; inventory[idx].qty--; if(inventory[idx].qty <= 0) inventory[idx] = null; renderInventory(); }
+
+  function pickupItems() {
+    let toRemove = [];
+    itemsOnGround.forEach((item, index) => {
+      if(item.x === player.x && item.y === player.y) {
+        if(item.greedTrap && player.stats.int < 15) {
+           logMsg("<span style='color:var(--error)'>THE TEMPLE DOORS SLAM SHUT! You are trapped forever.</span>");
+           document.getElementById('modal-content').innerHTML = `<h2>💀 TRAPPED</h2><p>Greed was your undoing. The temple is your tomb.</p><button onclick="location.reload()">Restart</button>`;
+           document.getElementById('overlay').style.display = 'flex'; isDead = true; return;
+        }
+        let def = ITEM_DEF[item.icon];
+        if(def.type === "wealth") { player.gp += (def.maxGP||50); Sound.clink(); toRemove.push(index); return; }
+        if(item.icon === '🏺' && !player.savedRat) {
+            logMsg("<span style='color:var(--error)'>CAPTURED!</span>");
+            document.getElementById('modal-content').innerHTML = `<h2>🪢 CAPTURED</h2><p>The bandits show no mercy.</p><button onclick="location.reload()">Restart</button>`;
+            document.getElementById('overlay').style.display = 'flex'; isDead = true; return;
+        }
+        let stacked = false;
+        if(def.stackable) { let slot = inventory.find(i => i && i.icon === item.icon); if(slot) { slot.qty++; stacked = true; } }
+        if(!stacked) { let emptyIdx = inventory.findIndex(i => i === null); if(emptyIdx !== -1) { inventory[emptyIdx] = { icon: item.icon, qty: 1 }; stacked = true; } }
+        if(stacked) { toRemove.push(index); logMsg(`Picked up ${item.icon}`); }
+      }
+    });
+    for (let i = toRemove.length - 1; i >= 0; i--) itemsOnGround.splice(toRemove[i], 1);
+    renderInventory(); updateUI();
+  }
+
+  // SOURCE: src/engine.js
+  // === Core Loops & AI ===
+  let chestStates = {}; 
+
+  function advanceTurn(steps = 1) {
+    if(isDead) return;
+    
+    // Roc Capture Logic (Level 11)
+    if(currentLevel === 11 && !player.rocCaptured) {
+      player.mountainSteps = (player.mountainSteps || 0) + steps;
+      if(player.mountainSteps >= 5) {
+        player.rocCaptured = true;
+        logMsg("<span style='color:var(--error)'>A GIANT ROC SWOOPS DOWN AND GRABS YOU!</span>");
+        startQuestTimer(15, "Roc Nest Escape", () => {
+           if(player.fedEagle) {
+             logMsg("<span style='color:var(--success)'>The giant Eagle you fed rescues you from the nest!</span>");
+             currentLevel = 12; initMap(50);
+           } else {
+             logMsg("<span style='color:var(--error)'>The Roc's eggs hatch... you are eaten.</span>");
+             isDead = true; die();
+           }
+        });
+        currentScene = 'nest'; // Switch scene context
+        player.x = 10; player.y = 10; // Nest position
+        itemsOnGround.push({x: 11, y: 11, icon: '🏅'}); // Locket
+        drawMap(); return;
+      }
+    }
+
+    if (player.isRunning) {
+      player.exhaustion += steps;
+      if (player.exhaustion > 20) {
+        player.hp -= (0.2 * steps); player.mp = Math.max(0, player.mp - (0.1 * steps));
+        if (player.exhaustion % 10 === 0) logMsg("<span style='color:var(--warning)'>Exhausted!</span>");
+      }
+    } else { player.exhaustion = Math.max(0, player.exhaustion - steps); }
+
+    player.hunger = Math.min(100, player.hunger + (CONSTANTS.HUNGER_RATE * steps));
+    if(player.totalHealPending > 0) {
+      let tick = Math.min(player.totalHealPending, 1 * steps);
+      player.hp = Math.min(player.maxHp, player.hp + tick);
+      player.totalHealPending -= tick;
+    }
+
+    // AI and standard logic...
+    enemies.forEach((e, eIdx) => {
+      if(!e.stats || e.stats.quest) return;
+      e.actionTimer += (e.stats.speed * steps);
+      while(e.actionTimer >= 1) {
+        e.actionTimer -= 1;
+        let nx = e.x, ny = e.y;
+        let isAdj = Math.abs(e.x - player.x) <= 1 && Math.abs(e.y - player.y) <= 1;
+        if(isAdj) { monsterAttack(eIdx); }
+        else {
+          let dx = Math.sign(player.x - e.x), dy = Math.sign(player.y - e.y);
+          if(theMap[e.y+dy][e.x+dx] !== TILES.WALL) { e.x += dx; e.y += dy; }
+        }
+      }
+    });
+
+    calculateFOV(); drawMap(); updateUI();
+  }
+
+  function restPlayer() {
+    document.getElementById('overlay').style.display = 'flex';
+    document.getElementById('modal-content').innerHTML = `<h2>💤 Sleeping...</h2><button onclick="wakeUp()">Wake Up</button>`;
+    player.isSleeping = true;
+  }
+
+  window.wakeUp = () => {
+    document.getElementById('overlay').style.display = 'none';
+    player.isSleeping = false; advanceTurn(10);
+    player.hp = Math.min(player.maxHp, player.hp + 20); updateUI();
+  };
+
+  function die() {
+    let crystalIdx = inventory.findIndex(i => i && i.icon === '💎💠');
+    if (crystalIdx !== -1) {
+      logMsg("Crystal Shatters!"); inventory[crystalIdx] = null;
+      player.hp = player.maxHp; updateUI(); return;
+    }
+    isDead = true; Sound.scream(); drawMap();
+    setTimeout(() => {
+      document.getElementById('overlay').style.display = 'flex';
+      document.getElementById('modal-content').innerHTML = `<h2>YOU DIED</h2><button onclick="location.reload()">Restart</button>`;
+    }, 600);
+  }
+
+  function checkLevelUp() {
+    let req = CONSTANTS.XP_BASE * Math.pow(CONSTANTS.XP_MULT, player.level - 1);
+    if (player.xp >= req) {
+      player.xp -= req; player.level++; player.statPoints += 3;
+      player.hp = player.maxHp; logMsg("LEVEL UP!"); triggerLevelUpVisuals();
+    }
+  }
+
+  function triggerLevelUpVisuals() { window.levelUpFlash = 1.0; Sound.playTone(800, 'sine', 0.5, 0.1, 1200); }
+
+  function doCombat(enemyIndex) {
+    let e = enemies[enemyIndex]; if(!e) return;
+    if(e.type === 'master' || e.type === 'pirate') { insultBattle(enemyIndex); return; }
+    let dmg = player.baseDmg; e.stats.hp -= dmg;
+    addFloatingText(e.x, e.y, `-${dmg}`, "#f00");
+    if (e.stats.hp <= 0) { 
+      logMsg("Defeated!"); player.xp += 50; checkLevelUp(); 
+      enemies.splice(enemyIndex, 1); 
+    }
+    advanceTurn(1);
+  }
+
+  function monsterAttack(enemyIndex) {
+    let e = enemies[enemyIndex].stats;
+    let dmg = e.dmg; player.hp -= dmg;
+    addFloatingText(player.x, player.y, `-${dmg}`, "#f00");
+    if(player.hp <= 0) die();
+  }
+
+  function movePlayer(dx, dy) {
+    if(isDead || player.isSleeping) return;
+    player.facing = {dx, dy};
+    let nx = player.x + dx, ny = player.y + dy;
+    let tile = theMap[ny][nx];
+    let eIdx = enemies.findIndex(e => e.x === nx && e.y === ny);
+    if (eIdx !== -1) { doCombat(eIdx); return; }
+    if (tile === TILES.WALL) { Sound.oof(); return; }
+    
+    // Chest Interaction
+    if(tile === TILES.CHEST) {
+       let keyIdx = inventory.findIndex(i => i && i.icon === '🗝️');
+       if(keyIdx !== -1) { decrementItem(keyIdx); theMap[ny][nx] = TILES.FLOOR; spawnLoot(nx, ny, true); }
+       else { logMsg("Locked."); theMap[ny][nx] = TILES.FLOOR; } // Simple bypass for now
+       return;
+    }
+
+    if (tile === TILES.STORE) { openStore('apu'); return; }
+    if (tile === TILES.LEFTYS) { openStore('leftys'); return; }
+    if (tile === TILES.SCUMM_BAR) { openStore('scumm'); return; }
+
+    player.x = nx; player.y = ny; 
+    if(tile === TILES.WATER) Sound.splash(); else Sound.step();
+    pickupItems(); advanceTurn(1);
+  }
+
+  const INSULTS = [
+    { i: "You fight like a Dairy Farmer!", r: "How appropriate. You fight like a cow!" },
+    { i: "I've spoken with apes more polite than you!", r: "I'm glad to hear you attended your family reunion!" }
+  ];
+
+  window.insultBattle = (idx) => {
+    let insult = INSULTS[Math.floor(Math.random()*INSULTS.length)];
+    let html = `<h2>⚔️ Insult Battle</h2><p>${insult.i}</p>`;
+    INSULTS.forEach(c => { html += `<button onclick="replyInsult(${idx}, '${c.r}', '${insult.r}')">${c.r}</button>`; });
+    document.getElementById('modal-content').innerHTML = html;
+    document.getElementById('overlay').style.display = 'flex';
+  };
+
+  window.replyInsult = (idx, reply, correct) => {
+    document.getElementById('overlay').style.display = 'none';
+    if(reply === correct) { logMsg("Correct!"); enemies.splice(idx, 1); player.xp += 500; }
+    else { player.hp -= 10; logMsg("Wrong!"); }
+    updateUI(); drawMap();
+  };
+
+  // SOURCE: src/shop.js
+  // === Shop System & Easter Egg ===
+  function larryEasterEgg(step, desc="") {
+    let m = document.getElementById('modal-content');
+    Sound.gibberish();
+    if(step === 0) {
+      m.innerHTML = `<h2>🏪 Apu's Mart</h2><p>🧔🏿‍♂️ "Ah, the 🧴! A wise choice, my friend. Will that be Plain or Ribbed?"</p>
+        <button class="egg-btn" onclick="larryEasterEgg(1, 'Plain')">Plain</button> <button class="egg-btn" onclick="larryEasterEgg(1, 'Ribbed')">Ribbed</button>`;
+    } else if (step === 1) {
+      m.innerHTML = `<h2>🏪 Apu's Mart</h2><p>🧔🏿‍♂️ "Excellent. Colored or Clear?"</p>
+        <button class="egg-btn" onclick="larryEasterEgg(2, '${desc}, Colored')">Colored</button> <button class="egg-btn" onclick="larryEasterEgg(2, '${desc}, Clear')">Clear</button>`;
+    } else if (step === 2) {
+      m.innerHTML = `<h2>🏪 Apu's Mart</h2><p>🧔🏿‍♂️ "Very well. Lubricated or Dry?"</p>
+        <button class="egg-btn" onclick="larryEasterEgg(3, '${desc}, Lubricated')">Lubricated</button> <button class="egg-btn" onclick="larryEasterEgg(3, '${desc}, Dry')">Dry</button>`;
+    } else if (step === 3) {
+      Sound.scream();
+      m.innerHTML = `<h2>📢 LOUDSPEAKER</h2><p style="color:var(--error); font-weight:bold; font-size:18px; text-transform:uppercase;">
+        "ATTENTION SHOPPERS! PRICE CHECK AT REGISTER 1! ONE 🧴, ${desc.toUpperCase()}! THAT'S ONE 🧴 FOR THE GENTLEMAN IN THE LEISURE SUIT!"</p>
+        <button class="egg-btn" style="background:var(--surface-container)" onclick="finishLarryEgg()">Hide in shame...</button>`;
+    }
+  }
+
+  function finishLarryEgg() {
+    logMsg("<span style='color:var(--warning)'>Unseen customers poke their heads out and yell: 'Pervert!'</span>");
+    let emptyIdx = inventory.findIndex(i => i === null);
+    if(emptyIdx !== -1) { player.gp -= 1; inventory[emptyIdx] = {icon:'🧴', qty:1}; Sound.clink(); renderInventory(); updateUI(); }
+    openStore('apu'); 
+  }
+
+  function askApu() {
+    let m = document.getElementById('modal-content');
+    Sound.gibberish();
+    if(player.storesVisited === 2) {
+      m.innerHTML = `<h2>🏪 Apu's Mart</h2><p>🙋 "Hey Apu, how did you get down here?"</p><p>🧔🏿‍♂️ "Oh, that was my brother, Sanji!"</p>
+        <button onclick="openStore('apu')">Back</button>`;
+    } else if(player.storesVisited === 3) {
+      m.innerHTML = `<h2>🏪 Apu's Mart</h2><p>🧔🏿‍♂️ "No, that was my other brother, Manjula!"</p>
+        <button onclick="openStore('apu')">Back</button>`;
+    } else {
+      m.innerHTML = `<h2>🏪 Apu's Mart</h2><p>🧔🏿‍♂️ "I have eight brothers and a cousin named Dave."</p>
+        <button onclick="openStore('apu')">Back</button>`;
+    }
+  }
+
+  function larryEncounter() {
+    let m = document.getElementById('modal-content');
+    let hasProp = inventory.some(i => i && i.icon === '🧴');
+    m.innerHTML = `<h2>🫦 Mystery Lady</h2><p style="font-size:80px">💃</p><p>"Hello sailor..."</p>
+      ${hasProp ? `<button class="egg-btn" style="background:var(--success)" onclick="finishLarryEncounter(true)">Use 🧴</button>` : `<button class="egg-btn" style="background:var(--error)" onclick="finishLarryEncounter(false)">Proceed anyway...</button>`}
+      <button class="egg-btn" onclick="openStore('leftys')">Nevermind</button>`;
+  }
+
+  window.finishLarryEncounter = (safe) => {
+    if(safe) {
+      decrementItem(inventory.findIndex(i => i && i.icon === '🧴'));
+      player.xp += 500; logMsg("Survived! XP Gained."); checkLevelUp(); document.getElementById('overlay').style.display = 'none';
+    } else {
+      logMsg("You caught a social disease!"); isDead = true; Sound.scream();
+    }
+  };
+
+  function openStore(type = 'apu') {
+    let o = document.getElementById('overlay');
+    let m = document.getElementById('modal-content');
+    let html = `<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #555; margin-bottom:12px;">
+               <span style="font-size:12px; color:var(--primary);">Your GP: ${player.gp}</span>
+               <button style="width:auto; padding:2px 8px; font-size:10px;" onclick="document.getElementById('overlay').style.display='none'">Exit</button>
+             </div>`;
+    let items = [];
+
+    if(type === 'apu') {
+      html += `<h2>🏪 Apu's Mart</h2><p style="font-size: 80px;">🧔🏿‍♂️</p><p>Apu: "Welcome!"</p>`;
+      if(player.lastStoreFloor !== currentLevel) { player.storesVisited++; player.lastStoreFloor = currentLevel; }
+      items = [{icon:'👜', name:'Small Bag', cost:20}, {icon:'📃', name:'Scroll of Identify', cost:30}, {icon:'🔥', name:'Scroll of Fireball', cost:50}, {icon:'🧴', name:'Prophylactic', cost:1}];
+      if(player.storesVisited > 1) html += `<button style="margin-bottom:10px;" onclick="askApu()">Ask about his double...</button>`;
+    } 
+    else if(type === 'leftys') {
+      html += `<h2>🍺 Lefty's Bar</h2><p>Lefty: "What'll it be?"</p>`;
+      items = [{icon:'🥃', name:'Whiskey', cost:15}, {icon:'🍺', name:'Beer', cost:5}];
+      html += `<button class="egg-btn" style="background:#444; margin-bottom:10px;" onclick="larryEncounter()">Talk to the Lady</button>`;
+      html += `<button class="egg-btn" style="background:#222; margin-bottom:10px;" onclick="playAstro()">Play Astrochicken 🕹️</button>`;
+    } 
+    else if(type === 'bookstore') {
+      html += `<h2>📚 The Ancient Tome</h2><p>Wizard: "Knowledge has a price..."</p>`;
+      items = [{icon:'⚡📘', name:'Tome of Lightning', cost:800}, {icon:'💖📘', name:'Tome of Heal', cost:1200}, {icon:'👟📘', name:'Tome of Haste', cost:1500}];
+    }
+    else if(type === 'antique') {
+      html += `<h2>🏺 Antique Shop</h2><p>Owner: "WHAT? SPEAK UP!"</p>`;
+      items = [{icon:'🦯', name:'Swordmaster Staff', cost:500}, {icon:'⚔️🌟', name:'Ultimate Weapon', cost:1000000}];
+      html += `<button class="egg-btn" onclick="crackSafe()">Look at the Safe</button>`;
+    }
+    else if(type === 'scumm') {
+      html += `<h2>🏴‍☠️ SCUMM Bar</h2><p>Pirate: "Want some Grog?"</p>`;
+      items = [{icon:'☠️🏺', name:'Caustic Grog', cost:50}, {icon:'🐟', name:'Red Herring', cost:10}];
+    }
+
+    Sound.gibberish();
+    items.forEach(i => {
+      html += `<div class="shop-item"><span>${i.icon} ${i.name} (${i.cost}g)</span> <button onclick="buy('${i.icon}', ${i.cost}, '${type}')">Buy</button></div>`;
+    });
+    m.innerHTML = html; o.style.display = 'flex';
+  }
+
+  window.playAstro = () => {
+    let m = document.getElementById('modal-content');
+    m.innerHTML = `<h2>🕹️ ASTROCHICKEN</h2><p>A classic! But the cabinet is glitched.</p>
+      <div style="background:#000; color:#0f0; padding:10px; font-family:monospace; font-size:12px;">
+        ERROR AT ADDR 0x42: <br> "THE KEY TO THE GENIE'S HEART IS A COIN FROM THE PAST."
+      </div>
+      <button onclick="openStore('leftys')" style="margin-top:10px;">Exit</button>`;
+  };
+
+  window.crackSafe = () => {
+    let code = prompt("Enter Safe Combination (3 numbers, e.g. 10-20-30):");
+    if(code === "36-24-36") { // classic easter egg
+      logMsg("The safe clicks open! You found a UNIQUE COIN.");
+      let empty = inventory.findIndex(i => i === null);
+      if(empty !== -1) inventory[empty] = {icon:'🪙', qty:1};
+      renderInventory(); updateUI();
+    } else { alert("Nothing happens."); }
+  };
+
+  window.buy = (icon, cost, type) => {
+    if(player.gp >= cost) {
+      let emptyIdx = inventory.findIndex(i => i === null);
+      if(emptyIdx !== -1) {
+        if(icon === '🧴') { larryEasterEgg(0); return; }
+        if(icon === '☠️🏺') { startQuestTimer(15, "Grog Melting", () => { 
+           logMsg("<span style='color:red'>The grog melted through the mug and burnt your legs!</span>");
+           player.hp -= 10; updateUI(); 
+           let idx = inventory.findIndex(i => i && i.icon === '☠️🏺');
+           if(idx !== -1) inventory[idx] = null; renderInventory();
+        }); }
+        player.gp -= cost; inventory[emptyIdx] = {icon, qty:1};
+        Sound.clink(); openStore(type); renderInventory(); updateUI();
+      } else alert("Inventory Full!");
+    } else alert("Not enough GP!");
+  };
+
+  // SOURCE: src/render.js
+  // === Renderer ===
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    VIEW_COLS = Math.ceil(canvas.width / TILE_SIZE);
+    VIEW_ROWS = Math.ceil(canvas.height / TILE_SIZE);
+    if(theMap.length > 0) drawMap();
+  }
+  window.addEventListener('resize', resizeCanvas);
+  
+  function calculateFOV() {
+    for(let y=0; y<mapH; y++) visible[y].fill(false);
+    
+    if(window.debugFlags && debugFlags.fullLight) {
+      for(let y=0; y<mapH; y++) { visible[y].fill(true); explored[y].fill(true); }
+      return;
+    }
+
+    let sightLimit = lightTurns > 0 ? 15 : 5;
+    
+    if(darkMap[player.y] && darkMap[player.y][player.x] && lightTurns <= 0) {
+      visible[player.y][player.x] = true; explored[player.y][player.x] = true;
+      return; 
+    }
+
+    visible[player.y][player.x] = true; explored[player.y][player.x] = true;
+
+    for(let angle=0; angle<360; angle+=2) {
+      let rad = angle * Math.PI / 180;
+      let dx = Math.cos(rad), dy = Math.sin(rad);
+      let cx = player.x + 0.5, cy = player.y + 0.5;
+
+      for(let r=1; r<=sightLimit; r++) {
+        cx += dx; cy += dy;
+        let mapX = Math.floor(cx), mapY = Math.floor(cy);
+        if(mapX < 0 || mapY < 0 || mapX >= mapW || mapY >= mapH) break;
+        visible[mapY][mapX] = true; explored[mapY][mapX] = true;
+        if(theMap[mapY][mapX] === TILES.WALL) break;
+        if(darkMap[mapY][mapX] && lightTurns <= 0) break;
+      }
+    }
+  }
+
+  function drawMap() {
+    if(!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let cx = Math.floor(VIEW_COLS / 2), cy = Math.floor(VIEW_ROWS / 2);
+    let wallColors = ['#4A4458', '#2e4536', '#45322e', '#2e3845', '#452e41'];
+    let wCol = wallColors[(currentLevel - 1) % wallColors.length];
+
+    for (let y = 0; y < VIEW_ROWS; y++) {
+      let mapY = player.y + y - cy; 
+      for (let x = 0; x < VIEW_COLS; x++) {
+        let mapX = player.x + x - cx; 
+
+        if (mapY >=0 && mapY < mapH && mapX >= 0 && mapX < mapW) {
+          if (!explored[mapY][mapX] && !(window.debugFlags && debugFlags.revealMap)) continue;
+
+          let tile = theMap[mapY][mapX];
+          let isVis = visible[mapY][mapX] || (window.debugFlags && debugFlags.revealMap);
+          let isDark = darkMap[mapY][mapX];
+
+          if(isVis) {
+            if(tile === TILES.WALL) {
+              if(window.useSprites && assets.sprites['wall']) {
+                ctx.drawImage(assets.sprites['wall'], x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+              } else {
+                ctx.fillStyle = wCol;
+                ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                ctx.fillStyle = 'rgba(0,0,0,0.2)';
+                ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, 2);
+                ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE + TILE_SIZE/2, TILE_SIZE, 2);
+                ctx.fillRect(x * TILE_SIZE + TILE_SIZE/2, y * TILE_SIZE, 2, TILE_SIZE/2);
+                ctx.fillRect(x * TILE_SIZE + TILE_SIZE/4, y * TILE_SIZE + TILE_SIZE/2, 2, TILE_SIZE/2);
+              }
+            }
+            else if(tile === TILES.STAIR_UP) ctx.fillStyle = '#D0BCFF';
+            else if(tile === TILES.STAIR_DOWN) ctx.fillStyle = '#F2B8B5';
+            else if(tile === TILES.CHEST) ctx.fillStyle = '#ffb74d';
+            else if(tile === TILES.STORE || tile === TILES.LEFTYS || tile === TILES.BOOKSTORE || tile === TILES.ANTIQUE_SHOP || tile === TILES.STANS_SHOP || tile === TILES.SCUMM_BAR) ctx.fillStyle = '#4db6ac';
+            else if(tile === TILES.WATER) ctx.fillStyle = '#2196F3';
+            else if(tile === TILES.DEEP_WATER) ctx.fillStyle = '#0D47A1';
+            else if(tile === TILES.SAND) ctx.fillStyle = '#F0E68C';
+            else if(tile === TILES.GRASS) ctx.fillStyle = '#2E7D32';
+            else if(tile === TILES.TREE) { ctx.fillStyle = '#2E7D32'; ctx.fillRect(x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE); ctx.font='20px sans-serif'; ctx.fillText('🌳', x*TILE_SIZE+4, y*TILE_SIZE+24); }
+            else if(tile === TILES.ROCK || tile === TILES.BOULDER) { ctx.fillStyle = '#555'; ctx.fillRect(x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE); ctx.font='20px sans-serif'; ctx.fillText('🪨', x*TILE_SIZE+4, y*TILE_SIZE+24); }
+            else if(tile === TILES.WILLOW) { ctx.fillStyle = '#2E7D32'; ctx.fillRect(x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE); ctx.font='20px sans-serif'; ctx.fillText('🌿', x*TILE_SIZE+4, y*TILE_SIZE+24); }
+            else if(tile === TILES.NEST) { ctx.fillStyle = '#5D4037'; ctx.fillRect(x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE); ctx.font='20px sans-serif'; ctx.fillText('🪹', x*TILE_SIZE+4, y*TILE_SIZE+24); }
+            else if(tile === TILES.ARCADE) { ctx.fillStyle = '#000'; ctx.fillRect(x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE); ctx.font='20px sans-serif'; ctx.fillText('🕹️', x*TILE_SIZE+4, y*TILE_SIZE+24); }
+            else {
+              ctx.fillStyle = isDark && lightTurns <= 0 ? '#000' : (currentScene === 'dungeon' ? '#312D3A' : (currentScene === 'beach' ? '#F0E68C' : '#2E7D32'));
+              ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+              if(!(isDark && lightTurns <= 0)) {
+                ctx.fillStyle = 'rgba(255,255,255,0.03)';
+                ctx.beginPath();
+                ctx.arc(x * TILE_SIZE + 16, y * TILE_SIZE + 16, 2, 0, Math.PI*2);
+                ctx.fill();
+              }
+            }
+            
+            // Draw overlays
+            if(tile === TILES.CHEST) { ctx.font='20px sans-serif'; ctx.fillText('📦', x*TILE_SIZE+4, y*TILE_SIZE+24); }
+            if(tile === TILES.STORE) { ctx.font='20px sans-serif'; ctx.fillText('🏪', x*TILE_SIZE+4, y*TILE_SIZE+24); }
+            if(tile === TILES.LEFTYS) { ctx.font='20px sans-serif'; ctx.fillText('🍺', x*TILE_SIZE+4, y*TILE_SIZE+24); }
+            if(tile === TILES.BOOKSTORE) { ctx.font='20px sans-serif'; ctx.fillText('📚', x*TILE_SIZE+4, y*TILE_SIZE+24); }
+            if(tile === TILES.ANTIQUE_SHOP) { ctx.font='20px sans-serif'; ctx.fillText('🏺', x*TILE_SIZE+4, y*TILE_SIZE+24); }
+            if(tile === TILES.STANS_SHOP) { ctx.font='20px sans-serif'; ctx.fillText('🧥', x*TILE_SIZE+4, y*TILE_SIZE+24); }
+            if(tile === TILES.SCUMM_BAR) { ctx.font='20px sans-serif'; ctx.fillText('🏴‍☠️', x*TILE_SIZE+4, y*TILE_SIZE+24); }
+            if(tile === TILES.STAIR_UP) { ctx.font='20px sans-serif'; ctx.fillText('⬆️', x*TILE_SIZE+4, y*TILE_SIZE+24); }
+            if(tile === TILES.STAIR_DOWN) { ctx.font='20px sans-serif'; ctx.fillText('⬇️', x*TILE_SIZE+4, y*TILE_SIZE+24); }
+            
+            if(tile === TILES.FLOOR || tile === TILES.WATER || tile === TILES.SAND || tile === TILES.GRASS) {
+              let item = itemsOnGround.find(i => i.x === mapX && i.y === mapY);
+              if(item) { ctx.font = '20px sans-serif'; ctx.fillText(item.icon, x * TILE_SIZE + 4, y * TILE_SIZE + 24); }
+            }
+          } else {
+            if(tile === TILES.WALL) ctx.fillStyle = '#111';
+            else ctx.fillStyle = '#0a0a0a';
+            ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+          }
+        }
+      }
+    }
+
+    enemies.forEach(enemy => {
+      if(visible[enemy.y][enemy.x] || (window.debugFlags && debugFlags.revealMap)) {
+        let drawX = (enemy.x - player.x + cx) * TILE_SIZE;
+        let drawY = (enemy.y - player.y + cy) * TILE_SIZE;
+        let size = (enemy.type === 'genie' || enemy.type === 'roc') ? 64 : 24;
+        let offset = (enemy.type === 'genie' || enemy.type === 'roc') ? -16 : 0;
+        
+        if(window.useSprites && assets.sprites[enemy.type]) {
+           ctx.drawImage(assets.sprites[enemy.type], drawX, drawY, size, size);
+        } else {
+           ctx.font = `${size}px sans-serif`; 
+           ctx.fillText(enemy.stats.icon, drawX + 2 + offset, drawY + 24);
+        }
+
+        if (enemy.stats.hp < (enemy.stats.maxHp || MONSTER_DEF[enemy.type].hp)) {
+          let max = enemy.stats.maxHp || MONSTER_DEF[enemy.type].hp;
+          let percent = Math.max(0, enemy.stats.hp / max);
+          ctx.fillStyle = "#000";
+          ctx.fillRect(drawX + 4, drawY, TILE_SIZE - 8, 4);
+          ctx.fillStyle = percent > 0.5 ? "#0f0" : (percent > 0.2 ? "#ff0" : "#f00");
+          ctx.fillRect(drawX + 4, drawY, (TILE_SIZE - 8) * percent, 4);
+        }
+      }
+    });
+
+    ctx.font = '24px sans-serif';
+    let playerIcon = isDead ? '💀' : (player.isRunning ? '🏃' : '🧍');
+    
+    if(window.useSprites && assets.sprites['player']) {
+       ctx.drawImage(assets.sprites['player'], cx * TILE_SIZE, cy * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+    } else {
+       ctx.fillText(playerIcon, cx * TILE_SIZE + 2, cy * TILE_SIZE + 24);
+    }
+
+    // Draw Effects
+    activeEffects.forEach((eff, i) => {
+      if(eff.type === 'lightning') {
+        ctx.strokeStyle = eff.color || '#0ff'; ctx.lineWidth = 3; ctx.beginPath();
+        let x1 = (eff.x1 - player.x + cx) * TILE_SIZE + 16;
+        let y1 = (eff.y1 - player.y + cy) * TILE_SIZE + 16;
+        let x2 = (eff.x2 - player.x + cx) * TILE_SIZE + 16;
+        let y2 = (eff.y2 - player.y + cy) * TILE_SIZE + 16;
+        ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+      }
+      eff.life -= 0.1; if(eff.life <= 0) activeEffects.splice(i, 1);
+    });
+
+    // Radial Light
+    let sightLimit = lightTurns > 0 ? 15 : 5;
+    let radius = sightLimit * TILE_SIZE;
+    let grad = ctx.createRadialGradient(cx * TILE_SIZE + 16, cy * TILE_SIZE + 16, radius * 0.5, cx * TILE_SIZE + 16, cy * TILE_SIZE + 16, radius);
+    grad.addColorStop(0, 'rgba(0,0,0,0)'); grad.addColorStop(1, 'rgba(0,0,0,1)');
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'rgba(0,0,0,1)'; ctx.beginPath();
+    ctx.arc(cx * TILE_SIZE + 16, cy * TILE_SIZE + 16, radius, 0, Math.PI*2, true);
+    ctx.rect(0, 0, canvas.width, canvas.height); ctx.fill();
+
+    if(damageTint > 0) { ctx.fillStyle = `rgba(255, 0, 0, ${damageTint/100})`; ctx.fillRect(0, 0, canvas.width, canvas.height); }
+    if(window.levelUpFlash > 0) {
+      if(window.levelUpFlash === 1.0) {
+         Sound.playTone(100, 'square', 0.5, 0.2, 50);
+         for(let i=0; i<5; i++) setTimeout(()=>Sound.playTone(400 + Math.random()*1000, 'sine', 0.1, 0.05), 100 + i*100);
+      }
+      ctx.fillStyle = `rgba(255, 255, 200, ${window.levelUpFlash})`; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      window.levelUpFlash -= 0.05;
+      ctx.filter = `hue-rotate(${(Date.now()/10)%360}deg)`;
+    } else { ctx.filter = 'none'; }
+
+    // Draw Quest Timer Overlay
+    if (questTimer.active) {
+      ctx.fillStyle = "rgba(0,0,0,0.7)";
+      ctx.fillRect(canvas.width/2 - 100, 100, 200, 40);
+      ctx.strokeStyle = "var(--warning)";
+      ctx.strokeRect(canvas.width/2 - 100, 100, 200, 40);
+      ctx.fillStyle = "var(--warning)";
+      ctx.font = "bold 16px monospace";
+      ctx.textAlign = "center";
+      ctx.fillText(`${questTimer.label}: ${questTimer.time.toFixed(1)}s`, canvas.width/2, 125);
+      ctx.textAlign = "left";
+    }
+
+    for(let i = floatingTexts.length - 1; i >= 0; i--) {
+      let ft = floatingTexts[i];
+      let drawX = (ft.x - player.x + cx) * TILE_SIZE + 16;
+      let drawY = (ft.y - player.y + cy) * TILE_SIZE - (1.0 - ft.life/ft.maxLife) * 30;
+      ctx.font = `bold ${ft.size}px sans-serif`; ctx.fillStyle = ft.color;
+      ctx.globalAlpha = Math.max(0, ft.life / ft.maxLife); ctx.textAlign = 'center';
+      ctx.fillText(ft.text, drawX, drawY); ft.life -= 0.05;
+      if(ft.life <= 0) floatingTexts.splice(i, 1);
+    }
+    ctx.globalAlpha = 1.0; ctx.textAlign = 'left'; drawMinimap();
+  }
+
+  function drawMinimap() {
+    let minCanvas = document.getElementById('minimap'); if(!minCanvas) return;
+    let mCtx = minCanvas.getContext('2d'); mCtx.clearRect(0, 0, 150, 150);
+    let scale = 150 / mapW;
+    for(let y=0; y<mapH; y++) {
+      for(let x=0; x<mapW; x++) {
+        if(explored[y][x]) {
+          if(theMap[y][x] === TILES.WALL) mCtx.fillStyle = '#555';
+          else if(theMap[y][x] === TILES.STORE || theMap[y][x] === TILES.LEFTYS || theMap[y][x] === TILES.BOOKSTORE) mCtx.fillStyle = '#0ff';
+          else if(theMap[y][x] === TILES.STAIR_DOWN || theMap[y][x] === TILES.STAIR_UP) mCtx.fillStyle = '#f0f';
+          else mCtx.fillStyle = '#333';
+          mCtx.fillRect(x*scale, y*scale, scale, scale);
+        }
+      }
+    }
+    mCtx.fillStyle = '#0f0'; mCtx.fillRect(player.x*scale, player.y*scale, scale, scale);
+  }
+  setInterval(() => { if(floatingTexts.length > 0 || (window.activeEffects && activeEffects.length > 0) || window.levelUpFlash > 0 || questTimer.active) drawMap(); }, 50);
+
+  // SOURCE: src/input.js
+  document.getElementById('hamburgerBtn').addEventListener('click', () => {
+    let menu = document.getElementById('hamburger-menu');
+    menu.style.display = menu.style.display === 'none' ? 'flex' : 'none';
+  });
+
+  document.getElementById('startBtn').addEventListener('click', () => {
+    document.getElementById('start-screen').style.display = 'none';
+    Sound.init();
+    try {
+      resizeCanvas();
+      initMap(50); calculateFOV(); renderInventory(); renderPouch(); drawMap(); updateUI();
+
+      // Real-time Quest Ticker (v7.0.0)
+      setInterval(() => {
+        if(questTimer.active) {
+          questTimer.time -= 0.1;
+          if(questTimer.time <= 0) {
+            questTimer.active = false;
+            if(questTimer.callback) questTimer.callback();
+          }
+          drawMap(); // redraw for timer overlay
+        }
+
+        if(damageTint > 0) {
+          damageTint = Math.max(0, damageTint - 5);
+          drawMap();
+        }
+      }, 100);
+
+    } catch (err) {
+      document.getElementById('log').innerHTML = `<span style="color:var(--error)">Fatal Boot Error: ${err.message}</span>`;
+    }
+  });
+  ...
+  window.startQuestTimer = (seconds, label, callback) => {
+    questTimer = { active: true, time: seconds, label: label, callback: callback };
+  };
+
+  window.stopQuestTimer = () => { questTimer.active = false; };
+
+  // Start Screen Animation
+  let startCtx = null;
+  const startCanvas = document.createElement('canvas');
+  const startScreen = document.getElementById('start-screen');
+  if(startScreen) {
+    startCanvas.style.position = 'absolute'; startCanvas.style.top='0'; startCanvas.style.left='0'; startCanvas.style.zIndex='-1';
+    startScreen.appendChild(startCanvas);
+    const sCtx = startCanvas.getContext('2d');
+    const resizeStart = () => { startCanvas.width = window.innerWidth; startCanvas.height = window.innerHeight; };
+    window.addEventListener('resize', resizeStart); resizeStart();
+    const dots = Array(50).fill().map(()=>({x: Math.random()*startCanvas.width, y: Math.random()*startCanvas.height, s: Math.random()*2+1}));
+    const anim = () => {
+      if(startScreen.style.display === 'none') return;
+      sCtx.fillStyle = 'rgba(0,0,0,0.1)'; sCtx.fillRect(0,0,startCanvas.width,startCanvas.height);
+      sCtx.fillStyle = 'var(--primary)';
+      dots.forEach(d => {
+        sCtx.beginPath(); sCtx.arc(d.x, d.y, d.s, 0, Math.PI*2); sCtx.fill();
+        d.y += d.s; if(d.y > startCanvas.height) d.y = -10;
+      });
+      requestAnimationFrame(anim);
+    };
+    anim();
+  }
+
+  window.addEventListener('keydown', (e) => { 
+    if(e.key === 'Shift') player.isRunning = true; 
+    if(e.key === 'Escape') {
+       // Close any open draggable modals
+       document.querySelectorAll('.draggable-modal').forEach(m => m.style.display = 'none');
+    }
+  });
+  window.addEventListener('keyup', (e) => { if(e.key === 'Shift') player.isRunning = false; });
+
+  document.addEventListener('keydown', function(event) {
+    if(document.getElementById('start-screen').style.display !== 'none') return;
+  ...
+    // Close modals with Enter
+    if(event.key === 'Enter' && document.getElementById('overlay').style.display === 'flex') {
+      document.getElementById('overlay').style.display = 'none';
+      return;
+    }
+
+    if(document.getElementById('overlay').style.display === 'flex') return;
+    Sound.init();
+
+    let key = event.key.toLowerCase();
+
+    // Movement Rate Limiting
+    const now = Date.now();
+    let moveDelay = player.statusType === 'sugar' ? CONSTANTS.SUGAR_RUSH_SPEED : CONSTANTS.NORMAL_SPEED;
+    if(player.isRunning) moveDelay = Math.max(50, moveDelay - 100); 
+
+    if(['w', 'arrowup', 's', 'arrowdown', 'a', 'arrowleft', 'd', 'arrowright'].includes(key)) {
+      if(now - lastMoveTime < moveDelay) return;
+      lastMoveTime = now;
+  ...
+      if(player.statusType === 'freeze') {
+        logMsg("You are frozen and cannot move!");
+        return;
+      }
+      
+      if(player.statusType === 'dizzy') {
+        const dirs = ['w', 's', 'a', 'd'];
+        key = dirs[Math.floor(Math.random() * dirs.length)];
+      }
+    }
+
+    if(['w', 'arrowup'].includes(key)) movePlayer(0, -1);
+    else if(['s', 'arrowdown'].includes(key)) movePlayer(0, 1);
+    else if(['a', 'arrowleft'].includes(key)) movePlayer(-1, 0);
+    else if(['d', 'arrowright'].includes(key)) movePlayer(1, 0);
+    else if(key === 'escape') toggleMenu();
+    else if(key === 'i') toggleModal('inv-modal');
+    else if(key === 'e') toggleModal('equip-modal');
+    else if(key === 'c') toggleModal('stats-modal');
+    else if(key === 'm') toggleModal('magic-modal');
+    else if(key === 'y') toggleModal('achieve-modal');
+    else if(key === 'z') restPlayer();
+    else if(key === ' ') meleeAttack();
+    else if(key === 'f') castEquippedSpell();
+    
+    let num = parseInt(key);
+    if(!isNaN(num)) { let idx = num === 0 ? 9 : num - 1; handleItemClick(idx); }
+  });
+
+  // === Boot Sequence ===
+  // Initialization now happens via Enter the Dungeon button
+</script>
+</body>
+</html>
+

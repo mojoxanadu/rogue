@@ -1,0 +1,943 @@
+# Changelog - Rogue JS
+
+## [Build 753] - 2026-04-13
+
+### OPEN BUGS
+- K.750.1: Key mapping overlays positioned above buttons instead of on them
+- K.750.2: Bunnies/mosquitos show as "UNDEFINED" in Tristram until killed
+- K.750.7: Debug console stats chips missing (light level, sleeping, sight, FoW, coords, alive/dead)
+- K.750.8: WebGL grass animation static, only grows from bottom edge
+- K.750.10: Town portal tile shows sprite when portal is closed (should show dirt)
+
+### OPEN ENHANCEMENTS
+- E.TRIST.1: Move Supercenter to beach village; Tristram gets regular Apu Kwik-E-Mart
+- E.TRIST.2: Town portals spin at 30 RPM
+- E.TRIST.3: Expand Tristram overworld — gate, path, forests, streams, crop fields, irregular boundaries
+- E.TRIST.4: Dennis's Hut near gate — Dennis's Wife (🤰) patrols, killable sheep follows
+- E.TRIST.5: Muck peasants — "Ooo! There's lovely muck over here!" (voice EaX6rnyDKjJx35tchi80)
+- E.TRIST.6: Retired soldier — complains about sciatica, tells pointless war stories (voice KgUSWQPFmuiZ5ycRbnty)
+
+### ASSET PIPELINE PENDING
+- Dennis movie — awaiting video asset
+- Weapon Master voice — ID `6sFKzaJr574YWVu4UuJF`
+
+### Bugs Fixed
+- **K.750.4**: Removed WIS stat reference from class selection screen. Spellcaster
+  starting MP reduced from +10 to 2. Updated `intBonus` on Robe (replaces `wisBonus`).
+- **K.750.5**: HP no longer regenerates while walking — `HUNGER_HEAL` set to 0.0.
+  (Walk regen will return as "Power Walk" talent later.)
+- **K.750.6**: Mosquito NaN damage — `e.stats.dmg` now falls back to 1 if undefined
+  in `monsterAttack()`, preventing NaN HP display.
+- **B45**: Music/SFX settings now properly respected — checkbox states synced with
+  `gameSettings` on page load. `playMusic()` checks `gameSettings.music`.
+- **B46**: HP/MP display handles NaN values gracefully (clamps to 0).
+- **B47/E14**: Class selection modal now loads backdrop image and class videos from
+  asset bundles. Backdrop (1024x1024 PNG) and 3 class portrait videos (fighter,
+  rogue, spellcaster) embedded in asset files.
+- **B48**: NPC dialog videos now load from `roguelike_assets_movies.dat` via blob URLs.
+  Videos increased from 140px to 200px.
+- **Supercenter**: Cousin Dave's talking head now shown at Supercenter instead of
+  Apu's. `movie_cousin_dave` video used when `currentScene === 'town'`.
+- **Enemy deaths**: Missing "slain" / "blasted away" log messages added to `doCombat()`
+  and `explodeBomb()`.
+- **Enemy movement**: Enemies now move diagonally and cannot walk onto each other.
+  `enemyPassesThrough()` function removed; replaced with `isTileFloor()` check
+  and `enemies.some()` overlap guard.
+- **Blacksmith**: Collision with Forge tile now opens Griswold's shop dialog with
+  voice clip playback. Voice ID updated to `Q4oILuo4P8VeXtE6FMLI`.
+- **FM synth music removed**: All `Sound.tracks` cleared — no more synthesized
+  "beep boop" fallback music. Music now plays exclusively from asset bundles.
+  `showClassModal()` calls `Sound.stopAll()` / `Sound.stopMusic()` / `Sound.stopAmbient()`.
+
+### Enhancements
+- **Title screen**: ASCII art replaced with `title.png` (1200x896). Build script
+  renders game name in Pixelify Sans Bold, small caps, gold with drop shadow.
+- **Class selection**: Video portraits overlaid on backdrop at exact rectangle
+  positions. Hover shows gold border glow; selected shows green border glow.
+  "Don't worry" hint text added under BEGIN ADVENTURE button. Class order
+  changed to Fighter (left), Rogue (center), Spellcaster (right).
+- **HP/MP globe**: WebGL animation speed slowed to 25%.
+- **Asset button**: Shows "61 Sprites" / "272 Sounds" on separate lines.
+- **Fanfare**: `fanfare.mp3` added to assets, plays on BEGIN ADVENTURE click.
+- **Debug console**: "Copy Game Log to Clipboard" button added.
+- **Console commands**: `/music on|off`, `/sfx on|off` added.
+- **WIS→INT**: All `wisBonus` references replaced with `intBonus`.
+- **Blacksmith voice**: 5 dialog clips generated via ElevenLabs
+  (voice ID `Q4oILuo4P8VeXtE6FMLI`). Plays on Griswold shop open.
+
+## [Build 749] - 2026-04-12
+
+### Bugs Fixed
+- **B1**: Farm animals (cows, chickens, pigs, etc.) now attackable — removed incorrect
+  quest-protection flag that was blocking all farm animal combat.
+- **B2**: Town Guard kill quest now only counts kills at `currentLevel >= 1`; kills in
+  town, beach, and fields scenes no longer increment the quest counter.
+- **B3**: Dialog modal ESC close now stops voice audio — ESC key routes through
+  `hideOverlay()` which calls `stopVoice()` before dismissing the modal.
+- **B5**: Background music now plays on game start — added `Sound.playMusic('tristram')`
+  call immediately after `initMap()` completes in the `startGame` handler.
+- **B6**: Bag panel drag-and-drop now works between bag slots and pouch slots in both
+  directions.
+- **B7**: All consumable items (food, potions, scrolls, candles, arrows) stackable up to
+  99. (was already done in earlier session)
+- **B4**: Chicken and duck loot tables corrected — these animals no longer drop gold
+  coins; loot restricted to feathers and meat only.
+- **B9**: WebGL effects fully replaced with quality reimplementations (no WebGL gate
+  required for most effects; canvas 2D fallbacks provided throughout):
+  - **Grass**: Denser, taller tufts; avatar parting effect as player walks through.
+  - **Chain lightning**: Fractal midpoint-displacement branches replace old line arcs.
+  - **Fireball**: GPU point-particle system — thousands of embers with velocity/fade.
+  - **Ice bolt**: Deterministic jagged path with frost-burst spread on impact.
+  - **Ifrit**: SDF-based humanoid particle system — silhouette of fire-elemental form.
+  - **Portal**: Full Navier-Stokes fluid sim with WebGL2 (see WebGL Effects section).
+- **B10**: Game log message on food/potion consumption. (was already done)
+- **B11**: Dennis voice line volume increased 200% via ffmpeg — pending asset rebuild
+  (`python3 build_complete_assets.py`).
+- **B12**: HP globe CSS updated to blood red (`#580000`); WebGL orb rendering now
+  correctly hides the CSS fallback div when the WebGL path is active.
+- **B13**: Candle light expiry now properly restores pitch-black state for dark areas
+  instead of leaving residual ambient light.
+- **B14**: Empty chest log message ("The chest is empty."). (was already done)
+- **B15**: `STAIR_UP` tile placed at the Floor 1 spawn point so the dungeon entry/exit
+  cycle is correct.
+- **B16**: Cat-chases-rat AI implemented on Floor 2 — cat entity pursues rat entity each
+  turn; rat flees toward walls.
+- **B17**: WebGL orb fluid rendering fully wired via `updateUI()` and a dedicated 60 fps
+  `requestAnimationFrame` loop; no longer requires manual trigger.
+- **B18**: Debug console stat chips restored — HP / MP / Level / XP / Floor / Scene /
+  Gold chips re-added to the debug overlay header bar.
+- **B19**: Ring of Midas now applies `midasTouch` status effect on equip and clears it
+  on unequip.
+- **B21**: Weapon Master courtyard floor renders as cobblestones (🪨 tile overlapping
+  pattern) instead of bare dungeon floor.
+- **B22**: Minimap area label now displayed on a parchment/scroll CSS background panel.
+- **B23**: Inventory modal mapped to both P and I keys. (was already done)
+- **B24**: Chord keybindings shown in the in-game menu list. (was already done)
+- **B25**: ^X keybinding shown in hamburger menu. (was already done)
+- **B26**: Debug Add Item text field disables keybindings while focused. (was already done)
+- **B27**: Eagle's Crag door now plays `wind_gust` SFX on collision/entry.
+- **B28**: "You hear nothing but your own breath" ambient message now uses the internal
+  narrator voice clip instead of silent text.
+- **B29**: Eagle's Crag door tile transition fixed — destination scene correctly set to
+  `'eagle_crag'` (was erroneously loading `'champion'`).
+- **B30**: Grok the pacifist orc collision dialog implemented with a flirt → annoy
+  escalation cycle; repeated collisions cycle through increasingly exasperated responses.
+- **B31**: Step sound replaced/boosted — `footstep.mp3` now used if the file exists at
+  `/home/projects/roguelike/footstep.mp3`; volume boosted in FM fallback path.
+- **B34**: Keys usable from pouch slots. (was already done)
+- **B35**: Fence NPC now patrols near Lefty's Bar entrance (up to 6 tiles N/S/E/W)
+  instead of standing in the doorway and blocking it.
+- **B36**: Fence shop offers 25–35% of market value, no questions asked.
+- **B37**: Scavenger Talent auto-loots corpses on kill when the talent toggle is active.
+- **B40**: Resurrect button added to Debug Menu. (was already done)
+- **B42**: Items cannot be used from Quick Slots while the player is dead. (was already
+  done)
+- **B43**: Build number auto-injected into the HTML `<title>` tag via `{{BUILD_NUMBER}}`
+  template substitution in `build.py`.
+- **B44**: Greek temple tiles only display Hall of Champions flavor messages when the
+  current scene is `'champion'`; no spurious messages in other scenes.
+
+### Enhancements
+- **E1**: Music toggle is now a 3-position cycle: Off → FM Synthesis → MP3. Falls back
+  to FM if no MP3 asset is present, with a console log on fallback.
+- **E2**: SFX toggle is now a 3-position cycle: Off → FM Synthesis → MP3. Same fallback
+  logging behaviour as E1.
+- **E5**: Blacksmith NPC added at The Forge in Tristram (voice ID `LRpNiUBlcqgIsKUzcrlN`).
+  Sells repair services and basic weapons.
+- **E6**: Deckard Cain heals the player to 100% HP and MP for free on first visit;
+  subsequent visits offer paid identification only.
+- **E9**: Genie Boss scaled to 400% normal size; drops Tome of Town Portal (📖🌀) with
+  100% drop chance.
+- **E14**: Class selection screen added before dungeon entry — Fighter / Rogue /
+  Spellcaster with portrait videos, WebGL sparkle hover effect, and a BEGIN ADVENTURE
+  button. Each class applies appropriate starting stat bonuses.
+- **E18**: Cat entity emoji updated to 🐈.
+- **E19**: Mouse/rat entity emoji updated to 🐁.
+- **E21**: Underwear item emoji updated to 🩲.
+- **E23**: Tile edge smoothing — gradient feathering and corner arc overlays applied at
+  terrain transition boundaries to reduce hard pixelated edges.
+
+### WebGL Effects
+- **Town Portal tile**: Full Navier-Stokes fluid simulation with rainbow hue-cycling dye
+  injection; rendered on a WebGL2 canvas overlay positioned over the portal tile.
+- **Town Portal cast animation**: 1.5-second expanding ring plus inward spiral particle
+  animation plays when a Town Portal scroll is used.
+- **`webgl_effects_demo.html`**: New standalone effects demo page showcasing 6 WebGL
+  effects plus the portal demo; useful for isolated testing outside the main game.
+- **Fluid orbs**: Switched to WebGL2 `RGBA16F` half-float textures for correct
+  floating-point fluid rendering; resolves banding artefacts on WebGL2-capable browsers.
+
+## [Build 748] - 2026-04-11
+### Completed
+- **Dragon battle visible on start screen**: Removed iframe approach entirely. Dragon WASM
+  (`flying-dragon.wasm`) is now inlined directly into the fat HTML by `build.py`, rendering
+  on a dedicated `<canvas id="dragon-canvas">` at `z-index:999` behind the start screen UI.
+  `#start-screen` CSS changed to `background:transparent`. Dragon canvas is hidden and
+  released when the player clicks Enter.
+- **Dragon WASM rebuilt with battle scene**: 6 coloured monster entities orbit the dragon.
+  Dragon breathes fire every ~4 seconds (WebGPU particle system via new `ShaderFire`), dealing
+  damage and killing monsters that are in range. Monsters lunge-attack the dragon. Dragon and
+  monster HP reset on Space. Press `F` to trigger fire immediately, `R` to cycle flight paths.
+- **Eagle's Crag unified to BOUNDARY_DATA scene system**: The old floor-3 carved-room approach
+  replaced with the shared background-scene loader. Floor 3 places a `CASTLE_DOOR` entry tile;
+  walking through it enters the `eagle_crag` scene from `boundary_data.js`.
+- **Scene return paths**: All three background scenes (`champion`, `nest`, `eagle_crag`) now
+  have `returnTile` entries. Walking to the return tile transitions back to the parent map.
+- **Eagle feeding quest in eagle_crag**: Eagle NPC handles fed/unfed states and returns the
+  player to floor 3 after being fed.
+- **Minimap area names fixed**: `mountain` → `Highlands`. Labels added for `champion`, `nest`,
+  `eagle_crag`.
+- **Mimic voice assets generated**: `voice_mimic_reveal` and `voice_mimic_attack` using voice
+  id `9yzdeviXkFddZ4Oz8Mok`.
+- **boundary_editor.html explicitly included in deploy.sh**.
+
+### Build Notes
+- Build number: 748.
+- All JS source files syntax-verified clean.
+- Fat HTML: `roguelike_build748.html` (7.1MB, includes inlined dragon WASM).
+- Asset bundles rebuilt: `roguelike_assets.dat` (267 sounds incl. Mimic voices).
+- Deployment: `roguelike_deploy_748.tar` + 9 JSON parts (410MB expanded).
+
+---
+
+- **Eagle's Crag unified to BOUNDARY_DATA scene system**: The old floor-3 carved-room approach
+  was replaced with the shared background-scene loader. Floor 3 now places a `CASTLE_DOOR` entry
+  tile; walking through it enters the `eagle_crag` scene from `boundary_data.js`.
+- **Scene return paths**: All three background scenes (`champion`, `nest`, `eagle_crag`) now
+  have `returnTile` entries. Walking to the return tile transitions the player back to their
+  parent map with proper level/scene restoration.
+- **Eagle feeding quest in eagle_crag scene**: The eagle NPC in the scene properly handles
+  fed/unfed states, including returning the player to floor 3 after being fed.
+- **Minimap area names fixed**: `mountain` now correctly shows `Highlands` instead of
+  `Eagle's Crag`. Added explicit labels for `champion`, `nest`, and `eagle_crag`.
+- **Mimic voice assets generated**: `voice_mimic_reveal` and `voice_mimic_attack` generated
+  using requested voice id `9yzdeviXkFddZ4Oz8Mok`.
+- **Deployment regenerated**: Build 748 tar + 5-part JSON deployment package created.
+
+### Build Notes
+- Build number bumped to 748.
+- All source files syntax-verified clean.
+- Fat HTML rebuilt: `roguelike_build748.html` (814K).
+- Deployment: `roguelike_deploy_748.tar` + 5 JSON parts.
+
+---
+
+## [Build 747] - 2026-04-10
+### In Progress Fixes
+- **Mimic chest activation fixed**: mimic-marked chests now actually transform when opened.
+  Added mimic death drops (key + gold, with occasional ring) and wired requested Mimic voice id
+  `9yzdeviXkFddZ4Oz8Mok` into the asset generator.
+- **Background scene map wiring completed**: `champion`, `nest`, and other `BOUNDARY_DATA`
+  scenes now initialize as real `BG_SCENE` maps with NPC placement sourced from
+  `boundary_data.js` instead of partial ad hoc setup.
+- **Mountain scene hook-up**: Roc's Nest now gets an actual overworld `TILES.NEST` entry point.
+- **Scene NPC patrols**: `BOUNDARY_DATA` patrol paths now animate in-game for scene NPCs.
+- **Scene transition cleanup**: Hall of Champions now enters through the shared scene loader
+  instead of mutating `currentScene` without rebuilding the map.
+- **Patch cleanup**: removed duplicate Mimic attack/effect blocks and duplicate background-scene
+  collision checks that had been left behind during iterative patching.
+
+### Build Notes
+- Asset bundles rebuilt: `roguelike_assets.dat`, `roguelike_assets_ambient.dat`
+  (includes new background images: Eagle's Crag, Hall of Champions, Roc's Nest)
+- Deployment package regenerated: `roguelike_deploy_747_part1.json` + `part2.json`
+- All source files syntax-verified clean before build
+- Engine.js locks removed — full codebase now editable
+- `boundary_data.js` added to build pipeline for background scene data
+
+### Added (Deferred Tasks — Previously Blocked on engine.js)
+- **MUD movement commands in debug console**: `/north`, `/south`, `/east`, `/west`, `/sleep`,
+  `/rest`, `/attack <name>`, `/cast <spell>`, `/cast <spell> at <target>`. Use with the
+  debug console overlay.
+- **Insult battle pride system**: Battles no longer deal HP damage. First 3 swings are all
+  missed (pure theater). Player starts with only bad retorts ("Oh yeah?!"). Winning pirate
+  flees to another part of the area. Player learns insult/retort pairs progressively. Pride
+  system replaces old HP-based damage.
+- **Pickpocket voice lines**: Thief steal now plays `voice_internal_stolen_0/1/2` ("Hey!",
+  "Stop! Thief!", "That's mine!") and `yoink` SFX.
+- **FightingMaster NPC + courtyard room**: Courtyard rooms appear on floors 3, 6, 9.
+  FightingMaster checks player level — awards `warrior` achievement at level 5, tells you
+  to train more if below. QFG quest references now trigger correctly.
+- **Cat/rat/old boot spawn**: Once per floor when stationary for 5+ turns in dungeon,
+  spawns a cat chasing a rat, plus an old boot at player's feet. Entities exist on the map.
+- **Fence patrol**: Fence wanders up to 6 tiles from the bar entrance instead of standing
+  in the doorway. Moves along N/S/E/W (no diagonals).
+- **Eagle's Crag door one-way**: Door is permanently unlocked after first key use.
+  Walking through when open no longer requires key check.
+
+### Changed (Deferred Tasks)
+- **Exhaustion drain**: Scales with exhaustion level starting at >10 (was >20 with flat rate).
+  Drain rate increases smoothly: `(exhaustion - 10) * 0.15` HP/steps.
+- **Sleep mana regen**: Resting now restores both HP and MP. Mana regen tick is
+  `max(1, floor(3 + conBonus/2))` per 800ms. Modal shows both HP and MP totals.
+- **Fence opens store on collision**: Walking into the Fence now opens `openShop('fence')`.
+
+### Added
+- **WoW-style macro system**: Console-only macro editor. `/macro add IF HP<30 THEN USE 'Healing Potion'`.
+  Conditions: HP<N, MP<N, HUNGER>N, FLOOR>=N, STATUS=name.
+  Actions: USE 'item name', CAST spellname, REST, FLEE.
+  Macros evaluate automatically each turn via `runMacros()`. Saved in save file under `player.macros`.
+- **`/assets` console command**: `/assets` shows count by type; `/assets <type>` lists names.
+- **Configurable keybindings**: Movement and action keys stored in `window._keybindings` and
+  saved to save file. All settings commands use `^x` chord (Ctrl+X then letter).
+  `window.setKeybinding(name, key)` API for remapping.
+- **Icebolt spell**: Targets nearest visible enemy, deals cold damage and freezes for 3 turns.
+  New WebGL shader mode 4 (crystalline blue frost). Ice beam visual effect with jagged shards.
+- **Poison, Shield, Haste spells**: Previously fell through to "Unknown spell". All three now
+  implemented: poison applies DOT, shield gives 10-turn damage reduction, haste = 15-turn sugar rush.
+- **Minimap zoom +/- buttons**: Tiny +/- in top-right of minimap container. Range 4–16 tile radius.
+- **Area name on minimap**: Floor/area name drawn as text along the bottom arc of the minimap.
+- **Scroll residue**: Scrolls now leave `✨ Magic Residue` after use instead of disappearing.
+  Mana cost is waived when casting from a scroll (`fromScroll` param now honored).
+- **Modal z-index focus**: Clicking any modal brings it to front via incrementing z-index manager.
+- **Expand right-click inventory menu**: Added Equip and Move to Pouch options.
+- **Double-click to use items**: Inventory and pouch slots now support double-click to use.
+- **Unequip to ground**: `unequipToGround(slot)` drops equipped item to inventory or feet if full.
+- **`bringToFront(el)` utility**: All modals participate in z-index layering on mousedown.
+- **Monty Python NPC design doc**: Detailed comment block in `quests_monty_python.js` mapping
+  Bridge Keeper, Castle Aghhh, Dennis, Black Knight, French Taunter, and Apu Price Check mechanics
+  for Kelch to wire in `engine.js`/`map.js`. Added missing `black_knight_win` achievement.
+
+### Changed
+- **Fog of war in lit areas**: Outdoor/town scenes now show full map but keep fog on unexplored
+  tiles with a soft `blur(6px)` feathered edge instead of hard tile boundaries.
+- **HP globe color**: Changed to blood red radial gradient (#6b0000 → #3d0000 → #1a0000).
+  MP globe also given deep blue gradient.
+- **Globe size**: HP and MP orbs enlarged from 60px to 75px.
+- **Globe slosh direction**: Slosh now opposes movement direction (moving right → liquid shifts left).
+- **Save file format**: Pretty-printed JSON with section comments. ROT13+djb2 checksum obfuscation
+  replaces old XOR+base64 (portable across machines). Load auto-detects both old and new formats.
+- **Keybindings saved in save file**: Remapped keys persist across sessions.
+- **Supercenter floor 6 fix**: Cousin Dave only appears in town, not floor 6.
+- **Asset load message**: Redirected from game log to debug console log.
+- **Removed console.log spam**: HP and MP values no longer logged to browser console on every frame.
+- **`/launch astrochicken`**: Fixed dual-definition bug — shop.js version renamed to
+  `astrochickenBarGame()`. WASM iframe version in ui_logic.js is now canonical.
+- **Wind SFX in Eagle's Crag**: `wind_gust` sound plays intermittently (15–45s). Cloud drift
+  speed multiplied 4× during active gusts.
+- **Minimap border**: Removed duplicate gold CSS border from `#minimap-container`. Canvas ring only.
+- **Monty Python Black Knight achievement**: Added correct `black_knight_win` achievement
+  (was erroneously using `rabbit_killer` achievement for the black knight stage).
+
+### Fixed
+- **Kneeling emoji**: Fixed null-check crash on `kneelBtn` that was silently aborting
+  `kneelAction()` before setting `player.isKneeling`.
+- **Stationary walking emoji**: `drawAvatar()` correctly shows standing emoji when idle.
+- **NPC protection from ranged/magic**: `rangedWeaponTarget()` and `fireballTarget()` now
+  check `isProtectedNPC()`. Cain, Dennis, chaplain, pacifist orc, fence, cow, chicken etc.
+  cannot be hit by ranged weapons or spells.
+- **HP/MP globe triple-rendering**: CSS `.orb-fill` div hidden when WebGL is active. Only
+  one rendering path active at a time (WebGL preferred, Canvas 2D fallback).
+- **Debug edit stats**: Updated `debugEditStats()` to show all 8 direct stats (maxHp, maxMp,
+  meleeDmgBonus, rangedDmgBonus, spellDmgBonus, hitRate, critRate, dodgeRate).
+- **Pouch-to-equip drag**: `handleDrop()` now accepts `draggedSource === 'pouch'`, moving item
+  via a temp inventory slot.
+- **cancelStatAlloc() ReferenceError**: (was referencing undefined `stat` variable on reset)
+  Corrected in stat allocation flow.
+
+## [Build 746] - 2026-04-10
+### Added
+- **Dragon integration on start screen**: Embedded `dragon_offline.html` (WebGPU dragon
+  animation) as an iframe behind the existing battle animation on the start screen.
+  Dragon loads lazily and is destroyed on game start. Battle emojis render on top.
+- **Ctrl+X chord keybindings**: Press Ctrl+X to toggle the in-game menu (hamburger).
+  While in Ctrl+X mode (2-second window), press S to save or L to load. Prevents
+  accidental saves and gives keyboard access to the menu without ESC.
+- **L and K key bindings**: Listen (L) and Kneel (K) actions now have keyboard shortcuts
+  matching their left-bar button hints.
+- **Build script enhancements** (`build.py`): Output now includes a boxed build summary
+  header listing all source files, their paths, and last-modified dates. Each section
+  is wrapped in `BEGIN`/`END` comment markers with source filename and modification date.
+
+### Changed
+- **Start screen layout**: "ENTER THE DUNGEON" button moved to sit beside the asset
+  loader card in a horizontal row, instead of below it.
+- **Build number**: Bumped to 746.
+
+### Fixed
+- **SFX toggle now gates all sound paths**: `Sound.playSample()` and `Sound.playVoice()`
+  now check `gameSettings.sfx` before playing. Previously only `Sound.playTone()` was
+  gated, causing MP3 sample SFX to play even when SFX was toggled off.
+- **Music toggle now gates FM synthesis**: `Sound.playFM()` now checks `gameSettings.music`
+  before playing. FM-sequenced music tracks were previously unaffected by the music toggle.
+- **Zero-byte MP3 fallback**: If an MP3 sound asset exists in `assets.sounds` but is
+  shorter than 50 characters (zero-byte or invalid data URI), `playSample()` returns null,
+  allowing the synthesized fallback to kick in instead of silently failing.
+- **Music crossfade between areas**: Transitioning between music-triggering areas now
+  fades out the old track over 5 seconds while fading in the new track over 5 seconds,
+  instead of hard-cutting. Applied to both HTMLAudioElement (sample) and FM sequencer paths.
+  Prevents both tracks playing simultaneously at full volume.
+- **Music volume reduction during dialog**: When a voice clip plays (`Sound.playVoice()`),
+  music volume is automatically reduced to 25% of its current level. Volume is restored
+  when the voice clip ends or `stopVoice()` is called. Works for both sample-based and
+  FM-sequenced music.
+- **Keybind hint mismatch**: Pouch button hint corrected from "P" to "I" to match the
+  actual key binding. Added missing L (Listen) and K (Kneel) key bindings in input.js.
+
+### Merged (developer Kelch — Build 745 K)
+Merged from Kelch's `745k3.txt`. Files: `state.js`, `ui_logic.js`, `engine.js`,
+`map.js`, `quests_kq5.js`. Our `audio.js`, `input.js`, `header.html`, `ui_layout.html`
+kept as newer.
+
+#### Enhancements
+1. **Generic enemies no longer move or attack diagonally** (`engine.js`). Enemies
+   pick one axis (E/W or N/S) at random and only move along it. Adjacency check for
+   attacks now requires same row or column.
+2. **Randomized damage** (`engine.js`). Player and generic enemies now deal 1 to max
+   damage instead of always max. Player melee: `rand(1..baseDmg) + meleeDmgBonus`.
+3. **Direct stat system** (`state.js`, `ui_logic.js`). Removed player ability scores
+   (str/dex/int/con/wis). Stats are now allocated directly: Max HP, Max MP,
+   Melee/Ranged/Spell Damage Bonus, Hit Rate, Crit Rate, Dodge Rate. Damage bonuses
+   cost 5 points per +1.
+4. **`isTileFloor()` function** (`state.js`, `map.js`, `engine.js`, `quests_kq5.js`).
+   Replaces most `=== TILES.FLOOR` checks with a generalized walkability check that
+   includes FLOOR, GRASS, SAND, BRIDGE, BUSH.
+5. **`setPlayerDefaults()` function** (`state.js`). Centralizes player reset logic
+   used by both game start and restart.
+6. **Tristram mapgen extracted** (`map.js`). `mapgenTown()` function replaces inline
+   town generation in `initMap()`. Tristram tile map now uses string-array encoding.
+7. **`enemyPassesThrough()` utility** (`engine.js`). Unified walkability check for
+   enemies (handles throughWalls).
+
+#### Fixes
+1. **Ducks don't quack unless hit for damage** (`engine.js`). Quack sound moved inside
+   the hit-success branch.
+2. **Player can miss enemies, enemies can miss player** (`engine.js`). Hit chance is
+   `player.hitRate * (1 - enemy.dodge)`. Monster attack uses same formula against player.
+3. **Monster dodge values rebalanced** (`state.js`). Nearly all dodge values reduced
+   (many to 0 or near-0) because dodge is now a meaningful bonus on top of hit rate.
+4. **Initial player stats**: Hit rate 0.6 (was 0.50), crit rate 0.0 (was 0.10),
+   dodge rate 0.0 (was 0.15). Initial HP 16 (was 25). New constants for all.
+5. **Restart game bug** (`engine.js`). `restartGame()` now calls `setPlayerDefaults()`
+   instead of inline reset, fixing desync between initial values and reset values.
+
+## [Build 745] - 2026-04-09
+### Added
+- **Full NPC voice cast**: All major characters now have ElevenLabs-generated voice clips
+  triggered automatically at dialog render time. 100 clips total across 17 characters:
+  - Apu / Cousin Dave — voice `N5d2d1s5cnuy6wghabpn`
+  - Wizard (Curiosity Shoppe) — `1BfrkuYXmEwp8AWqSLWk`
+  - Granny Weatherwax — `vFLqXa8bgbofGarf6fZh` (wand/staff banter)
+  - Deckard Cain — `bFrjFL4nlpeYNwNRhXxq`
+  - Pirate Chaplain — `LRpNiUBlcqgIsKUzcrlN`
+  - Pacifist Orc (Grok) — `C5GgjTyGQ2aQx8uMiLh9`
+  - Dennis — `fmR785nA5jqTzoTNg3Jk`
+  - Ifrit — `qA5SHJ9UjGlW2QwXWR7w`
+  - Lefty — `ZUz67EWNNT6d1i38Xmcm`
+  - Swordmaster — `mrmaApeLxpgZi4RK7oGq`
+  - 5× distinct Lowly Pirates — `PPzYpIqttlTYA83688JI`, `6VgigPFWF0sNZy1BthVg`,
+    `RIxlkEgVTlW2XuYWyYjL`, `dfZGXKiIzjizWtJ0NgPy`, `342hpGp7PKo7DsTTVSdr`
+  - The Fence — `s2wvuS7SwITYg8dqsJdn`
+  - Genie — `xYWUvKNK6zWCgsdAK7Wi`
+  - Antique Shopkeeper (hard of hearing) — `MKlLqCItoCkvdhrxgtLv`
+  - Internal narrator (Grue warnings, eagle crag, brook) — `3l9iCMrNSRR0w51JvFB0`
+- **New music tracks**: Added `music_pirate` (pirate areas / SCUMM Bar / lechuck scenes)
+  and `music_bandit` (desert bandit camp) from `Music.zip`. Both use alias map in
+  `Sound._playLoopingMusicSample`: `monkey`/`leftys`/`lechuck` → `music_pirate`,
+  `bandit` → `music_bandit`.
+- **Voice hooks wired into**: store greetings, all Grok dialog steps (bruce, taste, survival,
+  chaplain hint, flirt, woken), Ifrit idle taunts and combat, pirate insult battles (each
+  pirate gets its own voice), swordmaster defeated line, Chaplain all steps, Cain topics,
+  Dennis topics, Discworld arcana banter (wizard + granny sequenced), antique shop,
+  Lefty greeting, Fence greeting + insufficient-funds refusal, internal narrator moments.
+- **`Sound.errorBuzz()`**: Added convenience method; used in `showInsufficientFunds`.
+- **`voiceRefusals` map**: Fence and Chaplain play voiced refusals on insufficient gold.
+- **Post-build QA pass**: Ran 51-check QA sweep; identified and fixed orc voice hooks
+  missing across all Grok dialog steps, brook swim voice not firing. 2 real bugs fixed.
+- **Dragon RS offline feasibility test**: `dragon_offline.html` (5.3MB) — fully vendored
+  offline version of the live `hucanco.de/dragon-rs` WebGPU dragon animation.
+  - All 23 SvelteKit JS module chunks inlined as source strings
+  - 3.8MB WASM binary base64-encoded and patched into the module's fetch path
+  - Runtime loader creates blob: URLs in dependency order, rewrites each module's
+    import specifiers to already-created blob URLs before blobifying it
+  - Precomputed specifier→canonical key maps (18 modules) eliminate relative URL errors
+  - No remote dependencies; requires WebGPU (Chrome/Edge 113+)
+  - **Status**: IN PROGRESS — SvelteKit router URL matching may redirect to homepage
+    rather than dragon route when opened as a local file; further patching needed.
+
+### Fixed
+- Orc (Grok) dialog tree: all 9 steps now call `playVoiceClip()` (woken, bruce,
+  bruce_where, bruce_taste, chaplain, combat, and others were missing voice hooks).
+- Brook swim: `voice_internal_brook` now fires when player bounces off town brook.
+- `wizard` store greeting: now randomly selects one of 3 greeting lines and voices it.
+- `app.BenBPfPz.js` was referencing `../nodes/7.N1yvUb6O.js` in spec map — now resolved.
+
+## [Build 744] - 2026-04-09
+### Added
+- **Wave 6 audio pipeline**: Added `tools/generate_sound_assets.py` for offline ElevenLabs generation.
+  - Reads API key from `secrets.env` or environment
+  - Generates Apu dialogue + common SFX into `sounds/generated/`
+  - Automatic fallback to default API voice if requested library voice unavailable
+  - Documents process in `sound_generation.md`
+- **Apu voice set** (18 clips, voice `N5d2d1s5cnuy6wghabpn`): greetings, Super Center intro,
+  franchise tree, Larry easter egg, family dialog.
+- **Common SFX** (11 clips): step, clink, sword, grunt, scream, quack, splash, oof, achieve,
+  error_buzz, chest_open.
+- **Music loops** (6 tracks from `music.zip`): tristram, ifrit lair, dackard cain, eagle crag,
+  fields, supercenter.
+- **Centipede arcade**: `centipede/index.html` added to arcade bundle; SCUMM Bar cabinet
+  launches it via `launchCentipedeCabinet()`.
+
+### Changed
+- **Sample-backed runtime audio**: `Sound.playSample()` returns Audio object, supports data-URI
+  MP3 directly. `Sound.playMusic()` checks `music_${name}` sample key before FM fallback.
+  Added `Sound.playVoice()`, `Sound.stopVoice()`, `Sound._playLoopingMusicSample()`.
+- **Split asset bundles** (no longer a single file):
+  - `roguelike_assets.dat` — core (sprites, GIFs, SFX, voice, music loops)
+  - `roguelike_assets_ambient.dat` — ambient loops
+  - `roguelike_assets_arcade.dat` — Astrochicken WASM + Centipede
+- `build_complete_assets.py` updated to write all three bundles and verify them.
+
+## [Build 743] - 2026-04-09
+### Added
+- **WebGLFX layer** (`src/webgl_fx.js`): lightweight optional WebGL effects manager.
+  Graceful no-op when WebGL unavailable; game stays offline-safe.
+- **Orb fluid effect**: HP/MP orb overlays use fluid ripple/smear via WebGLFX.
+  Reacts to clicks, player movement, combat hits, mana spend.
+- **Grass underlay**: Tristram, fields, and Eagle Crag shelf get animated grass tufts
+  when WebGLFX available. Tile collision logic unchanged.
+- **Fireball / chain lightning visuals**: Enhanced via WebGLFX overlay passes.
+- **Ifrit fire aura**: Animated in main renderer.
+- **dragon.html**: Standalone canvas approximation of dragon-rs for loading-screen
+  evaluation (NOT the original; original is `dragon_offline.html`).
+- **43 bugs fixed** across Waves 1–5 (see Build 742 for itemised list).
+
+### Changed
+- Build output: `roguelike_build743.html`; `webgl_fx.js` added to build order.
+
+## [Build 742] - 2026-04-08
+### Added / Fixed (43 bugs from submitted list)
+- **Asset loader card**: Redesigned as 3 inventory-slot card on start screen.
+  Generalised to accept any bundle file. Duplicate-load prevention. Cancel/reset button.
+- **Debug console Enter key**: Fixed — `stopPropagation()` added; outer handler skips
+  focused console input.
+- **Hover highlight**: Replaced tile-box outline with tight emoji/sprite glow.
+  White = interactable now; gray = too far; red flash = failed pickup.
+- **2-tile interaction reach**: Right-click context menu for corpses/items accessible
+  within 2 tiles, not just standing on top.
+- **Ifrit loot**: Moved from chest to Ifrit corpse. Lair decorated with fireproof props.
+- **Dark chambers**: Spawns/stairs/shops excluded. Player spawn moved off dark tiles.
+- **Fresh game start**: Always begins in Tristram (`currentLevel = 0` set before first
+  `initMap()` and before `_initQuestEngine()` to prevent palette crash).
+- **Bag mechanics**: Right-click opens bag contents panel attached to pouch window.
+  Drag-to-bag inserts into bag slot. Auto-loot and loot-all treat bag slots as inventory.
+- **Achievements**: Synced display to check both legacy `achievements` object and
+  `QuestEngine.hasAchievement()`.
+- **Shark**: Fixed wall traversal; water-tile-only movement; stalks player; attacks
+  unprovoked; 🩸 blood spray visual.
+- **Spell cooldown WoW timer**: Dimmed icon + countdown on magic modal and quickslots.
+- **Stats/Talents tabs**: Separate tabs within the stats modal.
+- **Multi-point stat spending**: Stepper UI replaces one-at-a-time confirm/cancel.
+- **Talent flowchart**: SVG flowchart replaces list view in Talents tab.
+- **Left bar reorganisation**: Achievements/Quest Log/Stats moved to hamburger menu;
+  cast-spell icon removed from bar.
+- **Drag-to-pouch icon**: Pouch icon in left bar accepts drops from inventory and loot windows.
+- **spawnLoot() loot system**: Chest loot now creates a corpse/loot pile (right-click).
+- **Thief**: Attackable; stolen items drop from corpse. Thief patrols and pickpockets
+  stationary player.
+- **Pirate combat**: Full Monkey Island insult battle on collision; learn from losing.
+- **Store/stair/door spacing**: `getDeadEndWallFarFrom()` enforces 5-tile minimum.
+- **Floor 3 eagle chamber**: Grass-tiled outdoor room, castle door, rock decor, flavor log.
+- **Swordmaster maze**: Dark twisty maze, pirate guards, FSM scrambles minimap inside.
+- **Ranged bow/arrows**: Denis sells bow (25g) and arrows (stackable to 98).
+- **Wand/staff** at Curiosity Shoppe (25000g each) with Discworld Granny banter.
+- **Consumables**: All stackable up to 10 per slot.
+- **Tome → ashes**: Using a spell tome replaces it with 🌫️ Spell Residue.
+- **Coin clink**: Plays on all gold balance changes via `changeGold()`.
+- **Insufficient funds**: Error buzz + shopkeeper-specific refusal lines.
+- **Asset viewer**: Generalised to 3-slot multi-bundle loader (Build 742 version).
+
+## [Build 741] - 2026-04-08
+### Changed
+- **Build numbering**: Switched from semantic versioning (7.x.x) to sequential build numbers.
+- **Talking Head GIFs**: Apu, Wizard, Chaplain display animated GIFs when asset file loaded.
+- **Asset Viewer**: Fully rewritten with Talking Heads section, multi-file support, audio
+  play buttons, GIF preview, stat panel, filter nav.
+
+### Fixed
+- **Asset bundle crash**: Core bundle reduced from 48MB to ~1.6MB by splitting Astrochicken
+  WASM and ambient audio into separate optional files. `loadAssetData()` merges any bundle.
+
+## [Build 740] - 2026-04-08
+### Changed
+- NPC animated face cycling (Apu, Wizard, Chaplain) — emoji expression rotation via `setInterval`.
+
+## [Build 739-738] - 2026-04-08
+### Fixed
+- Avatar emoji: Replaced ZWJ compound gender emojis with single-codepoint equivalents.
+- Pouch window width increased to fit 4×10 grid without clipping.
+
+
+### Added
+- **Wave 6 audio pipeline**: Added `tools/generate_sound_assets.py` for offline ElevenLabs generation.
+  - Reads API key from `secrets.env` or environment
+  - Generates bundled Apu dialogue MP3 clips into `sounds/generated/voices/`
+  - Generates common SFX MP3 clips into `sounds/generated/sfx/`
+  - Documents process in `sound_generation.md`
+- **Apu voice playback**: Added automatic Apu / Cousin Dave voice playback for store greetings,
+  family dialog, franchise dialog tree, and Larry easter egg flow via `Sound.playVoice()`.
+- **Music sample pack integration**: Imported loops from `music.zip` and bundled:
+  `music_tristram`, `music_supercenter`, `music_deckard_cain`, `music_eagle_crag`,
+  `music_fields`, and `music_ifrit_lair`.
+- **Centipede arcade integration**: Added `centipede/index.html` to the arcade asset bundle and
+  exposed a SCUMM Bar cabinet launch path.
+
+### Changed
+- **Sample-backed runtime audio**: `Sound.playSample()` now supports direct data-URI MP3 playback.
+  `Sound.playMusic()` prefers bundled `music_*` loops before FM fallback. `Sound.playVoice()` and
+  `Sound.stopVoice()` manage one-shot dialogue playback.
+- **Split asset architecture finalized**:
+  - `roguelike_assets.dat` = core sprites/GIFs/SFX/voice/music
+  - `roguelike_assets_ambient.dat` = ambient loops
+  - `roguelike_assets_arcade.dat` = Astrochicken + Centipede
+
+### Notes
+- The requested ElevenLabs library voice was not available to the free-tier API.
+  The generator automatically falls back to a standard API voice so the pipeline still works.
+
+## [Build 743] - 2026-04-09
+### Added
+- **WebGLFX layer**: Added `src/webgl_fx.js` as a lightweight optional effects manager loaded before `render.js`.
+  It initializes `window.WebGLFX` when WebGL is available and cleanly no-ops when it is not, so the
+  game stays offline-safe and keeps the old canvas fallback path.
+- **Orb fluid response**: HP/MP orb overlays now use a more fluid ripple/smear pass when WebGLFX is
+  available. Reactions are wired to orb clicks/touches, player movement, combat hits, and mana spend.
+- **Dragon demo**: Added standalone `dragon.html`, a self-contained animated loading-screen prototype.
+  It is documented as a lightweight approximation, not `dragon-rs`.
+
+### Changed
+- **Terrain underlay**: Tristram grass and the Eagle Crag shelf now get a subtle animated grass tuft
+  underlay via the shared effects layer. Tile gameplay logic is unchanged.
+- **Spell visuals**: Fireball now gets a hotter trail/burst overlay and chain lightning now has a
+  stronger electroshock arc effect. Added a working chain lightning cast path for tome users.
+- **Ifrit presentation**: Ifrit now renders with an animated fire aura in the main scene renderer.
+- **Build output**: `build.py` now emits `roguelike_build743.html` and loads `webgl_fx.js` before `render.js`.
+
+## [Build 741] - 2026-04-08
+### Changed
+- **Build numbering**: Switched from semantic versioning (7.x.x) to sequential build numbers.
+- **Talking Head GIFs**: Apu, the Wizard, and the Pirate Chaplain now display animated GIFs
+  when the asset file is loaded, replacing the static emoji faces. Falls back to emoji if
+  assets not loaded. Embedded in `roguelike_assets.dat` via `build_complete_assets.py`.
+- **Asset Viewer** (`asset_viewer.html`): Fully rewritten — added Talking Heads section,
+  updated monster/item/NPC catalog to current state, added audio play buttons, GIF preview,
+  stat panel, and filter nav.
+
+### Fixed
+- **Asset bundle split**: `roguelike_assets.dat` was 48MB (caused JSON.parse crash in browser
+  at 8% load). Root cause: Astrochicken WASM binary (33MB) + ambient audio (5MB) all in one
+  JSON file. Fixed by:
+  - Removing warrior sprite sheets from core (avatar uses emoji now)
+  - Splitting Astrochicken WASM into `roguelike_assets_astrochicken.dat` (33MB, optional)
+  - Core bundle reduced to **1.6MB** — 57 sprites + 11 sounds
+  - JSON dumped with `separators=(',',':')` to minimize whitespace
+- **Asset loader rewrite**: `loadAssetData()` helper merges any loaded bundle into `assets.*`
+  without clobbering previously loaded data. Handles both GIF/PNG sprites (as `<img>`) and
+  SVG placeholders (as stub objects). Second file input (`#asset-loader-extra`) on start
+  screen for optional Astrochicken bundle.
+
+## [Build 740] - 2026-04-08
+### Changed
+- **NPC Animated Faces**: Replaced static NPC emoji with cycling expression animation.
+  GIF system implemented via `npcFaceHTML()` — graceful fallback to emoji if not loaded.
+
+## [Build 739] - 2026-04-08
+### Fixed
+- **Avatar emoji**: Replaced ZWJ compound gender emojis (which pasted as 2 characters)
+  with simple single-codepoint emojis: 🧍 stand, 🚶 walk, 🏃 run, 🙇 kneel, 😴 sleep, ⚔️ fight.
+
+## [Build 738] - 2026-04-08
+### Fixed
+- **Pouch window**: Widened from 420px to 430px, reduced body padding to fix right-column clipping.
+- **Avatar emojis**: Replaced warrior sprite sheet rendering with context-aware emoji avatar.
+  State transitions: standing/walking/running/kneeling/sleeping/fighting. East-facing mirrors
+  via canvas `scale(-1,1)`. Walk animation keyed to `_lastPlayerMoveTime`.
+
+## [Build 737] - 2026-04-08
+### Fixed
+- **Duplicate floor item render**: Removed mislabelled duplicate draw block in `render.js`.
+- **Drag-to-pouch**: Pouch icon in left bar now accepts item drops, auto-finds open slot
+  (including inside bags). Handles both inventory drags and corpse loot drags.
+- **spawnLoot() loot system**: Chest loot now creates a corpse/loot pile for right-click
+  interaction rather than dropping directly to floor. Multi-item chest support.
+- **Castle rat cell escape**: Killing the castle rat teleports player to a 5×5 cell.
+  Using any food item triggers mouse rescue (`mouseRescueScene()`), gnawing bonds and
+  opening a hidden escape tunnel. Wired to quest events and achievements.
+- **pickupItems()**: Removed all remaining auto-pickup calls from movement paths.
+- **Shadowstep (B key)**: Implemented Blink/Shadowstep talent — 3-tile dash in facing
+  direction, stops at walls, 3 MP cost, 8-turn cooldown, shadow afterimage effect.
+- **Tunnel spell**: Restored from build 6.5.0. `⛏️ Scroll of Tunnel` added to ITEM_DEF.
+  Digs 8 tiles through walls at 400ms/tile with screen shake. Costs 4 MP.
+- **Save/load**: Now saves and restores corpses, darkMap, autoLootEnabled.
+
+## [Build 736] - 2026-04-08
+### Added
+- **Grok the Formerly Terrible**: Full pacifist orc dialog tree on floor 6 dark chamber.
+  - Wakes up angry if light brought in (was sleeping)
+  - Flirt lines ("You're quite cute for a human. Very compact.")
+  - Bruce the Grue dialog: "Where is he?" → "He was just here a minute ago" →
+    "Why didn't he eat you?" → "Do you know how bad orcs taste?"
+  - "He described it as: like licking a boot that is also somehow alive and annoyed"
+  - 5 tradeable useless items (meditation rock, ceremonial bean, bent paperclip, etc.)
+  - Hints about the Pirate Chaplain and breadsticks on Floor 5
+  - Does not engage in combat — just sits there
+  - `grokFirstMeet()` / `grokTrade()` functions
+
+## [Build 735] - 2026-04-08
+### Added
+- **Grue danger system**: Every turn in a dark tile without light increments `player.grueDanger`.
+  8 escalating messages from "It is pitch black" to pale eyes opening in the darkness.
+  At danger ≥ 15, each step has a 15% chance of instant death (caps at 90%). Light resets
+  danger immediately with a log note about the Grue retreating. Ominous low sound at step 5+.
+- Grues removed as spawnable enemies (they are environmental hazard only, never seen).
+
+## [Build 734] - 2026-04-08
+### Added
+- **Dark chambers**: 10% chance per dungeon room to be pitch-dark (darkMap tiles set true).
+  Rooms with stairs or stores are excluded. Dark chambers appear on all dungeon levels.
+- **Pacifist orc NPC**: Appears in first dark room on floor 6. Only accessible with light.
+  Without light: "Something large is breathing in the darkness." Stub dialog with candle gift.
+- **Grue/orc MONSTER_DEF entries**: Added grue (environmental), orc (standard combat),
+  pacifist_orc (quest NPC).
+- **Corpse/loot system** (engine.js): All monster deaths now create a `corpse` object with
+  loot array instead of dropping items directly. Right-click to open loot window.
+  - `generateLoot()`: Multi-item drops — 50% gold + 1-3 weighted items + 8% bag chance.
+  - `openLootWindow()`: Modal with drag-to-inventory, Loot All button, INT>20 nearby enemy warning.
+  - `lootAll()`: Grabs everything that fits; red flash + log if full.
+  - `expireCorpses()`: After 5 min wall-clock, corpse becomes bones pile, loot drops to floor.
+  - `autoLootCorpse()`: When Scavenger talent active, silently collects loot on kill.
+  - `tryPlaceInPouch()`: Finds first open pouch slot or open bag slot.
+- **Chests passable**: Walk past chests freely; right-click with key to open.
+- **Right-click context menu** on canvas: Opens loot window for corpses, floor item menu
+  for items (Pick Up), chest opening with key. Ctrl+click on corpse = instant loot all.
+- **Mouse hover**: White outline on corpses and floor items under cursor.
+- **No auto-pickup on movement**: Items require explicit right-click interaction.
+- **Auto-loot Scavenger talent**: Added to Subtlety tree. Toggle in hamburger menu once learned.
+- **Bag expansion system** (14 bag types):
+  - 3-slot: 🎒👜🛍️📦🫙 (common, sold at Apu for 8-12g)
+  - 5-slot: 🧳💼🧰👝🎒🔥 (uncommon, min level 10)
+  - 10-slot: 🧳✨💼🌟🎒💫 (rare, boss drops only, min level 20)
+  - 100-slot: 🎒🌈 "The Luggage" (Hall of Champions, 40 achievements, 10000g)
+  - `openBag()`: Modal showing bag contents grid, click to extract items.
+  - `takeItemFromBag()`: Moves item to inventory → pouch → ground.
+
+## [Build 733] - 2026-04-07
+### Added
+- **Bag of Loot** (🎒): Common chest drop, opens to reveal 1-3 random items.
+- Hall of Champions store restored (was lost in refactor). Tiered items by achievement count.
+  New at 40 achievements: 🎒🌈 The Luggage (100-slot bag).
+- Bags added to monster drop table (3% chance, level-appropriate via `randomBag()`).
+- Boss drops: Ifrit 50% drops 🧳✨ at level 20+; Shark 30% drops 💼🌟 at level 20+.
+
+## [Build 732] - 2026-04-07
+### Fixed
+- **Magic quickslots**: Moved outside minimap container to separate `#magic-quickslots` div
+  at fixed position below minimap — no longer clipped by overflow.
+- **Minimap sizing**: Canvas explicitly reset to 150×150 each frame; `Math.ceil(scale)` prevents
+  tiles overflowing the gold border.
+- **Pouch**: Unified 4×10 grid (40 slots), row 0 = quickslots with hotkey numbers, rows 1-3 = stash.
+  36px slots with 6px border-radius, 1px margin.
+- **Avatar sprite sheets**: Grid corrected to 10 columns (100×128 per frame). Chroma-key pass
+  removes gray checkerboard background (R≈G≈B 160-250 → alpha=0).
+- **Spell equip/cast**: `player.equippedSpell` set directly (not via `window.player`). Spell names
+  clickable in magic modal. Null-check on spells object.
+- **Equipment modal**: Replaced broken `background-image: url(data:image/svg+xml...)` with
+  inline `<svg>` Vitruvian figure.
+- **Orb liquid slosh**: CSS keyframe animations (liquidIdle/Walk/Run) on `.orb-fill`. Class toggled
+  by player state in `updateUI()`. Bubble elements added to HP/MP orbs.
+
+## [Build 731] - 2026-04-07
+### Fixed
+- Numerous bugs from the 28-item bug list, including: Game Log no title bar, debug console
+  key suppression, console command entry at bottom with auto-scroll, sprite fallback to emoji,
+  pouch slot sizing, magic system, Tristram stairs, sleep/regen healing with floating text,
+  store 3-tab UI, Apu dialog, hunger rate doubled, minimap, eagle NPC quest dialog, restart
+  after death, music toggle, town portal, Slurpee Sugar Rush, CapsLock run, debug warp,
+  drag-to-drop, right-click item context menu, asset viewer sound playback.
+
+## [Build 730] - 2026-04-07
+### Changed
+- **Build numbering**: First build under new sequential build number system (was v7.2.7).
+- **Warrior sprite sheets**: Added 4 animated sprite sheets (walk/run/sleep/fight) to asset
+  bundle. 1200×896, 10 cols × 7 rows, 100×128 per frame. Chroma-key rendering.
+
+## [7.2.6] - 2026-04-07
+### Fixed
+- JavaScript syntax error in `quests_kq5.js` preventing game start.
+
+## [7.2.5] - 2026-04-06
+### Added
+- **Quest Engine**: Complete rewrite as a declarative data-driven system. All quests defined
+  in separate files per franchise (Monkey Island, Monty Python, Zork, KQ5, etc.).
+- **Achievements** (81 total): Classic WoW-style with categories, points, and unlock notifications.
+- **Hall of Champions**: Tiered shop unlocked at 20+ achievements with high-end items.
+- **Talent Trees**: 3 trees (Assassination, Combat, Subtlety) with prerequisites.
+- **Stat Allocation**: Confirm/cancel workflow with stat previews.
+- **Quest Log**: Active/completed tabs with category grouping and journal entries.
+
+## [7.2.4] - 2026-04-06
+### Added
+- Spell system: Fireball (click-to-target), Illuminate, Town Portal.
+- Spell tomes as equippable items. F/G quickslot keys.
+- Secret walls (10% chance), Hall of Champions tile.
+- Insult Sword Fighting system (Monkey Island).
+
+## [7.2.3] - 2026-04-06
+### Added
+- Complete Monkey Island quest pack (Melee Island, insult fighting, Carla/Otis/Meathook).
+- Pirate Chaplain (Pastafarianism / Flying Spaghetti Monster).
+- Antique shop, SCUMM Bar, Stan's Used Boats.
+
+## [7.2.2] - 2026-04-06
+### Fixed
+- Sound effects, HP globe overflow, audio context resume, left bar UI sizing.
+
+## [7.2.1] - 2026-04-06
+### Added
+- Teaching comments across all core JS files.
+### Fixed
+- Audio context, debug abilities, keybinding hints.
+
+## [7.2.0] - 2026-04-05
+### Added
+- Sprite overhaul, Monty Python quests, Morrowind/Bethesda quests, Town of Tristram.
+
+## [7.0.0 - 6.5.0] - 2026-04-05
+### Added
+- Pouch system, overworld engine, UI overhaul (Blizzard style), draggable modals,
+  Tunnel spell, FM synthesis audio, Monkey Island music, boot-throw animation.
+
+
+## [7.2.0] - 2026-04-05
+### Added
+- **Sprite Overhaul**:
+  - **Backfilled Assets**: Fully integrated high-fidelity sprites for the entire item table, monster roster, NPC list, and storefronts (Walls, Floors, Swords, Potions, Skeletons, Black Knight, etc.).
+  - **Rendering Engine**: Upgraded `render.js` to prioritize sprite textures from `.dat` files with Emoji fallbacks.
+- **Monty Python & The Holy Grail**:
+  - **The Black Knight**: Unique combat logic with "Limb-Loss" triggers. Icons and damage change as HP drops.
+  - **Bridge of Death**: Interactive modal dialogue with the Bridge Keeper. High INT unlocks the "Counter-Question" win state.
+  - **Killer Rabbit & Holy Hand Grenade**: A tiny but lethal 999 DMG monster. Requires the Holy Hand Grenade which uses a timing-based "Count to Three" modal.
+  - **The Witch Trial**: Prove a suspect is a witch by finding a Duck (`🦆`) and using the Scales of Justice.
+  - **Dennis the Peasant**: Anarcho-Syndicalist dialogue tree. Grants the "Violence Inherent in the System" achievement.
+  - **French Taunter**: Periodic cow-throwing attacks while near his castle walls.
+- **Morrowind/Bethesda Quests**:
+  - **Boots of Blinding Speed**: +50% Evade and instant move delay, but sets light radius to 0 (Blindness).
+  - **The Atronach**: MP regen disabled but gains massive Max MP.
+  - **Dark Brotherhood**: Killing cows/chickens causes an Assassin to ambush you during sleep.
+- **Town of Tristram**:
+  - **Deckard Cain**: Flat-fee bulk identification service.
+  - **Apu's Supercenter**: High-capacity bags and advanced supplies.
+
+## [7.2.2] - 2026-04-06
+### Fixed
+- **Sound Effects**: Added missing `snore()` method to audio.js and integrated snoring loop into rest mechanic. Increased step and snore fallback volumes for better audibility.
+- **HP Indicator Globe**: Added safety clamping to prevent HP overflow and debug logging to diagnose display issues with resource orbs.
+- **Audio Context**: Improved resume logic to reset resumeAttempted flag on failure, allowing retry when audio context suspension occurs.
+- **Left Bar UI**: Reduced button size (36px) and removed circular borders for cleaner vertical alignment; added vertical scroll capability.
+
+## [7.2.1] - 2026-04-06
+### Added
+- **Teaching Comments**: Comprehensive module documentation added to all core JavaScript files (engine.js, shop.js, render.js, input.js, ui_logic.js, map.js) with detailed overviews of responsibilities and architecture.
+
+### Fixed
+- **Audio Context**: Improved Web Audio API resume logic to prevent sound effects from failing to play after browser autoplay restrictions.
+- **Debug Abilities**: Added missing debug functions (toggleFog, toggleLight, debugToggleGodMode, debugToggleNoRegen, debugToggleEncryption) to the compiled HTML.
+- **Keybinding Hints**: Fixed '?' key detection to properly toggle keybind hint displays with Shift+/ fallback.
+
+## [7.0.1] - 2026-04-05
+### Added
+- **Starting Gear**: The player now starts the game equipped with a Running Shirt, Briefs, and Sandals (purely fashionable, no armor bonus).
+
+## [7.0.0] - Phase 1 (Core Systems)
+### Added
+- **The Pouch**: A 30-slot dedicated storage modal (WoW style) for managing quest items and bulk resources without clogging your 10 quick-slots.
+- **Drag & Drop**: Fully integrated dragging items between the Inventory, Pouch, Equipment, and the World.
+- **Overworld Engine**: Expanded the level generator to support distinct "Scenes" (Mountain, Beach, Forest, Castle) with unique tile palettes (Trees, Sand, Moats, Bridges, etc.) instead of just dungeon walls.
+- **Resurrection Crystal**: High-level boss monsters now have a 25% chance to drop a `💎💠`. If you die in combat while carrying one, it shatters, restoring you to full HP/MP with a massive 90s-style visual flash and sound effect.
+
+## [6.5.0] - 2026-04-05
+### Added
+- **UI Overhaul (Blizzard Style)**: Complete UI rewrite featuring a full-screen canvas that dynamically resizes. Added a minimap, floating resource orbs (HP/MP), an XP bar, and a left-side action bar.
+- **Draggable Modals**: The Inventory, Equipment, Stats, and Magic menus are now draggable, translucent windows that overlay the game world.
+- **Drag & Drop Inventory**: You can now drag items from your inventory into your equipment slots, or drag them onto the game world to drop them.
+- **New Spells**: 
+  - **Lightning (⚡)**: Auto-targets enemies within a distance of 5, chaining damage.
+  - **Tunnel (⛏️)**: Modifies the map, digging through solid rock up to 10 cells in the direction you are facing. Causes screen shake and earthquake sound.
+- **Visual Feedback**: Added floating combat text for damage taken, damage dealt, and healing. Leveling up now features a fireworks sound effect, screen flash, and floating text.
+- **Boot Throwing Animation**: Saving the rat now features a projectile animation of the boot flying at the cat, complete with dialogue.
+- **Asset Loader**: Added an initial start screen with a file loader to select `roguelike_assets.dat` (preparation for full MIDI support).
+
+### Changed
+- **Stat Balance**: Starting Max HP reduced to 25. Starting Max MP reduced to 0. Base hit rates for player and monsters reduced to 50% for early-game balance.
+- **Lighting**: Replaced the jagged grid-dithering with a smooth, radial fog-of-war gradient overlay.
+- **Chest Mechanics**: Chests are no longer permanently blocking. 1st bump attempts to unlock. 2nd bump allows you to walk through it. 3rd bump stops you again, etc.
+- **Quest Monsters**: The Cat, Rat, Pirate, Genie, and Master Swordfighter no longer engage in standard melee combat or chase the player aimlessly.
+
+### Fixed
+- **Store Entry Bug**: Fixed a logic flow error where chests prevented the player from entering stores.
+- **Negative XP Bug**: Fixed an edge case where killing an enemy with massive overkill damage resulted in negative XP gains.
+
+## [5.4.0] - 2026-04-05
+### Added
+- **Running Mechanic**: Hold Left Shift to run (150% speed). Causes exhaustion; high exhaustion drains HP/MP.
+- **Combat UI**: Added small HP bars above monsters during combat.
+- **Achievements**: XP and special messages for puzzle completion (Feline Flinger, Bottle Service).
+### Fixed
+- **Sleeping Logic**: Added a "Wake Up" button to the sleeping modal. Restored healing over time and snoring sound during sleep.
+- **Quest Cleanup**: The Rat now correctly runs away after being rescued from the Cat.
+- **Chest Mechanics**: Chests now toggle blocking state (Bump to interact, Bump again to pass through).
+- **Icons**: Changed Slime icon to 🫧 to avoid overlap with Health Potion.
+- **Visuals**: Damage tint now fades based on real-time (0.25s) rather than turn-based.
+- **UI Layout**: Optimized equipment view and silhouette positioning.
+
+## [5.3.9] - 2026-04-05
+### Added
+- **Content Expansion**: Added Slime, Bat, Skeleton, Spider, Ogre, and Dragon monsters.
+- **Variety**: Added 10+ new food items (Pizza, Tacos, etc.) and various "useless" items (Yarn, Soap, Bricks).
+### Changed
+- **Inventory**: Candles and all Scrolls are now stackable.
+
+## [5.3.8] - 2026-04-05
+### Added
+- **UI**: GP balance is now visible directly inside the store modal.
+- **Identification**: Identify scrolls can now be used on equipped items via the silhouette UI.
+### Fixed
+- **Death Logic**: Negative HP no longer allows "zombie" turns; robots and other high-damage dealers trigger immediate Game Over.
+- **Chests**: Chests now become non-blocking floor tiles after the first interaction attempt.
+
+## [5.3.7] - 2026-04-05
+### Added
+- **Shop**: Lefty's Bar (Level 3) with Whiskey/Beer and the "Mystery Lady" puzzle.
+- **Lore**: Expanded Apu's family dialogue (Sanji, Manjula, and Cousin Dave).
+- **Combat**: Chests can now trigger "Critical Ambushes" if they contain a monster.
+- **Mechanics**: Food now heals over time (1 HP/turn) while potions remain instant.
+### Fixed
+- **Map**: Chests are now restricted to room centers to prevent blocking narrow hallways.
+
+## [5.3.6] - 2026-04-05
+### Added
+- **Visuals**: Light cone now features a randomized "dither/flicker" effect at its outer edge.
+### Fixed
+- **AI**: Monsters now attack proactively when adjacent.
+- **Map**: Flooded chambers generate before monster spawning to ensure correct aquatic entity placement.
+- **Economy**: Added sell values to every item in the game.
+
+## [5.3.5] - 2026-04-05
+### Added
+- **Audio**: Added "oof" sound effect for wall collisions.
+
+## [5.3.3] - 2026-04-05
+### Added
+- **Audio Engine**: Implemented OPL-style FM Synthesis for a "SoundBlaster" retro feel.
+- **Music**: Added Monkey Island and King's Quest V soundtracks.
+
+## [5.3.2] - 2026-04-05
+### Added
+- **KQ5 Quest**: Integrated the "Save the Rat" requirement. Failure to save the rat in Level 2 leads to death in the Level 9 Bandit Camp.
+
+## [5.3.0] - 2026-04-05
+### Added
+- **Progression**: XP, leveling, stat allocation, and MP gauge.
+- **Magic**: Scrolls and Tomes for Fireball, Lightning, and utility spells.
+- **Boss**: Level 6 Pirate Master with Insult Sword Fighting.
+- **Status**: Dizzy and Freeze effects.

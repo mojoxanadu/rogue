@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Static Map Editor</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Consolas, Monaco, monospace; background: #141414; color: #eee; }
+    #app { display: grid; grid-template-columns: 360px 1fr; height: 100vh; }
+    #left {
+      border-right: 2px solid #2d2d2d;
+      padding: 14px;
+      overflow-y: auto;
+      background: linear-gradient(180deg, #1b1b1b, #101010);
+    }
+    h1 { margin: 0 0 10px 0; font-size: 20px; }
+    .section { margin-bottom: 14px; border: 1px solid #333; border-radius: 10px; padding: 10px; background: #1c1c1c; }
+    .section h2 { margin: 0 0 8px 0; font-size: 14px; color: #9dd3ff; }
+    .row { display: flex; gap: 8px; }
+    select, button, input, textarea {
+      width: 100%;
+      background: #252525;
+      color: #eee;
+      border: 1px solid #3a3a3a;
+      border-radius: 8px;
+      padding: 10px;
+      font-family: inherit;
+      font-size: 14px;
+    }
+    button { cursor: pointer; }
+    button:hover { background: #303030; }
+    #palette { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .tile-btn {
+      min-height: 72px;
+      font-size: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      border: 2px solid #444;
+      background: #1e1e1e;
+    }
+    .tile-btn.active { border-color: #ffd166; box-shadow: 0 0 0 2px rgba(255,209,102,0.35); }
+    .tile-label {
+      position: absolute;
+      bottom: 4px;
+      right: 6px;
+      font-size: 11px;
+      color: #bbb;
+      background: rgba(0,0,0,0.35);
+      padding: 1px 4px;
+      border-radius: 4px;
+    }
+    #help {
+      min-height: 72px;
+      font-size: 13px;
+      line-height: 1.35;
+      color: #ddd;
+      background: #171717;
+      border: 1px dashed #3b3b3b;
+      border-radius: 8px;
+      padding: 10px;
+    }
+    #right { display: flex; flex-direction: column; }
+    #toolbar {
+      border-bottom: 2px solid #2d2d2d;
+      padding: 10px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      background: #191919;
+    }
+    #canvasWrap {
+      flex: 1;
+      overflow: auto;
+      display: grid;
+      place-items: center;
+      padding: 12px;
+      background: #0f0f0f;
+    }
+    #mapCanvas { image-rendering: pixelated; border: 1px solid #555; background: #0a0a0a; }
+    #status { font-size: 12px; color: #9d9d9d; }
+    textarea { min-height: 120px; }
+    .tiny { font-size: 12px; color: #aaa; }
+    .tile-img {
+      width: 42px;
+      height: 42px;
+      image-rendering: pixelated;
+      object-fit: contain;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="left">
+      <h1>Static Map Editor</h1>
+
+      <div class="section">
+        <h2>Map</h2>
+        <select id="mapSelect"></select>
+      </div>
+
+      <div class="section">
+        <h2>Asset Source</h2>
+        <div class="row">
+          <button id="btnUseOpenerAssets">Use Game Assets</button>
+          <button id="btnLoadAssetFile">Load .dat/.json</button>
+        </div>
+        <input id="assetFile" type="file" accept=".dat,.json,application/json" style="display:none">
+        <div class="tiny" id="assetStatus">No asset file loaded (using emoji fallback).</div>
+      </div>
+
+      <div class="section">
+        <h2>Paint Tile</h2>
+        <div id="palette"></div>
+      </div>
+
+      <div class="section">
+        <h2>Hover Help</h2>
+        <div id="help">Hover a tile button for context help. Click to select that paint tile.</div>
+      </div>
+
+      <div class="section">
+        <h2>Import / Export</h2>
+        <div class="row">
+          <button id="btnExport">Export JSON</button>
+          <button id="btnImport">Import JSON</button>
+        </div>
+        <textarea id="jsonArea" placeholder="Map JSON appears here..."></textarea>
+      </div>
+    </div>
+
+    <div id="right">
+      <div id="toolbar">
+        <label>Tile Size <input id="tileSize" type="number" min="12" max="64" value="28" style="width:80px"></label>
+        <button id="btnResize">Apply Size</button>
+        <button id="btnFill">Fill Map</button>
+        <button id="btnClear">Clear to Floor</button>
+        <div id="status"></div>
+      </div>
+      <div id="canvasWrap">
+        <canvas id="mapCanvas"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const TILES = [
+      { char: '#', emoji: '🧱', sprite: 'wall', name: 'Wall', help: 'Impassable wall. Use for town walls and room boundaries.' },
+      { char: '.', emoji: '🟫', sprite: 'floor', name: 'Floor', help: 'Walkable floor tile.' },
+      { char: 'g', emoji: '🌿', sprite: 'grass', name: 'Grass', help: 'Outdoor grass tile (walkable).' },
+      { char: 'T', emoji: '🌳', sprite: 'tree', name: 'Tree', help: 'Impassable tree tile. Use for forests/copses.' },
+      { char: '~', emoji: '🌊', sprite: 'water', name: 'Water', help: 'Water tile; usually impassable/swim hazard.' },
+      { char: 's', emoji: '🏪', sprite: 'store', name: 'Store', help: 'Generic store entrance tile.' },
+      { char: 'b', emoji: '🍻', sprite: 'leftys', name: 'SCUMMbar', help: 'SCUMMbar special entrance tile.' },
+      { char: 'a', emoji: '🏺', sprite: 'fence', name: 'Antique', help: 'Antique Shoppe entrance tile.' },
+      { char: 'd', emoji: '🛶', sprite: 'boat', name: 'Dock', help: 'Dock/boat marker tile.' }
+    ];
+
+    const STATIC_MAPS = {
+      tristram_template: { w: 36, h: 28, fill: 'g' },
+      beach_template: { w: 50, h: 30, fill: 'g' },
+      ifrit_chamber_template: { w: 22, h: 18, fill: '#' }
+    };
+
+    const mapSelect = document.getElementById('mapSelect');
+    const palette = document.getElementById('palette');
+    const help = document.getElementById('help');
+    const status = document.getElementById('status');
+    const assetStatus = document.getElementById('assetStatus');
+    const canvas = document.getElementById('mapCanvas');
+    const ctx = canvas.getContext('2d');
+    const jsonArea = document.getElementById('jsonArea');
+
+    let tileSize = 28;
+    let active = TILES[0];
+    let drawing = false;
+    let mapName = 'tristram_template';
+    let grid = [];
+    let loadedAssets = null;
+    const spriteCache = new Map();
+
+    function resolveSpriteSrc(key) {
+      if(!loadedAssets || !loadedAssets.sprites || !loadedAssets.sprites[key]) return null;
+      const v = loadedAssets.sprites[key];
+      return (typeof v === 'string') ? v : (v && v.src ? v.src : null);
+    }
+
+    function spriteImageFor(key) {
+      if(!key) return null;
+      if(spriteCache.has(key)) return spriteCache.get(key);
+      const src = resolveSpriteSrc(key);
+      if(!src) return null;
+      const img = new Image();
+      img.src = src;
+      spriteCache.set(key, img);
+      return img;
+    }
+
+    function setAssets(data, label) {
+      loadedAssets = data || null;
+      spriteCache.clear();
+      assetStatus.textContent = loadedAssets && loadedAssets.sprites
+        ? `Loaded assets: ${label || 'custom file'} (${Object.keys(loadedAssets.sprites).length} sprites)`
+        : 'No valid sprite bundle loaded (using emoji fallback).';
+      renderPalette();
+      redraw();
+    }
+
+    function makeGrid(w, h, fill) {
+      grid = Array.from({ length: h }, () => Array.from({ length: w }, () => fill));
+    }
+
+    function loadTemplate(name) {
+      const t = STATIC_MAPS[name];
+      mapName = name;
+      makeGrid(t.w, t.h, t.fill);
+      if(name === 'ifrit_chamber_template') {
+        for(let y=2; y<t.h-2; y++) for(let x=2; x<t.w-2; x++) grid[y][x] = '.';
+      }
+      redraw();
+    }
+
+    function redraw() {
+      const h = grid.length;
+      const w = h ? grid[0].length : 0;
+      canvas.width = w * tileSize;
+      canvas.height = h * tileSize;
+      for(let y=0; y<h; y++) {
+        for(let x=0; x<w; x++) {
+          const c = grid[y][x];
+          ctx.fillStyle = c === '#' ? '#6c7076' : c === '.' ? '#5b4a39' : c === 'g' ? '#355f2d' : c === 'T' ? '#234819' : c === '~' ? '#1e5f99' : '#4d3f2a';
+          ctx.fillRect(x*tileSize, y*tileSize, tileSize, tileSize);
+          ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+          ctx.strokeRect(x*tileSize, y*tileSize, tileSize, tileSize);
+          const td = TILES.find(t => t.char === c);
+          if(td) {
+            const img = spriteImageFor(td.sprite);
+            if(img && img.complete) {
+              ctx.globalAlpha = 0.95;
+              ctx.drawImage(img, x*tileSize, y*tileSize, tileSize, tileSize);
+              ctx.globalAlpha = 1;
+            } else {
+              ctx.globalAlpha = 0.85;
+              ctx.font = `${Math.floor(tileSize*0.6)}px sans-serif`;
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillText(td.emoji, x*tileSize + tileSize/2, y*tileSize + tileSize/2);
+              ctx.globalAlpha = 1;
+            }
+          }
+        }
+      }
+      status.textContent = `${mapName}: ${w}x${h}, tile '${active.char}' ${active.name}`;
+    }
+
+    function paintAt(clientX, clientY) {
+      const rect = canvas.getBoundingClientRect();
+      const x = Math.floor((clientX - rect.left) / tileSize);
+      const y = Math.floor((clientY - rect.top) / tileSize);
+      if(y < 0 || y >= grid.length || x < 0 || x >= grid[0].length) return;
+      grid[y][x] = active.char;
+      redraw();
+    }
+
+    canvas.addEventListener('mousedown', e => { drawing = true; paintAt(e.clientX, e.clientY); });
+    canvas.addEventListener('mousemove', e => { if(drawing) paintAt(e.clientX, e.clientY); });
+    window.addEventListener('mouseup', () => { drawing = false; });
+
+    function renderPalette() {
+      palette.innerHTML = '';
+      TILES.forEach(t => {
+        const b = document.createElement('button');
+        b.className = 'tile-btn' + (t.char === active.char ? ' active' : '');
+        const src = resolveSpriteSrc(t.sprite);
+        if(src) {
+          b.innerHTML = `<img class="tile-img" src="${src}" alt="${t.name}"><span class="tile-label">${t.char}</span>`;
+        } else {
+          b.innerHTML = `${t.emoji}<span class="tile-label">${t.char}</span>`;
+        }
+        b.onmouseenter = () => help.textContent = `${t.name} (${t.char}): ${t.help}`;
+        b.onclick = () => {
+          active = t;
+          renderPalette();
+          redraw();
+        };
+        palette.appendChild(b);
+      });
+    }
+
+    document.getElementById('btnExport').onclick = () => {
+      jsonArea.value = JSON.stringify({ name: mapName, tileSize, map: grid.map(r => r.join('')) }, null, 2);
+    };
+
+    document.getElementById('btnImport').onclick = () => {
+      try {
+        const data = JSON.parse(jsonArea.value);
+        if(!Array.isArray(data.map)) throw new Error('Invalid map array');
+        mapName = data.name || 'imported_map';
+        grid = data.map.map(r => r.split(''));
+        redraw();
+      } catch (e) {
+        alert('Invalid JSON for map import.');
+      }
+    };
+
+    document.getElementById('btnResize').onclick = () => {
+      tileSize = Math.max(12, Math.min(64, parseInt(document.getElementById('tileSize').value || '28', 10)));
+      redraw();
+    };
+    document.getElementById('btnFill').onclick = () => {
+      for(let y=0; y<grid.length; y++) for(let x=0; x<grid[0].length; x++) grid[y][x] = active.char;
+      redraw();
+    };
+    document.getElementById('btnClear').onclick = () => {
+      for(let y=0; y<grid.length; y++) for(let x=0; x<grid[0].length; x++) grid[y][x] = '.';
+      redraw();
+    };
+
+    document.getElementById('btnUseOpenerAssets').onclick = () => {
+      const openerAssets = window.opener && window.opener.assets;
+      if(openerAssets && openerAssets.sprites) setAssets(openerAssets, 'window.opener.assets');
+      else alert('No opener asset object found. Open this editor from the game window or load a .dat file.');
+    };
+    document.getElementById('btnLoadAssetFile').onclick = () => {
+      document.getElementById('assetFile').click();
+    };
+    document.getElementById('assetFile').addEventListener('change', (e) => {
+      const f = e.target.files && e.target.files[0];
+      if(!f) return;
+      const r = new FileReader();
+      r.onload = (ev) => {
+        try {
+          const data = JSON.parse(ev.target.result);
+          setAssets(data, f.name);
+        } catch(err) {
+          alert('Invalid asset file JSON.');
+        }
+      };
+      r.readAsText(f);
+    });
+
+    Object.keys(STATIC_MAPS).forEach(n => {
+      const opt = document.createElement('option');
+      opt.value = n;
+      opt.textContent = n;
+      mapSelect.appendChild(opt);
+    });
+    mapSelect.onchange = () => loadTemplate(mapSelect.value);
+
+    renderPalette();
+    mapSelect.value = mapName;
+    loadTemplate(mapName);
+    if(window.opener && window.opener.assets && window.opener.assets.sprites) {
+      setAssets(window.opener.assets, 'window.opener.assets');
+    }
+  </script>
+</body>
+</html>

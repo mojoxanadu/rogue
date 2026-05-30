@@ -1,0 +1,19 @@
+{
+  "slime": { "source": "crawl", "path": "item/misc/runes/rune_slime.png" },
+  "skeleton": { "source": "andor", "path": "monsters_skeleton1.png" },
+  "bat": { "source": "emoji", "path": "🦇" },
+  "ghost": { "source": "andor", "path": "monsters_ghost1.png" },
+  "snake": { "source": "emoji", "path": "🐍" },
+  "assassin": { "source": "andor", "path": "monsters_rogue1.png" },
+  "genie": { "source": "emoji", "path": "🧞" },
+  "king": { "source": "emoji", "path": "🤴" },
+  "bridge_keeper": { "source": "emoji", "path": "🧙‍♂️" },
+  "chipmunk": { "source": "emoji", "path": "🐿️" },
+  "duck": { "source": "emoji", "path": "🦆" },
+  "shark": { "source": "crawl", "path": "mon/animals/skyshark.png" },
+  "wet_rat": { "source": "emoji", "path": "🐀" },
+  "water": { "source": "crawl", "path": "misc/mask_shallow_water.png" },
+  "floor": { "source": "crawl", "path": "dngn/floor/spider09.png" },
+  "tree": { "source": "crawl", "path": "dngn/trees/tree4.png" },
+  "rock": { "source": "crawl", "path": "item/weapon/ranged/rock.png" }
+}

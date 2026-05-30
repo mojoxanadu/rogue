@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>WebGL Effects Test — Rogue JS</title>
+<style>
+  body { background: #0a0a0f; color: #ccc; font-family: monospace; margin: 0; padding: 20px; }
+  h1 { color: #b8860b; }
+  h2 { color: #88aacc; margin-top: 32px; border-bottom: 1px solid #333; padding-bottom: 6px; }
+  .row { display: flex; gap: 24px; align-items: flex-end; flex-wrap: wrap; margin: 16px 0; }
+  .panel { background: #111; border: 1px solid #333; border-radius: 8px; padding: 16px; min-width: 180px; }
+  label { display: block; margin-bottom: 6px; font-size: 12px; color: #888; }
+  .status { font-size: 11px; padding: 2px 8px; border-radius: 4px; display: inline-block; margin-left: 8px; }
+  .ok { background: #1a3a1a; color: #4f4; }
+  .fail { background: #3a1a1a; color: #f44; }
+  .warn { background: #3a3a1a; color: #ff4; }
+  canvas { display: block; border-radius: 50%; }
+  #grass-canvas { border-radius: 4px; border: 1px solid #444; }
+  #log { background: #080808; border: 1px solid #222; border-radius: 4px; padding: 10px; 
+         height: 180px; overflow-y: auto; font-size: 11px; line-height: 1.6; margin-top: 16px; }
+  .log-ok { color: #4f4; }
+  .log-warn { color: #ff4; }
+  .log-err { color: #f44; }
+  .log-info { color: #8af; }
+  button { background: #1a3050; color: #adf; border: 1px solid #336; border-radius: 4px;
+           padding: 6px 14px; cursor: pointer; font-family: monospace; margin: 4px 2px; }
+  button:hover { background: #234; }
+  .orb-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .orb-label { font-size: 11px; color: #888; }
+  input[type=range] { width: 120px; }
+  .test-badge { font-size: 10px; padding: 2px 6px; border-radius: 3px; margin-left: 4px; }
+  #css-hp-orb { 
+    width: 75px; height: 75px; border-radius: 50%; border: 2px solid #555; 
+    position: relative; overflow: hidden; display: flex; justify-content: center; 
+    align-items: center; font-weight: bold; font-size: 13px;
+    background: radial-gradient(ellipse at 35% 35%, #6b0000, #3d0000 60%, #1a0000);
+  }
+  #css-hp-orb .orb-fill { 
+    position: absolute; bottom: 0; left: 0; right: 0; height: 60%;
+    background: linear-gradient(to top, #ff2222, #cc1111);
+    animation: liquidIdle 3s ease-in-out infinite;
+  }
+  @keyframes liquidIdle {
+    0%, 100% { transform: skewX(0deg); }
+    50% { transform: skewX(0.5deg); }
+  }
+  .orb-text { position: relative; z-index: 1; color: #fff; text-shadow: 1px 1px 2px #000; }
+</style>
+</head>
+<body>
+<h1>🎮 WebGL Effects Test — Rogue JS</h1>
+<p style="color:#888; font-size:12px;">Open in Chrome. All tests run automatically. Use buttons to trigger events.</p>
+
+<div id="log"></div>
+
+<h2>WebGL Context <span id="webgl-status" class="status">checking...</span></h2>
+<div class="row">
+  <div class="panel">
+    <label>Raw WebGL canvas (128×128 fluid mode 0)</label>
+    <canvas id="raw-webgl" width="128" height="128" style="border-radius:4px; border:1px solid #444;"></canvas>
+    <div style="margin-top:8px;">
+      <button onclick="testRawWebGL(0)">Mode 0: Fluid</button>
+      <button onclick="testRawWebGL(1)">Mode 1: Flame</button>
+      <button onclick="testRawWebGL(2)">Mode 2: Aura</button>
+      <button onclick="testRawWebGL(3)">Mode 3: Lightning</button>
+      <button onclick="testRawWebGL(4)">Mode 4: Ice</button>
+    </div>
+  </div>
+</div>
+
+<h2>HP/MP Globe Orbs <span id="orb-status" class="status">checking...</span></h2>
+<div class="row">
+  <div class="panel orb-wrap">
+    <label>WebGL HP Globe (canvas 2D + WebGLFX fluid)</label>
+    <canvas id="hp-canvas" width="75" height="75" style="border-radius:50%; border:2px solid #555;"></canvas>
+    <span class="orb-label">WebGL fluid rendering</span>
+    <button onclick="triggerHpDamage()">Simulate Damage</button>
+  </div>
+  <div class="panel orb-wrap">
+    <label>WebGL MP Globe</label>
+    <canvas id="mp-canvas" width="75" height="75" style="border-radius:50%; border:2px solid #2244aa;"></canvas>
+    <span class="orb-label">WebGL fluid rendering</span>
+    <button onclick="triggerMpUse()">Simulate MP Use</button>
+  </div>
+  <div class="panel orb-wrap">
+    <label>CSS Fallback HP (for comparison)</label>
+    <div id="css-hp-orb">
+      <div class="orb-fill"></div>
+      <span class="orb-text">75/100</span>
+    </div>
+    <span class="orb-label">CSS fallback (should NOT show in-game when WebGL active)</span>
+  </div>
+</div>
+<div class="row">
+  <div class="panel" style="flex:1; min-width: 300px;">
+    <label>HP Fill %: <span id="hp-pct-label">75</span>%</label>
+    <input type="range" id="hp-slider" min="0" max="100" value="75" oninput="updateOrbs()">
+    <label style="margin-top:8px;">MP Fill %: <span id="mp-pct-label">50</span>%</label>
+    <input type="range" id="mp-slider" min="0" max="100" value="50" oninput="updateOrbs()">
+  </div>
+</div>
+
+<h2>Grass Underlay Animation <span id="grass-status" class="status">checking...</span></h2>
+<div class="row">
+  <div class="panel">
+    <label>Grass tufts (simulated tile grid 5×5)</label>
+    <canvas id="grass-canvas" width="200" height="200"></canvas>
+    <div style="margin-top:8px;">
+      <button onclick="startGrassAnim()">Start Animation</button>
+      <button onclick="stopGrassAnim()">Stop</button>
+      <button id="dense-btn" onclick="toggleDense()">Toggle Dense Mode</button>
+    </div>
+  </div>
+</div>
+
+<h2>Orb Perturbation / Impact Test <span id="impact-status" class="status">checking...</span></h2>
+<div class="row">
+  <div class="panel">
+    <label>Click orb to energize, or use buttons:</label>
+    <canvas id="impact-canvas" width="150" height="150" style="border-radius:50%; border:2px solid #555; cursor:pointer;" onclick="impactOrb()"></canvas>
+    <button onclick="impactOrb()">Trigger Impact</button>
+    <button onclick="bigImpact()">Big Impact (damage)</button>
+  </div>
+</div>
+
+<script>
+// ─── Logging ───────────────────────────────────────────────────────────────
+const logEl = document.getElementById('log');
+function log(msg, cls = 'log-info') {
+  const d = document.createElement('div');
+  d.className = cls;
+  d.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+  logEl.appendChild(d);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+function setStatus(id, ok, msg) {
+  const el = document.getElementById(id);
+  el.className = 'status ' + (ok === true ? 'ok' : ok === false ? 'fail' : 'warn');
+  el.textContent = msg;
+}
+
+// ─── Inline WebGLFX (extracted verbatim from src/webgl_fx.js) ──────────────
+// We inline the full WebGLFX module here so the test page is standalone.
+// NOTE: This is the SAME shader code as the game. If this works here, the game should too.
+(function() {
+  const TAU = Math.PI * 2;
+  const state = {
+    started: false, active: false, hooksInstalled: false,
+    glCanvas: null, gl: null, program: null, buffer: null, uniforms: null,
+    orbs: { hp: { pulse: 0, impacts: [] }, mp: { pulse: 0, impacts: [] } }
+  };
+  const vsSource = [
+    'attribute vec2 a_pos;','varying vec2 v_uv;','void main() {',
+    '  v_uv = a_pos * 0.5 + 0.5;','  gl_Position = vec4(a_pos, 0.0, 1.0);','}'
+  ].join('\n');
+  const fsSource = [
+    'precision mediump float;','varying vec2 v_uv;',
+    'uniform float u_time;','uniform float u_mode;','uniform float u_energy;',
+    'uniform vec3 u_tint;','uniform vec2 u_seed;',
+    'float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); }',
+    'float noise(vec2 p) {',
+    '  vec2 i = floor(p); vec2 f = fract(p); f = f * f * (3.0 - 2.0 * f);',
+    '  return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y); }',
+    'float fbm(vec2 p) { float v=0.0,a=0.5; for(int i=0;i<4;i++){v+=noise(p)*a;p=p*2.03+vec2(17,9);a*=0.5;} return v; }',
+    'void main() {',
+    '  vec2 uv=v_uv; vec2 p=(uv-0.5)*2.0; float r=length(p); float t=u_time; vec3 color=u_tint; float alpha=0.0;',
+    '  if(u_mode<0.5){',
+    '    float swirl=fbm(p*2.6+u_seed*4.0+vec2(t*0.35,-t*0.22));',
+    '    float ring=sin((r*16.0-t*5.0)+swirl*5.0);',
+    '    alpha=smoothstep(1.05,0.18,r)*(0.22+swirl*0.38+ring*0.12+u_energy*0.12);',
+    '    color=mix(color*0.55,vec3(1.0),0.18+swirl*0.24);',
+    '  } else if(u_mode<1.5){',
+    '    vec2 fp=vec2(p.x*1.2,p.y*1.6+0.4);',
+    '    float flame=fbm(fp*2.2+vec2(0.0,-t*1.2)+u_seed*7.0);',
+    '    float core=smoothstep(1.05,0.05,length(fp));',
+    '    alpha=core*(0.3+flame*0.7)*(0.9+u_energy*0.2);',
+    '    color=mix(vec3(0.92,0.14,0.03),vec3(1.0,0.88,0.25),flame*0.8+core*0.2);',
+    '  } else if(u_mode<2.5){',
+    '    float aura=abs(0.62-r);',
+    '    float haze=fbm(p*3.2+u_seed*5.0+vec2(t*0.28,-t*0.55));',
+    '    alpha=smoothstep(0.3,0.0,aura+haze*0.09)*(0.45+u_energy*0.18);',
+    '    color=mix(vec3(0.95,0.2,0.05),vec3(1.0,0.8,0.3),haze);',
+    '  } else if(u_mode<3.5){',
+    '    float beam=1.0-abs(p.y+sin(p.x*9.0+t*8.0+u_seed.x*4.0)*0.14);',
+    '    float sparks=fbm(p*5.0+vec2(t*0.9,t*0.35)+u_seed*3.0);',
+    '    alpha=smoothstep(0.0,1.0,beam)*(0.15+sparks*0.95);',
+    '    color=mix(vec3(0.2,0.7,1.0),vec3(1.0),beam*0.65);',
+    '  } else {',
+    '    float crystals=fbm(p*5.5+vec2(t*0.15,t*0.08)+u_seed*6.0);',
+    '    float shard=max(0.0,1.0-abs(p.x*2.5+sin(p.y*12.0+t*2.0)*0.18));',
+    '    float coldCore=smoothstep(1.05,0.0,r);',
+    '    alpha=coldCore*(0.4+crystals*0.5+shard*0.3)*(0.85+u_energy*0.2);',
+    '    color=mix(vec3(0.55,0.85,1.0),vec3(0.9,0.97,1.0),crystals*0.7+shard*0.3);',
+    '  }',
+    '  gl_FragColor = vec4(color, clamp(alpha,0.0,1.0)); }'
+  ].join('\n');
+
+  function createShader(gl, type, src) {
+    const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+    if(!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
+    return s;
+  }
+  function nowMs() { return (performance || Date).now() / 1000; }
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  function hexToRgb01(hex) {
+    const r = parseInt(hex.slice(1,3),16)/255, g = parseInt(hex.slice(3,5),16)/255, b = parseInt(hex.slice(5,7),16)/255;
+    return [r, g, b];
+  }
+  function hash2(x, y) { return ((Math.sin(x * 127.1 + y * 311.7) * 43758.5453) % 1 + 1) % 1; }
+
+  function initGL() {
+    if(state.started) return state.active;
+    state.started = true;
+    try {
+      const glCanvas = document.createElement('canvas');
+      glCanvas.width = 128; glCanvas.height = 128;
+      const gl = glCanvas.getContext('webgl', { alpha:true, premultipliedAlpha:true }) ||
+                 glCanvas.getContext('experimental-webgl', { alpha:true, premultipliedAlpha:true });
+      if(!gl) throw new Error('No WebGL context');
+      const program = gl.createProgram();
+      gl.attachShader(program, createShader(gl, gl.VERTEX_SHADER, vsSource));
+      gl.attachShader(program, createShader(gl, gl.FRAGMENT_SHADER, fsSource));
+      gl.linkProgram(program);
+      if(!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(program));
+      const buffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]), gl.STATIC_DRAW);
+      state.glCanvas = glCanvas; state.gl = gl; state.program = program; state.buffer = buffer;
+      state.uniforms = {
+        time: gl.getUniformLocation(program, 'u_time'),
+        mode: gl.getUniformLocation(program, 'u_mode'),
+        energy: gl.getUniformLocation(program, 'u_energy'),
+        tint: gl.getUniformLocation(program, 'u_tint'),
+        seed: gl.getUniformLocation(program, 'u_seed')
+      };
+      state.active = true;
+      return true;
+    } catch(err) {
+      console.warn('WebGLFX disabled:', err.message);
+      state.active = false;
+      return false;
+    }
+  }
+
+  function renderTexture(mode, energy, tint, seedX, seedY, width, height) {
+    if(!initGL()) return null;
+    const gl = state.gl, glCanvas = state.glCanvas;
+    const w = Math.max(16, Math.round(width||128)), h = Math.max(16, Math.round(height||128));
+    glCanvas.width = w; glCanvas.height = h;
+    gl.viewport(0, 0, w, h);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.clearColor(0,0,0,0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.useProgram(state.program);
+    gl.bindBuffer(gl.ARRAY_BUFFER, state.buffer);
+    const aPos = gl.getAttribLocation(state.program, 'a_pos');
+    gl.enableVertexAttribArray(aPos);
+    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+    gl.uniform1f(state.uniforms.time, nowMs());
+    gl.uniform1f(state.uniforms.mode, mode);
+    gl.uniform1f(state.uniforms.energy, energy);
+    gl.uniform3f(state.uniforms.tint, ...tint);
+    gl.uniform2f(state.uniforms.seed, seedX||0, seedY||0);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    return glCanvas;
+  }
+
+  function energizeOrb(kind, amount, centerX) {
+    if(!initGL()) return false;
+    const orb = state.orbs[kind] || state.orbs.hp;
+    orb.pulse = clamp(orb.pulse + amount, 0, 4.5);
+    orb.impacts.unshift({ x: clamp(centerX==null?0.5:centerX, 0.08, 0.92), amp: Math.max(1.3, amount*5.5), born: (performance||Date).now(), phase: Math.random()*TAU });
+    orb.impacts = orb.impacts.slice(0, 6);
+    return true;
+  }
+
+  function drawOrb(targetCanvas, fillPct, color, kind) {
+    if(!initGL()) return false;
+    const ctx = targetCanvas.getContext('2d'); if(!ctx) return false;
+    const W = targetCanvas.width, H = targetCanvas.height;
+    const t = nowMs();
+    const orbState = state.orbs[kind] || state.orbs.hp;
+    ctx.clearRect(0, 0, W, H);
+    if(fillPct <= 0) return true;
+    orbState.pulse *= 0.94;
+    orbState.impacts = orbState.impacts.filter(i => (performance||Date).now() - i.born < 1400);
+    const tint = hexToRgb01(color);
+    const texture = renderTexture(0, 0.55 + orbState.pulse * 0.22 + orbState.impacts.length * 0.08, tint, fillPct, (kind==='mp'?0.8:0.2), W, H);
+    const waterY = H * (1 - fillPct);
+    ctx.save();
+    ctx.beginPath(); ctx.arc(W/2, H/2, W/2-1, 0, TAU); ctx.clip();
+    ctx.beginPath(); ctx.moveTo(0, H);
+    for(let x = 0; x <= W; x++) {
+      const xf = x / Math.max(1, W);
+      let y = waterY + Math.sin(xf * TAU * 1.3 + t * 1.4) * (1.0 + orbState.pulse * 0.5);
+      y += Math.sin(xf * TAU * 2.8 - t * 0.6) * (0.4 + fillPct * 0.5);
+      for(let i = 0; i < orbState.impacts.length; i++) {
+        const impact = orbState.impacts[i];
+        const age = ((performance||Date).now() - impact.born) / 1000;
+        const dx = xf - impact.x;
+        const spread = Math.exp(-Math.abs(dx)*9 - age*2.5);
+        y += Math.sin(dx*24 - age*13 + impact.phase) * impact.amp * spread;
+      }
+      ctx.lineTo(x, y);
+    }
+    ctx.lineTo(W, H); ctx.closePath();
+    const grad = ctx.createLinearGradient(0, waterY-8, 0, H);
+    grad.addColorStop(0, color); grad.addColorStop(0.45, color);
+    grad.addColorStop(1, color.replace(/#/, '#') + '88');
+    if(texture) {
+      ctx.save(); ctx.globalAlpha = 0.6; ctx.drawImage(texture, 0, 0, W, H); ctx.restore();
+    }
+    ctx.fillStyle = grad; ctx.fill();
+    if(texture) {
+      ctx.save(); ctx.globalAlpha = 0.4;
+      ctx.globalCompositeOperation = 'screen';
+      ctx.drawImage(texture, 0, 0, W, H); ctx.restore();
+    }
+    ctx.restore();
+    return true;
+  }
+
+  window.TestWebGLFX = { initGL, renderTexture, energizeOrb, drawOrb, state, hash2 };
+})();
+
+// ─── Test: Raw WebGL canvas ────────────────────────────────────────────────
+let rawMode = 0;
+let rawAnimId = null;
+function testRawWebGL(mode) {
+  rawMode = mode;
+  if(rawAnimId) cancelAnimationFrame(rawAnimId);
+  const canvas = document.getElementById('raw-webgl');
+  const ok = TestWebGLFX.initGL();
+  setStatus('webgl-status', ok, ok ? 'WebGL OK' : 'WebGL FAILED');
+  if(!ok) { log('WebGL context creation FAILED — check browser/GPU settings', 'log-err'); return; }
+  log(`Raw WebGL mode ${mode} rendering started`, 'log-ok');
+  function step() {
+    const tex = TestWebGLFX.renderTexture(mode, 0.6, [0.9, 0.05, 0.05], 0.3, 0.7, 128, 128);
+    if(tex) { const ctx = canvas.getContext('2d'); ctx.clearRect(0,0,128,128); ctx.drawImage(tex,0,0); }
+    rawAnimId = requestAnimationFrame(step);
+  }
+  step();
+}
+
+// ─── Test: HP/MP Orb rendering ────────────────────────────────────────────
+let orbAnimId = null;
+let hpFill = 0.75, mpFill = 0.5;
+
+document.getElementById('hp-slider').oninput = function() {
+  hpFill = this.value / 100;
+  document.getElementById('hp-pct-label').textContent = this.value;
+};
+document.getElementById('mp-slider').oninput = function() {
+  mpFill = this.value / 100;
+  document.getElementById('mp-pct-label').textContent = this.value;
+};
+
+function updateOrbs() {} // handled by animation loop
+
+function startOrbAnim() {
+  if(orbAnimId) return;
+  const hpCanvas = document.getElementById('hp-canvas');
+  const mpCanvas = document.getElementById('mp-canvas');
+  const ok = TestWebGLFX.initGL();
+  setStatus('orb-status', ok, ok ? 'Fluid Active' : 'WebGL FAILED');
+  if(!ok) { log('Orb WebGL FAILED — check initGL', 'log-err'); return; }
+  log('Orb fluid animation started', 'log-ok');
+  function step() {
+    const hpOk = TestWebGLFX.drawOrb(hpCanvas, hpFill, '#580000', 'hp');
+    const mpOk = TestWebGLFX.drawOrb(mpCanvas, mpFill, '#003388', 'mp');
+    if(!hpOk) log('HP orb drawOrb returned false', 'log-warn');
+    orbAnimId = requestAnimationFrame(step);
+  }
+  step();
+}
+
+function triggerHpDamage() {
+  TestWebGLFX.energizeOrb('hp', 2.5, 0.5);
+  log('HP damage impact triggered', 'log-info');
+}
+function triggerMpUse() {
+  TestWebGLFX.energizeOrb('mp', 1.8, 0.5);
+  log('MP use impact triggered', 'log-info');
+}
+
+// ─── Test: Impact orb ─────────────────────────────────────────────────────
+let impactAnimId = null;
+function startImpactAnim() {
+  if(impactAnimId) return;
+  const canvas = document.getElementById('impact-canvas');
+  const ok = TestWebGLFX.initGL();
+  setStatus('impact-status', ok, ok ? 'Running' : 'WebGL FAILED');
+  if(!ok) return;
+  // Use a separate orb state via drawOrb with 'hp'
+  function step() {
+    TestWebGLFX.drawOrb(canvas, 0.65, '#580000', 'hp');
+    impactAnimId = requestAnimationFrame(step);
+  }
+  step();
+}
+function impactOrb() {
+  TestWebGLFX.energizeOrb('hp', 1.2, Math.random());
+  log('Impact energized', 'log-info');
+}
+function bigImpact() {
+  TestWebGLFX.energizeOrb('hp', 4.5, 0.3);
+  log('BIG impact energized', 'log-warn');
+}
+
+// ─── Test: Grass Animation ─────────────────────────────────────────────────
+const TILE_SIZE = 40;
+const GRASS_COLS = 5, GRASS_ROWS = 5;
+let grassAnimId = null;
+let grassDense = false;
+const TILES_GRASS = 1;
+
+function drawGrassTile(ctx, px, py, mapX, mapY, animNow, dense) {
+  const tuftCount = dense ? 8 : 5;
+  const swayBase = animNow * 0.0023 + mapX * 0.61 + mapY * 0.47;
+  const alpha = 0.28;
+  ctx.save(); ctx.lineCap = 'round';
+  for(let i = 0; i < tuftCount; i++) {
+    const seed = TestWebGLFX.hash2(mapX * 13 + i * 7, mapY * 17 + i * 11);
+    const baseX = px + 4 + i * ((TILE_SIZE - 8) / Math.max(1, tuftCount - 1));
+    const baseY = py + TILE_SIZE - 2 - (seed > 0.8 ? 1 : 0);
+    const height = 8 + seed * (dense ? 14 : 9);
+    const sway = Math.sin(swayBase + i * 0.85 + seed * 4.0) * (dense ? 3.2 : 2.5);
+    ctx.strokeStyle = seed > 0.6 ? `rgba(150,205,105,${alpha+0.06})` : `rgba(42,100,34,${alpha})`;
+    ctx.lineWidth = seed > 0.6 ? 1.2 : 1.8;
+    ctx.beginPath();
+    ctx.moveTo(baseX, baseY);
+    ctx.quadraticCurveTo(baseX + sway*0.4, baseY - height*0.55, baseX + sway, baseY - height);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function startGrassAnim() {
+  if(grassAnimId) { log('Grass already running', 'log-warn'); return; }
+  const canvas = document.getElementById('grass-canvas');
+  const ctx = canvas.getContext('2d');
+  setStatus('grass-status', true, 'Animating');
+  log('Grass animation started — watch for sway movement', 'log-ok');
+  function step(ts) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for(let row = 0; row < GRASS_ROWS; row++) {
+      for(let col = 0; col < GRASS_COLS; col++) {
+        const px = col * TILE_SIZE, py = row * TILE_SIZE;
+        // Floor tile background
+        ctx.fillStyle = (col + row) % 2 === 0 ? '#1a2a12' : '#152010';
+        ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+        // Grass overlay
+        drawGrassTile(ctx, px, py, col, row, ts, grassDense);
+      }
+    }
+    // Avatar parting grass (tile in center)
+    const avX = 2, avY = 2;
+    ctx.fillStyle = 'rgba(200,180,100,0.7)';
+    ctx.beginPath();
+    ctx.arc(avX * TILE_SIZE + TILE_SIZE/2, avY * TILE_SIZE + TILE_SIZE/2, TILE_SIZE*0.35, 0, Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle = '#ff8';
+    ctx.font = '18px monospace';
+    ctx.fillText('@', avX * TILE_SIZE + TILE_SIZE*0.22, avY * TILE_SIZE + TILE_SIZE*0.72);
+    grassAnimId = requestAnimationFrame(step);
+  }
+  grassAnimId = requestAnimationFrame(step);
+}
+function stopGrassAnim() {
+  if(grassAnimId) { cancelAnimationFrame(grassAnimId); grassAnimId = null; }
+  setStatus('grass-status', null, 'Stopped');
+  log('Grass animation stopped', 'log-warn');
+}
+function toggleDense() {
+  grassDense = !grassDense;
+  document.getElementById('dense-btn').textContent = grassDense ? 'Toggle Dense Mode (ON)' : 'Toggle Dense Mode';
+  log('Grass dense mode: ' + grassDense, 'log-info');
+}
+
+// ─── Auto-run all tests on load ────────────────────────────────────────────
+window.addEventListener('load', () => {
+  log('=== WebGL Test Page Loaded ===', 'log-info');
+  
+  // Test 1: WebGL context
+  const ok = TestWebGLFX.initGL();
+  setStatus('webgl-status', ok, ok ? 'WebGL OK ✓' : 'WebGL FAILED ✗');
+  if(ok) {
+    log('WebGL context: OK', 'log-ok');
+    log('  GL vendor: ' + (TestWebGLFX.state.gl && TestWebGLFX.state.gl.getParameter(TestWebGLFX.state.gl.VENDOR) || 'unknown'), 'log-info');
+    log('  Shader program linked: OK', 'log-ok');
+  } else {
+    log('WebGL context: FAILED — orbs will show CSS fallback only', 'log-err');
+    log('  Check: chrome://settings → Advanced → Use hardware acceleration', 'log-warn');
+  }
+
+  // Start all animations
+  testRawWebGL(0);
+  startOrbAnim();
+  startImpactAnim();
+  startGrassAnim();
+
+  log('All tests started — verifying visual output:', 'log-info');
+  log('  HP orb should show blood-red (#580000) fluid with ripples', 'log-info');
+  log('  MP orb should show blue (#003388) fluid', 'log-info');
+  log('  Grass should animate with sway (not be static)', 'log-info');
+  log('  Raw WebGL box should show animated fluid effect', 'log-info');
+  log('B12 check: HP orb color should be blood red, NOT salmon', 'log-warn');
+  log('B9 check: Grass blades should be moving, NOT frozen', 'log-warn');
+  log('B17 check: Fluid perturbation should be visible in orbs', 'log-warn');
+});
+</script>
+</body>
+</html>

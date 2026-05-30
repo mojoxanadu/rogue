@@ -1,0 +1,2519 @@
+<!-- SOURCE: src/header.html -->
+<!DOCTYPE html>
+<html lang="en">
+<!--
+  DUNGEON DESCENT - HTML & CSS TEMPLATE
+  ======================================
+  This file defines the core HTML structure and CSS styling for the game.
+  It serves as the foundation for the UI, establishing:
+  - CSS Custom Properties (CSS Variables) for theming
+  - Absolute positioning for game canvas and HUD overlays
+  - Responsive design using viewport units (vw/vh)
+  - Modular UI components (chips, orbs, inventory slots, modals)
+  - CSS animations and transitions for visual feedback
+
+  This is a single-page application where the game canvas occupies the entire
+  viewport, and UI elements are layered on top using z-index.
+-->
+<head>
+<meta charset="UTF-8">
+<title>Dungeon Descent v7.2.1</title>
+<style>
+  /*
+     CSS CUSTOM PROPERTIES (CSS VARIABLES)
+     =====================================
+     Define a consistent color palette and design tokens using CSS variables.
+     This enables easy theming, maintainability, and dynamic updates via JavaScript.
+     Variables are scoped to the :root element, making them globally accessible.
+  */
+  :root {
+    --bg: #141218; --surface: #1D1B20; --surface-container: #4A4458;
+    --primary: #D0BCFF; --on-primary: #381E72; --secondary: #CCC2DC; 
+    --error: #F2B8B5; --warning: #ffb74d; --success: #81c784;
+    --radius-lg: 12px;
+  }
+  /*
+     BASE RESET & FULL‑SCREEN LAYOUT
+     ================================
+     Reset margins/padding, disable overflow, and set the root elements to occupy
+     the entire viewport (100vw × 100vh). This creates a blank canvas for the game.
+     user-select: none prevents accidental text selection during drag‑and‑drop.
+  */
+  body, html { 
+    margin: 0; padding: 0; overflow: hidden; background: #000; 
+    font-family: 'Segoe UI', sans-serif; color: var(--secondary); user-select: none;
+    width: 100vw; height: 100vh;
+  }
+  
+  /*
+     GAME CANVAS
+     ===========
+     The <canvas> element is positioned absolutely at (0,0) with a lower z‑index,
+     allowing the HUD to be drawn on top. It is set to display:block to avoid
+     inline‑element whitespace issues.
+  */
+  canvas { 
+    position: absolute; top: 0; left: 0; z-index: 1; display: block;
+  }
+
+  /*
+     HUD (HEADS‑UP DISPLAY) CONTAINER
+     ================================
+     A full‑screen overlay that holds all UI widgets (stats, inventory, minimap, etc.).
+     pointer‑events: none allows clicks to pass through to the canvas, except for
+     elements with the .interactive class that re‑enable pointer‑events.
+  */
+  #hud {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none;
+  }
+
+  .interactive { pointer-events: auto; }
+
+  /*
+     TOP‑LEFT STATS BAR
+     ==================
+     Displays dynamic player stats (GP, Hunger, Status) as rounded "chip" elements.
+     Uses flexbox for horizontal layout and absolute positioning relative to the
+     viewport edge. The .chip.danger class highlights negative status effects.
+  */
+  #top-left-stats {
+    position: absolute; top: 16px; left: 60px; display: flex; gap: 8px;
+  }
+  .chip {
+    background: rgba(29, 27, 32, 0.8); padding: 8px 12px;
+    border-radius: 999px; font-size: 14px; font-weight: 600;
+    border: 1px solid var(--surface-container);
+  }
+  .chip.danger { color: var(--error); border-color: var(--error); }
+
+  /*
+     LEFT ACTION BAR
+     ===============
+     Vertical strip of icon buttons for quick access to menus (Inventory, Stats, Magic, etc.).
+     Each button is a circle with a hover effect. The .badge class shows notification
+     counts (e.g., unspent stat points). Uses flex‑direction: column for vertical stacking.
+  */
+  #left-bar {
+    position: absolute; top: 16px; left: 16px; display: flex; flex-direction: column; gap: 2px;
+    max-height: calc(100vh - 32px); overflow-y: auto;
+  }
+  .icon-btn {
+    width: 40px; height: 40px; border-radius: 50%; background: rgba(29, 27, 32, 0.9);
+    border: 2px solid var(--secondary); color: #fff; font-size: 18px;
+    display: flex; justify-content: center; align-items: center; cursor: pointer;
+    position: relative;
+  }
+  #left-bar .icon-btn { border: none; width: 36px; height: 36px; border-radius: 6px; font-size: 16px; }
+  .icon-btn:hover { background: var(--surface-container); }
+  .icon-btn .badge {
+    position: absolute; top: -5px; right: -5px; background: var(--error); color: #000;
+    font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 10px;
+  }
+
+  /*
+     BOTTOM BAR – PLAYER RESOURCES & INVENTORY
+     =========================================
+     Contains the XP progress bar, HP/MP resource orbs, and the 10‑slot inventory hotbar.
+     The XP bar uses a CSS transition for smooth updates. The orbs use radial gradients
+     for a glossy, game‑like appearance. Inventory slots are draggable and show quantity
+     overlays.
+  */
+  #bottom-bar {
+    position: absolute; bottom: 16px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  #xp-container {
+    width: 500px; height: 12px; background: rgba(0,0,0,0.6); border: 1px solid #555; border-radius: 6px; position: relative;
+  }
+  #xp-bar-fill {
+    height: 100%; background: var(--primary); border-radius: 5px; transition: width 0.3s;
+  }
+  #xp-text {
+    position: absolute; top: -2px; left: 50%; transform: translateX(-50%); font-size: 10px; font-weight: bold; color: #fff; text-shadow: 1px 1px 0 #000;
+  }
+  
+  #resource-row {
+    display: flex; align-items: center; gap: 16px;
+  }
+  .orb {
+    width: 60px; height: 60px; border-radius: 50%; border: 2px solid #555; display: flex; justify-content: center; align-items: center;
+    font-weight: bold; font-size: 14px; text-shadow: 1px 1px 2px #000; box-shadow: inset 0 -10px 20px rgba(0,0,0,0.8);
+    position: relative; overflow: hidden;
+  }
+  #hp-orb { background: #800000; }
+  #mp-orb { background: #000080; }
+  .orb-fill {
+    position: absolute; bottom: 0; left: 0; right: 0; background: #ff4d4d;
+    transition: height 0.3s;
+  }
+  #hp-orb .orb-fill { background: #ff4d4d; }
+  #mp-orb .orb-fill { background: #4da6ff; }
+  .orb-text {
+    position: relative; z-index: 1;
+  }
+  
+  #inventoryUI {
+    display: flex; gap: 4px; background: rgba(0,0,0,0.5); padding: 8px; border-radius: 12px;
+  }
+  .inv-slot {
+    width: 40px; height: 40px; background: rgba(29, 27, 32, 0.9);
+    border: 2px solid #555; border-radius: 6px;
+    display: flex; justify-content: center; align-items: center;
+    font-size: 20px; position: relative; cursor: grab;
+  }
+  .inv-slot:hover { border-color: var(--primary); }
+  .inv-slot .qty {
+    position: absolute; bottom: -4px; right: -4px; color: #fff; background: var(--on-primary);
+    font-size: 10px; font-weight: bold; border-radius: 50%; padding: 1px 4px;
+  }
+  .inv-slot .hotkey { position: absolute; top: 0px; left: 2px; color: #888; font-size: 10px; }
+
+  /*
+     LOG OVERLAY – GAME MESSAGES
+     ===========================
+     A scrolling text area that displays game events, combat results, and system messages.
+     Uses a mask gradient to fade older entries. Each log entry includes a timestamp
+     and supports inline HTML styling for colored text.
+  */
+  #log-overlay {
+    position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%);
+    width: 600px; height: 120px; background: rgba(0,0,0,0.4); border-radius: 8px;
+    padding: 8px; overflow-y: auto; font-family: monospace; font-size: 12px;
+    mask-image: linear-gradient(to bottom, transparent, black 10%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent, black 10%);
+  }
+  .log-entry { margin-bottom: 2px; }
+  .log-time { color: #888; margin-right: 8px; }
+
+  /*
+     MINIMAP – DUNGEON OVERVIEW
+     ===========================
+     A small, fixed‑size canvas that shows the currently explored map region.
+     Positioned in the top‑right corner, it helps players navigate the dungeon.
+     The map is drawn by JavaScript; this CSS only provides the container styling.
+  */
+  #minimap-container {
+    position: absolute; top: 16px; right: 16px; background: rgba(0,0,0,0.6);
+    border: 2px solid #555; border-radius: 8px; padding: 4px; text-align: center;
+  }
+  #minimap-label { font-size: 12px; font-weight: bold; margin-bottom: 4px; color: var(--primary); }
+  #minimap { width: 150px; height: 150px; background: #000; }
+
+  /*
+     DRAGGABLE MODALS – WINDOWED UI
+     ===============================
+     Translucent, movable windows for inventory, stats, spells, and other panels.
+     Each modal has a header that serves as a drag handle. The modal‑body holds
+     dynamic content generated by JavaScript. Uses box‑shadow for depth.
+  */
+  .draggable-modal {
+    position: absolute; background: rgba(29, 27, 32, 0.95); border: 2px solid var(--secondary);
+    border-radius: 8px; z-index: 100; pointer-events: auto; display: none; flex-direction: column;
+    min-width: 250px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+  }
+  .modal-header {
+    background: var(--surface-container); padding: 8px 12px; border-radius: 6px 6px 0 0;
+    display: flex; justify-content: space-between; align-items: center; cursor: move;
+    font-weight: bold; color: var(--primary);
+  }
+  .modal-close { cursor: pointer; color: #fff; background: transparent; border: none; font-size: 16px; }
+  .modal-body { padding: 16px; }
+
+  /*
+     EQUIPMENT LAYOUT – PAPER DOLL
+     ==============================
+     A "paper doll" arrangement of equipment slots (head, body, hands, etc.) inside
+     the equipment modal. Slots are positioned absolutely within a container.
+     Dashed borders indicate empty slots; solid borders show equipped items.
+  */
+  .equip-container {
+    position: relative; height: 200px; width: 100%; display: flex; justify-content: center; align-items: center;
+  }
+  .equip-slot {
+    width: 48px; height: 48px; background: rgba(0,0,0,0.5);
+    border: 2px dashed #555; border-radius: 8px;
+    display: flex; justify-content: center; align-items: center; font-size: 24px;
+    position: absolute; cursor: drop;
+  }
+  .equip-label { position: absolute; top: -14px; font-size: 10px; color: #aaa; text-shadow: 1px 1px 0 #000;}
+
+  /*
+     KEYBIND HINTS – ACCESSIBILITY
+     =============================
+     Small tooltips that appear when the .show‑keybinds class is added to the body,
+     revealing the keyboard shortcuts for nearby UI elements. Useful for onboarding
+     new players.
+  */
+  .keybind-hint {
+    display: none; position: absolute; top: -15px; left: 50%; transform: translateX(-50%);
+    background: #ff0; color: #000; font-size: 10px; font-weight: bold; padding: 2px 4px; border-radius: 4px;
+  }
+  body.show-keybinds .keybind-hint { display: block; }
+
+  /*
+     MISCELLANEOUS UTILITY STYLES
+     ============================
+     Shared styles for buttons, Easter‑egg buttons, and the screen‑shake animation
+     used for earthquake/tunnel effects. The button hover effect uses filter:brightness
+     for a consistent highlight.
+  */
+  .egg-btn, button { background: var(--surface-container); color: #fff; border: 1px solid #555; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+  button:hover { filter: brightness(1.2); }
+  
+  @keyframes rockViewport {
+    0% { transform: rotate(0deg); }
+    25% { transform: rotate(-3deg); }
+    75% { transform: rotate(3deg); }
+    100% { transform: rotate(0deg); }
+  }
+
+  /*
+     START SCREEN – TITLE & ASSET LOADER
+     ===================================
+     Full‑screen overlay shown before the game begins. Contains the title ASCII art,
+     an asset‑file loader, and the "Enter the Dungeon" button. The background features
+     a custom particle‑field animation drawn on a separate canvas.
+  */
+  #start-screen {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000;
+    display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000;
+  }
+  .ascii-art { font-family: monospace; white-space: pre; color: var(--primary); font-size: 10px; line-height: 10px; margin-bottom: 20px; }
+</style>
+</head>
+<!-- SOURCE: src/ui_layout.html -->
+<body>
+<!--
+  UI LAYOUT – HTML STRUCTURE
+  ==========================
+  This file contains the complete HTML markup for the game's user interface.
+  It is divided into three main layers:
+  1. The <canvas> element (the game world)
+  2. The HUD (Heads‑Up Display) with stats, minimap, action bar, log, and inventory
+  3. Draggable modal windows for menus, inventory, equipment, etc.
+
+  All UI elements are positioned absolutely and layered using z‑index.
+  The layout is designed to be fully responsive via CSS (see header.html).
+-->
+
+<!-- The primary game canvas. All dungeon rendering happens here via JavaScript. -->
+<canvas id="game"></canvas>
+
+<!--
+  HUD (Heads‑Up Display) – Contains all overlay UI elements.
+  The .interactive class enables pointer‑events for this container.
+-->
+<div id="hud">
+  
+  <!-- Top‑left stat chips: GP, Hunger, Status. Updated dynamically by ui_logic.js. -->
+  <div id="top-left-stats" class="interactive">
+    <div class="chip" id="gpUI">💰 0</div>
+    <div class="chip" id="hungerUI">Hunger: 0%</div>
+    <div class="chip" id="statusUI" style="display:none;"></div>
+  </div>
+
+  <!-- Minimap canvas container. The canvas is drawn by render.js. -->
+  <div id="minimap-container" class="interactive">
+    <div id="minimap-label">Floor 1</div>
+    <canvas id="minimap" width="150" height="150"></canvas>
+  </div>
+
+  <!--
+    Left action bar – icon buttons for menus, actions, and spells.
+    Each button includes a hidden keybind hint (shown via CSS class).
+  -->
+  <div id="left-bar" class="interactive">
+    <div class="icon-btn" onclick="toggleMenu()" title="Menu (ESC)"><div class="keybind-hint">ESC</div>&#9776;</div>
+    <div class="icon-btn" onclick="toggleModal('inv-modal')" title="Inventory (I)"><div class="keybind-hint">I</div>🎒</div>
+    <div class="icon-btn" onclick="toggleModal('pouch-modal')" title="Pouch (P)"><div class="keybind-hint">P</div>🛍️</div>
+    <div class="icon-btn" onclick="toggleModal('equip-modal')" title="Equipment (E)"><div class="keybind-hint">E</div>🛡️</div>
+    <div class="icon-btn" onclick="toggleModal('stats-modal')" title="Stats & Talents (C)"><div class="keybind-hint">C</div>📊<div class="badge" id="stat-badge" style="display:none;">0</div></div>
+    <div class="icon-btn" onclick="toggleModal('magic-modal')" title="Magic (M)"><div class="keybind-hint">M</div>✨</div>
+    <div class="icon-btn" onclick="toggleModal('achieve-modal')" title="Achievements (Y)"><div class="keybind-hint">Y</div>🏆</div>
+    <div class="icon-btn" onclick="listenAction()" title="Listen (L)"><div class="keybind-hint">L</div>👂</div>
+    <div class="icon-btn" onclick="kneelAction()" title="Kneel (K)" id="kneelBtn"><div class="keybind-hint">K</div>🙇</div>
+    
+    <div style="flex-grow:0; height: 10px;"></div>
+    
+    <div class="icon-btn" onclick="restPlayer()" title="Sleep (Z)"><div class="keybind-hint">Z</div>💤</div>
+    <div class="icon-btn" onclick="meleeAttack()" title="Melee Attack (Space)"><div class="keybind-hint">SPC</div><span id="melee-icon">🗡️</span></div>
+    <div class="icon-btn" onclick="castEquippedSpell()" title="Cast Spell (F)"><div class="keybind-hint">F</div><span id="spell-icon">✨</span></div>
+  </div>
+
+  <!-- Game message log. Entries are added via logMsg() in ui_logic.js. -->
+  <div id="log-overlay" class="interactive">
+    <div id="log"></div>
+  </div>
+
+  <!--
+    Bottom bar – XP progress, HP/MP orbs, and 10‑slot inventory hotbar.
+    The inventory slots are populated by renderInventory() in ui_logic.js.
+  -->
+  <div id="bottom-bar" class="interactive">
+    <div id="xp-container" title="Experience">
+      <div id="xp-bar-fill" style="width: 0%;"></div>
+      <div id="xp-text">Lvl 1 - 0/100 XP</div>
+    </div>
+    
+    <div id="resource-row">
+      <div class="orb" id="hp-orb" title="Health">
+        <div class="orb-fill"></div>
+        <span class="orb-text">50/50</span>
+      </div>
+      
+      <div id="inventoryUI">
+        <!-- Slots generated by JS -->
+      </div>
+      
+      <div class="orb" id="mp-orb" title="Mana">
+        <div class="orb-fill"></div>
+        <span class="orb-text">20/20</span>
+      </div>
+    </div>
+  </div>
+
+</div> <!-- End HUD -->
+
+<!--
+  DRAGGABLE MODALS
+  ================
+  All modal windows are initially hidden (display:none) and are shown via
+  toggleModal(). Each modal has a header with a close button and a body
+  that is filled dynamically by JavaScript.
+-->
+<div id="overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); display:none; justify-content:center; align-items:center; z-index:200;">
+  <div class="modal" id="modal-content" style="background:var(--surface); border:2px solid var(--secondary); padding:24px; border-radius:8px; text-align:center;"></div>
+</div>
+
+<div class="draggable-modal" id="inv-modal" style="top: 100px; left: 100px; width: 280px;">
+  <div class="modal-header"><span>🎒 Inventory</span><button class="modal-close" onclick="toggleModal('inv-modal')">✖</button></div>
+  <div class="modal-body">
+    <div id="inventory-modal-grid" style="display:grid; grid-template-columns: repeat(5, 1fr); gap:4px;"></div>
+  </div>
+</div>
+
+<div class="draggable-modal" id="equip-modal" style="top: 100px; left: 100px; width: 220px;">
+  <div class="modal-header"><span>🛡️ Equipment</span><button class="modal-close" onclick="toggleModal('equip-modal')">✖</button></div>
+  <div class="modal-body">
+    <div class="equip-container">
+      <div class="equip-slot" id="eqhead" style="top: 5px;"><div class="equip-label">Head</div></div>
+      <div class="equip-slot" id="eqchest" style="top: 55px;"><div class="equip-label">Chest</div></div>
+      <div class="equip-slot" id="eqleftHand" style="top: 55px; left: 20px;"><div class="equip-label">L-Hand</div></div>
+      <div class="equip-slot" id="eqrightHand" style="top: 55px; right: 20px;"><div class="equip-label">R-Hand</div></div>
+      <div class="equip-slot" id="eqlegs" style="top: 105px;"><div class="equip-label">Legs</div></div>
+      <div class="equip-slot" id="eqfeet" style="top: 155px; scale: 0.7;"><div class="equip-label">Feet</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="draggable-modal" id="pouch-modal" style="top: 100px; left: 300px; width: 280px;">
+  <div class="modal-header"><span>🛍️ Pouch</span><button class="modal-close" onclick="toggleModal('pouch-modal')">✖</button></div>
+  <div class="modal-body">
+    <div id="pouchUI" style="display:grid; grid-template-columns: repeat(5, 1fr); gap:4px;"></div>
+  </div>
+</div>
+
+<div class="draggable-modal" id="stats-modal" style="top: 100px; left: 300px; width: 500px;">
+  <div class="modal-header"><span>📊 Stats & Talents</span><button class="modal-close" onclick="toggleModal('stats-modal')">✖</button></div>
+  <div class="modal-body">
+    <div style="display:flex; gap:16px;">
+      <div id="stats-body" style="flex:1;"></div>
+      <div id="talents-body" style="flex:2; border-left:1px solid #555; padding-left:16px; height: 350px; overflow-y: auto;"></div>
+    </div>
+  </div>
+</div>
+
+<div class="draggable-modal" id="magic-modal" style="top: 100px; left: 500px; width: 300px;">
+  <div class="modal-header"><span>✨ Magic</span><button class="modal-close" onclick="toggleModal('magic-modal')">✖</button></div>
+  <div class="modal-body" id="magic-body"></div>
+</div>
+
+<div class="draggable-modal" id="achieve-modal" style="top: 100px; left: 700px; width: 300px;">
+  <div class="modal-header"><span>🏆 Achievements</span><button class="modal-close" onclick="toggleModal('achieve-modal')">✖</button></div>
+  <div class="modal-body" id="achieve-body">Not yet implemented</div>
+</div>
+
+<div class="draggable-modal" id="menu-modal" style="top: 60px; left: 60px;">
+  <div class="modal-header"><span>&#9776; Menu</span><button class="modal-close" onclick="toggleModal('menu-modal')">✖</button></div>
+  <div class="modal-body" style="display:flex; flex-direction:column; gap:8px;">
+    <button onclick="saveGame()">💾 Save Game</button>
+    <button onclick="loadGame()">📂 Load Game</button>
+    <button onclick="toggleModal('settings-modal')">⚙️ Settings</button>
+    <button onclick="toggleModal('debug-modal')">🐛 Debug Menu</button>
+  </div>
+</div>
+
+<div class="draggable-modal" id="debug-modal" style="top: 60px; left: 300px; width: 300px;">
+  <div class="modal-header"><span>🐛 Debug Menu</span><button class="modal-close" onclick="toggleModal('debug-modal')">✖</button></div>
+  <div class="modal-body" style="display:flex; flex-direction:column; gap:8px;">
+    <button onclick="toggleFog()">Toggle Map</button>
+    <button onclick="toggleLight()">Toggle Light</button>
+    <button onclick="toggleModal('asset-viewer-modal')">📂 Assets</button>
+    <button onclick="debugToggleGodMode()">Toggle God Mode</button>
+    <button onclick="debugToggleNoRegen()">Toggle No Regen</button>
+    <button onclick="debugAddGold(1000)">Add 1000 Gold</button>
+    <button onclick="debugAddStatPoints(10)">Add 10 Stat Points</button>
+    <button onclick="debugAddTalentPoints(10)">Add 10 Talent Points</button>
+    <button onclick="debugWarpNextLevel()">Warp to Next Level</button>
+    <button onclick="debugWarpPrevLevel()">Warp to Prev Level</button>
+    <button onclick="debugHealFull()">Heal to Full</button>
+    <button onclick="debugRestoreMana()">Restore Mana</button>
+    <button onclick="debugToggleEncryption()">Toggle Encryption</button>
+    <button onclick="debugAddItemPrompt()">Add Item...</button>
+    <button onclick="debugEditStats()">Edit Stats</button>
+    <button onclick="debugSetLevelPrompt()">Set Level...</button>
+  </div>
+</div>
+
+<div class="draggable-modal" id="asset-viewer-modal" style="top: 50px; left: 50px; width: 600px;">
+  <div class="modal-header"><span>📂 Asset Viewer</span><button class="modal-close" onclick="toggleModal('asset-viewer-modal')">✖</button></div>
+  <div class="modal-body" id="asset-viewer-body" style="height: 400px; overflow-y: auto;"></div>
+</div>
+
+<div class="draggable-modal" id="settings-modal" style="top: 150px; left: 150px; width: 300px;">
+  <div class="modal-header"><span>⚙️ Settings</span><button class="modal-close" onclick="toggleModal('settings-modal')">✖</button></div>
+  <div class="modal-body">Settings not yet implemented</div>
+</div>
+
+<!--
+  START SCREEN – shown before the game begins.
+  Includes ASCII art title, asset loader input, and the start button.
+-->
+<div id="start-screen">
+  <div class="ascii-art">
+   /\                                                        /\
+  |  |                                                      |  |
+ /____\                                                    /____\
+[      ]                                                  [      ]
+|      |                                                  |      |
+|      |        DUNGEON DESCENT: THE ULTIMATE QUEST       |      |
+|______|                                                  |______|
+  </div>
+  <h1 style="color:var(--primary); text-shadow: 2px 2px #000;">DUNGEON DESCENT v7.2.1</h1>
+  <p style="color:#aaa; max-width: 600px; text-align:center; line-height: 1.5;">"I've faced dragons, ogres, and the dreaded math homework."</p>
+  <div style="margin: 24px; padding: 16px; border: 1px dashed var(--secondary); border-radius: 8px; text-align:center; background: rgba(0,0,0,0.5);">
+    <p style="color:var(--warning); font-weight:bold; margin-top:0;">Asset File Required</p>
+    <input type="file" id="asset-loader" accept=".dat" style="margin-bottom: 12px; color: #fff;">
+  </div>
+  <button id="startBtn" style="padding: 16px 32px; font-size: 24px; background: var(--success); color: #000; border:none; border-radius: 8px; cursor:pointer; font-weight:bold;">ENTER THE DUNGEON</button>
+</div>
+
+<script>
+
+  // SOURCE: src/audio.js
+  // === Audio Synthesizer (FM / OPL style) ===
+  /*
+    AUDIO ENGINE – WEB AUDIO API
+    ============================
+    This module implements a hybrid audio system:
+    1. FM (Frequency Modulation) synthesis for music and sound effects,
+       inspired by vintage OPL (Yamaha YM3812) chips.
+    2. Sample playback for pre‑loaded audio buffers (v6.2.0).
+
+    The Sound object provides a simple API for game sound effects and
+    music sequencing. All audio is generated programmatically, requiring
+    no external assets except for optional samples.
+  */
+  // Main audio namespace – all public methods are attached here.
+  const Sound = {
+    ctx: null,
+    tracks: {},
+    currentTrack: null,
+    musicTimer: null,
+    resumeAttempted: false,
+
+    /*
+      Initializes the Web Audio context. Called automatically before any sound plays.
+      Falls back gracefully if the browser doesn't support Web Audio API.
+    */
+    init: () => {
+      if(!Sound.ctx && (window.AudioContext || window.webkitAudioContext)) {
+        try {
+          Sound.ctx = new (window.AudioContext || window.webkitAudioContext)();
+          Sound.resumeAttempted = false;
+          if (Sound.ctx.state === 'suspended') {
+            Sound.ctx.resume().catch(() => {});
+          }
+        }
+        catch(e) { Sound.ctx = 'failed'; }
+      }
+    },
+    ensureAudioContext: () => {
+      if (!Sound.ctx || Sound.ctx === 'failed') {
+        Sound.ctx = null;
+        Sound.init();
+        if (!Sound.ctx || Sound.ctx === 'failed') return false;
+      }
+      if (Sound.ctx.state === 'suspended') {
+        Sound.resumeAttempted = true;
+        Sound.ctx.resume().then(() => {
+          console.log('Audio context resumed successfully');
+        }).catch((e) => {
+          console.error('Failed to resume audio context:', e);
+          Sound.resumeAttempted = false;
+        });
+      }
+      return true;
+    },
+
+    /*
+      FM (Frequency Modulation) Operator – The core of OPL‑style synthesis.
+      Creates two oscillators: a carrier and a modulator. The modulator's
+      output is connected to the carrier's frequency, producing rich,
+      harmonic‑rich tones characteristic of vintage game soundcards.
+      Parameters:
+        freq: carrier frequency (Hz)
+        duration: note length (seconds)
+        vol: amplitude (0‑1)
+        ratio: modulator frequency multiplier (typical: 2)
+        modulatorIndex: modulation depth (higher = more harmonics)
+    */
+    playFM: (freq, duration, vol=0.1, ratio=2, modulatorIndex=5) => {
+      if(!Sound.ensureAudioContext()) return;
+      const t = Sound.ctx.currentTime;
+      
+      const carrier = Sound.ctx.createOscillator();
+      const modulator = Sound.ctx.createOscillator();
+      const modGain = Sound.ctx.createGain();
+      const mainGain = Sound.ctx.createGain();
+
+      carrier.frequency.value = freq;
+      modulator.frequency.value = freq * ratio;
+      modGain.gain.value = freq * modulatorIndex;
+
+      modulator.connect(modGain);
+      modGain.connect(carrier.frequency);
+      carrier.connect(mainGain);
+      mainGain.connect(Sound.ctx.destination);
+
+      mainGain.gain.setValueAtTime(0, t);
+      mainGain.gain.linearRampToValueAtTime(vol, t + 0.05);
+      mainGain.gain.exponentialRampToValueAtTime(0.01, t + duration);
+
+      carrier.start(t); modulator.start(t);
+      carrier.stop(t + duration); modulator.stop(t + duration);
+    },
+
+    /*
+      Play a pre‑loaded sample from the assets.sounds dictionary.
+      Used for sound effects that have been loaded from external files
+      (e.g., sword swing, monster grunt). Falls back silently if the
+      sample is missing or the audio context is unavailable.
+    */
+    playSample: (name, vol=0.2) => {
+      if(!Sound.ensureAudioContext() || !assets.sounds[name]) return;
+      try {
+        const source = Sound.ctx.createBufferSource();
+        const gain = Sound.ctx.createGain();
+        source.buffer = assets.sounds[name];
+        source.connect(gain);
+        gain.connect(Sound.ctx.destination);
+        gain.gain.value = vol;
+        source.start(0);
+      } catch(e) { console.error("Sample error:", e); }
+    },
+
+    /*
+      Convenience sound‑effect methods.
+      Each method attempts to play a pre‑loaded sample; if the sample is missing,
+      it falls back to a synthesized tone using playTone().
+      These are used throughout the game code for auditory feedback.
+    */
+    step: () => assets.sounds['step'] ? Sound.playSample('step') : Sound.playTone(150, 'square', 0.05, 0.2, 50),
+    grunt: () => assets.sounds['grunt'] ? Sound.playSample('grunt') : Sound.playTone(200, 'triangle', 0.2, 0.2, 80),
+    scream: () => assets.sounds['scream'] ? Sound.playSample('scream') : Sound.playTone(400, 'sawtooth', 0.6, 0.3, 50),
+    clink: () => assets.sounds['clink'] ? Sound.playSample('clink') : Sound.playTone(1200, 'sine', 0.1, 0.1, 2000),
+    sword: () => { 
+      if(assets.sounds['sword']) Sound.playSample('sword');
+      else { Sound.playTone(400, 'square', 0.1, 0.2, 1200); setTimeout(() => Sound.playTone(800, 'triangle', 0.05, 0.1, 200), 50); }
+    },
+    splash: () => assets.sounds['splash'] ? Sound.playSample('splash') : Sound.playTone(100, 'triangle', 0.2, 0.2, 40),
+    quack: () => { if(assets.sounds['quack']) Sound.playSample('quack'); else { Sound.playTone(400, 'sawtooth', 0.1, 0.1, 600); setTimeout(() => Sound.playTone(400, 'sawtooth', 0.1, 0.1, 600), 120); } },
+    squeak: () => assets.sounds['squeak'] ? Sound.playSample('squeak') : Sound.playTone(1800, 'sine', 0.05, 0.1, 2000),
+    gurgle: () => { for(let i=0; i<4; i++) setTimeout(() => Sound.playTone(100 + Math.random()*100, 'sine', 0.2, 0.1, 50), i*150); },
+    oof: () => assets.sounds['oof'] ? Sound.playSample('oof') : Sound.playTone(120, 'sawtooth', 0.1, 0.2, 60),
+    snore: () => assets.sounds['snore'] ? Sound.playSample('snore') : Sound.playTone(60, 'sawtooth', 0.8, 0.1, 40),
+
+    /*
+      Simple tone generator – creates a single oscillator with optional frequency slide.
+      Used as a fallback for missing samples and for simple beeps/effects.
+      Parameters:
+        freq: starting frequency (Hz)
+        type: oscillator waveform ('sine', 'square', 'sawtooth', 'triangle')
+        duration: length in seconds
+        vol: amplitude (0‑1)
+        slideFreq: if provided, the frequency slides exponentially to this value.
+    */
+    playTone: (freq, type, duration, vol=0.1, slideFreq=null) => {
+      if(!Sound.ensureAudioContext()) return;
+      const osc = Sound.ctx.createOscillator();
+      const gain = Sound.ctx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, Sound.ctx.currentTime);
+      if(slideFreq) osc.frequency.exponentialRampToValueAtTime(slideFreq, Sound.ctx.currentTime + duration);
+      gain.gain.setValueAtTime(vol, Sound.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, Sound.ctx.currentTime + duration);
+      osc.connect(gain); gain.connect(Sound.ctx.destination);
+      osc.start(); osc.stop(Sound.ctx.currentTime + duration);
+    },
+
+    /*
+      Music sequencer – plays a JSON‑defined track using FM synthesis.
+      The track is an array of note objects: { f: frequency, d: duration, r: ratio, i: index }.
+      The sequencer steps through the track recursively using setTimeout,
+      allowing real‑time music playback that can be interrupted at any time.
+    */
+    playMusic: (name) => {
+      if(Sound.currentTrack === name) return;
+      Sound.stopMusic();
+      Sound.currentTrack = name;
+      
+      const track = Sound.tracks[name];
+      if(!track) return;
+
+      let step = 0;
+      const nextNote = () => {
+        if(Sound.currentTrack !== name) return;
+        const note = track[step];
+        if(note.f > 0) Sound.playFM(note.f, note.d, 0.02, note.r || 2, note.i || 5);
+        step = (step + 1) % track.length;
+        Sound.musicTimer = setTimeout(nextNote, note.d * 1000);
+      };
+      nextNote();
+    },
+
+    // Stops the currently playing music track and clears the sequencer timer.
+    stopMusic: () => {
+      Sound.currentTrack = null;
+      if(Sound.musicTimer) clearTimeout(Sound.musicTimer);
+    }
+  };
+
+  // SOURCE: src/music_data.js
+  // === Music Track Data (Monkey Island & KQ5) ===
+  /*
+    MUSIC DATA – FM SYNTHESIS SEQUENCES
+    ====================================
+    This file defines musical tracks as arrays of note objects.
+    Each note object has the following properties:
+      f: frequency (Hz) – 0 represents a rest
+      d: duration (seconds)
+      r: modulator frequency ratio (optional, default 2)
+      i: modulator index (optional, default 5)
+
+    The tracks are stored in Sound.tracks and played by the sequencer
+    in audio.js. The data is inspired by classic adventure game soundtracks.
+  */
+  Sound.tracks = {
+    // "Monkey Island" main theme – a cheerful, pirate‑shanty melody.
+    'monkey': [
+      // Verse
+      {f: 440, d: 0.2, r: 2}, {f: 440, d: 0.2}, {f: 587, d: 0.4, r: 1.5}, {f: 440, d: 0.4},
+      {f: 659, d: 0.4, r: 3}, {f: 440, d: 0.4}, {f: 587, d: 0.4}, {f: 523, d: 0.4},
+      {f: 440, d: 0.2}, {f: 440, d: 0.2}, {f: 587, d: 0.4}, {f: 440, d: 0.4},
+      {f: 392, d: 0.4}, {f: 349, d: 0.4}, {f: 329, d: 0.8},
+      // Bridge (Expanded v6.4.0)
+      {f: 523, d: 0.2, r: 2.5}, {f: 587, d: 0.2}, {f: 659, d: 0.4}, {f: 523, d: 0.4},
+      {f: 440, d: 0.4}, {f: 392, d: 0.4}, {f: 440, d: 0.8},
+      {f: 523, d: 0.2, r: 2}, {f: 587, d: 0.2}, {f: 659, d: 0.4}, {f: 784, d: 0.4},
+      {f: 659, d: 0.4}, {f: 587, d: 0.4}, {f: 523, d: 0.8}
+    ],
+    // "Bandit" theme – a slower, ominous bass line.
+    'bandit': [
+      {f: 164, d: 0.8, r: 0.5, i: 10}, {f: 146, d: 0.8}, {f: 164, d: 0.8}, {f: 196, d: 0.8},
+      {f: 164, d: 0.8}, {f: 146, d: 0.8}, {f: 130, d: 1.6},
+      {f: 123, d: 0.8}, {f: 110, d: 0.8}, {f: 98, d: 1.6},
+      // Bridge
+      {f: 110, d: 0.8, r: 0.8}, {f: 130, d: 0.8}, {f: 146, d: 0.8}, {f: 164, d: 1.6}
+    ],
+    // "LeChuck" theme – a dark, menacing progression.
+    'lechuck': [
+      {f: 110, d: 0.4, r: 4, i: 20}, {f: 116, d: 0.4}, {f: 123, d: 0.4}, {f: 110, d: 0.8},
+      {f: 82, d: 0.4}, {f: 87, d: 0.4}, {f: 92, d: 0.4}, {f: 82, d: 0.8},
+      {f: 55, d: 0.4, r: 5}, {f: 62, d: 0.4}, {f: 65, d: 0.4}, {f: 55, d: 0.8}
+    ],
+    // "Leftys" theme – a fast, upbeat bar‑room tune.
+    'leftys': [
+      {f: 130, d: 0.2, r: 2}, {f: 155, d: 0.2}, {f: 174, d: 0.2}, {f: 185, d: 0.2}, 
+      {f: 196, d: 0.4}, {f: 0, d: 0.2}, {f: 196, d: 0.2}, {f: 233, d: 0.2}, {f: 261, d: 0.4},
+      {f: 130, d: 0.2}, {f: 155, d: 0.2}, {f: 174, d: 0.2}, {f: 185, d: 0.2}, 
+      {f: 196, d: 0.4}, {f: 174, d: 0.2}, {f: 155, d: 0.2}, {f: 130, d: 0.4}
+    ]
+  };
+
+  // SOURCE: src/state.js
+  // === Game Constants & State ===
+  /*
+    GAME STATE & CONFIGURATION
+    ===========================
+    This file contains all global variables, constants, and data definitions
+    that shape the game's mechanics and world.
+
+    It is divided into sections:
+    1. CONSTANTS – tunable numeric parameters (hunger, speed, XP, etc.)
+    2. Canvas & Tile definitions
+    3. TALENT_TREES – progression trees for character development
+    4. Game‑state variables (currentLevel, theMap, inventory, etc.)
+    5. Player object – the player's persistent stats and flags
+    6. MONSTER_DEF – definitions of all enemy types
+    7. ITEM_DEF – definitions of all item types
+    8. Utility functions (e.g., addFloatingText)
+
+    This file is loaded early and referenced by virtually every other module.
+  */
+  // Core game‑balance constants. Adjust these to change the feel of the game.
+  const CONSTANTS = {
+    HUNGER_RATE: 0.005,
+    HUNGER_DAMAGE: 0.5,
+    HUNGER_HEAL: 0.2,
+    SPAWN_RATE: 0.02,
+    DISEASE_DAMAGE: 1,
+    SUGAR_RUSH_SPEED: 100,
+    NORMAL_SPEED: 166,
+    RUN_SPEED: 80,
+    XP_BASE: 100,
+    XP_MULT: 1.5,
+    BASE_MP: 0,
+    BASE_HP: 25,
+    DIZZY_TURNS: 15,
+    FREEZE_TURNS: 40,
+    RESPEC_BASE_COST: 100,
+    STEAL_CHANCE: 0.2
+  };
+
+  // Canvas references and tile‑size configuration.
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const TILE_SIZE = 32;
+  // Set canvas dimensions to match window size immediately
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  let VIEW_COLS = Math.ceil(canvas.width / TILE_SIZE);
+  let VIEW_ROWS = Math.ceil(canvas.height / TILE_SIZE);
+  console.log(`state.js init: canvas=${canvas.width}x${canvas.height}, VIEW_COLS=${VIEW_COLS}, VIEW_ROWS=${VIEW_ROWS}`); 
+  
+  // Tile ID mapping. Each numeric ID corresponds to a specific terrain or object type.
+  const TILES = { 
+    WALL: 1, FLOOR: 2, STAIR_DOWN: 3, STAIR_UP: 4, CHEST: 5, STORE: 6, WATER: 7, LEFTYS: 8, BOOKSTORE: 9,
+    TREE: 10, BUSH: 11, ROCK: 12, SAND: 13, DEEP_WATER: 14, GRASS: 15, MOAT: 16, BRIDGE: 17, 
+    ANTIQUE_SHOP: 18, STANS_SHOP: 19, SCUMM_BAR: 20, WILLOW: 21, NEST: 22, PIT: 23, BOULDER: 24, TIGHTROPE: 25,
+    ARCADE: 26, BOAT: 27, HUT: 28, CASTLE_DOOR: 29, 
+    PORTAL: 30, BLADE: 31, LETTER: 32, FORGE: 33, COW: 34, CHICKEN: 35,
+    CHASM: 36, BRIDGE_TILE: 37 // v7.2.0 Monty Python
+  };
+
+  // Talent trees for character specialization. Each tree contains 3 talents.
+  const TALENT_TREES = {
+    assassination: {
+      name: "Assassination",
+      talents: [
+        { id: "crit1", name: "Malice", desc: "+5% Crit Chance", max: 5, bonus: { critRate: 0.01 } },
+        { id: "dmg1", name: "Murder", desc: "+2 Base Damage", max: 3, bonus: { baseDmg: 2 } },
+        { id: "pois1", name: "Vile Poisons", desc: "Melee hits deal poison", max: 1, req: 5 }
+      ]
+    },
+    combat: {
+      name: "Combat",
+      talents: [
+        { id: "hp1", name: "Toughness", desc: "+10 Max HP", max: 5, bonus: { maxHp: 10 } },
+        { id: "evade1", name: "Lightning Reflexes", desc: "+5% Evade", max: 5, bonus: { dodgeRate: 0.01 } },
+        { id: "haste1", name: "Adrenaline Rush", desc: "Reduce run exhaustion", max: 3, req: 10 }
+      ]
+    },
+    subtlety: {
+      name: "Subtlety",
+      talents: [
+        { id: "stealth1", name: "Camouflage", desc: "-1 Monster Aggro Range", max: 3 },
+        { id: "mana1", name: "Master of Deception", desc: "+10 Max MP", max: 5, bonus: { maxMp: 10 } },
+        { id: "blink1", name: "Shadowstep", desc: "Magical 3-tile dash", max: 1, req: 10 }
+      ]
+    }
+  };
+
+  // Global game‑state variables. These are updated as the game progresses.
+  let currentLevel = 1, mapW = 0, mapH = 0;
+  let currentScene = 'dungeon'; 
+  let theMap = [], explored = [], visible = [], enemies = [], itemsOnGround = [], darkMap = [];
+  let isDead = false, dropMode = false, isIdentifying = false, damageTint = 0;
+  let lightTurns = 0, lastMoveTime = 0;
+  let floatingTexts = []; 
+  let questTimer = { active: false, time: 0, label: "", callback: null }; 
+  let levelCache = {}; 
+  const logInfo = { count: 0 };
+  const inventory = new Array(10).fill(null);
+  const pouch = new Array(30).fill(null); 
+  const assets = { sprites: {}, sounds: {} };
+  let activeEffects = []; 
+  let useSprites = false; 
+  let debugFlags = { revealMap: false, fullLight: false, godMode: false, noRegen: false, noEncryption: false };
+  window.debugFlags = debugFlags;
+  let stolenItems = []; 
+
+  // The player object – holds all persistent character data.
+  const player = {
+    x: 0, y: 0, facing: {dx: 0, dy: 1},
+    hp: CONSTANTS.BASE_HP, maxHp: CONSTANTS.BASE_HP, mp: CONSTANTS.BASE_MP, maxMp: CONSTANTS.BASE_MP, gp: 0,
+    xp: 0, level: 1, statPoints: 0, talentPoints: 0, respecs: 0,
+    stats: { str: 10, dex: 10, int: 10 },
+    talents: {}, 
+    hunger: 0.0, darkSteps: 0, 
+    exhaustion: 0, isRunning: false, isKneeling: false,
+    healOverTime: 0, totalHealPending: 0,
+    storesVisited: 0, lastStoreFloor: -1,
+    savedRat: false, hasBottle: false, masterDefeated: false, fedEagle: false,
+    boatRepaired: false, playingAstro: false, grogTurns: 0,
+    killedPassive: false, assassinMet: false, guardTalked: false, clavicusDeal: false,
+    atronach: false, blind: false,
+    bridgeQuestions: false, grenadeCount: 0, knightLimb: 0, // v7.2.0
+    astroScore: 0, skillChecks: { boulder: false, rope: false },
+    equippedSpell: null,
+    baseDmg: 2, hitRate: 0.50, critRate: 0.10, dodgeRate: 0.15,
+    statusTurns: 0, statusType: null,
+    spells: {},
+    equipped: { head: null, chest: '🎽', legs: '𩲩', feet: '🩴', leftHand: null, rightHand: null }
+  };
+
+  // Monster definitions – stats and abilities for every enemy type.
+  const MONSTER_DEF = {
+    "chipmunk": { icon: '🐿️', hp: 10, dmg: 3, hit: 0.5, crit: 0.05, dodge: 0.3, speed: 0.34, throughWalls: false },
+    "slime":    { icon: '🫧', hp: 8, dmg: 2, hit: 0.4, crit: 0.0, dodge: 0.1, speed: 0.2, throughWalls: false },
+    "bat":      { icon: '🦇', hp: 6, dmg: 2, hit: 0.4, crit: 0.05, dodge: 0.6, speed: 0.8, throughWalls: false },
+    "skeleton": { icon: '💀', hp: 20, dmg: 8, hit: 0.5, crit: 0.1, dodge: 0.2, speed: 0.4, throughWalls: false },
+    "ghost":    { icon: '👻', hp: 15, dmg: 8, hit: 0.4, crit: 0.20, dodge: 0.5, speed: 0.50, throughWalls: true },
+    "robot":    { icon: '🤖', hp: 40, dmg: 12, hit: 0.6, crit: 0.15, dodge: 0.0, speed: 1.00, throughWalls: false },
+    "thief":    { icon: '👤', hp: 40, dmg: 2, hit: 0.9, crit: 0.0, dodge: 0.6, speed: 1.2, throughWalls: false, quest: true },
+    "fence":    { icon: '🧥', hp: 100, dmg: 5, hit: 0.5, crit: 0.0, dodge: 0.1, speed: 0.0, throughWalls: false, quest: true },
+    "cain":     { icon: '🧔', hp: 999, dmg: 0, hit: 0.0, crit: 0.0, dodge: 0.0, speed: 0.0, throughWalls: false, quest: true },
+    "dragon":   { icon: '🐉', hp: 150, dmg: 30, hit: 0.6, crit: 0.2, dodge: 0.2, speed: 0.5, throughWalls: false },
+    "snake":    { icon: '🐍', hp: 15, dmg: 4, hit: 0.5, crit: 0.10, dodge: 0.4, speed: 0.50, throughWalls: false, effect: 'dizzy', effectChance: 0.05 },
+    "troll":    { icon: '🧌', hp: 60, dmg: 15, hit: 0.4, crit: 0.05, dodge: 0.0, speed: 0.25, throughWalls: false, effect: 'dizzy', effectChance: 0.05 },
+    "medusa":   { icon: '🐍👩', hp: 45, dmg: 8, hit: 0.5, crit: 0.10, dodge: 0.2, speed: 0.40, throughWalls: false, effect: 'freeze', effectChance: 0.10 },
+    "pirate":   { icon: '🏴‍☠️', hp: 30, dmg: 10, hit: 0.5, crit: 0.10, dodge: 0.3, speed: 0.50, throughWalls: false, quest: true },
+    "master":   { icon: '🤺', hp: 120, dmg: 20, hit: 0.7, crit: 0.20, dodge: 0.5, speed: 0.80, throughWalls: false, isBoss: true, quest: true },
+    "cat":      { icon: '🐱', hp: 20, dmg: 5, hit: 0.5, crit: 0.1, dodge: 0.4, speed: 0.6, throughWalls: false, quest: true },
+    "genie":    { icon: '🧞', hp: 999, dmg: 50, hit: 0.8, crit: 0.5, dodge: 0.9, speed: 1.0, throughWalls: true, isBoss: true, quest: true },
+    "king":     { icon: '🤴', hp: 60, dmg: 5, hit: 0.5, crit: 0.05, dodge: 0.2, speed: 0.4, rare: true },
+    "eagle":    { icon: '🦅', hp: 50, dmg: 10, hit: 0.8, crit: 0.1, dodge: 0.6, speed: 1.0, throughWalls: false, quest: true },
+    "gurgi":    { icon: '🐵', hp: 30, dmg: 2, hit: 0.4, crit: 0.0, dodge: 0.5, speed: 0.5, throughWalls: false, quest: true },
+    "erasmus":  { icon: '🧙‍♂️', hp: 999, dmg: 0, hit: 1.0, crit: 0.0, dodge: 1.0, speed: 1.0, throughWalls: false, quest: true },
+    "cow":      { icon: '🐄', hp: 50, dmg: 0, hit: 0.0, crit: 0.0, dodge: 0.0, speed: 0.0, throughWalls: false, quest: true },
+    "assassin": { icon: '🥷', hp: 80, dmg: 20, hit: 0.9, crit: 0.3, dodge: 0.5, speed: 1.2, throughWalls: false },
+    "black_knight": { icon: '🤺', hp: 200, dmg: 15, hit: 0.6, crit: 0.1, dodge: 0.0, speed: 0.5, isBoss: true, quest: true },
+    "killer_rabbit": { icon: '🐰', hp: 10, dmg: 999, hit: 1.0, crit: 1.0, dodge: 0.9, speed: 1.5, throughWalls: true },
+    "french_taunter": { icon: '🏰🇫🇷', hp: 999, dmg: 0, hit: 0.0, crit: 0.0, dodge: 1.0, speed: 0.0, quest: true },
+    "dennis": { icon: '👨‍🌾', hp: 30, dmg: 2, hit: 0.5, crit: 0.0, dodge: 0.1, speed: 0.0, quest: true },
+    "bridge_keeper": { icon: '🧙‍♂️', hp: 999, dmg: 0, hit: 1.0, crit: 0.0, dodge: 1.0, speed: 0.0, quest: true }
+  };
+
+  // Item definitions – properties of every collectible item in the game.
+  const ITEM_DEF = {
+    "💣🌟": { name: "Holy Hand Grenade", type: "misc", stackable: false, maxGP: 1000 },
+    "🥥": { name: "Half-Coconut", type: "misc", stackable: false, maxGP: 5 },
+    "📜📜": { name: "Constitutional Convention", type: "scroll", stackable: false, maxGP: 0 },
+    "🧪🦎": { name: "Potion of Newt", type: "potion", stackable: true, maxHeal: 0, maxGP: 50 },
+    "💎💠": { name: "Resurrection Crystal", type: "misc", stackable: false, maxGP: 5000 },
+    "📿": { name: "Orichalcum Bead", type: "quest", stackable: true, maxGP: 0 },
+    "🪙": { name: "Unique Coin", type: "quest", stackable: false, maxGP: 0 },
+    "🏅": { name: "Gold Locket", type: "quest", stackable: false, maxGP: 0 },
+    "🪕": { name: "Harp", type: "quest", stackable: false, maxGP: 0 },
+    "🍲": { name: "Black Cauldron", type: "quest", stackable: false, maxGP: 0 },
+    "🐔": { name: "Rubber Chicken", type: "quest", stackable: false, maxGP: 0 },
+    "⚙️": { name: "Pulley", type: "quest", stackable: false, maxGP: 0 },
+    "👢⚡": { name: "Boots of Blinding Speed", type: "armor", slot: "feet", stackable: false, evadePercent: 50, maxGP: 1000 },
+    "👺": { name: "Masque of Clavicus Vile", type: "armor", slot: "head", stackable: false, evadePercent: 5, maxGP: 50000 },
+    "🛡️🏛️": { name: "Heirloom Shield", type: "quest", stackable: false, maxGP: 0 },
+    "💍": { name: "Ring of Midas", type: "armor", slot: "rightHand", stackable: false, evadePercent: -20, maxGP: 500 },
+    "🥾": { name: "Old Boot", type: "misc", stackable: false, maxGP: 2 },
+    "🦯": { name: "Staff", type: "weapon", stackable: false, maxDamage: 2, maxGP: 5 },
+    "🏺": { name: "Brass Bottle", type: "misc", stackable: false, maxGP: 100 },
+    "🧪": { name: "Health Potion", type: "potion", stackable: true, maxHeal: 25, maxGP: 50 },
+    "🕯️": { name: "Candle", type: "light", stackable: true, lightRange: 15, maxGP: 15 },
+    "📃": { name: "Identify Scroll", type: "scroll", stackable: true, maxGP: 15 },
+    "🌀": { name: "Town Portal Scroll", type: "scroll", spell: "portal", stackable: true, maxGP: 100 },
+    "🍕": { name: "Pizza", type: "food", stackable: true, maxHeal: 10, foodValue: 30, maxGP: 15 },
+    "💰": { name: "Gold Bag", type: "wealth", stackable: false, maxGP: 50 },
+    "🗡️": { name: "Sword", type: "weapon", stackable: false, maxDamage: 8, maxGP: 100 },
+    "🛡️": { name: "Shield", type: "armor", slot: "rightHand", stackable: false, evadePercent: 15, maxGP: 150 },
+    "🎽": { name: "Running Shirt", type: "armor", slot: "chest", stackable: false, evadePercent: 0, maxGP: 2 },
+    "𩲩": { name: "Briefs", type: "armor", slot: "legs", stackable: false, evadePercent: 0, maxGP: 2 },
+    "🩴": { name: "Sandals", type: "armor", slot: "feet", stackable: false, evadePercent: 0, maxGP: 2 },
+    "🦴": { name: "Bone", type: "useless", stackable: true, maxGP: 1 },
+    "💩": { name: "Poop", type: "useless", stackable: true, maxPoison: 4, maxGP: 0 },
+    "📎": { name: "Paperclip", type: "useless", stackable: true, maxGP: 1 },
+    "🧶": { name: "Yarn", type: "useless", stackable: true, maxGP: 2 },
+    "🧵": { name: "Thread", type: "useless", stackable: true, maxGP: 1 },
+    "📰": { name: "Old News", type: "useless", stackable: true, maxGP: 1 },
+    "🧤": { name: "Single Glove", type: "useless", stackable: false, maxGP: 3 },
+    "🧱": { name: "Brick", type: "useless", stackable: true, maxGP: 1 },
+    "🧼": { name: "Soap", type: "useless", stackable: true, maxGP: 5 }
+  };
+
+  // NPC dialogue lines – used for shopkeeper flavor text.
+  const APU_LINES = ["Thank you, come again!", "I have eight brothers and a cousin named Dave."];
+
+  // Utility function to create floating combat text (damage numbers, heals, etc.).
+  window.addFloatingText = (x, y, text, color, size = 16) => {
+    floatingTexts.push({ x, y, text, color, life: 1.0, maxLife: 1.0, size });
+  };
+
+  // SOURCE: src/ui_logic.js
+  /*
+  UI_LOGIC MODULE – USER INTERFACE, SAVE/LOAD, AND DEBUG SYSTEMS
+  ===============================================================
+  This module contains all front‑end logic for updating the game's HTML interface,
+  managing save/load with optional encryption, rendering inventory grids, handling
+  draggable modals, and providing debug/developer tools. It bridges the game state
+  with the DOM, ensuring the player sees real‑time feedback.
+
+  Key responsibilities:
+  1. UI update functions – health/mana orbs, XP bar, gold, hunger, status chips, equipment slots
+  2. Logging system – timestamped message display with auto‑scroll
+  3. Save/load system – JSON serialization with XOR obfuscation, file download/upload
+  4. Draggable modal management – mouse drag‑and‑drop for movable windows
+  5. Inventory & pouch rendering – visual grids with drag‑and‑drop between inventory/pouch
+  6. Stat & talent panels – allocation UI, talent tree display, spell management
+  7. Debug/cheat functions – god mode, warp, add items, edit stats, toggle encryption
+  8. Asset loader – import external sprite/sound packs via JSON file
+  9. Quest actions – listen, kneel, attack, cast spell, toggle fog/light
+
+  The functions here are called from engine.js (updateUI), from input.js (key/mouse events),
+  and from direct HTML button clicks. They modify DOM elements and update global state.
+*/
+// === Core UI & Layout Control ===
+  function logMsg(msg) {
+    const logDiv = document.getElementById('log');
+    if(!logDiv) return;
+    logInfo.count++;
+    const now = new Date();
+    const ts = `[${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}]`;
+    logDiv.innerHTML += `<div class="log-entry"><span class="log-time">${ts}</span><span class="log-new">${msg}</span></div>`;
+    logDiv.scrollTop = logDiv.scrollHeight;
+  }
+
+  function updateUI() {
+    player.hp = Math.max(0, Math.min(player.maxHp, player.hp));
+    player.mp = Math.max(0, Math.min(player.maxMp, player.mp));
+    const hpOrb = document.getElementById('hp-orb');
+    if (hpOrb) {
+        const hpFill = hpOrb.querySelector('.orb-fill');
+        const hpText = hpOrb.querySelector('.orb-text');
+        if (hpFill) { if (player.maxHp > 0) { let pct = Math.max(0, Math.min(100, player.hp / player.maxHp * 100)); console.log(`HP: ${player.hp}/${player.maxHp} => ${pct}%`); hpFill.style.height = `${pct}%`; } else hpFill.style.height = '0%'; }
+        if (hpText) hpText.innerText = `${Math.floor(player.hp)}/${player.maxHp}`;
+    }
+    const mpOrb = document.getElementById('mp-orb');
+    if (mpOrb) {
+        const mpFill = mpOrb.querySelector('.orb-fill');
+        const mpText = mpOrb.querySelector('.orb-text');
+        if (mpFill) { if (player.maxMp > 0) { let pct = Math.max(0, Math.min(100, player.mp / player.maxMp * 100)); console.log(`MP: ${player.mp}/${player.maxMp} => ${pct}%`); mpFill.style.height = `${pct}%`; } else mpFill.style.height = '0%'; }
+        if (mpText) mpText.innerText = `${Math.floor(player.mp)}/${player.maxMp}`;
+    }
+
+    const xpBar = document.getElementById('xp-bar-fill');
+    const xpText = document.getElementById('xp-text');
+    if (xpBar && xpText) {
+      let requiredXp = CONSTANTS.XP_BASE * Math.pow(CONSTANTS.XP_MULT, player.level - 1);
+      xpBar.style.width = Math.min(100, (player.xp / requiredXp) * 100) + '%';
+      xpText.innerText = `Lvl ${player.level} - ${Math.floor(player.xp)}/${Math.floor(requiredXp)} XP`;
+    }
+
+    const minimapLabel = document.getElementById('minimap-label');
+    if(minimapLabel) minimapLabel.innerText = 'Floor ' + currentLevel;
+
+    const gpUI = document.getElementById('gpUI');
+    if(gpUI) gpUI.innerText = `💰 ${player.gp}`;
+    
+    const hgUI = document.getElementById('hungerUI');
+    if(hgUI) hgUI.innerText = `Hunger: ${Math.floor(player.hunger)}%`;
+
+    const statusUI = document.getElementById('statusUI');
+    if(statusUI) {
+      if(player.statusType) {
+        statusUI.style.display = 'block';
+        statusUI.innerText = player.statusType.toUpperCase();
+        statusUI.className = "chip danger";
+      } else { statusUI.style.display = 'none'; }
+    }
+
+    const badge = document.getElementById('stat-badge');
+    if(badge) {
+       let totalPts = player.statPoints + player.talentPoints;
+       badge.innerText = totalPts;
+       badge.style.display = totalPts > 0 ? 'block' : 'none';
+    }
+    
+    Object.keys(player.equipped).forEach(slot => {
+      const el = document.getElementById(`eq${slot}`);
+      if(el) {
+        const icon = player.equipped[slot];
+        el.innerHTML = `<div class="equip-label">${slot}</div>${icon || ''}`;
+      }
+    });
+
+    const statsModal = document.getElementById('stats-modal');
+    if(statsModal && statsModal.style.display === 'flex') { showStats(); showTalents(); }
+    
+    const magicModal = document.getElementById('magic-modal');
+    if(magicModal && magicModal.style.display === 'flex') showMagic();
+
+    const invModal = document.getElementById('inv-modal');
+    if(invModal && invModal.style.display === 'flex') renderInventoryModal();
+  }
+
+  // === Save/Load System ===
+  const SAVE_KEY = "DungeonDescentSecret";
+  function obfuscate(str) { return btoa(str.split('').map((char, i) => String.fromCharCode(char.charCodeAt(0) ^ SAVE_KEY.charCodeAt(i % SAVE_KEY.length))).join('')); }
+  function deobfuscate(str) { const raw = atob(str); return raw.split('').map((char, i) => String.fromCharCode(char.charCodeAt(0) ^ SAVE_KEY.charCodeAt(i % SAVE_KEY.length))).join(''); }
+
+  window.saveGame = () => {
+    const state = { player, currentLevel, currentScene, mapW, mapH, theMap, explored, itemsOnGround, enemies, levelCache, stolenItems };
+    let json = JSON.stringify(state);
+    let blob;
+    if (window.debugFlags && window.debugFlags.noEncryption) {
+      blob = json;
+      logMsg("Game saved (unencrypted).");
+    } else {
+      blob = obfuscate(json);
+      logMsg("Game saved (encrypted).");
+    }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([blob], {type: 'application/json'}));
+    a.download = `dungeon_save.json`; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 100);
+  };
+
+  window.loadGame = () => {
+    const input = document.createElement('input'); input.type = 'file'; input.accept = '.json';
+    input.onchange = (e) => {
+      const file = e.target.files[0]; const reader = new FileReader();
+      reader.onload = (ev) => {
+        let data;
+        try {
+          // First try to parse as plain JSON (unencrypted)
+          data = JSON.parse(ev.target.result);
+          logMsg("Loaded unencrypted save.");
+        } catch (plainErr) {
+          // If that fails, try deobfuscation (encrypted)
+          try {
+            data = JSON.parse(deobfuscate(ev.target.result));
+            logMsg("Loaded encrypted save.");
+          } catch (encErr) {
+            alert("Invalid save file!");
+            return;
+          }
+        }
+        // Load data into game state
+        Object.assign(player, data.player); currentLevel = data.currentLevel; currentScene = data.currentScene;
+        theMap = data.theMap; explored = data.explored; itemsOnGround = data.itemsOnGround; enemies = data.enemies;
+        levelCache = data.levelCache; stolenItems = data.stolenItems || [];
+        logMsg("Save loaded!"); toggleModal('menu-modal'); calculateFOV(); drawMap(); updateUI();
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  };
+
+  // === Draggable Modals ===
+  let activeModal = null, isDragging = false, dragOffset = {x: 0, y: 0};
+  window.draggedItemIdx = null; window.draggedSource = null;
+
+  window.toggleModal = (id) => {
+    let el = document.getElementById(id);
+    if(!el) return;
+    el.style.display = (el.style.display === 'none' || el.style.display === '') ? 'flex' : 'none';
+    if(el.style.display === 'flex') {
+      if(id === 'stats-modal') { showStats(); showTalents(); }
+      if(id === 'magic-modal') showMagic();
+      if(id === 'pouch-modal') renderPouch();
+      if(id === 'inv-modal') renderInventoryModal();
+      if(id === 'asset-viewer-modal') showAssetViewer();
+    }
+  };
+
+  document.addEventListener('mousedown', (e) => {
+    const header = e.target.closest('.modal-header');
+    if(header) {
+      isDragging = true; activeModal = header.closest('.draggable-modal');
+      let rect = activeModal.getBoundingClientRect();
+      dragOffset = {x: e.clientX - rect.left, y: e.clientY - rect.top};
+    }
+  });
+  document.addEventListener('mousemove', (e) => {
+    if(isDragging && activeModal) {
+      activeModal.style.left = (e.clientX - dragOffset.x) + 'px';
+      activeModal.style.top = (e.clientY - dragOffset.y) + 'px';
+    }
+  });
+  document.addEventListener('mouseup', () => { isDragging = false; activeModal = null; });
+
+  // === Inventory and Pouch Rendering ===
+  window.renderInventory = () => {
+    const grid = document.getElementById('inventoryUI'); if(!grid) return;
+    grid.innerHTML = '';
+    for(let i=0; i<10; i++) {
+      let item = inventory[i], slot = document.createElement('div');
+      slot.className = isIdentifying ? 'inv-slot selected' : 'inv-slot';
+      slot.draggable = item ? true : false;
+      if(item) slot.addEventListener('dragstart', (e) => handleDragStart(e, 'inv', i));
+      slot.addEventListener('dragover', allowDrop);
+      slot.addEventListener('drop', (e) => handleDropItem(e, 'inv', i));
+      slot.innerHTML = `<span class="hotkey">${i===9?0:i+1}</span>`;
+      if(item) { slot.innerHTML += item.icon; if(item.qty > 1) slot.innerHTML += `<span class="qty">${item.qty}</span>`; }
+      slot.onclick = () => handleItemClick(i); grid.appendChild(slot);
+    }
+  };
+
+  window.renderInventoryModal = () => {
+    const grid = document.getElementById('inventory-modal-grid'); if(!grid) return;
+    grid.innerHTML = '';
+    for(let i=0; i<10; i++) {
+      let item = inventory[i], slot = document.createElement('div');
+      slot.className = 'inv-slot';
+      slot.draggable = item ? true : false;
+      if(item) slot.addEventListener('dragstart', (e) => handleDragStart(e, 'inv', i));
+      slot.addEventListener('dragover', allowDrop);
+      slot.addEventListener('drop', (e) => handleDropItem(e, 'inv', i));
+      if(item) { slot.innerHTML = item.icon; if(item.qty > 1) slot.innerHTML += `<span class="qty">${item.qty}</span>`; }
+      slot.onclick = () => handleItemClick(i); grid.appendChild(slot);
+    }
+  };
+
+  window.renderPouch = () => {
+    const grid = document.getElementById('pouchUI'); if(!grid) return;
+    grid.innerHTML = '';
+    for(let i=0; i<30; i++) {
+      let item = pouch[i], slot = document.createElement('div');
+      slot.className = 'inv-slot'; slot.style.width='32px'; slot.style.height='32px'; slot.style.fontSize='16px';
+      slot.draggable = item ? true : false;
+      if(item) slot.addEventListener('dragstart', (e) => handleDragStart(e, 'pouch', i));
+      slot.addEventListener('dragover', allowDrop);
+      slot.addEventListener('drop', (e) => handleDropItem(e, 'pouch', i));
+      if(item) { slot.innerHTML = item.icon; if(item.qty > 1) slot.innerHTML += `<span class="qty" style="font-size:8px;">${item.qty}</span>`; }
+      grid.appendChild(slot);
+    }
+  };
+
+  window.handleDragStart = (e, source, idx) => { window.draggedSource = source; window.draggedItemIdx = idx; e.dataTransfer.setData('text/plain', idx); };
+  window.allowDrop = (e) => { e.preventDefault(); };
+  window.handleDropItem = (e, targetSource, targetIdx) => {
+    e.preventDefault();
+    if(window.draggedItemIdx !== null && window.draggedSource !== null) {
+      let srcArr = window.draggedSource === 'inv' ? inventory : pouch;
+      let tgtArr = targetSource === 'inv' ? inventory : pouch;
+      let temp = tgtArr[targetIdx]; tgtArr[targetIdx] = srcArr[window.draggedItemIdx]; srcArr[window.draggedItemIdx] = temp;
+      window.draggedItemIdx = null; window.draggedSource = null;
+      renderInventory(); renderInventoryModal(); renderPouch(); updateUI();
+    }
+  };
+
+  window.handleDrop = (e, slot) => {
+    e.preventDefault();
+    if(window.draggedItemIdx !== null && window.draggedSource === 'inv') { swapEquip(window.draggedItemIdx, slot); window.draggedItemIdx = null; window.draggedSource = null; }
+  };
+
+  // === Stats and Talents (v7.1.0) ===
+  window.allocateStat = (stat) => { if(player.statPoints > 0) { player.stats[stat]++; player.statPoints--; 
+    if(stat==='str'){player.maxHp+=5;player.hp+=5;} if(stat==='int'){player.maxMp+=5;player.mp+=5;}
+    showStats(); updateUI(); } 
+  };
+
+  window.showStats = () => {
+    const statsBody = document.getElementById('stats-body');
+    if(!statsBody) return;
+    let html = `<p>Level ${player.level}</p><p>Points: <span style="color:var(--warning)">${player.statPoints}</span></p>
+      <div style="text-align:left; font-size:12px;">
+        <p>STR: ${player.stats.str} <button onclick="allocateStat('str')">+</button></p>
+        <p>DEX: ${player.stats.dex} <button onclick="allocateStat('dex')">+</button></p>
+        <p>INT: ${player.stats.int} <button onclick="allocateStat('int')">+</button></p>
+      </div>
+      <div style="margin-top: 10px; text-align:left; font-size:12px;">
+        <p><strong>Combat Stats</strong></p>
+        <p>HP: ${player.hp}/${player.maxHp}</p>
+        <p>MP: ${player.mp}/${player.maxMp}</p>
+        <p>Damage: ${player.baseDmg}</p>
+        <p>Hit Rate: ${(player.hitRate * 100).toFixed(1)}%</p>
+        <p>Crit Rate: ${(player.critRate * 100).toFixed(1)}%</p>
+        <p>Dodge Rate: ${(player.dodgeRate * 100).toFixed(1)}%</p>
+      </div>`;
+    statsBody.innerHTML = html;
+  };
+
+  window.buyTalent = (tree, idx) => {
+    const t = TALENT_TREES[tree].talents[idx];
+    const current = player.talents[t.id] || 0;
+    if(player.talentPoints > 0 && current < t.max) {
+      player.talents[t.id] = current + 1;
+      player.talentPoints--;
+      if(t.bonus) Object.keys(t.bonus).forEach(k => player[k] += t.bonus[k]);
+      showTalents(); updateUI();
+    }
+  };
+
+  window.showTalents = () => {
+    const talentsBody = document.getElementById('talents-body');
+    if(!talentsBody) return;
+    let html = `<p>Talent Points: <span style="color:var(--primary)">${player.talentPoints}</span></p>`;
+    Object.keys(TALENT_TREES).forEach(key => {
+      let tree = TALENT_TREES[key];
+      html += `<div style="margin-bottom:10px;"><strong style="color:var(--primary)">${tree.name}</strong>`;
+      tree.talents.forEach((t, i) => {
+        let pts = player.talents[t.id] || 0;
+        html += `<div style="font-size:11px; display:flex; justify-content:space-between; margin-top:4px;">
+          <span>${t.name} (${pts}/${t.max})</span>
+          <button onclick="buyTalent('${key}', ${i})" style="font-size:9px; padding:1px 4px;" ${player.talentPoints===0 || pts===t.max ? 'disabled':''}>+</button>
+        </div>`;
+      });
+      html += `</div>`;
+    });
+    talentsBody.innerHTML = html;
+  };
+
+  window.showMagic = () => {
+    const magicBody = document.getElementById('magic-body');
+    if(!magicBody) return;
+    let keys = Object.keys(player.spells);
+    let html = keys.length === 0 ? "<p>No spells.</p>" : "<div style='display:flex; flex-direction:column; gap:4px;'>";
+    keys.forEach(k => {
+      let sp = player.spells[k], isEq = player.equippedSpell === k;
+      html += `<div style="background:var(--surface-container); padding:6px; border-radius:4px; display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:12px;">${k.toUpperCase()} (Lv${sp.level})</span>
+        <button onclick="window.player.equippedSpell='${k}';showMagic();updateUI();" style="font-size:10px; background:${isEq?'var(--success)':'#444'}">${isEq?'Eq':'Equip'}</button>
+      </div>`;
+    });
+    magicBody.innerHTML = html + "</div>";
+  };
+
+  window.showAssetViewer = () => {
+    const body = document.getElementById('asset-viewer-body');
+    if(!body) return;
+    let html = "<h3>Sprites</h3><div style='display:grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap:8px;'>";
+    Object.keys(assets.sprites).forEach(k => {
+      html += `<div style='text-align:center; font-size:10px;'><img src='${assets.sprites[k].src}' style='width:32px; height:32px;'><br>${k}</div>`;
+    });
+    html += "</div><h3>Sounds</h3>";
+    Object.keys(assets.sounds).forEach(k => { html += `<button onclick="Sound.playSample('${k}')" style="margin:2px; padding:2px 6px; font-size:12px;">${k}</button> `; });
+    body.innerHTML = html;
+  };
+
+  // === Quest Actions ===
+  window.listenAction = () => {
+    if(darkMap[player.y] && darkMap[player.y][player.x] && lightTurns <= 0) {
+      logMsg("<span style='color:var(--warning)'>You hear faint, scuttling footsteps... something is near.</span>");
+      Sound.playTone(100, 'sine', 0.5, 0.05, 50);
+    } else { logMsg("You hear nothing but your own breath."); }
+  };
+
+  window.kneelAction = () => {
+    player.isKneeling = true; logMsg("You kneel low to the ground.");
+    document.getElementById('kneelBtn').style.background = 'var(--success)';
+    setTimeout(() => { player.isKneeling = false; document.getElementById('kneelBtn').style.background = ''; }, 1000);
+  };
+
+  // Action Buttons
+  window.meleeAttack = () => { movePlayer(player.facing.dx, player.facing.dy); };
+  window.castEquippedSpell = () => { if(player.equippedSpell) castSpell(player.equippedSpell); else logMsg("No spell equipped!"); };
+  window.toggleMenu = () => { toggleModal('menu-modal'); };
+  window.toggleFog = () => { debugFlags.revealMap = !debugFlags.revealMap; drawMap(); };
+  window.toggleLight = () => { debugFlags.fullLight = !debugFlags.fullLight; calculateFOV(); drawMap(); };
+  // Debug Abilities
+  window.debugToggleGodMode = () => { debugFlags.godMode = !debugFlags.godMode; logMsg(`God Mode ${debugFlags.godMode ? 'ON' : 'OFF'}`); };
+  window.debugToggleNoRegen = () => { debugFlags.noRegen = !debugFlags.noRegen; logMsg(`No Regen ${debugFlags.noRegen ? 'ON' : 'OFF'}`); };
+  window.debugAddGold = (amt) => { player.gp += amt; logMsg(`Added ${amt} gold.`); updateUI(); };
+  window.debugAddStatPoints = (amt) => { player.statPoints += amt; logMsg(`Added ${amt} stat points.`); updateUI(); };
+  window.debugAddTalentPoints = (amt) => { player.talentPoints += amt; logMsg(`Added ${amt} talent points.`); updateUI(); };
+  window.debugWarpNextLevel = () => { currentLevel++; initMap(50); calculateFOV(); drawMap(); updateUI(); logMsg(`Warped to level ${currentLevel}`); };
+  window.debugWarpPrevLevel = () => { if(currentLevel > 1) { currentLevel--; initMap(50); calculateFOV(); drawMap(); updateUI(); logMsg(`Warped to level ${currentLevel}`); } };
+  window.debugHealFull = () => { player.hp = player.maxHp; logMsg(`Healed to full HP.`); updateUI(); };
+  window.debugRestoreMana = () => { player.mp = player.maxMp; logMsg(`Restored mana.`); updateUI(); };
+
+  window.debugToggleEncryption = () => { debugFlags.noEncryption = !debugFlags.noEncryption; logMsg(`Encryption ${debugFlags.noEncryption ? 'OFF' : 'ON'}`); };
+  window.debugAddItem = (icon) => {
+    let def = ITEM_DEF[icon];
+    if (!def) { logMsg(`Unknown item: ${icon}`); return; }
+    let slot = inventory.findIndex(i => i === null);
+    if (slot !== -1) { inventory[slot] = { icon }; }
+    else { slot = pouch.findIndex(i => i === null); if (slot !== -1) pouch[slot] = { icon }; else itemsOnGround.push({x: player.x, y: player.y, icon}); }
+    logMsg(`Added ${def.name} to ${slot !== -1 ? 'inventory' : 'ground'}.`);
+    renderInventory(); updateUI();
+  };
+  window.debugEditStats = () => {
+    let html = `<h2>Edit Stats</h2><p>Current: STR ${player.stats.str}, DEX ${player.stats.dex}, INT ${player.stats.int}</p>`;
+    html += `<input type="number" id="edit-str" value="${player.stats.str}" min="1" max="99" style="width:60px;"> STR<br>`;
+    html += `<input type="number" id="edit-dex" value="${player.stats.dex}" min="1" max="99" style="width:60px;"> DEX<br>`;
+    html += `<input type="number" id="edit-int" value="${player.stats.int}" min="1" max="99" style="width:60px;"> INT<br>`;
+    html += `<button onclick="let s=parseInt(document.getElementById('edit-str').value); let d=parseInt(document.getElementById('edit-dex').value); let i=parseInt(document.getElementById('edit-int').value); player.stats.str = s; player.stats.dex = d; player.stats.int = i; logMsg('Stats updated.'); document.getElementById('overlay').style.display='none'; updateUI();">Apply</button>`;
+    document.getElementById('modal-content').innerHTML = html;
+    document.getElementById('overlay').style.display = 'flex';
+  };
+  window.debugSetLevel = (level) => {
+    if (level < 1) level = 1;
+    currentLevel = level;
+    initMap(50);
+    calculateFOV();
+    drawMap();
+    updateUI();
+    logMsg(`Warped to level ${currentLevel}`);
+  };
+  window.debugAddItemPrompt = () => {
+    let icon = window.prompt('Enter item icon (e.g., 🗡️, 🧪, 📜):');
+    if (icon) debugAddItem(icon);
+  };
+  window.debugSetLevelPrompt = () => {
+    let level = parseInt(window.prompt('Enter level number:'));
+    if (!isNaN(level)) debugSetLevel(level);
+  };
+
+  // === Initialization ===
+  const assetInput = document.getElementById('asset-loader');
+  if(assetInput) {
+    assetInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const data = JSON.parse(ev.target.result);
+          if(data.sprites) Object.keys(data.sprites).forEach(k => { 
+             const img = new Image(); 
+             img.src = data.sprites[k]; 
+             assets.sprites[k] = img; 
+          });
+          if(data.sounds) Object.keys(data.sounds).forEach(k => {
+             assets.sounds[k] = data.sounds[k];
+          });
+          window.useSprites = true;
+          document.getElementById('startBtn').innerText = "START GAME";
+          document.getElementById('startBtn').style.background = 'var(--success)';
+        } catch(err) {
+          alert("Invalid asset file.");
+        }
+      };
+      reader.readAsText(file);
+    });
+  }
+
+  // SOURCE: src/map.js
+  /*
+  MAP MODULE – PROCEDURAL GENERATION AND SCENE MANAGEMENT
+  ========================================================
+  This module handles the creation and initialization of game levels, including
+  procedurally generated dungeons, themed outdoor scenes (desert, beach, mountain),
+  and the central town hub. It defines tile layouts, spawns monsters and items,
+  and sets up special Monty Python‑themed encounters.
+
+  Key responsibilities:
+  1. Map generation (initMap) – creates tile grids based on current scene and level
+  2. Scene management – dungeon, town, desert, beach, mountain, forest, castle themes
+  3. Procedural algorithms – binary space partitioning for room‑and‑corridor dungeons
+  4. Special level layouts – Tristram town, desert trial (Bridge of Death, Black Knight)
+  5. Spawn logic – monsters, loot, stairs, NPCs, quest items (Holy Hand Grenade)
+  6. Utility functions – getRandomFloor, getDeadEndWall, spawnMonsters, spawnLoot
+
+  The functions here are called when the player descends/ascends stairs (engine.js),
+  from the start button (input.js), and from debug warp commands. They populate the
+  global theMap, darkMap, explored, visible, enemies, and itemsOnGround arrays.
+*/
+// === Map Generation (v7.2.0) ===
+  function getDeadEndWall() {
+    let candidates = [];
+    for(let y=1; y<mapH-1; y++) {
+      for(let x=1; x<mapW-1; x++) {
+        if(theMap[y][x] === TILES.WALL) {
+          let floors = 0;
+          if(theMap[y-1] && theMap[y-1][x] === TILES.FLOOR) floors++;
+          if(theMap[y+1] && theMap[y+1][x] === TILES.FLOOR) floors++;
+          if(theMap[y][x-1] === TILES.FLOOR) floors++;
+          if(theMap[y][x+1] === TILES.FLOOR) floors++;
+          if(floors === 1) candidates.push({x,y});
+        }
+      }
+    }
+    return candidates.length > 0 ? candidates[Math.floor(Math.random()*candidates.length)] : {x:5,y:5};
+  }
+
+  function initMap(baseSize) {
+    if (currentLevel > 10) {
+      if (currentLevel === 11) currentScene = 'mountain';
+      else if (currentLevel === 12) currentScene = 'beach';
+      else if (currentLevel === 13) currentScene = 'desert';
+      else if (currentLevel === 14) currentScene = 'forest';
+      else if (currentLevel >= 15) currentScene = 'castle';
+    } else if (currentLevel === 0) { currentScene = 'town'; } // Tristram
+    else { currentScene = 'dungeon'; }
+
+    let scaledSize = Math.floor(baseSize * Math.pow(1.1, Math.max(0, currentLevel - 1)));
+    if(scaledSize % 2 === 0) scaledSize++;
+    mapW = scaledSize; mapH = scaledSize;
+    
+    let defaultTile = currentScene === 'dungeon' ? TILES.WALL : TILES.GRASS;
+    if(currentScene === 'desert') defaultTile = TILES.SAND;
+    if(currentScene === 'beach') defaultTile = TILES.SAND;
+
+    theMap = Array(mapH).fill().map(()=>Array(mapW).fill(defaultTile));
+    darkMap = Array(mapH).fill().map(()=>Array(mapW).fill(false));
+    explored = Array(mapH).fill().map(()=>Array(mapW).fill(false));
+    visible = Array(mapH).fill().map(()=>Array(mapW).fill(false));
+    enemies = []; itemsOnGround = []; lightTurns = 0;
+
+    if (currentScene === 'town') {
+      // Tristram Hub
+      mapW = 25; mapH = 25;
+      theMap = Array(mapH).fill().map(()=>Array(mapW).fill(TILES.GRASS));
+      for(let i=0; i<mapW; i++) { theMap[0][i]=TILES.WALL; theMap[mapH-1][i]=TILES.WALL; theMap[i][0]=TILES.WALL; theMap[i][mapW-1]=TILES.WALL; }
+      
+      theMap[5][5] = TILES.STORE; // Apu
+      theMap[5][15] = TILES.BOOKSTORE; // Wizard
+      theMap[15][5] = TILES.FORGE; // Blacksmith
+      theMap[12][12] = TILES.PORTAL; // Portal back
+      
+      enemies.push({ x: 10, y: 10, type: "cain", stats: {...MONSTER_DEF["cain"]} });
+      enemies.push({ x: 18, y: 18, type: "cow", stats: {...MONSTER_DEF["cow"]} });
+      enemies.push({ x: 20, y: 5, type: "dennis", stats: {...MONSTER_DEF["dennis"]} });
+      player.x = 12; player.y = 13;
+    } 
+    else if (currentScene === 'dungeon') {
+      let rooms = [];
+      function splitArea(x, y, w, h, iter) {
+        if(iter === 0 || (w < 10 && h < 10)) {
+          rooms.push({x, y, w, h, cx: Math.floor(x+w/2), cy: Math.floor(y+h/2)}); return;
+        }
+        let splitHoriz = Math.random() > 0.5;
+        if(splitHoriz) { let split = Math.floor(h/2); splitArea(x, y, w, split, iter-1); splitArea(x, y+split, w, h-split, iter-1); }
+        else { let split = Math.floor(w/2); splitArea(x, y, split, h, iter-1); splitArea(x+split, y, w-split, h, iter-1); }
+      }
+      splitArea(1, 1, mapW-2, mapH-2, 4);
+
+      for(let r of rooms) {
+        for(let cy=r.y+1; cy<r.y+r.h-1; cy++) for(let cx=r.x+1; cx<r.x+r.w-1; cx++) theMap[cy][cx] = TILES.FLOOR;
+      }
+      for(let i=0; i<rooms.length-1; i++) {
+        let p1 = rooms[i], p2 = rooms[i+1];
+        let cx = p1.cx, cy = p1.cy;
+        while(cx !== p2.cx) { theMap[cy][cx] = TILES.FLOOR; cx += Math.sign(p2.cx - cx); }
+        while(cy !== p2.cy) { theMap[cy][cx] = TILES.FLOOR; cy += Math.sign(p2.cy - cy); }
+      }
+
+      if(currentLevel === 3) {
+        let pos = getDeadEndWall(); theMap[pos.y][pos.x] = TILES.LEFTYS;
+        enemies.push({ x: pos.x+1, y: pos.y, type: "fence", stats: {...MONSTER_DEF["fence"]} });
+      }
+      
+      let up = getDeadEndWall(); player.x = up.x; player.y = up.y;
+      theMap[player.y][player.x] = currentLevel > 1 ? TILES.STAIR_UP : TILES.FLOOR;
+      let down = getDeadEndWall(); theMap[down.y][down.x] = TILES.STAIR_DOWN;
+
+      spawnMonsters(5); spawnLoot(0,0,false);
+    } 
+    else if (currentScene === 'desert') {
+      // Monty Python & Indy Trials
+      for(let i=5; i<15; i++) theMap[10][i] = TILES.LETTER; // IEHOVA
+      theMap[12][10] = TILES.BLADE;
+      
+      enemies.push({ x: 15, y: 10, type: "bridge_keeper", stats: {...MONSTER_DEF["bridge_keeper"]} });
+      enemies.push({ x: 20, y: 20, type: "black_knight", stats: {...MONSTER_DEF["black_knight"]}, actionTimer: 0 });
+      enemies.push({ x: 5, y: 5, type: "killer_rabbit", stats: {...MONSTER_DEF["killer_rabbit"]}, actionTimer: 0 });
+      enemies.push({ x: 2, y: 15, type: "french_taunter", stats: {...MONSTER_DEF["french_taunter"]} });
+      
+      itemsOnGround.push({ x: 6, y: 5, icon: '💣🌟' }); // Monk's Loot
+      
+      player.x = 2; player.y = 2;
+      theMap[mapH-2][mapW-2] = TILES.STAIR_DOWN;
+    }
+  }
+
+  function getRandomFloor() {
+    let x, y;
+    do { x = Math.floor(Math.random()*mapW); y = Math.floor(Math.random()*mapH); } while(theMap[y][x] !== TILES.FLOOR && theMap[y][x] !== TILES.SAND);
+    return {x,y};
+  }
+
+  function spawnMonsters(count) {
+    for(let i=0; i<count; i++) {
+      let pos = getRandomFloor();
+      enemies.push({ x: pos.x, y: pos.y, type: "slime", stats: {...MONSTER_DEF["slime"]}, actionTimer: 0 });
+    }
+  }
+
+  function spawnLoot(x, y, isChest) {
+    let pos = getRandomFloor();
+    itemsOnGround.push({ x: pos.x, y: pos.y, icon: '🧪' });
+  }
+
+  // SOURCE: src/mechanics.js
+/*
+  MECHANICS MODULE – INVENTORY, ITEMS, AND SPECIAL ACTIONS
+  =========================================================
+  This module contains the core game mechanics for handling player interactions with inventory items,
+  special quest items, and Monty Python‑themed events. It bridges the UI (clicks, keypresses) with
+  the game state (inventory, equipment, enemies, quest flags).
+
+  Key responsibilities:
+  1. Item click handling – weapon/armor equipping, food/potion consumption, scroll reading
+  2. Special item logic – Holy Hand Grenade (timed modal), Boots of Blinding Speed, Potion of Newt
+  3. Monty Python events – Witch Trial (duck‑based justice), Killer Rabbit grenade sequence
+  4. Inventory management – pickup, stacking, pouch overflow, greed traps
+  5. Equipment swapping – stat recalculation (damage, dodge rate)
+
+  The functions here are called from ui_logic.js (handleItemClick) and from the game loop
+  (pickupItems). They update the global inventory, pouch, player.equipped, and enemy arrays.
+*/
+  // === Inventory & Quest Actions (v7.2.0) ===
+  function handleItemClick(idx) {
+    let itemObj = inventory[idx];
+    if(!itemObj) return;
+
+    // Handle Holy Hand Grenade
+    if(itemObj.icon === '💣🌟') {
+      triggerGrenade(idx);
+      return;
+    }
+
+    // Handle Potion of Newt (I got better!)
+    if(itemObj.icon === '🧪🦎') {
+      logMsg("You turned into a newt! ...You got better.");
+      player.xp += 100; checkLevelUp(); decrementItem(idx);
+      return;
+    }
+
+    // Boots of Blinding Speed Logic
+    if(itemObj.icon === '👢⚡') {
+      logMsg("<span style='color:var(--primary)'>You feel extremely fast, but everything goes dark!</span>");
+      player.blind = true;
+      swapEquip(idx, 'feet');
+      return;
+    }
+
+    // Standard behavior...
+    let def = ITEM_DEF[itemObj.icon];
+    if(def.type === "bag") { openBag(idx); return; }
+    if(def.type === "weapon") { swapEquip(idx, 'leftHand'); return; }
+    if(def.type === "armor") { swapEquip(idx, def.slot || 'chest'); return; }
+    
+    if(def.type === "food" || def.type === "potion") {
+      // Quest Feeding logic
+      let nearEagle = enemies.findIndex(e => e.type === 'eagle' && Math.abs(e.x-player.x)<=2);
+      if(nearEagle !== -1 && itemObj.icon === '🍖') {
+        logMsg("ACHIEVEMENT: Eagle Eye! You fed the starving bird.");
+        enemies.splice(nearEagle, 1); player.fedEagle = true; player.xp += 500; 
+        decrementItem(idx); return;
+      }
+      
+      if(def.maxHeal > 0) {
+        if(def.type === "potion") player.hp = Math.min(player.maxHp, player.hp + def.maxHeal);
+        else player.totalHealPending += def.maxHeal;
+      }
+      player.hunger = Math.max(0, player.hunger - (def.foodValue || 0));
+      decrementItem(idx);
+    }
+    else if(def.type === "scroll") {
+      if(itemObj.icon === '📃') { isIdentifying = true; logMsg("Select an item."); return; }
+      if(def.spell) { castSpell(def.spell, true); decrementItem(idx); }
+    }
+    updateUI();
+  }
+
+  // === Monty Python Specialized Modals ===
+  window.triggerGrenade = (idx) => {
+    let m = document.getElementById('modal-content');
+    player.grenadeCount = 1;
+    m.innerHTML = `<h2>💣 Holy Hand Grenade</h2>
+      <p id='grenade-text' style='font-size:24px; font-weight:bold;'>ONE...</p>
+      <button onclick="countGrenade(${idx})">AND THREE SHALL BE THE NUMBER!</button>`;
+    document.getElementById('overlay').style.display = 'flex';
+    
+    const ticker = setInterval(() => {
+      if(document.getElementById('overlay').style.display === 'none') { clearInterval(ticker); return; }
+      player.grenadeCount++;
+      let txt = "";
+      if(player.grenadeCount === 2) txt = "TWO...";
+      if(player.grenadeCount === 3) txt = "THREE!";
+      if(player.grenadeCount === 4) txt = "FOUR?";
+      if(player.grenadeCount === 5) txt = "FIVE!!";
+      if(player.grenadeCount > 5) { 
+        logMsg("You waited too long! The grenade exploded in your hand.");
+        player.hp = 0; die(); clearInterval(ticker);
+      }
+      document.getElementById('grenade-text').innerText = txt;
+    }, 1000);
+  };
+
+  window.countGrenade = (idx) => {
+    document.getElementById('overlay').style.display = 'none';
+    if(player.grenadeCount === 3) {
+      logMsg("<span style='color:var(--success)'>The Killer Rabbit is blown to tiny bits!</span>");
+      enemies = enemies.filter(e => e.type !== 'killer_rabbit');
+      player.xp += 2000; checkLevelUp();
+      decrementItem(idx);
+    } else {
+      logMsg("<span style='color:var(--error)'>You threw it on the count of " + player.grenadeCount + ". It missed!</span>");
+    }
+    drawMap();
+  };
+
+  window.witchTrial = () => {
+    let hasDuck = inventory.some(i => i && i.icon === '🦆');
+    let m = document.getElementById('modal-content');
+    if(hasDuck) {
+      m.innerHTML = `<h2>⚖️ The Scales of Justice</h2><p>"She weighs the same as a duck!"</p>
+        <p style='color:var(--success)'>The crowd gasps! The peasant woman turns into a WITCH and vanishes!</p>
+        <button onclick="finishWitch()">Pick up Potion of Newt</button>`;
+    } else {
+      m.innerHTML = `<h2>⚖️ The Scales of Justice</h2><p>"We need something that floats to weigh her against!"</p>
+        <button onclick="document.getElementById('overlay').style.display='none'">Maybe a Duck?</button>`;
+    }
+    document.getElementById('overlay').style.display = 'flex';
+  };
+
+  window.finishWitch = () => {
+    document.getElementById('overlay').style.display = 'none';
+    let empty = inventory.findIndex(i => i === null);
+    if(empty !== -1) inventory[empty] = {icon:'🧪🦎', qty:1};
+    logMsg("The Witch left a Potion of Newt behind.");
+    renderInventory();
+  };
+
+  // === Advanced Pouch/Bag Logic (v7.0.0) ===
+  function pickupItems() {
+    let toRemove = [];
+    itemsOnGround.forEach((item, index) => {
+      if(item.x === player.x && item.y === player.y) {
+        // Greed Trap check
+        if(item.greedTrap && player.stats.int < 15) {
+           logMsg("TRAPPED BY GREED!"); isDead = true; die(); return;
+        }
+        
+        let def = ITEM_DEF[item.icon];
+        if(!def) return;
+
+        // Try Main Inventory First
+        let stacked = false;
+        if(def.stackable) {
+          let slot = inventory.find(i => i && i.icon === item.icon);
+          if(slot) { slot.qty++; stacked = true; }
+        }
+        if(!stacked) {
+          let emptyIdx = inventory.findIndex(i => i === null);
+          if(emptyIdx !== -1) { inventory[emptyIdx] = {icon: item.icon, qty: 1}; stacked = true; }
+        }
+
+        // Try Pouch Second
+        if(!stacked) {
+          let pIdx = pouch.findIndex(i => i === null);
+          if(pIdx !== -1) { pouch[pIdx] = {icon: item.icon, qty: 1}; stacked = true; logMsg(`Stashed ${item.icon} in Pouch.`); }
+        }
+
+        if(stacked) { toRemove.push(index); logMsg(`Picked up ${item.icon}`); }
+        else { logMsg("<span style='color:var(--warning)'>Inventory and Pouch full!</span>"); }
+      }
+    });
+    for(let i=toRemove.length-1; i>=0; i--) itemsOnGround.splice(toRemove[i], 1);
+    renderInventory(); renderPouch(); updateUI();
+  }
+
+  function decrementItem(idx) { 
+    if(!inventory[idx]) return; 
+    inventory[idx].qty--; 
+    if(inventory[idx].qty <= 0) inventory[idx] = null; 
+    renderInventory(); 
+  }
+
+  function swapEquip(idx, slot) {
+    let item = inventory[idx], cur = player.equipped[slot];
+    player.equipped[slot] = item.icon; inventory[idx] = cur ? { icon: cur, qty: 1 } : null;
+    let totalDmg = 2, totalEvade = 15;
+    Object.values(player.equipped).forEach(ic => { if(ic) { let d = ITEM_DEF[ic]; totalDmg += (d.maxDamage||0); totalEvade += (d.evadePercent||0); } });
+    player.baseDmg = totalDmg; player.dodgeRate = totalEvade / 100;
+    renderInventory(); updateUI();
+  }
+
+  // SOURCE: src/engine.js
+  /*
+  ENGINE MODULE – CORE GAME LOOPS, AI, AND COMBAT
+  ================================================
+  This module contains the central game engine that drives turn‑based progression,
+  artificial intelligence, combat resolution, and Monty Python‑themed event sequences.
+  It is the heartbeat of the roguelike, orchestrating player actions, enemy behaviors,
+  and world simulation.
+
+  Key responsibilities:
+  1. Turn advancement (advanceTurn) – handles hunger, exhaustion, healing, monster AI, spawns
+  2. Combat system (doCombat, monsterAttack) – damage calculation, floating text, sound cues
+  3. Special enemy logic – French Taunter cow‑throwing, Thief pickpocketing, Black Knight limb loss
+  4. Death & resurrection – crystal shatter mechanic, death screen
+  5. Level‑up mechanics – experience thresholds, fireworks visual effects
+  6. Monty Python sequences – Bridge of Death trial, Roc capture/escape, Witch Trial
+  7. Player movement (movePlayer) – collision, tile effects, bridge keeper encounter
+
+  The functions here are called from input.js (movePlayer, restPlayer), from the UI
+  (combat clicks), and from the game's own turn‑based clock (advanceTurn). They update
+  the global player, enemies, itemsOnGround, and activeEffects arrays.
+*/
+// === Core Loops & AI ===
+  let chestStates = {};
+  let snoreLoop = null;
+
+  function advanceTurn(steps = 1) {
+    if(isDead) return;
+    
+    // Atronach & Regen Suppression (v7.2.0)
+    if (!player.atronach) {
+       // natural regen
+    }
+
+    // Roc Capture
+    if(currentLevel === 11 && !player.rocCaptured) {
+      player.mountainSteps = (player.mountainSteps || 0) + steps;
+      if(player.mountainSteps >= 5) {
+        player.rocCaptured = true;
+        logMsg("<span style='color:var(--error)'>A GIANT ROC SWOOPS DOWN AND GRABS YOU!</span>");
+        startQuestTimer(15, "Roc Nest Escape", () => {
+           if(player.fedEagle) {
+             logMsg("<span style='color:var(--success)'>The giant Eagle you fed rescues you from the nest!</span>");
+             currentLevel = 12; initMap(50);
+           } else { logMsg("<span style='color:var(--error)'>You are eaten.</span>"); isDead = true; die(); }
+        });
+        currentScene = 'nest'; player.x = 10; player.y = 10; 
+        itemsOnGround.push({x: 11, y: 11, icon: '🏅'}); drawMap(); return;
+      }
+    }
+
+    if (player.isRunning) {
+      player.exhaustion += steps;
+      if (player.exhaustion > 20) {
+        player.hp -= (0.2 * steps); player.mp = Math.max(0, player.mp - (0.1 * steps));
+      }
+    } else { player.exhaustion = Math.max(0, player.exhaustion - steps); }
+
+    player.hunger = Math.min(100, player.hunger + (CONSTANTS.HUNGER_RATE * steps));
+    // Hunger damage when starving
+    if (player.hunger >= 100) {
+      player.hp -= CONSTANTS.HUNGER_DAMAGE * steps;
+      addFloatingText(player.x, player.y, "🍖 -" + CONSTANTS.HUNGER_DAMAGE.toFixed(1), "#f00");
+    }
+    // Hunger heal when well-fed (optional)
+    if (player.hunger <= 20) {
+      player.hp = Math.min(player.maxHp, player.hp + CONSTANTS.HUNGER_HEAL * steps);
+    }
+    if(player.totalHealPending > 0) {
+      let tick = Math.min(player.totalHealPending, 1 * steps);
+      player.hp = Math.min(player.maxHp, player.hp + tick);
+      player.totalHealPending -= tick;
+    }
+
+    // AI and NPC Logic
+    enemies.forEach((e, eIdx) => {
+      if(!e.stats) return;
+      
+      // French Taunter Cow-Throwing (v7.2.0)
+      if (e.type === 'french_taunter') {
+        if (Math.abs(e.x - player.x) + Math.abs(e.y - player.y) <= 5 && Math.random() < 0.1) {
+           logMsg("<span style='color:var(--error)'>The French Taunter flings a COW at you!</span>");
+           player.hp -= 10; addFloatingText(player.x, player.y, "🐄 -10", "#f00", 24);
+        }
+        return;
+      }
+
+      if (e.type === 'thief') {
+        let dist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
+        if (dist === 1 && Math.random() < CONSTANTS.STEAL_CHANCE) thiefSteal(eIdx);
+        let item = itemsOnGround.find(i => Math.abs(i.x-e.x)+Math.abs(i.y-e.y) <= 5);
+        if(item) { e.x += Math.sign(item.x-e.x); e.y += Math.sign(item.y-e.y); }
+        else { e.x += (Math.random()>0.5?1:-1); e.y += (Math.random()>0.5?1:-1); }
+        return;
+      }
+
+      if(e.stats.quest) return; 
+      
+      e.actionTimer += (e.stats.speed * steps);
+      while(e.actionTimer >= 1) {
+        e.actionTimer -= 1;
+        let nx = e.x, ny = e.y;
+        let isAdj = Math.abs(e.x - player.x) <= 1 && Math.abs(e.y - player.y) <= 1;
+        if(isAdj) { monsterAttack(eIdx); }
+        else {
+          let dx = Math.sign(player.x - e.x), dy = Math.sign(player.y - e.y);
+          if(theMap[e.y+dy] && theMap[e.y+dy][e.x+dx] === TILES.FLOOR) { e.x += dx; e.y += dy; }
+        }
+      }
+    });
+
+    // Spawn new monsters over time
+    if (Math.random() < CONSTANTS.SPAWN_RATE * steps) {
+        let pos = getRandomFloor();
+        if (pos && !enemies.some(e => e.x === pos.x && e.y === pos.y) && (pos.x !== player.x || pos.y !== player.y)) {
+            enemies.push({ x: pos.x, y: pos.y, type: "slime", stats: {...MONSTER_DEF["slime"]}, actionTimer: 0 });
+        }
+    }
+
+    let curTile = theMap[player.y][player.x];
+    if (curTile === TILES.BLADE && !player.isKneeling) { player.hp -= 10; damageTint = 30; }
+
+    calculateFOV(); drawMap(); updateUI();
+  }
+
+  function thiefSteal(thiefIdx) {
+    let items = inventory.filter(i => i !== null);
+    if (items.length > 0) {
+      let idx = inventory.indexOf(items[Math.floor(Math.random()*items.length)]);
+      let stolen = inventory[idx];
+      stolenItems.push(stolen);
+      inventory[idx] = null;
+      logMsg(`<span style='color:var(--error)'>The Thief pickpocketed your ${ITEM_DEF[stolen.icon].name}!</span>`);
+      document.getElementById('modal-content').innerHTML = `<h2>🧤 PICKPOCKETED</h2><p>The Thief stole your <strong>${ITEM_DEF[stolen.icon].name}</strong>!</p><button onclick="document.getElementById('overlay').style.display='none'">Drat!</button>`;
+      document.getElementById('overlay').style.display = 'flex';
+      renderInventory(); updateUI();
+    }
+  }
+
+  function restPlayer() {
+    document.getElementById('overlay').style.display = 'flex';
+    document.getElementById('modal-content').innerHTML = `<h2>💤 Sleeping...</h2><button onclick="wakeUp()">Wake Up</button>`;
+    player.isSleeping = true;
+    Sound.gurgle();
+    if (snoreLoop) clearInterval(snoreLoop);
+    snoreLoop = setInterval(() => Sound.snore(), 2000);
+
+    // Assassin Ambush (v7.2.0)
+    if (player.killedPassive && !player.assassinMet) {
+       player.assassinMet = true;
+       setTimeout(() => {
+         if (snoreLoop) clearInterval(snoreLoop);
+         logMsg("<span style='color:var(--error)'>You wake to a cold blade at your throat! 'The Dark Brotherhood sends its regards!'</span>");
+         enemies.push({ x: player.x+1, y: player.y, type: "assassin", stats: {...MONSTER_DEF["assassin"]}, actionTimer: 0 });
+         wakeUp();
+       }, 1500);
+       return;
+    }
+
+    let thief = enemies.find(e => e.type === 'thief' && Math.abs(e.x-player.x)+Math.abs(e.y-player.y) <= 2);
+    if (thief && Math.random() < 0.75) {
+       setTimeout(() => {
+         if (snoreLoop) clearInterval(snoreLoop);
+         logMsg("<span style='color:var(--warning)'>A Thief was rooting through your pack!</span>");
+         wakeUp();
+       }, 1000);
+    }
+  }
+
+  window.wakeUp = () => {
+    document.getElementById('overlay').style.display = 'none';
+    player.isSleeping = false; advanceTurn(10);
+    if (snoreLoop) clearInterval(snoreLoop);
+    if (!player.atronach) player.hp = Math.min(player.maxHp, player.hp + 20);
+    updateUI();
+  };
+
+  function die() {
+    let crystalIdx = inventory.findIndex(i => i && i.icon === '💎💠');
+    if (crystalIdx !== -1) {
+      logMsg("Crystal Shatters!");
+      inventory[crystalIdx] = null;
+      player.hp = player.maxHp; updateUI(); return;
+    }
+    isDead = true; Sound.scream(); drawMap();
+    setTimeout(() => {
+      document.getElementById('overlay').style.display = 'flex';
+      document.getElementById('modal-content').innerHTML = `<h2>YOU DIED</h2><button onclick="location.reload()">Restart</button>`;
+    }, 600);
+  }
+
+  function checkLevelUp() {
+    let req = CONSTANTS.XP_BASE * Math.pow(CONSTANTS.XP_MULT, player.level - 1);
+    if (player.xp >= req) {
+      player.xp -= req; player.level++; player.statPoints += 1; player.talentPoints += 1;
+      player.hp = player.maxHp; player.mp = player.maxMp; logMsg("LEVEL UP!"); triggerLevelUpVisuals();
+    }
+  }
+
+  function triggerLevelUpVisuals() {
+    window.levelUpFlash = 1.0;
+    Sound.playTone(800, 'sine', 0.5, 0.1, 1200);
+    // Fireworks effect: radiating colored lines
+    for(let i = 0; i < 12; i++) {
+      let angle = Math.PI * 2 * i / 12;
+      let dx = Math.cos(angle) * 3;
+      let dy = Math.sin(angle) * 3;
+      activeEffects.push({
+        x1: player.x, y1: player.y,
+        x2: player.x + dx, y2: player.y + dy,
+        color: `hsl(${i * 30}, 100%, 60%)`,
+        life: 1.0
+      });
+    }
+  }
+
+  function doCombat(enemyIndex) {
+    let e = enemies[enemyIndex]; if(!e) return;
+    if(e.type === 'master' || e.type === 'pirate') { insultBattle(enemyIndex); return; }
+    
+    // Black Knight Limb-Loss (v7.2.0)
+    if (e.type === 'black_knight') {
+       let dmg = player.baseDmg; e.stats.hp -= dmg;
+       Sound.sword();
+       addFloatingText(e.x, e.y, `-${dmg}`, "#f00", 16 + dmg);
+       let pct = e.stats.hp / 200;
+       if (pct <= 0.75 && player.knightLimb === 0) { player.knightLimb = 1; logMsg("'Tis but a scratch!' (Damage Reduced)"); e.stats.dmg -= 5; }
+       if (pct <= 0.50 && player.knightLimb === 1) { player.knightLimb = 2; logMsg("'Just a flesh wound!'"); e.stats.dmg -= 5; }
+       if (pct <= 0.25 && player.knightLimb === 2) { player.knightLimb = 3; logMsg("'I'll bite your legs off!' (Speed Reduced)"); e.stats.speed = 0.1; e.stats.icon = '🦵'; }
+       if (e.stats.hp <= 0) { logMsg("'Alright, we'll call it a draw!'"); enemies.splice(enemyIndex, 1); player.xp += 500; checkLevelUp(); }
+       advanceTurn(1); return;
+    }
+
+    let dmg = player.baseDmg; e.stats.hp -= dmg;
+    logMsg(`You hit the ${e.type} for ${dmg} damage.`);
+    Sound.sword();
+    addFloatingText(e.x, e.y, `-${dmg}`, "#f00", 16 + dmg);
+    if (e.stats.hp <= 0) { 
+      if (e.type === 'cow' || e.type === 'chicken') player.killedPassive = true;
+      player.xp += 50; checkLevelUp(); enemies.splice(enemyIndex, 1); 
+    }
+    advanceTurn(1);
+  }
+
+  function monsterAttack(enemyIndex) {
+    let e = enemies[enemyIndex]; let dmg = e.stats.dmg;
+    player.hp -= dmg;
+    logMsg(`The ${e.type} hits you for ${dmg} damage.`);
+    Sound.grunt();
+    addFloatingText(player.x, player.y, `-${dmg}`, "#f00", 16 + dmg);
+    if(player.hp <= 0) die();
+  }
+
+  function movePlayer(dx, dy) {
+    if(isDead || player.isSleeping) return;
+    player.facing = {dx, dy};
+    let nx = player.x + dx, ny = player.y + dy;
+    let tile = theMap[ny][nx];
+    
+    // Bridge Keeper (v7.2.0)
+    let keeperIdx = enemies.findIndex(e => e.type === 'bridge_keeper' && e.x === nx && e.y === ny);
+    if (keeperIdx !== -1 && !player.bridgeQuestions) { bridgeTrial(keeperIdx); return; }
+
+    if (tile === TILES.LETTER) {
+       let letter = window.letterMap ? window.letterMap[`${nx},${ny}`] : 'A';
+       if ("IEHOVA".indexOf(letter) === -1) { logMsg("Wrong letter!"); isDead = true; die(); return; }
+    }
+
+    let eIdx = enemies.findIndex(e => e.x === nx && e.y === ny);
+    if (eIdx !== -1) { doCombat(eIdx); return; }
+    if (tile === TILES.WALL) { Sound.oof(); return; }
+    
+    player.x = nx; player.y = ny; 
+    if(tile === TILES.WATER) Sound.splash(); else Sound.step();
+    pickupItems(); advanceTurn(1);
+  }
+
+  window.bridgeTrial = (idx) => {
+    let m = document.getElementById('modal-content');
+    m.innerHTML = `<h2>🧙‍♂️ Bridge of Death</h2><p>Keeper: "What... is your name?"</p>
+      <button onclick="bridgeAns(1)">"Sir Lancelot of Camelot."</button>
+      <button onclick="bridgeAns(0)">"Galahad the... wait!"</button>`;
+    document.getElementById('overlay').style.display = 'flex';
+  };
+
+  window.bridgeAns = (correct) => {
+    if(!correct) { logMsg("AHHHHHHH!"); isDead = true; die(); return; }
+    let m = document.getElementById('modal-content');
+    m.innerHTML = `<h2>🧙‍♂️ Bridge of Death</h2><p>Keeper: "What... is your quest?"</p>
+      <button onclick="bridgeAns2(1)">"To seek the Holy Grail."</button>
+      <button onclick="bridgeAns2(0)">"To find a nice shrubbery."</button>`;
+  };
+
+  window.bridgeAns2 = (correct) => {
+    if(!correct) { logMsg("AHHHHHHH!"); isDead = true; die(); return; }
+    let m = document.getElementById('modal-content');
+    let highInt = player.stats.int >= 15;
+    m.innerHTML = `<h2>🧙‍♂️ Bridge of Death</h2><p>Keeper: "What... is the airspeed velocity of an unladen swallow?"</p>
+      <button onclick="bridgeAns3(0)">"24 miles per hour?"</button>
+      ${highInt ? `<button onclick="bridgeAns3(1)">"What do you mean? African or European swallow?"</button>` : ''}`;
+  };
+
+  window.bridgeAns3 = (win) => {
+    document.getElementById('overlay').style.display = 'none';
+    if(win) { logMsg("Keeper: 'What? I don't know that! AHHHHHHH!'"); enemies = enemies.filter(e => e.type !== 'bridge_keeper'); player.bridgeQuestions = true; }
+    else { logMsg("AHHHHHHH!"); isDead = true; die(); }
+  };
+
+  // SOURCE: src/shop.js
+  /*
+  SHOP MODULE – NPC MERCHANTS, TRADING, AND QUEST INTERACTIONS
+  =============================================================
+  This module implements the game's shop system, providing interactive merchant interfaces
+  for buying items, selling loot, identifying mystery items, and advancing quest‑related
+  dialogue. Each NPC vendor has a distinct personality and inventory tied to Monty Python
+  and Discworld references.
+
+  Key responsibilities:
+  1. Shop UI rendering (openStore) – generates modal HTML for each NPC type
+  2. NPC‑specific logic – Apu (bags, potions), Deckard Cain (bulk identification),
+     Dennis (constitutional convention), Librarian (spellbooks, Grue lore), Fence (stolen goods)
+  3. Transaction handling – buying items, selling to fence, buying back stolen items
+  4. Inventory management – automatic pouch stashing when inventory is full
+  5. Quest progression – Dennis' political commentary, Wizard's Grue warnings
+
+  The functions here are called from ui_logic.js (when clicking on NPCs on the map) and
+  from the shop modal's own buttons. They update player.gp, inventory, pouch, and stolenItems.
+*/
+// === Shop & Quest Interaction System (v7.2.0) ===
+  function openStore(type = 'apu') {
+    let o = document.getElementById('overlay');
+    let m = document.getElementById('modal-content');
+    let html = `<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #555; padding-bottom:8px; margin-bottom:12px;">
+               <span style="font-size:12px; color:var(--primary);">Your GP: ${player.gp}</span>
+               <button style="width:auto; padding:2px 8px; font-size:10px;" onclick="document.getElementById('overlay').style.display='none'">Exit</button>
+             </div>`;
+    let items = [];
+
+    if(type === 'apu') {
+      html += `<h2>🏪 Apu's Supercenter</h2><p>"Thank you, come again! I have high-capacity bags today!"</p>`;
+      items = [
+        {icon:'👜', name:'Adventurer Bag (5 slots)', cost:50},
+        {icon:'🎒', name:'Master Bag (10 slots)', cost:150},
+        {icon:'📜', name:'Scroll of Identification', cost:20},
+        {icon:'🧪', name:'Health Potion', cost:40}
+      ];
+    } 
+    else if(type === 'cain') {
+      html += `<h2>🧔 Deckard Cain</h2><p>"Stay awhile and listen! I can identify all your mysterious items for a flat fee of 100g."</p>`;
+      html += `<button onclick="bulkIdentify()">Identify All Items (100g)</button>`;
+    }
+    else if(type === 'dennis') {
+      html += `<h2>👨‍🌾 Dennis</h2><p>"Listen, strange women lying in ponds distributing swords is no basis for a system of government!"</p>`;
+      if(player.equipped.head === '👑' || player.gp > 1000) {
+        html += `<p style='color:var(--warning)'>"I didn't know we had a king. I thought we were an autonomous collective!"</p>
+          <button onclick="getConvention()">Request constitutional convention</button>`;
+      } else {
+        html += `<p>"Help! Help! I'm being repressed!"</p>`;
+      }
+    }
+    else if(type === 'wizard') {
+      html += `<h2>🧙‍♂️ The Librarian</h2><p>"Looking for lore? I have the books of Discworld and the secrets of the Grue."</p>`;
+      html += `<button onclick="askGrue()">Ask about Grues</button>`;
+      items = [{icon:'📖', name:'Spellbook: Fireball', cost:200}, {icon:'📖', name:'Spellbook: Portal', cost:500}];
+    }
+    else if(type === 'fence') {
+      html += `<h2>🧥 The Fence</h2><p>"I got 12 kids to feed. Don't ask questions."</p>`;
+      stolenItems.forEach((it, idx) => {
+        let cost = (ITEM_DEF[it.icon].maxGP || 100) * 2;
+        html += `<div class="shop-item"><span>${it.icon} Stolen ${ITEM_DEF[it.icon].name} (${cost}g)</span> <button onclick="buyStolen(${idx})">Buy Back</button></div>`;
+      });
+      html += `<hr><p style='font-size:10px; color:#aaa;'>I'll give you 10% for your loot.</p>`;
+      inventory.forEach((i, idx) => { if(i) html += `<div class="shop-item"><span>${i.icon} ${ITEM_DEF[i.icon].name} (+${Math.floor(ITEM_DEF[i.icon].maxGP*0.1)}g)</span> <button onclick="sell(${idx}, 'fence')">Sell</button></div>`; });
+    }
+
+    items.forEach(i => { html += `<div class="shop-item"><span>${i.icon} ${i.name} (${i.cost}g)</span> <button onclick="buy('${i.icon}', ${i.cost}, '${type}')">Buy</button></div>`; });
+    m.innerHTML = html; o.style.display = 'flex';
+  }
+
+  window.bulkIdentify = () => {
+    if(player.gp >= 100) {
+      player.gp -= 100;
+      logMsg("Deckard Cain identifies your entire haul!");
+      inventory.forEach(i => { if(i) i.identified = true; });
+      pouch.forEach(i => { if(i) i.identified = true; });
+      updateUI(); document.getElementById('overlay').style.display = 'none';
+    } else { alert("Not enough gold!"); }
+  };
+
+  window.askGrue = () => {
+    logMsg("Wizard: 'The Grue has slavering fangs and razor-sharp claws. They are a mystery because they melt when exposed to light.'");
+    logMsg("Wizard: 'Carry a candle, or you will be likely eaten.'");
+  };
+
+  window.getConvention = () => {
+    logMsg("Dennis hands you a SCROLL OF CONSTITUTIONAL CONVENTION.");
+    let empty = inventory.findIndex(i => i === null);
+    if(empty !== -1) inventory[empty] = {icon:'📜📜', qty:1};
+    renderInventory(); document.getElementById('overlay').style.display = 'none';
+  };
+
+  window.buy = (icon, cost, type) => {
+    if(player.gp >= cost) {
+      let emptyIdx = inventory.findIndex(i => i === null);
+      if(emptyIdx === -1) emptyIdx = pouch.findIndex(i => i === null); // Auto-stash in pouch if buying
+      
+      if(emptyIdx !== -1) {
+        player.gp -= cost;
+        let arr = inventory.includes(null) ? inventory : pouch;
+        let finalIdx = arr.findIndex(i => i === null);
+        arr[finalIdx] = {icon, qty:1};
+        Sound.clink(); openStore(type); renderInventory(); renderPouch(); updateUI();
+      } else { alert("No room!"); }
+    }
+  };
+
+  // SOURCE: src/render.js
+  /*
+  RENDER MODULE – CANVAS GRAPHICS, FIELD OF VIEW, AND VISUAL EFFECTS
+  ==================================================================
+  This module handles all visual rendering for the game, drawing the world, entities,
+  and UI elements onto HTML5 Canvas. It includes sprite‑based rendering with fallback
+  to emoji/text, dynamic field‑of‑view calculations, lighting effects, and visual
+  feedback systems (floating damage numbers, level‑up flashes, active effect lines).
+
+  Key responsibilities:
+  1. Canvas setup & resize handling (resizeCanvas) – adapts to window size
+  2. Field‑of‑view computation (calculateFOV) – ray‑casting for visibility and exploration
+  3. Primary map rendering (drawMap) – tiles, items, enemies, player, with sprite support
+  4. Minimap rendering (drawMinimap) – top‑down overview of explored areas
+  5. Visual effects – floating text, combat flashes, lightning lines, level‑up screen tint
+  6. Performance optimizations – viewport culling, explored‑only rendering, sprite caching
+
+  The functions here are called from engine.js (after each turn), from ui_logic.js
+  (when UI updates require redraw), and from window resize events. They read the global
+  game state (theMap, itemsOnGround, enemies, player, activeEffects) and write to the canvas.
+*/
+// === Renderer (v7.2.0) ===
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    VIEW_COLS = Math.ceil(canvas.width / TILE_SIZE);
+    VIEW_ROWS = Math.ceil(canvas.height / TILE_SIZE);
+    console.log(`resizeCanvas: canvas=${canvas.width}x${canvas.height}, VIEW_COLS=${VIEW_COLS}, VIEW_ROWS=${VIEW_ROWS}`);
+    if(theMap.length > 0) drawMap();
+  }
+  window.addEventListener('resize', resizeCanvas);
+  
+  function calculateFOV() {
+    for(let y=0; y<mapH; y++) if(visible[y]) visible[y].fill(false);
+    if(window.debugFlags && debugFlags.fullLight) {
+      for(let y=0; y<mapH; y++) { visible[y].fill(true); explored[y].fill(true); }
+      return;
+    }
+    let sightLimit = lightTurns > 0 ? 15 : 5;
+    if(darkMap[player.y] && darkMap[player.y][player.x] && lightTurns <= 0) {
+      visible[player.y][player.x] = true; explored[player.y][player.x] = true;
+      return; 
+    }
+    visible[player.y][player.x] = true; explored[player.y][player.x] = true;
+    for(let angle=0; angle<360; angle+=2) {
+      let rad = angle * Math.PI / 180;
+      let dx = Math.cos(rad), dy = Math.sin(rad);
+      let cx = player.x + 0.5, cy = player.y + 0.5;
+      for(let r=1; r<=sightLimit; r++) {
+        cx += dx; cy += dy;
+        let mapX = Math.floor(cx), mapY = Math.floor(cy);
+        if(mapX < 0 || mapY < 0 || mapX >= mapW || mapY >= mapH) break;
+        visible[mapY][mapX] = true; explored[mapY][mapX] = true;
+        if(theMap[mapY][mapX] === TILES.WALL) break;
+        if(darkMap[mapY][mapX] && lightTurns <= 0) break;
+      }
+    }
+  }
+
+  function drawMap() {
+    if(!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    console.log(`drawMap: VIEW_COLS=${VIEW_COLS}, VIEW_ROWS=${VIEW_ROWS}, player=${player.x},${player.y}`);
+    let cx = Math.floor(VIEW_COLS / 2), cy = Math.floor(VIEW_ROWS / 2);
+    let wallColors = ['#4A4458', '#2e4536', '#45322e', '#2e3845', '#452e41'];
+    let wCol = wallColors[(currentLevel - 1) % wallColors.length];
+
+    for (let y = 0; y < VIEW_ROWS; y++) {
+      let mapY = player.y + y - cy; 
+      for (let x = 0; x < VIEW_COLS; x++) {
+        let mapX = player.x + x - cx; 
+        if (mapY >=0 && mapY < mapH && mapX >= 0 && mapX < mapW) {
+          if (!explored[mapY][mapX] && !(window.debugFlags && debugFlags.revealMap)) continue;
+          let tile = theMap[mapY][mapX];
+          let isVis = visible[mapY][mapX] || (window.debugFlags && debugFlags.revealMap);
+          let isDark = darkMap[mapY][mapX];
+
+          // Draw Tiles with Sprite Priority
+          let spriteName = null;
+          if(tile === TILES.WALL) spriteName = 'wall';
+          else if(tile === TILES.FLOOR) spriteName = 'floor';
+          else if(tile === TILES.CHEST) spriteName = 'chest';
+          else if(tile === TILES.STORE || tile === TILES.LEFTYS || tile === TILES.BOOKSTORE) spriteName = 'store';
+          else if(tile === TILES.PORTAL) spriteName = 'portal';
+
+          if(window.useSprites && spriteName && assets.sprites[spriteName]) {
+            ctx.drawImage(assets.sprites[spriteName], x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+          } else {
+            // Fallback block/color rendering
+            if(tile === TILES.WALL) { ctx.fillStyle = wCol; ctx.fillRect(x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE); }
+            else if(tile === TILES.STAIR_UP) { ctx.fillStyle = '#D0BCFF'; ctx.fillRect(x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE); }
+            else if(tile === TILES.STAIR_DOWN) { ctx.fillStyle = '#F2B8B5'; ctx.fillRect(x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE); }
+            else if(tile === TILES.CHEST) { ctx.fillStyle = '#ffb74d'; ctx.fillRect(x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE); }
+            else if(tile === TILES.WATER) { ctx.fillStyle = '#2196F3'; ctx.fillRect(x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE); }
+            else if(tile === TILES.SAND) { ctx.fillStyle = '#F0E68C'; ctx.fillRect(x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE); }
+            else if(tile === TILES.GRASS) { ctx.fillStyle = '#2E7D32'; ctx.fillRect(x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE); }
+            else {
+              ctx.fillStyle = isDark && lightTurns <= 0 ? '#000' : (currentScene === 'dungeon' ? '#312D3A' : (currentScene === 'beach' ? '#F0E68C' : '#2E7D32'));
+              ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            }
+          }
+
+          // Dim explored but not currently visible tiles
+          if (!isVis) {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+          }
+        }
+      }
+    }
+
+    // Draw Items
+    itemsOnGround.forEach(item => {
+      let vx = item.x - player.x + cx, vy = item.y - player.y + cy;
+      if(vx >= 0 && vx < VIEW_COLS && vy >= 0 && vy < VIEW_ROWS && visible[item.y][item.x]) {
+        let def = ITEM_DEF[item.icon];
+        let sprite = null;
+        if(window.useSprites) {
+           if(assets.sprites[item.icon]) sprite = assets.sprites[item.icon];
+           else if(item.icon === '🗡️') sprite = assets.sprites['sword'];
+           else if(item.icon === '🧪') sprite = assets.sprites['potion'];
+           else if(item.icon === '📜') sprite = assets.sprites['scroll'];
+           else if(item.icon === '🪙') sprite = assets.sprites['coin'];
+        }
+        if(sprite) ctx.drawImage(sprite, vx*TILE_SIZE+4, vy*TILE_SIZE+4, 24, 24);
+        else { ctx.font = '20px sans-serif'; ctx.fillText(item.icon, vx*TILE_SIZE+4, vy*TILE_SIZE+24); }
+      }
+    });
+
+    // Draw Enemies
+    enemies.forEach(e => {
+      let vx = e.x - player.x + cx, vy = e.y - player.y + cy;
+      if(vx >= 0 && vx < VIEW_COLS && vy >= 0 && vy < VIEW_ROWS && visible[e.y][e.x]) {
+        let sprite = null;
+        if(window.useSprites) {
+          if(assets.sprites[e.type]) sprite = assets.sprites[e.type];
+          else if(e.type === 'slime') sprite = assets.sprites['slime'];
+          else if(e.type === 'skeleton') sprite = assets.sprites['skeleton'];
+          else if(e.type === 'bat') sprite = assets.sprites['bat'];
+          else if(e.type === 'ghost') sprite = assets.sprites['ghost'];
+          else if(e.type === 'dragon') sprite = assets.sprites['dragon'];
+          else if(e.type === 'black_knight') sprite = assets.sprites['black_knight'];
+          else if(e.type === 'killer_rabbit') sprite = assets.sprites['rabbit'];
+          else if(e.type === 'cain' || e.type === 'wizard') sprite = assets.sprites['wizard'];
+        }
+        if(sprite) ctx.drawImage(sprite, vx*TILE_SIZE, vy*TILE_SIZE, TILE_SIZE, TILE_SIZE);
+        else { ctx.font = '24px sans-serif'; ctx.fillText(e.stats.icon, vx*TILE_SIZE+2, vy*TILE_SIZE+26); }
+        
+        // HP Bar
+        ctx.fillStyle = 'red'; ctx.fillRect(vx*TILE_SIZE, vy*TILE_SIZE-4, TILE_SIZE, 3);
+        ctx.fillStyle = 'green'; ctx.fillRect(vx*TILE_SIZE, vy*TILE_SIZE-4, TILE_SIZE * (e.stats.hp / MONSTER_DEF[e.type].hp), 3);
+      }
+    });
+
+    // Draw Player
+    if(window.useSprites && assets.sprites['player']) {
+      ctx.drawImage(assets.sprites['player'], cx*TILE_SIZE, cy*TILE_SIZE, TILE_SIZE, TILE_SIZE);
+    } else {
+      ctx.font = '24px sans-serif'; ctx.fillText(player.blind ? '🕶️' : '👤', cx*TILE_SIZE+2, cy*TILE_SIZE+26);
+    }
+
+    // Active Effects (Lightning etc)
+    activeEffects = activeEffects.filter(eff => {
+      ctx.strokeStyle = eff.color; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo((eff.x1-player.x+cx)*TILE_SIZE+16, (eff.y1-player.y+cy)*TILE_SIZE+16);
+      ctx.lineTo((eff.x2-player.x+cx)*TILE_SIZE+16, (eff.y2-player.y+cy)*TILE_SIZE+16); ctx.stroke();
+      eff.life -= 0.1; return eff.life > 0;
+    });
+
+    // Floating Text
+    floatingTexts = floatingTexts.filter(ft => {
+      let vx = ft.x - player.x + cx, vy = ft.y - player.y + cy;
+      ctx.save();
+      ctx.globalAlpha = ft.life;
+      ctx.fillStyle = ft.color;
+      ctx.font = `${ft.size}px bold sans-serif`;
+      ctx.fillText(ft.text, vx*TILE_SIZE, vy*TILE_SIZE - (1.0-ft.life)*20);
+      ctx.restore();
+      ft.life -= 0.02; return ft.life > 0;
+    });
+  // Level Up Flash
+  if (window.levelUpFlash > 0) {
+    ctx.globalAlpha = window.levelUpFlash * 0.5;
+    ctx.fillStyle = `hsl(${(1 - window.levelUpFlash) * 360}, 100%, 50%)`;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.globalAlpha = 1.0;
+  }
+  drawMinimap();
+}
+
+function drawMinimap() {
+  let minCanvas = document.getElementById('minimap');
+  if (!minCanvas) return;
+  if (mapW === 0 || mapH === 0) return;
+  let mCtx = minCanvas.getContext('2d');
+  mCtx.clearRect(0, 0, 150, 150);
+  let scale = 150 / Math.max(mapW, mapH);
+  let offsetX = (150 - mapW * scale) / 2;
+  let offsetY = (150 - mapH * scale) / 2;
+  for (let y = 0; y < mapH; y++) {
+    for (let x = 0; x < mapW; x++) {
+      if (explored[y][x]) {
+        if (theMap[y][x] === TILES.WALL) mCtx.fillStyle = '#555';
+        else if (theMap[y][x] === TILES.STORE || theMap[y][x] === TILES.LEFTYS || theMap[y][x] === TILES.BOOKSTORE) mCtx.fillStyle = '#0ff';
+        else if (theMap[y][x] === TILES.STAIR_DOWN || theMap[y][x] === TILES.STAIR_UP) mCtx.fillStyle = '#f0f';
+        else mCtx.fillStyle = '#333';
+        mCtx.fillRect(offsetX + x * scale, offsetY + y * scale, scale, scale);
+      }
+    }
+  }
+  mCtx.fillStyle = '#0f0';
+  mCtx.fillRect(offsetX + player.x * scale, offsetY + player.y * scale, scale, scale);
+}
+
+  // SOURCE: src/input.js
+  /*
+  INPUT MODULE – KEYBOARD, MOUSE, AND GAME LOOP MANAGEMENT
+  =========================================================
+  This module handles all user input (keyboard, mouse clicks) and real‑time game loops.
+  It binds event listeners for movement, UI toggles, special actions, and manages the
+  start‑screen animation, quest timer ticker, and status‑based movement modifications.
+
+  Key responsibilities:
+  1. Keyboard input routing – WASD/arrow movement, inventory ('i'), equipment ('e'),
+     spells ('f'), rest ('z'), attack (space), modal toggles, number‑key item clicks
+  2. Mouse event handling – hamburger menu toggle, start button click
+  3. Game loop timers – quest timer countdown, damage tint fade, level‑up flash decay
+  4. Start‑screen animation – floating dots background with requestAnimationFrame
+  5. Movement rate limiting – normal vs. sugar‑rush vs. running speeds, freeze/dizzy statuses
+  6. Shift‑key running – temporary speed boost with exhaustion consequences (handled in engine)
+
+  The functions here are called directly by browser events (keydown, keyup, click) and
+  by the setInterval game loop. They invoke engine.js (movePlayer, restPlayer),
+  mechanics.js (handleItemClick), and ui_logic.js (toggleModal) to drive game state.
+*/
+const hBtn = document.getElementById('hamburgerBtn');
+  if(hBtn) {
+    hBtn.addEventListener('click', () => {
+      let menu = document.getElementById('hamburger-menu');
+      if(menu) menu.style.display = menu.style.display === 'none' ? 'flex' : 'none';
+    });
+  }
+
+  document.getElementById('startBtn').addEventListener('click', () => {
+    document.getElementById('start-screen').style.display = 'none';
+    Sound.init();
+    try {
+      resizeCanvas();
+      initMap(50); calculateFOV(); renderInventory(); renderPouch(); drawMap(); updateUI();
+
+      // Real-time Quest Ticker (v7.0.0)
+      setInterval(() => {
+        if(questTimer.active) {
+          questTimer.time -= 0.1;
+          if(questTimer.time <= 0) {
+            questTimer.active = false;
+            if(questTimer.callback) questTimer.callback();
+          }
+          drawMap(); // redraw for timer overlay
+        }
+
+        if(damageTint > 0) {
+          damageTint = Math.max(0, damageTint - 5);
+          drawMap();
+        }
+        if (window.levelUpFlash > 0) {
+          window.levelUpFlash = Math.max(0, window.levelUpFlash - 0.05);
+          drawMap();
+        }
+      }, 100);
+
+    } catch (err) {
+      document.getElementById('log').innerHTML = `<span style="color:var(--error)">Fatal Boot Error: ${err.message}</span>`;
+    }
+  });
+  window.startQuestTimer = (seconds, label, callback) => {
+    questTimer = { active: true, time: seconds, label: label, callback: callback };
+  };
+
+  window.stopQuestTimer = () => { questTimer.active = false; };
+
+  // Start Screen Animation
+  let startCtx = null;
+  const startCanvas = document.createElement('canvas');
+  const startScreen = document.getElementById('start-screen');
+  if(startScreen) {
+    startCanvas.style.position = 'absolute'; startCanvas.style.top='0'; startCanvas.style.left='0'; startCanvas.style.zIndex='-1';
+    startScreen.appendChild(startCanvas);
+    const sCtx = startCanvas.getContext('2d');
+    const resizeStart = () => { startCanvas.width = window.innerWidth; startCanvas.height = window.innerHeight; };
+    window.addEventListener('resize', resizeStart); resizeStart();
+    const dots = Array(50).fill().map(()=>({x: Math.random()*startCanvas.width, y: Math.random()*startCanvas.height, s: Math.random()*2+1}));
+    const anim = () => {
+      if(startScreen.style.display === 'none') return;
+      sCtx.fillStyle = 'rgba(0,0,0,0.1)'; sCtx.fillRect(0,0,startCanvas.width,startCanvas.height);
+      sCtx.fillStyle = 'var(--primary)';
+      dots.forEach(d => {
+        sCtx.beginPath(); sCtx.arc(d.x, d.y, d.s, 0, Math.PI*2); sCtx.fill();
+        d.y += d.s; if(d.y > startCanvas.height) d.y = -10;
+      });
+      requestAnimationFrame(anim);
+    };
+    anim();
+  }
+
+  window.addEventListener('keydown', (e) => { 
+    if(e.key === 'Shift') player.isRunning = true; 
+    if(e.key === 'Escape') {
+       // Close any open draggable modals
+       document.querySelectorAll('.draggable-modal').forEach(m => m.style.display = 'none');
+    }
+  });
+  window.addEventListener('keyup', (e) => { if(e.key === 'Shift') player.isRunning = false; });
+
+  document.addEventListener('keydown', function(event) {
+    if(document.getElementById('start-screen').style.display !== 'none') { console.log('Key blocked: start screen visible'); return; }
+    // Close modals with Enter
+    if(event.key === 'Enter' && document.getElementById('overlay').style.display === 'flex') {
+      document.getElementById('overlay').style.display = 'none';
+      return;
+    }
+
+    if(document.getElementById('overlay').style.display === 'flex') { console.log('Key blocked: overlay visible'); return; }
+
+    // Toggle keybind hints with "?"
+    if (event.key === '?' || (event.key === '/' && event.shiftKey)) {
+        console.log('? key pressed, toggling show-keybinds');
+        event.preventDefault();
+        document.body.classList.toggle('show-keybinds');
+        return;
+    }
+
+    Sound.init();
+
+    let key = event.key.toLowerCase();
+
+    // Movement Rate Limiting
+    const now = Date.now();
+    let moveDelay = player.statusType === 'sugar' ? CONSTANTS.SUGAR_RUSH_SPEED : CONSTANTS.NORMAL_SPEED;
+    if(player.isRunning) moveDelay = Math.max(50, moveDelay - 100); 
+
+    if(['w', 'arrowup', 's', 'arrowdown', 'a', 'arrowleft', 'd', 'arrowright'].includes(key)) {
+      if(now - lastMoveTime < moveDelay) return;
+      lastMoveTime = now;
+      if(player.statusType === 'freeze') {
+        logMsg("You are frozen and cannot move!");
+        return;
+      }
+      
+      if(player.statusType === 'dizzy') {
+        const dirs = ['w', 's', 'a', 'd'];
+        key = dirs[Math.floor(Math.random() * dirs.length)];
+      }
+    }
+
+    if(['w', 'arrowup'].includes(key)) movePlayer(0, -1);
+    else if(['s', 'arrowdown'].includes(key)) movePlayer(0, 1);
+    else if(['a', 'arrowleft'].includes(key)) movePlayer(-1, 0);
+    else if(['d', 'arrowright'].includes(key)) movePlayer(1, 0);
+    else if(key === 'escape') toggleMenu();
+    else if(key === 'i') toggleModal('inv-modal');
+    else if(key === 'e') toggleModal('equip-modal');
+    else if(key === 'c') toggleModal('stats-modal');
+    else if(key === 'm') toggleModal('magic-modal');
+    else if(key === 'y') toggleModal('achieve-modal');
+    else if(key === 'z') restPlayer();
+    else if(key === ' ') meleeAttack();
+    else if(key === 'f') castEquippedSpell();
+    
+    let num = parseInt(key);
+    if(!isNaN(num)) { let idx = num === 0 ? 9 : num - 1; handleItemClick(idx); }
+  });
+
+  // === Boot Sequence ===
+  // Initialization now happens via Enter the Dungeon button
+
+</script>
+</body>
+</html>

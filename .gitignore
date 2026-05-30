@@ -11,9 +11,7 @@ roguelike_assets*.dat
 roguelike-*.apk
 
 # PWA bundle (derived from dev_build.html via mobile/Makefile).
-# NOTE: mobile/dist/ IS tracked — testers can clone the repo on
-# Termux/Android and serve straight from dist/ without needing python
-# + make to rebuild. Ungitignored deliberately.
+mobile/pwa/dist/
 
 # Local-only credentials + ops scripts (intentionally not secured — throwaway PAT for GitHub mirror).
 GITHUB_TOKEN
@@ -22,3 +20,8 @@ snapshot
 
 # Per-developer Claude Code state (settings.local.json, scheduler locks).
 .claude/
+
+# Side projects (accidentally landed in this repo).
+gettingout/
+wallets/
+rogue/

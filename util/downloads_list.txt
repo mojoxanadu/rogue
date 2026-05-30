@@ -1,0 +1,70 @@
+1689778
+AI Coding for Returning Programmers.docx
+Correcting Dymitri Haraszewski's Profile.docx
+DATABASE_README.md
+Document Comparison and Website Analysis.docx
+Drafting CDCR 602-2 Appeal of Grievance.pdf
+FINAL_CLEAN_WORKBOOK_WITH_PROBLEMS.xlsx
+FINAL_SUMMARY.txt
+FINAL_SUMMARY_WITH_PROBLEMS.txt
+Farm Boys (Will Fellows) (z-library.sk, 1lib.sk, z-lib.sk).epub
+Farm Boys (Will Fellows) (z-library.sk, 1lib.sk, z-lib.sk).pdf
+FludPremium
+Keeley Schenwar Prize Essay Guidance.pdf
+Manga_Catalog.csv
+Manga_Catalog_Enriched.csv
+My First Time Volume Three (Jack Hart) (z-library.sk, 1lib.sk, z-lib.sk).pdf
+Read the attached document and compare it to excha....docx
+Repeating the Last Request.docx
+Round Sync-backup-2026-03-08_232614.zip
+Telegram
+Telethon API Training for Python Developers.docx
+assets
+boo
+book_order_final_results_20260329.zip
+changelog.txt
+clean_workbook_reliable.py
+deepseek_langchain.py
+downloaded_file (1).docx
+downloaded_file (2).docx
+downloaded_file (3).docx
+downloaded_file (4).docx
+downloaded_file (5).docx
+downloaded_file (6).docx
+downloaded_file.docx
+dungeon.html
+encryption_key.bin
+eye questions.docx
+flaskfile-v2.48.30.apk
+flaskfile_description.txt
+g.txt
+game-icons.net.svg.zip
+gc
+gemini free api.txt
+gemini_generated_audio_overview_f3328807.mp3
+generate_assets.py
+hotspot_cmd.json
+index.html
+j.txt
+k3lch.txt
+lookup_isbn.py
+march29.docx
+mrs_nelson.csv
+mrs_nelson.db
+mrs_nelson.json
+mrs_nelson_full_catalog_enriched.xlsx
+openart-audio_1773631385114_fb0a6a77_1773631385159_73d2e6f2.mp3
+payload.html
+r
+remotedroid
+ri.txt
+roguelike7.2.0.html
+roguelike_assets.dat
+thisone.xlsx
+vfs-dump-2026-04-05T00-08-28.json
+wip-live-validated-with-notfound.csv
+wip-live-validated.csv
+wip-local-validation-update.csv
+wip-validated.csv
+wip.csv
+x.txt

@@ -1,0 +1,2452 @@
+<!-- SOURCE: src/header.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Dungeon Descent v6.0.0</title>
+<style>
+  :root {
+    --bg: #141218; --surface: #1D1B20; --surface-container: #4A4458;
+    --primary: #D0BCFF; --on-primary: #381E72; --secondary: #CCC2DC; 
+    --error: #F2B8B5; --warning: #ffb74d; --success: #81c784;
+    --radius-lg: 12px;
+  }
+  body, html { 
+    margin: 0; padding: 0; overflow: hidden; background: #000; 
+    font-family: 'Segoe UI', sans-serif; color: var(--secondary); user-select: none;
+    width: 100vw; height: 100vh;
+  }
+  
+  canvas { 
+    position: absolute; top: 0; left: 0; z-index: 1; display: block;
+  }
+
+  #hud {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none;
+  }
+
+  .interactive { pointer-events: auto; }
+
+  /* Top Left Stats */
+  #top-left-stats {
+    position: absolute; top: 16px; left: 60px; display: flex; gap: 8px;
+  }
+  .chip {
+    background: rgba(29, 27, 32, 0.8); padding: 8px 12px;
+    border-radius: 999px; font-size: 14px; font-weight: 600;
+    border: 1px solid var(--surface-container);
+  }
+  .chip.danger { color: var(--error); border-color: var(--error); }
+
+  /* Left Bar */
+  #left-bar {
+    position: absolute; top: 16px; left: 16px; display: flex; flex-direction: column; gap: 8px;
+  }
+  .icon-btn {
+    width: 40px; height: 40px; border-radius: 50%; background: rgba(29, 27, 32, 0.9);
+    border: 2px solid var(--secondary); color: #fff; font-size: 18px;
+    display: flex; justify-content: center; align-items: center; cursor: pointer;
+  }
+  .icon-btn:hover { background: var(--surface-container); }
+  .icon-btn .badge {
+    position: absolute; top: -5px; right: -5px; background: var(--error); color: #000;
+    font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 10px;
+  }
+
+  /* Bottom Bar (Items, HP, MP, XP) */
+  #bottom-bar {
+    position: absolute; bottom: 16px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  #xp-container {
+    width: 500px; height: 12px; background: rgba(0,0,0,0.6); border: 1px solid #555; border-radius: 6px; position: relative;
+  }
+  #xp-bar-fill {
+    height: 100%; background: var(--primary); border-radius: 5px; transition: width 0.3s;
+  }
+  #xp-text {
+    position: absolute; top: -2px; left: 50%; transform: translateX(-50%); font-size: 10px; font-weight: bold; color: #fff; text-shadow: 1px 1px 0 #000;
+  }
+  
+  #resource-row {
+    display: flex; align-items: center; gap: 16px;
+  }
+  .orb {
+    width: 60px; height: 60px; border-radius: 50%; border: 2px solid #555; display: flex; justify-content: center; align-items: center;
+    font-weight: bold; font-size: 14px; text-shadow: 1px 1px 2px #000; box-shadow: inset 0 -10px 20px rgba(0,0,0,0.8);
+  }
+  #hp-orb { background: radial-gradient(circle at 30% 30%, #ff4d4d, #800000); }
+  #mp-orb { background: radial-gradient(circle at 30% 30%, #4da6ff, #000080); }
+  
+  #inventoryUI {
+    display: flex; gap: 4px; background: rgba(0,0,0,0.5); padding: 8px; border-radius: 12px;
+  }
+  .inv-slot {
+    width: 40px; height: 40px; background: rgba(29, 27, 32, 0.9);
+    border: 2px solid #555; border-radius: 6px;
+    display: flex; justify-content: center; align-items: center;
+    font-size: 20px; position: relative; cursor: grab;
+  }
+  .inv-slot:hover { border-color: var(--primary); }
+  .inv-slot .qty {
+    position: absolute; bottom: -4px; right: -4px; color: #fff; background: var(--on-primary);
+    font-size: 10px; font-weight: bold; border-radius: 50%; padding: 1px 4px;
+  }
+  .inv-slot .hotkey { position: absolute; top: 0px; left: 2px; color: #888; font-size: 10px; }
+
+  /* Log Overlay */
+  #log-overlay {
+    position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%);
+    width: 600px; height: 120px; background: rgba(0,0,0,0.4); border-radius: 8px;
+    padding: 8px; overflow-y: auto; font-family: monospace; font-size: 12px;
+    mask-image: linear-gradient(to bottom, transparent, black 10%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent, black 10%);
+  }
+  .log-entry { margin-bottom: 2px; }
+  .log-time { color: #888; margin-right: 8px; }
+
+  /* Minimap */
+  #minimap-container {
+    position: absolute; top: 16px; right: 16px; background: rgba(0,0,0,0.6);
+    border: 2px solid #555; border-radius: 8px; padding: 4px; text-align: center;
+  }
+  #minimap-label { font-size: 12px; font-weight: bold; margin-bottom: 4px; color: var(--primary); }
+  #minimap { width: 150px; height: 150px; background: #000; }
+
+  /* Draggable Modals */
+  .draggable-modal {
+    position: absolute; background: rgba(29, 27, 32, 0.95); border: 2px solid var(--secondary);
+    border-radius: 8px; z-index: 100; pointer-events: auto; display: none; flex-direction: column;
+    min-width: 250px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+  }
+  .modal-header {
+    background: var(--surface-container); padding: 8px 12px; border-radius: 6px 6px 0 0;
+    display: flex; justify-content: space-between; align-items: center; cursor: move;
+    font-weight: bold; color: var(--primary);
+  }
+  .modal-close { cursor: pointer; color: #fff; background: transparent; border: none; font-size: 16px; }
+  .modal-body { padding: 16px; }
+
+  /* Equip Layout inside Modal */
+  .equip-container {
+    position: relative; height: 200px; width: 100%; display: flex; justify-content: center; align-items: center;
+  }
+  .equip-slot {
+    width: 48px; height: 48px; background: rgba(0,0,0,0.5);
+    border: 2px dashed #555; border-radius: 8px;
+    display: flex; justify-content: center; align-items: center; font-size: 24px;
+    position: absolute; cursor: drop;
+  }
+  .equip-label { position: absolute; top: -14px; font-size: 10px; color: #aaa; text-shadow: 1px 1px 0 #000;}
+
+  /* Keybind hints */
+  .keybind-hint {
+    display: none; position: absolute; top: -15px; left: 50%; transform: translateX(-50%);
+    background: #ff0; color: #000; font-size: 10px; font-weight: bold; padding: 2px 4px; border-radius: 4px;
+  }
+  body.show-keybinds .keybind-hint { display: block; }
+
+  /* Misc */
+  .egg-btn, button { background: var(--surface-container); color: #fff; border: 1px solid #555; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+  button:hover { filter: brightness(1.2); }
+  
+  @keyframes rockViewport {
+    0% { transform: rotate(0deg); }
+    25% { transform: rotate(-3deg); }
+    75% { transform: rotate(3deg); }
+    100% { transform: rotate(0deg); }
+  }
+
+  /* Start Screen */
+  #start-screen {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000;
+    display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000;
+  }
+  .ascii-art { font-family: monospace; white-space: pre; color: var(--primary); font-size: 10px; line-height: 10px; margin-bottom: 20px; }
+</style>
+</head>
+<!-- SOURCE: src/ui_layout.html -->
+<body>
+
+<canvas id="game"></canvas>
+
+<div id="hud">
+  
+  <div id="top-left-stats" class="interactive">
+    <div class="chip" id="gpUI">💰 0</div>
+    <div class="chip" id="hungerUI">Hunger: 0%</div>
+    <div class="chip" id="statusUI" style="display:none;"></div>
+  </div>
+
+  <div id="minimap-container" class="interactive">
+    <div id="minimap-label">Floor 1</div>
+    <canvas id="minimap" width="150" height="150"></canvas>
+  </div>
+
+  <div id="left-bar" class="interactive">
+    <div class="icon-btn" onclick="toggleMenu()" title="Menu (ESC)"><div class="keybind-hint">ESC</div>&#9776;</div>
+    <div class="icon-btn" onclick="toggleModal('inv-modal')" title="Inventory (I)"><div class="keybind-hint">I</div>🎒</div>
+    <div class="icon-btn" onclick="toggleModal('equip-modal')" title="Equipment (E)"><div class="keybind-hint">E</div>🛡️</div>
+    <div class="icon-btn" onclick="toggleModal('stats-modal')" title="Stats (C)"><div class="keybind-hint">C</div>📊<div class="badge" id="stat-badge" style="display:none;">0</div></div>
+    <div class="icon-btn" onclick="toggleModal('magic-modal')" title="Magic (M)"><div class="keybind-hint">M</div>✨</div>
+    <div class="icon-btn" onclick="toggleModal('achieve-modal')" title="Achievements (Y)"><div class="keybind-hint">Y</div>🏆</div>
+    
+    <div style="flex-grow:1; min-height: 50px;"></div>
+    
+    <div class="icon-btn" onclick="restPlayer()" title="Sleep (Z)"><div class="keybind-hint">Z</div>💤</div>
+    <div class="icon-btn" onclick="meleeAttack()" title="Melee Attack (Space)"><div class="keybind-hint">SPC</div><span id="melee-icon">🗡️</span></div>
+    <div class="icon-btn" onclick="castEquippedSpell()" title="Cast Spell (F)"><div class="keybind-hint">F</div><span id="spell-icon">✨</span></div>
+  </div>
+
+  <div id="log-overlay" class="interactive">
+    <div id="log"></div>
+  </div>
+
+  <div id="bottom-bar" class="interactive">
+    <div id="xp-container" title="Experience">
+      <div id="xp-bar-fill" style="width: 0%;"></div>
+      <div id="xp-text">Lvl 1 - 0/100 XP</div>
+    </div>
+    
+    <div id="resource-row">
+      <div class="orb" id="hp-orb" title="Health">50/50</div>
+      
+      <div id="inventoryUI">
+        <!-- Slots generated by JS -->
+      </div>
+      
+      <div class="orb" id="mp-orb" title="Mana">20/20</div>
+    </div>
+  </div>
+
+</div> <!-- End HUD -->
+
+<!-- Modals -->
+<div id="overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); display:none; justify-content:center; align-items:center; z-index:200;">
+  <div class="modal" id="modal-content" style="background:var(--surface); border:2px solid var(--secondary); padding:24px; border-radius:8px; text-align:center;"></div>
+</div>
+
+<div class="draggable-modal" id="equip-modal" style="top: 100px; left: 100px;">
+  <div class="modal-header"><span>🛡️ Equipment</span><button class="modal-close" onclick="toggleModal('equip-modal')">✖</button></div>
+  <div class="modal-body">
+    <div class="equip-container">
+      <div class="equip-slot" id="eqhead" style="top: 10px;" ondragover="allowDrop(event)" ondrop="handleDrop(event, 'head')"><div class="equip-label">Head</div></div>
+      <div class="equip-slot" id="eqchest" style="top: 65px;" ondragover="allowDrop(event)" ondrop="handleDrop(event, 'chest')"><div class="equip-label">Chest</div></div>
+      <div class="equip-slot" id="eqleftHand" style="top: 65px; left: 20px;" ondragover="allowDrop(event)" ondrop="handleDrop(event, 'leftHand')"><div class="equip-label">L-Hand</div></div>
+      <div class="equip-slot" id="eqrightHand" style="top: 65px; right: 20px;" ondragover="allowDrop(event)" ondrop="handleDrop(event, 'rightHand')"><div class="equip-label">R-Hand</div></div>
+      <div class="equip-slot" id="eqlegs" style="top: 120px;" ondragover="allowDrop(event)" ondrop="handleDrop(event, 'legs')"><div class="equip-label">Legs</div></div>
+      <div class="equip-slot" id="eqfeet" style="top: 150px; scale: 0.8;" ondragover="allowDrop(event)" ondrop="handleDrop(event, 'feet')"><div class="equip-label">Feet</div></div>
+    </div>
+    <div style="font-size:10px; color:#aaa; text-align:center; margin-top:8px;">Drag items from Inventory to equip.</div>
+  </div>
+</div>
+
+<div class="draggable-modal" id="menu-modal" style="top: 60px; left: 60px;">
+  <div class="modal-header"><span>&#9776; Menu</span><button class="modal-close" onclick="toggleModal('menu-modal')">✖</button></div>
+  <div class="modal-body" style="display:flex; flex-direction:column; gap:8px;">
+    <button onclick="saveGame()">💾 Save Game</button>
+    <button onclick="loadGame()">📂 Load Game</button>
+    <button onclick="toggleModal('settings-modal')">⚙️ Settings</button>
+    <button onclick="toggleModal('debug-modal')">🐛 Debug Menu</button>
+  </div>
+</div>
+
+<div class="draggable-modal" id="debug-modal" style="top: 60px; left: 300px;">
+  <div class="modal-header"><span>🐛 Debug Menu</span><button class="modal-close" onclick="toggleModal('debug-modal')">✖</button></div>
+  <div class="modal-body" style="display:flex; flex-direction:column; gap:8px;">
+    <button onclick="toggleFog()">Toggle Fog of War</button>
+    <button onclick="player.hp=player.maxHp;player.mp=player.maxMp;updateUI();">Heal All</button>
+    <button onclick="player.gp+=1000;updateUI();">Add 1000 Gold</button>
+    <button onclick="player.statPoints+=5;updateUI();">Add 5 Stat Pts</button>
+    <button onclick="player.xp+=1000;checkLevelUp();">Add 1000 XP</button>
+  </div>
+</div>
+
+<div class="draggable-modal" id="stats-modal" style="top: 100px; left: 300px;">
+  <div class="modal-header"><span>📊 Stats</span><button class="modal-close" onclick="toggleModal('stats-modal')">✖</button></div>
+  <div class="modal-body" id="stats-body"></div>
+</div>
+
+<div class="draggable-modal" id="magic-modal" style="top: 100px; left: 500px;">
+  <div class="modal-header"><span>✨ Magic</span><button class="modal-close" onclick="toggleModal('magic-modal')">✖</button></div>
+  <div class="modal-body" id="magic-body"></div>
+</div>
+
+<div class="draggable-modal" id="achieve-modal" style="top: 100px; left: 700px;">
+  <div class="modal-header"><span>🏆 Achievements</span><button class="modal-close" onclick="toggleModal('achieve-modal')">✖</button></div>
+  <div class="modal-body" id="achieve-body">Not yet implemented</div>
+</div>
+
+<div id="start-screen">
+  <div class="ascii-art">
+   /\                                                        /\
+  |  |                                                      |  |
+ /____\                                                    /____\
+[      ]                                                  [      ]
+|      |                                                  |      |
+|      |        DUNGEON DESCENT: THE ULTIMATE QUEST       |      |
+|______|                                                  |______|
+  </div>
+  <h1 style="color:var(--primary); text-shadow: 2px 2px #000;">DUNGEON DESCENT v6.0.0</h1>
+  <p style="color:#aaa; max-width: 600px; text-align:center; line-height: 1.5;">
+    "I've faced dragons, ogres, and the dreaded math homework. But nothing prepared me for the UI rewrite." - A smug adventurer.
+  </p>
+  <div style="margin: 24px; padding: 16px; border: 1px dashed var(--secondary); border-radius: 8px; text-align:center; background: rgba(0,0,0,0.5);">
+    <p style="color:var(--warning); font-weight:bold; margin-top:0;">Asset File Required</p>
+    <p style="font-size:12px;">To play MIDI music, please select the <code>roguelike_assets.dat</code> file.</p>
+    <input type="file" id="asset-loader" accept=".dat" style="margin-bottom: 12px; color: #fff;">
+  </div>
+  <button id="startBtn" style="padding: 16px 32px; font-size: 24px; background: var(--success); color: #000; border:none; border-radius: 8px; cursor:pointer; font-weight:bold; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">ENTER THE DUNGEON</button>
+</div>
+
+<script>
+
+  // SOURCE: src/audio.js
+  // === Audio Synthesizer (FM / OPL style) ===
+  const Sound = {
+    ctx: null,
+    tracks: {},
+    currentTrack: null,
+    musicTimer: null,
+
+    init: () => {
+      if(!Sound.ctx && (window.AudioContext || window.webkitAudioContext)) {
+        try { Sound.ctx = new (window.AudioContext || window.webkitAudioContext)(); }
+        catch(e) { Sound.ctx = 'failed'; }
+      }
+    },
+
+    // FM Operator - The core of the OPL sound
+    playFM: (freq, duration, vol=0.1, ratio=2, modulatorIndex=5) => {
+      if(!Sound.ctx || Sound.ctx === 'failed') return;
+      const t = Sound.ctx.currentTime;
+      
+      const carrier = Sound.ctx.createOscillator();
+      const modulator = Sound.ctx.createOscillator();
+      const modGain = Sound.ctx.createGain();
+      const mainGain = Sound.ctx.createGain();
+
+      carrier.frequency.value = freq;
+      modulator.frequency.value = freq * ratio;
+      modGain.gain.value = freq * modulatorIndex;
+
+      modulator.connect(modGain);
+      modGain.connect(carrier.frequency);
+      carrier.connect(mainGain);
+      mainGain.connect(Sound.ctx.destination);
+
+      mainGain.gain.setValueAtTime(0, t);
+      mainGain.gain.linearRampToValueAtTime(vol, t + 0.05);
+      mainGain.gain.exponentialRampToValueAtTime(0.01, t + duration);
+
+      carrier.start(t); modulator.start(t);
+      carrier.stop(t + duration); modulator.stop(t + duration);
+    },
+
+    // Play a pre-loaded AudioBuffer (v6.2.0)
+    playSample: (name, vol=0.2) => {
+      if(!Sound.ctx || Sound.ctx === 'failed' || !assets.sounds[name]) return;
+      try {
+        const source = Sound.ctx.createBufferSource();
+        const gain = Sound.ctx.createGain();
+        source.buffer = assets.sounds[name];
+        source.connect(gain);
+        gain.connect(Sound.ctx.destination);
+        gain.gain.value = vol;
+        source.start(0);
+      } catch(e) { console.error("Sample error:", e); }
+    },
+
+    step: () => assets.sounds['step'] ? Sound.playSample('step') : Sound.playTone(150, 'square', 0.05, 0.05, 50),
+    grunt: () => assets.sounds['grunt'] ? Sound.playSample('grunt') : Sound.playTone(200, 'triangle', 0.2, 0.2, 80),
+    scream: () => assets.sounds['scream'] ? Sound.playSample('scream') : Sound.playTone(400, 'sawtooth', 0.6, 0.3, 50),
+    clink: () => assets.sounds['clink'] ? Sound.playSample('clink') : Sound.playTone(1200, 'sine', 0.1, 0.1, 2000),
+    sword: () => { 
+      if(assets.sounds['sword']) Sound.playSample('sword');
+      else { Sound.playTone(400, 'square', 0.1, 0.2, 1200); setTimeout(() => Sound.playTone(800, 'triangle', 0.05, 0.1, 200), 50); }
+    },
+    splash: () => assets.sounds['splash'] ? Sound.playSample('splash') : Sound.playTone(100, 'triangle', 0.2, 0.2, 40),
+    quack: () => assets.sounds['quack'] ? Sound.playSample('quack') : { Sound.playTone(400, 'sawtooth', 0.1, 0.1, 600); setTimeout(() => Sound.playTone(400, 'sawtooth', 0.1, 0.1, 600), 120); },
+    squeak: () => assets.sounds['squeak'] ? Sound.playSample('squeak') : Sound.playTone(1800, 'sine', 0.05, 0.1, 2000),
+    gurgle: () => { for(let i=0; i<4; i++) setTimeout(() => Sound.playTone(100 + Math.random()*100, 'sine', 0.2, 0.1, 50), i*150); },
+    oof: () => assets.sounds['oof'] ? Sound.playSample('oof') : Sound.playTone(120, 'sawtooth', 0.1, 0.2, 60),
+    
+    playTone: (freq, type, duration, vol=0.1, slideFreq=null) => {
+      if(!Sound.ctx || Sound.ctx === 'failed') return;
+      const osc = Sound.ctx.createOscillator();
+      const gain = Sound.ctx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, Sound.ctx.currentTime);
+      if(slideFreq) osc.frequency.exponentialRampToValueAtTime(slideFreq, Sound.ctx.currentTime + duration);
+      gain.gain.setValueAtTime(vol, Sound.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, Sound.ctx.currentTime + duration);
+      osc.connect(gain); gain.connect(Sound.ctx.destination);
+      osc.start(); osc.stop(Sound.ctx.currentTime + duration);
+    },
+
+    // Sequencer for JSON music tracks
+    playMusic: (name) => {
+      if(Sound.currentTrack === name) return;
+      Sound.stopMusic();
+      Sound.currentTrack = name;
+      
+      const track = Sound.tracks[name];
+      if(!track) return;
+
+      let step = 0;
+      const nextNote = () => {
+        if(Sound.currentTrack !== name) return;
+        const note = track[step];
+        if(note.f > 0) Sound.playFM(note.f, note.d, 0.02, note.r || 2, note.i || 5);
+        step = (step + 1) % track.length;
+        Sound.musicTimer = setTimeout(nextNote, note.d * 1000);
+      };
+      nextNote();
+    },
+
+    stopMusic: () => {
+      Sound.currentTrack = null;
+      if(Sound.musicTimer) clearTimeout(Sound.musicTimer);
+    }
+  };
+
+  // SOURCE: src/music_data.js
+  // === Music Track Data (Monkey Island & KQ5) ===
+  Sound.tracks = {
+    'monkey': [
+      {f: 440, d: 0.2, r: 2}, {f: 440, d: 0.2}, {f: 587, d: 0.4, r: 1.5}, {f: 440, d: 0.4},
+      {f: 659, d: 0.4, r: 3}, {f: 440, d: 0.4}, {f: 587, d: 0.4}, {f: 523, d: 0.4},
+      {f: 440, d: 0.2}, {f: 440, d: 0.2}, {f: 587, d: 0.4}, {f: 440, d: 0.4},
+      {f: 392, d: 0.4}, {f: 349, d: 0.4}, {f: 329, d: 0.8}
+    ],
+    'bandit': [
+      {f: 164, d: 0.8, r: 0.5, i: 10}, {f: 146, d: 0.8}, {f: 164, d: 0.8}, {f: 196, d: 0.8},
+      {f: 164, d: 0.8}, {f: 146, d: 0.8}, {f: 130, d: 1.6},
+      {f: 123, d: 0.8}, {f: 110, d: 0.8}, {f: 98, d: 1.6}
+    ],
+    'lechuck': [
+      {f: 110, d: 0.4, r: 4, i: 20}, {f: 116, d: 0.4}, {f: 123, d: 0.4}, {f: 110, d: 0.8},
+      {f: 82, d: 0.4}, {f: 87, d: 0.4}, {f: 92, d: 0.4}, {f: 82, d: 0.8}
+    ]
+  };
+
+  // SOURCE: src/state.js
+  // === Game Constants & State ===
+  const CONSTANTS = {
+    HUNGER_RATE: 0.005,
+    HUNGER_DAMAGE: 0.5,
+    HUNGER_HEAL: 0.2,
+    SPAWN_RATE: 0.02,
+    DISEASE_DAMAGE: 1,
+    SUGAR_RUSH_SPEED: 100,
+    NORMAL_SPEED: 250,
+    RUN_SPEED: 120,
+    XP_BASE: 100,
+    XP_MULT: 1.5,
+    BASE_MP: 0,
+    BASE_HP: 25,
+    DIZZY_TURNS: 15,
+    FREEZE_TURNS: 40
+  };
+
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const TILE_SIZE = 32;
+  let VIEW_COLS = Math.floor(canvas.width / TILE_SIZE); 
+  let VIEW_ROWS = Math.floor(canvas.height / TILE_SIZE); 
+  const TILES = { WALL: 1, FLOOR: 2, STAIR_DOWN: 3, STAIR_UP: 4, CHEST: 5, STORE: 6, WATER: 7, LEFTYS: 8, BOOKSTORE: 9 };
+
+  let currentLevel = 1, mapW = 0, mapH = 0;
+  let theMap = [], explored = [], visible = [], enemies = [], itemsOnGround = [], darkMap = [];
+  let isDead = false, dropMode = false, isIdentifying = false, damageTint = 0;
+  let lightTurns = 0, lastMoveTime = 0;
+  let floatingTexts = []; 
+  let useSprites = false; 
+  
+  let levelCache = {}; 
+  const logInfo = { count: 0 };
+  const inventory = new Array(10).fill(null);
+  const assets = { sprites: {}, sounds: {} };
+  let activeEffects = []; // {type, x1, y1, x2, y2, life, color}
+  
+  const player = {
+    x: 0, y: 0, facing: {dx: 0, dy: 1},
+    hp: CONSTANTS.BASE_HP, maxHp: CONSTANTS.BASE_HP, mp: CONSTANTS.BASE_MP, maxMp: 20, gp: 0,
+    xp: 0, level: 1, statPoints: 0,
+    stats: { str: 10, dex: 10, int: 10 },
+    hunger: 0.0, darkSteps: 0, 
+    exhaustion: 0, isRunning: false,
+    healOverTime: 0, totalHealPending: 0,
+    storesVisited: 0, lastStoreFloor: -1,
+    savedRat: false, hasBottle: false, masterDefeated: false,
+    baseDmg: 2, hitRate: 0.50, critRate: 0.10, dodgeRate: 0.15,
+    statusTurns: 0, statusType: null,
+    spells: {},
+    equipped: { head: null, chest: null, legs: null, feet: null, leftHand: null, rightHand: null }
+  };
+
+  const MONSTER_DEF = {
+    "chipmunk": { icon: '🐿️', hp: 10, dmg: 3, hit: 0.5, crit: 0.05, dodge: 0.3, speed: 0.34, throughWalls: false },
+    "slime":    { icon: '🫧', hp: 8, dmg: 2, hit: 0.4, crit: 0.0, dodge: 0.1, speed: 0.2, throughWalls: false },
+    "bat":      { icon: '🦇', hp: 6, dmg: 2, hit: 0.4, crit: 0.05, dodge: 0.6, speed: 0.8, throughWalls: false },
+    "goat":     { icon: '🐐', hp: 25, dmg: 6, hit: 0.5, crit: 0.10, dodge: 0.1, speed: 0.34, throughWalls: false },
+    "skeleton": { icon: '💀', hp: 20, dmg: 8, hit: 0.5, crit: 0.1, dodge: 0.2, speed: 0.4, throughWalls: false },
+    "spider":   { icon: '🕷️', hp: 12, dmg: 5, hit: 0.5, crit: 0.15, dodge: 0.4, speed: 0.6, throughWalls: false },
+    "ghost":    { icon: '👻', hp: 15, dmg: 8, hit: 0.4, crit: 0.20, dodge: 0.5, speed: 0.50, throughWalls: true },
+    "ogre":     { icon: '👹', hp: 50, dmg: 15, hit: 0.4, crit: 0.1, dodge: 0.0, speed: 0.3, throughWalls: false },
+    "robot":    { icon: '🤖', hp: 40, dmg: 12, hit: 0.6, crit: 0.15, dodge: 0.0, speed: 1.00, throughWalls: false },
+    "dragon":   { icon: '🐉', hp: 150, dmg: 30, hit: 0.6, crit: 0.2, dodge: 0.2, speed: 0.5, throughWalls: false },
+    "duck":     { icon: '🦆', hp: 8, dmg: 2, hit: 0.4, crit: 0.05, dodge: 0.2, speed: 0.40, throughWalls: false },
+    "wet_rat":  { icon: '🐀', hp: 12, dmg: 4, hit: 0.5, crit: 0.10, dodge: 0.3, speed: 0.60, throughWalls: false },
+    "shark":    { icon: '🦈', hp: 80, dmg: 25, hit: 0.6, crit: 0.20, dodge: 0.1, speed: 0.80, throughWalls: false },
+    "snake":    { icon: '🐍', hp: 15, dmg: 4, hit: 0.5, crit: 0.10, dodge: 0.4, speed: 0.50, throughWalls: false, effect: 'dizzy', effectChance: 0.05 },
+    "troll":    { icon: '🧌', hp: 60, dmg: 15, hit: 0.4, crit: 0.05, dodge: 0.0, speed: 0.25, throughWalls: false, effect: 'dizzy', effectChance: 0.05 },
+    "medusa":   { icon: '🐍👩', hp: 45, dmg: 8, hit: 0.5, crit: 0.10, dodge: 0.2, speed: 0.40, throughWalls: false, effect: 'freeze', effectChance: 0.10 },
+    "pirate":   { icon: '🏴‍☠️', hp: 30, dmg: 10, hit: 0.5, crit: 0.10, dodge: 0.3, speed: 0.50, throughWalls: false },
+    "master":   { icon: '🤺', hp: 120, dmg: 20, hit: 0.7, crit: 0.20, dodge: 0.5, speed: 0.80, throughWalls: false, isBoss: true },
+    "cat":      { icon: '🐱', hp: 20, dmg: 5, hit: 0.5, crit: 0.1, dodge: 0.4, speed: 0.6, throughWalls: false, quest: true },
+    "genie":    { icon: '🧞', hp: 999, dmg: 50, hit: 0.8, crit: 0.5, dodge: 0.9, speed: 1.0, throughWalls: true, isBoss: true, quest: true },
+    "king":     { icon: '🤴', hp: 60, dmg: 5, hit: 0.5, crit: 0.05, dodge: 0.2, speed: 0.4, rare: true }
+  };
+
+  const ITEM_DEF = {
+    "💍": { name: "Ring of Midas", type: "armor", slot: "rightHand", stackable: false, evadePercent: -20, maxGP: 500 },
+    "🥾": { name: "Old Boot", type: "misc", stackable: false, maxGP: 2 },
+    "🪵": { name: "Stick", type: "weapon", stackable: false, maxDamage: 2, maxGP: 5 },
+    "🏺": { name: "Brass Bottle", type: "misc", stackable: false, maxGP: 100 },
+    "🦴": { name: "Bone", type: "useless", stackable: true, maxGP: 1 },
+    "💩": { name: "Poop", type: "useless", stackable: true, maxPoison: 4, maxGP: 0 },
+    "📎": { name: "Paperclip", type: "useless", stackable: true, maxGP: 1 },
+    "🧶": { name: "Yarn", type: "useless", stackable: true, maxGP: 2 },
+    "🧵": { name: "Thread", type: "useless", stackable: true, maxGP: 1 },
+    "📰": { name: "Old News", type: "useless", stackable: true, maxGP: 1 },
+    "🧤": { name: "Single Glove", type: "useless", stackable: false, maxGP: 3 },
+    "🧱": { name: "Brick", type: "useless", stackable: true, maxGP: 1 },
+    "🧼": { name: "Soap", type: "useless", stackable: true, maxGP: 5 },
+    "💰": { name: "Gold Bag", type: "wealth", stackable: false, maxGP: 50 },
+    "🔪": { name: "Knife", type: "weapon", stackable: false, maxDamage: 4, maxGP: 20 },
+    "🗡️": { name: "Sword", type: "weapon", stackable: false, maxDamage: 8, maxGP: 100 },
+    "🛡️": { name: "Shield", type: "armor", slot: "rightHand", stackable: false, evadePercent: 15, maxGP: 150 },
+    "👕": { name: "Shirt", type: "armor", slot: "chest", stackable: false, evadePercent: 5, maxGP: 50 },
+    "🍕": { name: "Pizza", type: "food", stackable: true, maxHeal: 10, foodValue: 30, maxGP: 15 },
+    "🌮": { name: "Taco", type: "food", stackable: true, maxHeal: 8, foodValue: 20, maxGP: 10 },
+    "🍔": { name: "Burger", type: "food", stackable: true, maxHeal: 15, foodValue: 40, maxGP: 25 },
+    "🍎": { name: "Apple", type: "food", stackable: true, maxHeal: 3, foodValue: 10, maxGP: 5 },
+    "🍌": { name: "Banana", type: "food", stackable: true, maxHeal: 4, foodValue: 12, maxGP: 6 },
+    "🍇": { name: "Grapes", type: "food", stackable: true, maxHeal: 5, foodValue: 15, maxGP: 8 },
+    "🥨": { name: "Pretzel", type: "food", stackable: true, maxHeal: 2, foodValue: 5, maxGP: 3 },
+    "🍖": { name: "Meat", type: "food", stackable: true, maxHeal: 5, foodValue: 25, maxGP: 10 },
+    "🐡": { name: "Fugu", type: "food", stackable: true, foodValue: 40, maxPoison: 15, maxGP: 20 },
+    "🧪": { name: "Health Potion", type: "potion", stackable: true, maxHeal: 25, maxGP: 50 },
+    "🕯️": { name: "Candle", type: "light", stackable: true, lightRange: 15, maxGP: 15 },
+    "◾":  { name: "Burned Candle", type: "useless", stackable: true, maxGP: 1 },
+    "🗝️": { name: "Key", type: "key", stackable: true, maxGP: 10 },
+    "📃": { name: "Identify Scroll", type: "scroll", stackable: true, maxGP: 15 },
+    "🍛": { name: "Curry", type: "food", stackable: true, maxHeal: 10, foodValue: 10, maxGP: 20 },
+    "🥤": { name: "Slurpee", type: "potion", stackable: true, foodValue: 5, maxGP: 5 },
+    "🎩": { name: "Top Hat", type: "armor", slot: "head", stackable: false, evadePercent: 10, maxGP: 100 },
+    "🔦": { name: "Flashlight", type: "light", stackable: false, lightRange: 15, maxGP: 500 },
+    "🪫": { name: "Dead Battery", type: "useless", stackable: true, maxGP: 5 },
+    "🔮": { name: "Crystal Ball", type: "scroll", stackable: true, maxGP: 5000 },
+    "👗": { name: "Gown", type: "armor", slot: "chest", stackable: false, evadePercent: 10, maxGP: 200 },
+    "🦠": { name: "Disease", type: "food", stackable: true, maxPoison: 50, maxGP: 0 },
+    "🐓": { name: "Chicken", type: "useless", stackable: false, maxGP: 10 },
+    "🧦": { name: "Socks", type: "armor", slot: "feet", stackable: false, evadePercent: 2, maxGP: 5 },
+    "💎": { name: "Diamond", type: "wealth", stackable: false, maxGP: 10000 },
+    "🧴": { name: "Prophylactic", type: "potion", stackable: true, maxGP: 1 },
+    "🧀": { name: "Cheese", type: "food", stackable: true, maxHeal: 10, foodValue: 15, maxGP: 10 },
+    "🕴️": { name: "Sharkskin Suit", type: "armor", slot: "chest", stackable: false, evadePercent: 25, maxGP: 1000 },
+    "🦷": { name: "Shark Tooth", type: "useless", stackable: true, maxGP: 50 },
+    "🥃": { name: "Whiskey", type: "food", stackable: true, foodValue: 10, maxHeal: 5, maxPoison: 5, maxGP: 5 },
+    "🍺": { name: "Watered Down Beer", type: "food", stackable: true, foodValue: 5, maxHeal: 2, maxGP: 2 },
+    "👜": { name: "Small Bag", type: "bag", slots: 3, maxGP: 10 },
+    "🎒": { name: "Medium Bag", type: "bag", slots: 5, maxGP: 50 },
+    "💼": { name: "Large Bag", type: "bag", slots: 10, maxGP: 250 },
+    "📦": { name: "Huge Crate", type: "bag", slots: 20, maxGP: 1000 },
+    "🔥📘": { name: "Tome of Fireball", type: "tome", spell: "fireball", stackable: false, maxGP: 250 },
+    "⚡📘": { name: "Tome of Lightning", type: "tome", spell: "lightning", stackable: false, maxGP: 400 },
+    "❄️📘": { name: "Tome of Ice Bolt", type: "tome", spell: "icebolt", stackable: false, maxGP: 300 },
+    "💪📘": { name: "Tome of Strength", type: "tome", spell: "strength", stackable: false, maxGP: 500 },
+    "🛡️📘": { name: "Tome of Shield", type: "tome", spell: "shield", stackable: false, maxGP: 500 },
+    "💖📘": { name: "Tome of Heal", type: "tome", spell: "heal", stackable: false, maxGP: 600 },
+    "👟📘": { name: "Tome of Haste", type: "tome", spell: "haste", stackable: false, maxGP: 750 },
+    "🔥": { name: "Scroll of Fireball", type: "scroll", spell: "fireball", stackable: true, maxGP: 25 },
+    "📜⚡": { name: "Scroll of Lightning", type: "scroll", spell: "lightning", stackable: true, maxGP: 50 },
+    "⛏️": { name: "Scroll of Tunnel", type: "scroll", spell: "tunnel", stackable: true, maxGP: 75 },
+    "🏪": { name: "Scroll of Shopping", type: "scroll", spell: "shopping", stackable: true, maxGP: 250 },
+    "💡": { name: "Scroll of Light", type: "scroll", spell: "light", stackable: true, maxGP: 10 }
+  };
+
+  const APU_LINES = [
+    "Thank you, come again!",
+    "Please do not squeeze the slurpees.",
+    "I will give you a special discount. Just for you.",
+    "This curry is made with 100% real artificial meat."
+  ];
+
+  window.addFloatingText = (x, y, text, color, size = 16) => {
+    floatingTexts.push({ x, y, text, color, life: 1.0, maxLife: 1.0, size });
+  };
+
+  // SOURCE: src/ui_logic.js
+  // === Core UI & Layout Control ===
+  function logMsg(msg) {
+    const logDiv = document.getElementById('log');
+    if(!logDiv) return;
+    logInfo.count++;
+    
+    // Format timestamp
+    const now = new Date();
+    const ts = `[${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}]`;
+    
+    logDiv.innerHTML += `<div class="log-entry"><span class="log-time">${ts}</span><span class="log-new">${msg}</span></div>`;
+    logDiv.scrollTop = logDiv.scrollHeight;
+  }
+
+  function updateUI() {
+    const hpOrb = document.getElementById('hp-orb');
+    if(hpOrb) hpOrb.innerText = `${Math.floor(player.hp)}/${player.maxHp}`;
+    
+    const mpOrb = document.getElementById('mp-orb');
+    if(mpOrb) mpOrb.innerText = `${Math.floor(player.mp)}/${player.maxMp}`;
+
+    const xpBar = document.getElementById('xp-bar-fill');
+    const xpText = document.getElementById('xp-text');
+    if (xpBar && xpText) {
+      let requiredXp = CONSTANTS.XP_BASE * Math.pow(CONSTANTS.XP_MULT, player.level - 1);
+      xpBar.style.width = Math.min(100, (player.xp / requiredXp) * 100) + '%';
+      xpText.innerText = `Lvl ${player.level} - ${Math.floor(player.xp)}/${Math.floor(requiredXp)} XP`;
+    }
+
+    const hgUI = document.getElementById('hungerUI');
+    if(hgUI) {
+      let hgPercent = Math.floor(player.hunger);
+      hgUI.innerText = `Hunger: ${hgPercent}%`;
+      hgUI.className = hgPercent >= 50 ? "chip danger" : "chip";
+    }
+
+    const gpUI = document.getElementById('gpUI');
+    if(gpUI) gpUI.innerText = `💰 ${player.gp}`;
+    
+    const statusUI = document.getElementById('statusUI');
+    if(statusUI) {
+      if(player.statusType) {
+        statusUI.style.display = 'block';
+        statusUI.innerText = player.statusType.toUpperCase();
+        statusUI.className = "chip danger";
+      } else {
+        statusUI.style.display = 'none';
+      }
+    }
+
+    let minLabel = document.getElementById('minimap-label');
+    if(minLabel) minLabel.innerText = `Floor ${currentLevel}`;
+
+    const badge = document.getElementById('stat-badge');
+    if(badge) {
+       if(player.statPoints > 0) { badge.style.display = 'block'; badge.innerText = player.statPoints; }
+       else { badge.style.display = 'none'; }
+    }
+    
+    Object.keys(player.equipped).forEach(slot => {
+      const el = document.getElementById(`eq${slot}`);
+      if(el) {
+        const icon = player.equipped[slot];
+        el.innerHTML = `<div class="equip-label">${slot}</div>${icon || ''}`;
+        el.onclick = () => {
+          if(isIdentifying && icon) {
+            let def = ITEM_DEF[icon];
+            logMsg(`[ID] ${def.name}: Dmg:${def.maxDamage || 0} Heal:${def.maxHeal || 0} Evade:${def.evadePercent || 0}%`);
+            isIdentifying = false; renderInventory(); updateUI();
+          } else if(!icon && window.draggedItemIdx !== null) {
+            // Click to drop (fallback to D&D)
+            swapEquip(window.draggedItemIdx, slot);
+            window.draggedItemIdx = null;
+          } else if (icon && !isIdentifying) {
+            // Click to unequip to first open slot
+            let emptyIdx = inventory.findIndex(i => i === null);
+            if(emptyIdx !== -1) {
+              inventory[emptyIdx] = { icon: icon, qty: 1 };
+              player.equipped[slot] = null;
+              // Recalc stats
+              let totalDmg = 2, totalEvade = 15;
+              Object.values(player.equipped).forEach(ic => {
+                if(ic) { let d = ITEM_DEF[ic]; if(d.maxDamage) totalDmg += d.maxDamage; if(d.evadePercent) totalEvade += d.evadePercent; }
+              });
+              player.baseDmg = totalDmg; player.dodgeRate = totalEvade / 100;
+              renderInventory(); updateUI();
+            } else { logMsg("Inventory full! Cannot unequip."); }
+          }
+        };
+      }
+    });
+
+    let sModal = document.getElementById('stats-modal');
+    let mModal = document.getElementById('magic-modal');
+    if(sModal && sModal.style.display === 'flex') showStats();
+    if(mModal && mModal.style.display === 'flex') showMagic();
+  }
+
+  // === Drag and Drop & Modals ===
+  let activeModal = null, isDragging = false, dragOffset = {x: 0, y: 0};
+  window.draggedItemIdx = null;
+
+  window.toggleModal = (id) => {
+    let el = document.getElementById(id);
+    if(!el) return;
+    if(el.style.display === 'flex') el.style.display = 'none';
+    else {
+      el.style.display = 'flex';
+      if(id === 'stats-modal') showStats();
+      if(id === 'magic-modal') showMagic();
+    }
+  };
+
+  document.addEventListener('mousedown', (e) => {
+    if(e.target.classList.contains('modal-header') || (e.target.parentElement && e.target.parentElement.classList.contains('modal-header'))) {
+      isDragging = true;
+      activeModal = e.target.closest('.draggable-modal');
+      if(activeModal) {
+         let rect = activeModal.getBoundingClientRect();
+         dragOffset = {x: e.clientX - rect.left, y: e.clientY - rect.top};
+      }
+    }
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if(isDragging && activeModal) {
+      activeModal.style.left = (e.clientX - dragOffset.x) + 'px';
+      activeModal.style.top = (e.clientY - dragOffset.y) + 'px';
+    }
+  });
+
+  document.addEventListener('mouseup', () => { isDragging = false; activeModal = null; });
+
+  window.handleDragStart = (e, idx) => {
+    window.draggedItemIdx = idx;
+    e.dataTransfer.setData('text/plain', idx);
+  };
+  window.allowDrop = (e) => { e.preventDefault(); };
+  window.handleDrop = (e, slot) => {
+    e.preventDefault();
+    if(window.draggedItemIdx !== null) {
+       swapEquip(window.draggedItemIdx, slot);
+       window.draggedItemIdx = null;
+    }
+  };
+  
+  // Drop onto ground (HUD background)
+  let hud = document.getElementById('hud');
+  if(hud) {
+    hud.addEventListener('dragover', (e) => {
+      if(e.target.id === 'hud' || e.target.id === 'log-overlay') e.preventDefault();
+    });
+    hud.addEventListener('drop', (e) => {
+      if((e.target.id === 'hud' || e.target.id === 'log-overlay') && window.draggedItemIdx !== null) {
+        let itemObj = inventory[window.draggedItemIdx];
+        itemsOnGround.push({ x: player.x, y: player.y, icon: itemObj.icon });
+        logMsg(`Dropped ${ITEM_DEF[itemObj.icon].name}`);
+        decrementItem(window.draggedItemIdx);
+        window.draggedItemIdx = null;
+        updateUI();
+      }
+    });
+  }
+
+  // === Keyboard Hints ===
+  window.addEventListener('keydown', (e) => {
+    if(e.key === '?') document.body.classList.toggle('show-keybinds');
+  });
+
+  // === Inventory Rendering ===
+  function renderInventory() {
+    const grid = document.getElementById('inventoryUI');
+    if(!grid) return;
+    grid.innerHTML = '';
+    for(let i=0; i<10; i++) {
+      let item = inventory[i];
+      let hotkey = i === 9 ? 0 : i + 1;
+      let slot = document.createElement('div');
+      slot.className = isIdentifying ? 'inv-slot selected' : 'inv-slot';
+      slot.draggable = item ? true : false;
+      if(item) {
+        slot.addEventListener('dragstart', (e) => handleDragStart(e, i));
+      }
+      slot.innerHTML = `<span class="hotkey">${hotkey}</span>`;
+      if(item) {
+        slot.innerHTML += item.icon;
+        if(item.qty > 1) slot.innerHTML += `<span class="qty">${item.qty}</span>`;
+      }
+      slot.onclick = () => handleItemClick(i);
+      grid.appendChild(slot);
+    }
+  }
+
+  function getModifiedStats() {
+    let stats = { ...player.stats };
+    return stats;
+  }
+
+  window.allocateStat = (stat) => {
+    if(player.statPoints > 0) {
+      player.stats[stat]++;
+      player.statPoints--;
+      if(stat === 'str') { player.maxHp += 5; player.hp += 5; }
+      if(stat === 'int') { player.maxMp += 5; player.mp += 5; }
+      showStats();
+      updateUI();
+    }
+  };
+
+  window.showStats = () => {
+    let mod = getModifiedStats();
+    let html = `
+      <p>Level: ${player.level} | XP: ${Math.floor(player.xp)}</p>
+      <p>Unspent Points: <span style="color:var(--warning)">${player.statPoints}</span></p>
+      <div style="text-align: left; margin: 0 auto; width: max-content;">
+        <p>STR: ${mod.str} ${player.statPoints > 0 ? `<button style="padding:2px 8px; width:auto; font-size:12px;" onclick="allocateStat('str')" title="+5 Max HP">+</button>` : ''}</p>
+        <p>DEX: ${mod.dex} ${player.statPoints > 0 ? `<button style="padding:2px 8px; width:auto; font-size:12px;" onclick="allocateStat('dex')" title="+Hit/Evade">+</button>` : ''}</p>
+        <p>INT: ${mod.int} ${player.statPoints > 0 ? `<button style="padding:2px 8px; width:auto; font-size:12px;" onclick="allocateStat('int')" title="+5 Max MP">+</button>` : ''}</p>
+        <hr style="border-color:#555">
+        <p>Base Dmg: ${player.baseDmg}</p>
+        <p>Hit Rate: ${(player.hitRate * 100).toFixed(0)}%</p>
+        <p>Crit Rate: ${(player.critRate * 100).toFixed(0)}%</p>
+        <p>Evade: ${(player.dodgeRate * 100).toFixed(0)}%</p>
+      </div>`;
+    let body = document.getElementById('stats-body');
+    if(body) body.innerHTML = html;
+  };
+
+  window.showMagic = () => {
+    let spellKeys = Object.keys(player.spells);
+    let html = "";
+    if(spellKeys.length === 0) {
+      html = `<p>You haven't learned any spells yet.</p><p>Read Tomes to learn new magic.</p>`;
+    } else {
+      html = `<div style="display:flex; flex-direction:column; gap:8px;">`;
+      spellKeys.forEach(key => {
+        let sp = player.spells[key];
+        let cost = Math.floor(10 * Math.pow(1.1, sp.level - 1));
+        html += `<div style="display:flex; justify-content:space-between; align-items:center; background:var(--surface-container); padding:8px; border-radius:8px;">
+            <div style="text-align:left;">
+              <strong>${key.toUpperCase()} (Lv ${sp.level})</strong><br>
+              <span style="font-size:12px; color:#aaa;">Proficiency: ${sp.uses}/100 | MP: ${cost}</span>
+            </div>
+            <button style="width:auto; padding:6px 12px; font-size:12px;" onclick="castSpell('${key}')">Cast</button>
+          </div>`;
+      });
+      html += `</div>`;
+    }
+    let body = document.getElementById('magic-body');
+    if(body) body.innerHTML = html;
+  };
+
+  // Action Bar Buttons mapping
+  window.meleeAttack = () => { logMsg("Melee attack logic not bound. Bump into enemies to attack."); };
+  window.castEquippedSpell = () => { logMsg("Equip a spell via the Magic Modal to cast here."); };
+  window.toggleMenu = () => { toggleModal('menu-modal'); };
+  window.toggleFog = () => { logMsg("Toggle Fog called."); };
+  window.saveGame = () => { logMsg("Save game stub."); };
+  window.loadGame = () => { logMsg("Load game stub."); };
+
+  // === Asset Loader (v6.2.0) ===
+  const assetInput = document.getElementById('asset-loader');
+  if(assetInput) {
+    assetInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const data = JSON.parse(ev.target.result);
+          if(data.sprites) {
+            Object.keys(data.sprites).forEach(key => {
+              const img = new Image();
+              img.src = data.sprites[key];
+              assets.sprites[key] = img;
+            });
+            window.useSprites = true;
+            logMsg("Sprites loaded!");
+          }
+          if(data.sounds && Sound.ctx) {
+            Object.keys(data.sounds).forEach(async (key) => {
+              try {
+                const b64 = data.sounds[key].split(',')[1] || data.sounds[key];
+                const bin = atob(b64);
+                const array = new Uint8Array(bin.length);
+                for(let i=0; i<bin.length; i++) array[i] = bin.charCodeAt(i);
+                const buffer = await Sound.ctx.decodeAudioData(array.buffer);
+                assets.sounds[key] = buffer;
+                console.log(`Loaded sound: ${key}`);
+              } catch(e) { console.error(`Sound decode error (${key}):`, e); }
+            });
+            logMsg("Audio samples loaded!");
+          }
+          if(data.midi) {
+            logMsg("MIDI data indexed.");
+          }
+        } catch(err) {
+          alert("Error parsing asset file: " + err.message);
+        }
+      };
+      reader.readAsText(file);
+    });
+  }
+
+  // SOURCE: src/map.js
+  // === Map Generation ===
+  function getDeadEndWall() {
+    let candidates = [];
+    for(let y=1; y<mapH-1; y++) {
+      for(let x=1; x<mapW-1; x++) {
+        if(theMap[y][x] === TILES.WALL) {
+          let floors = 0;
+          if(theMap[y-1][x] === TILES.FLOOR || theMap[y-1][x] === TILES.STORE || theMap[y-1][x] === TILES.BOOKSTORE || theMap[y-1][x] === TILES.LEFTYS) floors++;
+          if(theMap[y+1][x] === TILES.FLOOR || theMap[y+1][x] === TILES.STORE || theMap[y+1][x] === TILES.BOOKSTORE || theMap[y+1][x] === TILES.LEFTYS) floors++;
+          if(theMap[y][x-1] === TILES.FLOOR || theMap[y][x-1] === TILES.STORE || theMap[y][x-1] === TILES.BOOKSTORE || theMap[y][x-1] === TILES.LEFTYS) floors++;
+          if(theMap[y][x+1] === TILES.FLOOR || theMap[y][x+1] === TILES.STORE || theMap[y][x+1] === TILES.BOOKSTORE || theMap[y][x+1] === TILES.LEFTYS) floors++;
+          if(floors === 1) candidates.push({x,y});
+        }
+      }
+    }
+    if(candidates.length > 0) return candidates[Math.floor(Math.random()*candidates.length)];
+    let backup;
+    do { 
+      backup = {x: 1+Math.floor(Math.random()*(mapW-2)), y: 1+Math.floor(Math.random()*(mapH-2))}; 
+    } while(theMap[backup.y][backup.x] !== TILES.FLOOR);
+    return backup;
+  }
+
+  function initMap(baseSize) {
+    let scaledSize = Math.floor(baseSize * Math.pow(1.1, currentLevel - 1));
+    if(scaledSize % 2 === 0) scaledSize++;
+    mapW = scaledSize; mapH = scaledSize;
+    
+    theMap = Array(mapH).fill().map(()=>Array(mapW).fill(TILES.WALL));
+    darkMap = Array(mapH).fill().map(()=>Array(mapW).fill(false));
+    explored = Array(mapH).fill().map(()=>Array(mapW).fill(false));
+    visible = Array(mapH).fill().map(()=>Array(mapW).fill(false));
+    enemies = []; itemsOnGround = []; lightTurns = 0; player.darkSteps = 0;
+
+    let rooms = [];
+    function splitArea(x, y, w, h, iter) {
+      if(iter === 0 || (w < 12 && h < 12)) {
+        rooms.push({x, y, w, h, cx: Math.floor(x+w/2), cy: Math.floor(y+h/2)});
+        return;
+      }
+      let splitHoriz = Math.random() > 0.5;
+      if(w > h*1.5) splitHoriz = false; else if(h > w*1.5) splitHoriz = true;
+      
+      if(splitHoriz) {
+        let split = Math.floor(h/2) + (Math.floor(Math.random()*3)-1);
+        splitArea(x, y, w, split, iter-1);
+        splitArea(x, y+split, w, h-split, iter-1);
+      } else {
+        let split = Math.floor(w/2) + (Math.floor(Math.random()*3)-1);
+        splitArea(x, y, split, h, iter-1);
+        splitArea(x+split, y, w-split, h, iter-1);
+      }
+    }
+    splitArea(1, 1, mapW-2, mapH-2, 4);
+
+    for(let r of rooms) {
+      let type = Math.random();
+      if(type < 0.25) {
+        theMap[r.cy][r.cx] = TILES.FLOOR;
+      } else if (type < 0.6) {
+        let rw = Math.max(3, Math.floor(r.w * 0.7));
+        let rh = Math.max(3, Math.floor(r.h * 0.7));
+        let rx = r.x + Math.floor((r.w - rw)/2);
+        let ry = r.y + Math.floor((r.h - rh)/2);
+        for(let cy=ry; cy<ry+rh; cy++) for(let cx=rx; cx<rx+rw; cx++) theMap[cy][cx] = TILES.FLOOR;
+      } else {
+        let cx=r.cx, cy=r.cy, steps=r.w*r.h;
+        for(let i=0; i<steps; i++) {
+          theMap[cy][cx] = TILES.FLOOR;
+          let dirs = [[0,-1],[1,0],[0,1],[-1,0]];
+          let d = dirs[Math.floor(Math.random()*4)];
+          if(cx+d[0]>r.x && cx+d[0]<r.x+r.w-1) cx+=d[0];
+          if(cy+d[1]>r.y && cy+d[1]<r.y+r.h-1) cy+=d[1];
+        }
+      }
+    }
+
+    for(let i=0; i<rooms.length-1; i++) {
+      let p1 = rooms[i], p2 = rooms[i+1];
+      let cx = p1.cx, cy = p1.cy;
+      while(cx !== p2.cx) { theMap[cy][cx] = TILES.FLOOR; cx += Math.sign(p2.cx - cx); }
+      while(cy !== p2.cy) { theMap[cy][cx] = TILES.FLOOR; cy += Math.sign(p2.cy - cy); }
+    }
+
+    if(currentLevel % 2 === 0) theMap[getDeadEndWall().y][getDeadEndWall().x] = TILES.STORE;
+    if(currentLevel === 3) theMap[getDeadEndWall().y][getDeadEndWall().x] = TILES.LEFTYS;
+    if(currentLevel === 4) theMap[getDeadEndWall().y][getDeadEndWall().x] = TILES.BOOKSTORE;
+
+    for(let i=0; i<2; i++) {
+      let rm = rooms[Math.floor(Math.random()*rooms.length)];
+      let cx = Math.floor(rm.x + rm.w/2);
+      let cy = Math.floor(rm.y + rm.h/2);
+      if(theMap[cy][cx] === TILES.FLOOR) theMap[cy][cx] = TILES.CHEST;
+    }
+
+    let upStairPos = getDeadEndWall();
+    player.x = upStairPos.x; player.y = upStairPos.y;
+    theMap[player.y][player.x] = currentLevel > 1 ? TILES.STAIR_UP : TILES.FLOOR;
+
+    let downStairPos = getDeadEndWall();
+    while(downStairPos.x === upStairPos.x && downStairPos.y === upStairPos.y) downStairPos = getDeadEndWall();
+    theMap[downStairPos.y][downStairPos.x] = TILES.STAIR_DOWN;
+
+    // Chambers before monsters (v5.3.6)
+    let safeDist = (r) => Math.abs(r.cx - player.x) + Math.abs(r.cy - player.y) > 10 && 
+                         Math.abs(r.cx - downStairPos.x) + Math.abs(r.cy - downStairPos.y) > 10;
+    
+    if(Math.random() < 0.50) {
+      let candidates = rooms.filter(safeDist);
+      if(candidates.length > 0) {
+        let r = candidates[Math.floor(Math.random()*candidates.length)];
+        for(let y=r.y; y<r.y+r.h; y++) for(let x=r.x; x<r.x+r.w; x++) {
+          if(theMap[y][x] === TILES.FLOOR) darkMap[y][x] = true;
+        }
+      }
+    }
+    if(Math.random() < 0.10) {
+      let candidates = rooms.filter(safeDist);
+      if(candidates.length > 0) {
+        let r = candidates[Math.floor(Math.random()*candidates.length)];
+        for(let y=r.y; y<r.y+r.h; y++) for(let x=r.x; x<r.x+r.w; x++) {
+          if(theMap[y][x] === TILES.FLOOR) theMap[y][x] = TILES.WATER;
+        }
+      }
+    }
+
+    if(currentLevel === 2) {
+      itemsOnGround.push({ x: player.x + 1, y: player.y, icon: '🥾' });
+      let eventRoom = rooms[rooms.length-1];
+      enemies.push({ x: eventRoom.cx, y: eventRoom.cy, type: "cat", stats: {...MONSTER_DEF["cat"]}, actionTimer: 0 });
+      enemies.push({ x: eventRoom.cx + 1, y: eventRoom.cy, type: "wet_rat", stats: {...MONSTER_DEF["wet_rat"]}, actionTimer: 0 });
+    }
+    
+    if(currentLevel === 1 || currentLevel === 3) itemsOnGround.push({ x: getRandomFloor().x, y: getRandomFloor().y, icon: '🪵' });
+
+    if(currentLevel >= 5 && currentLevel <= 6) Sound.playMusic('monkey');
+    else if(currentLevel === 9) {
+      Sound.playMusic('bandit');
+      let camp = rooms[rooms.length-1];
+      for(let y=camp.y; y<camp.y+camp.h; y++) for(let x=camp.x; x<camp.x+camp.w; x++) {
+        if(theMap[y][x] === TILES.FLOOR) {
+          if(x === camp.cx && y === camp.cy) itemsOnGround.push({ x, y, icon: '🏺' });
+          else if(Math.random() < 0.3) enemies.push({ x, y, type: "pirate", stats: {...MONSTER_DEF["pirate"], icon: '💤'}, actionTimer: -100 });
+        }
+      }
+    } else if(currentLevel === 10) {
+      enemies.push({ x: downStairPos.x, y: downStairPos.y, type: "genie", stats: {...MONSTER_DEF["genie"]}, actionTimer: 0 });
+    } else { Sound.stopMusic(); }
+
+    if(currentLevel === 6) {
+      let bossRoom = rooms[1];
+      theMap[bossRoom.cy][bossRoom.cx] = TILES.CHEST;
+      enemies.push({ x: bossRoom.cx + 1, y: bossRoom.cy, type: "master", stats: {...MONSTER_DEF["master"]}, actionTimer: 0 });
+    }
+
+    spawnMonsters(Math.floor(6 * Math.pow(1.2, currentLevel - 1)));
+    
+    for(let i=0; i<5; i++) {
+      let pos = getRandomFloor();
+      spawnLoot(pos.x, pos.y, false, false);
+    }
+  }
+
+  function getRandomFloor() {
+    let x,y, escapes = 0;
+    do { 
+      x = 1+Math.floor(Math.random()*(mapW-2)); 
+      y = 1+Math.floor(Math.random()*(mapH-2)); 
+      escapes++;
+    } while(theMap[y][x] !== TILES.FLOOR && theMap[y][x] !== TILES.WATER && escapes < 1000);
+    return {x,y};
+  }
+
+  function spawnMonsters(count) {
+    for(let i=0; i<count; i++) {
+      let pos = {x: 1+Math.floor(Math.random()*(mapW-2)), y: 1+Math.floor(Math.random()*(mapH-2))};
+      let tile = theMap[pos.y][pos.x];
+      if(tile !== TILES.FLOOR && tile !== TILES.WATER) { i--; continue; }
+      
+      let typeStr = "chipmunk";
+      if(tile === TILES.WATER) {
+        let roll = Math.random();
+        if(roll < 0.6) { typeStr = "duck"; }
+        else if(roll < 0.9) { typeStr = "wet_rat"; }
+        else typeStr = "shark";
+      } else {
+        let types = ["chipmunk", "slime"];
+        if(currentLevel >= 2) types.push("bat", "goat");
+        if(currentLevel >= 3) types.push("snake", "skeleton");
+        if(currentLevel >= 4) types.push("ghost", "troll", "spider");
+        if(currentLevel >= 5) types.push("medusa", "pirate", "ogre");
+        if(currentLevel >= 7) types.push("robot", "dragon");
+        
+        if(currentLevel > 2 && Math.random() < 0.05) { // 5% chance for a rare spawn to replace a normal one
+           typeStr = "king";
+        } else {
+           typeStr = types[Math.floor(Math.random() * types.length)];
+        }
+      }
+      enemies.push({ x: pos.x, y: pos.y, type: typeStr, stats: {...MONSTER_DEF[typeStr]}, actionTimer: 0 });
+    }
+  }
+
+  function spawnLoot(x, y, isChest, forceStandard) {
+    if(!forceStandard && Math.random() < 0.01) {
+      let rares = ['👗','🦠','🐓','🧦','💎'];
+      itemsOnGround.push({x, y, icon: rares[Math.floor(Math.random()*rares.length)]});
+      return;
+    }
+    
+    let roll = Math.random();
+    let keys = Object.keys(ITEM_DEF);
+    if(isChest) {
+       if(roll < 0.15) { enemies.push({ x, y, type: "goat", stats: {...MONSTER_DEF["goat"]}, actionTimer: 0 }); return; }
+       else if(roll < 0.50) itemsOnGround.push({x, y, icon: '🕯️'});
+       else if(roll < 0.60) { player.gp+=100; Sound.clink(); return; }
+       else if(roll < 0.70) itemsOnGround.push({x, y, icon: '🧪'});
+       else if(roll < 0.80) itemsOnGround.push({x, y, icon: '🐡'});
+       else if(roll < 0.90) itemsOnGround.push({x, y, icon: '🗡️'});
+       else itemsOnGround.push({x, y, icon: '🛡️'});
+    } else {
+       if(!forceStandard && roll < 0.2) return;
+       let icon = keys[Math.floor(Math.random() * keys.length)];
+       const exclude = ['◾','🪫','🍛','🥤','🎩','🔦','🔮','👗','🦠','🐓','🧦','💎','🧴','🕴️','🦷','🏺','🥾','🔥📘','⚡📘','❄️📘','💪📘','🛡️📘','💖📘','👟📘'];
+       if(!exclude.includes(icon)) {
+           itemsOnGround.push({x, y, icon});
+       }
+    }
+  }
+
+  // SOURCE: src/mechanics.js
+  // === Inventory & Shop Actions ===
+  function toggleDropMode() { dropMode = !dropMode; updateUI(); }
+
+  function handleItemClick(idx) {
+    let itemObj = inventory[idx];
+    if(!itemObj) return;
+
+    if(isIdentifying) {
+      let def = ITEM_DEF[itemObj.icon];
+      logMsg(`[ID] ${def.name}: Dmg:${def.maxDamage || 0} Heal:${def.maxHeal || 0} Evade:${def.evadePercent || 0}%`);
+      isIdentifying = false; renderInventory(); return;
+    }
+
+    if(dropMode) {
+      itemsOnGround.push({ x: player.x, y: player.y, icon: itemObj.icon });
+      logMsg(`Dropped ${ITEM_DEF[itemObj.icon].name}`);
+      decrementItem(idx); dropMode = false; updateUI(); return;
+    }
+
+    if(itemObj.icon === '🥾') {
+      let nearestCat = enemies.findIndex(e => e.type === 'cat' && Math.abs(e.x - player.x) + Math.abs(e.y - player.y) <= 3);
+      if(nearestCat !== -1) {
+        logMsg("<span style='color:var(--success)'>ACHIEVEMENT: Feline Flinger! (250 XP)</span>");
+        
+        // Boot throwing animation
+        let cat = enemies[nearestCat];
+        let bx = player.x, by = player.y;
+        const throwAnim = setInterval(() => {
+          bx += Math.sign(cat.x - bx) * 0.5;
+          by += Math.sign(cat.y - by) * 0.5;
+          addFloatingText(bx, by, '🥾', "#fff", 20);
+          drawMap();
+          if (Math.abs(bx - cat.x) < 0.6 && Math.abs(by - cat.y) < 0.6) {
+            clearInterval(throwAnim);
+            logMsg("Cat: 'Nyan!'");
+            enemies.splice(nearestCat, 1);
+            
+            let ratIdx = enemies.findIndex(e => e.type === 'wet_rat' && Math.abs(e.x - player.x) + Math.abs(e.y - player.y) <= 5);
+            if(ratIdx !== -1) {
+              logMsg("Rat: 'Thank you for saving me! Squeek squeek!'");
+              enemies.splice(ratIdx, 1); // Remove rat, pretend it scurried
+            }
+
+            player.savedRat = true;
+            player.xp += 250; checkLevelUp();
+            decrementItem(idx);
+          }
+        }, 50);
+
+      } else { logMsg("Nothing to throw the boot at."); }
+      return;
+    }
+
+    if(itemObj.icon === '🏺') {
+      let nearestGenie = enemies.findIndex(e => e.type === 'genie' && Math.abs(e.x - player.x) + Math.abs(e.y - player.y) <= 3);
+      if(nearestGenie !== -1) {
+        logMsg("<span style='color:var(--success)'>ACHIEVEMENT: Bottle Service! (1000 XP)</span>");
+        logMsg("The Genie is sucked into the Brass Bottle! The path is clear!");
+        enemies.splice(nearestGenie, 1);
+        player.xp += 1000; checkLevelUp();
+        decrementItem(idx);
+        theMap[player.y][player.x] = TILES.STAIR_DOWN;
+        drawMap();
+      } else {
+        logMsg("<span style='color:var(--error)'>You open the bottle too soon! An angry genie turns you to ASHES!</span>");
+        document.getElementById('modal-content').innerHTML = `<h2>⚱️ ASHES TO ASHES</h2><p>You opened the bottle prematurely. The genie was not amused.</p><button onclick="location.reload()">Restart</button>`;
+        document.getElementById('overlay').style.display = 'flex';
+        isDead = true; Sound.scream();
+      }
+      return;
+    }
+
+    let def = ITEM_DEF[itemObj.icon];
+    if(def.type === "bag") { openBag(idx); return; }
+    if(def.type === "weapon") { swapEquip(idx, 'leftHand'); return; }
+    if(def.type === "armor") { swapEquip(idx, def.slot || 'chest'); return; }
+    
+    if(def.type === "food" || def.type === "potion") {
+      if(itemObj.icon === '🧴') {
+         if(player.statusType === 'disease') {
+            player.statusType = null;
+            player.statusTurns = 0;
+            logMsg("You used the 🧴. The disease was cured... somehow.");
+            decrementItem(idx);
+         } else {
+            logMsg("You look at the 🧴. Best save it for when you need it.");
+         }
+         updateUI(); return;
+      }
+      
+      if(def.maxHeal > 0) {
+        if(def.type === "potion") {
+           player.hp = Math.min(player.maxHp, player.hp + def.maxHeal);
+           addFloatingText(player.x, player.y, `+${def.maxHeal}`, "#0f0", 24);
+        } else {
+           player.totalHealPending += def.maxHeal; // Food heals over time
+        }
+      }
+      if(def.foodValue > 0) player.hunger = Math.max(0, player.hunger - def.foodValue);
+      if(def.maxPoison > 0) { player.hp -= def.maxPoison; logMsg("Ugh! It was poisoned!"); addFloatingText(player.x, player.y, `-${def.maxPoison}`, "#f00", 24); }
+      if(itemObj.icon === '🥤') { player.statusType = 'sugar'; player.statusTurns = 10; logMsg("Sugar Rush! 100% Hit."); }
+      if(itemObj.icon === '🦠') { player.statusType = 'disease'; player.statusTurns = 100; logMsg("You caught a disease."); }
+      logMsg(`Consumed ${def.name}.`);
+      decrementItem(idx);
+    }
+    else if(def.type === "scroll") {
+      if(itemObj.icon === '📃') { isIdentifying = true; logMsg("Select an item to identify."); decrementItem(idx); renderInventory(); return;}
+      if(itemObj.icon === '🔮') { 
+        let lv = prompt("Teleport to which floor number?"); 
+        if(lv && !isNaN(lv)) { 
+          levelCache[currentLevel] = { theMap, explored, visible, enemies, itemsOnGround, mapW, mapH };
+          currentLevel = parseInt(lv); initMap(50); decrementItem(idx); 
+        }
+      } else if (def.spell) {
+        castSpell(def.spell, true);
+        decrementItem(idx);
+      }
+    }
+    else if(def.type === "tome") {
+      if(!player.spells[def.spell]) {
+        player.spells[def.spell] = { level: 1, uses: 0 };
+        logMsg(`<span style='color:var(--primary)'>You learned ${def.spell.toUpperCase()}!</span>`);
+        decrementItem(idx);
+      } else {
+        logMsg("You already know this spell.");
+      }
+    }
+    else if(def.type === "light") {
+      lightTurns = itemObj.icon === '🔦' ? 1000 : 100;
+      logMsg(`${def.name} activated for ${lightTurns} turns.`);
+      inventory[idx].icon = itemObj.icon === '🔦' ? '🪫' : '◾';
+      renderInventory();
+    }
+    else if(itemObj.icon === '🐓') { logMsg("COCKADOODLEDOO!"); }
+    else { logMsg(`You look at the ${def.name}. It does nothing.`); }
+    
+    updateUI();
+  }
+
+  window.castSpell = (spellKey, isScroll = false) => {
+    let sp = player.spells[spellKey] || { level: 1, uses: 0 };
+    let cost = 0;
+    let powerMult = 1.0;
+    
+    if(!isScroll) {
+      if(!player.spells[spellKey]) return;
+      cost = Math.floor(10 * Math.pow(1.1, sp.level - 1));
+      if(player.mp < cost) { logMsg("Not enough MP!"); return; }
+      player.mp -= cost;
+      powerMult = Math.pow(1.1, sp.level - 1);
+      
+      sp.uses++;
+      if(sp.uses >= 100) {
+        sp.uses = 0;
+        sp.level++;
+        logMsg(`<span style='color:var(--primary)'>${spellKey.toUpperCase()} reached Level ${sp.level}!</span>`);
+      }
+      document.getElementById('overlay').style.display = 'none';
+    }
+    
+    if(spellKey === 'fireball') {
+      let nearest = null, minDist = 999;
+      enemies.forEach((e, idx) => {
+        if(visible[e.y][e.x]) {
+          let dist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
+          if(dist < minDist) { minDist = dist; nearest = idx; }
+        }
+      });
+      if(nearest !== null) {
+        let e = enemies[nearest];
+        let dmg = Math.floor(15 * powerMult);
+        e.stats.hp -= dmg;
+        logMsg(`Cast ${spellKey} on ${e.stats.icon} for ${dmg} dmg!`);
+        addFloatingText(e.x, e.y, `-${dmg}`, "#ff4500", 24);
+        Sound.scream();
+        if(e.stats.hp <= 0) doCombat(nearest); 
+      } else { logMsg("No visible targets."); if(!isScroll) player.mp+=cost; }
+
+    } else if (spellKey === 'lightning') {
+      // AoE auto-targeting within dist 5
+      let hitAny = false;
+      let dmg = Math.floor(25 * powerMult);
+      enemies.forEach((e, idx) => {
+        let dist = Math.abs(e.x - player.x) + Math.abs(e.y - player.y);
+        if(dist <= 5 && visible[e.y][e.x]) {
+          hitAny = true;
+          e.stats.hp -= dmg;
+          addFloatingText(e.x, e.y, `⚡-${dmg}`, "#0ff", 24);
+          if(e.stats.hp <= 0) doCombat(idx);
+        }
+      });
+      if(hitAny) {
+        logMsg(`Lightning arched to nearby enemies for ${dmg} dmg!`);
+        Sound.scream();
+      } else {
+        logMsg("No enemies within range 5.");
+        if(!isScroll) player.mp+=cost;
+      }
+
+    } else if (spellKey === 'tunnel') {
+      let dx = player.facing.dx || 1;
+      let dy = player.facing.dy || 0;
+      let cx = player.x + dx;
+      let cy = player.y + dy;
+      
+      if(theMap[cy] && theMap[cy][cx] !== TILES.WALL) {
+        logMsg("You must face a wall to tunnel.");
+        if(!isScroll) player.mp+=cost;
+        return;
+      }
+
+      Sound.gurgle(); // Placeholder for earthquake
+      document.getElementById('game').style.animation = 'rockViewport 1s ease-in-out';
+      setTimeout(()=> document.getElementById('game').style.animation = 'none', 1000);
+
+      let stepCount = 0;
+      const digInt = setInterval(() => {
+        cx += dx; cy += dy;
+        if(stepCount >= 10 || cx <= 0 || cx >= mapW-1 || cy <= 0 || cy >= mapH-1) { clearInterval(digInt); return; }
+        let tile = theMap[cy][cx];
+        if(tile !== TILES.WALL) { clearInterval(digInt); return; } // hit open space or bounds
+        
+        theMap[cy][cx] = TILES.FLOOR;
+        explored[cy][cx] = true;
+        addFloatingText(cx, cy, '🪨', "#888", 20);
+        calculateFOV(); drawMap();
+        stepCount++;
+      }, 500); // 2 cells per sec
+
+    } else if (spellKey === 'shopping') {
+      let storePos = {x: player.x, y: player.y};
+      let found = false;
+      let dirs = [[0,-1],[1,0],[0,1],[-1,0]];
+      for(let i=0; i<4; i++) {
+         let nx = player.x + dirs[i][0], ny = player.y + dirs[i][1];
+         if(theMap[ny][nx] === TILES.WALL) { storePos = {x:nx, y:ny}; found = true; break; }
+      }
+      if(found) {
+        theMap[storePos.y][storePos.x] = TILES.STORE;
+        logMsg("A magical store appears nearby.");
+        calculateFOV(); drawMap();
+      } else { logMsg("No wall nearby to open store."); if(!isScroll) player.mp+=cost; }
+    } else if (spellKey === 'light') {
+      lightTurns += Math.floor(20 * powerMult);
+      logMsg(`Magical light for ${Math.floor(20 * powerMult)} turns.`);
+      calculateFOV(); drawMap();
+    }
+    
+    updateUI();
+  };
+
+  function swapEquip(idx, slot) {
+    let item = inventory[idx];
+    let currentEquip = player.equipped[slot];
+    player.equipped[slot] = item.icon;
+    inventory[idx] = currentEquip ? { icon: currentEquip, qty: 1 } : null;
+    logMsg(`Equipped ${ITEM_DEF[item.icon].name}.`);
+    
+    let totalDmg = 2;
+    let totalEvade = 15;
+    
+    Object.values(player.equipped).forEach(icon => {
+      if(icon) {
+        let d = ITEM_DEF[icon];
+        if(d.maxDamage) totalDmg += d.maxDamage;
+        if(d.evadePercent) totalEvade += d.evadePercent;
+      }
+    });
+
+    player.baseDmg = totalDmg;
+    player.dodgeRate = totalEvade / 100;
+    
+    // Midas Effect Trigger
+    if(player.equipped.rightHand === '💍') {
+      player.statusType = 'midas';
+      player.statusTurns = Infinity;
+      logMsg("<span style='color:var(--warning)'>Everything you touch turns to gold...</span>");
+    } else if(player.statusType === 'midas') {
+      player.statusType = null;
+      player.statusTurns = 0;
+    }
+
+    renderInventory(); updateUI();
+  }
+
+  function openBag(bagIdx) {
+    let bag = inventory[bagIdx];
+    let def = ITEM_DEF[bag.icon];
+    if(!bag.contents) bag.contents = new Array(def.slots).fill(null);
+
+    let html = `<h2>${def.name}</h2><div style="display:grid; grid-template-columns: repeat(5, 1fr); gap:8px; margin-bottom:16px; justify-items: center;">`;
+    bag.contents.forEach((item, i) => {
+      html += `<div class="inv-slot" style="width:48px; height:48px; background:var(--surface-container); border:2px solid var(--secondary); border-radius:8px; display:flex; justify-content:center; align-items:center; font-size:24px;" onclick="handleBagItem(${bagIdx}, ${i})">${item ? item.icon : ''}</div>`;
+    });
+    html += `</div><button onclick="document.getElementById('overlay').style.display='none'">Close</button>`;
+    
+    document.getElementById('modal-content').innerHTML = html;
+    document.getElementById('overlay').style.display = 'flex';
+  }
+
+  window.handleBagItem = (bagIdx, itemIdx) => {
+    let bag = inventory[bagIdx];
+    let item = bag.contents[itemIdx];
+    
+    if(item) {
+      let empty = inventory.findIndex(s => s === null);
+      if(empty !== -1) {
+        inventory[empty] = item;
+        bag.contents[itemIdx] = null;
+        openBag(bagIdx); renderInventory();
+      } else alert("Main inventory full!");
+    } else {
+      logMsg("Bag stashing is not yet automated. Drop and pick up while bag is open?");
+    }
+  };
+
+  function decrementItem(idx) {
+    inventory[idx].qty--;
+    if(inventory[idx].qty <= 0) inventory[idx] = null;
+    renderInventory();
+  }
+
+  function pickupItems() {
+    let toRemove = [];
+    let inventoryFullWarned = false;
+
+    itemsOnGround.forEach((item, index) => {
+      if(item.x === player.x && item.y === player.y) {
+        let def = ITEM_DEF[item.icon];
+        if(def.type === "wealth") {
+          let amount = def.maxGP === 50 ? Math.floor(Math.random()*50)+1 : def.maxGP;
+          player.gp += amount;
+          Sound.clink(); logMsg(`Found ${amount} GP!`);
+          toRemove.push(index); return;
+        }
+
+        if(item.icon === '🏺') {
+          if(!player.savedRat) {
+            logMsg("<span style='color:var(--error)'>The bandits wake up and capture you! You are tied up and executed.</span>");
+            document.getElementById('modal-content').innerHTML = `<h2>🪢 CAPTURED</h2><p>You tried to sneak into the camp, but you had no friends to help you. The bandits showed no mercy.</p><button onclick="location.reload()">Restart</button>`;
+            document.getElementById('overlay').style.display = 'flex';
+            isDead = true; Sound.scream(); return;
+          } else {
+            document.getElementById('modal-content').innerHTML = `<h2>🐀 THE RAT'S REPAYMENT</h2><p>As you grab the bottle, the bandits surround and tie you up! <br><br>Suddenly, the rat you saved from the cat appears! It quickly chews through your ropes, allowing you to slip away into the shadows.</p><button onclick="document.getElementById('overlay').style.display='none'">Phew!</button>`;
+            document.getElementById('overlay').style.display = 'flex';
+            logMsg("The rat saved you! You secured the Brass Bottle.");
+          }
+        }
+
+        let stacked = false;
+        if(def.stackable) {
+          let slot = inventory.find(i => i && i.icon === item.icon);
+          if(slot) { slot.qty++; stacked = true; }
+        }
+        if(!stacked) {
+          let emptyIdx = inventory.findIndex(i => i === null);
+          if(emptyIdx !== -1) { 
+            inventory[emptyIdx] = { icon: item.icon, qty: 1 }; stacked = true; 
+          } else if(!inventoryFullWarned) {
+            logMsg(`<span style='color:var(--warning)'>Can't pick up ${item.icon} because no slots are available. Try dropping or selling an item to make room.</span>`);
+            inventoryFullWarned = true;
+          }
+        }
+        if(stacked) { toRemove.push(index); logMsg(`Picked up ${item.icon}`); }
+      }
+    });
+    for (let i = toRemove.length - 1; i >= 0; i--) itemsOnGround.splice(toRemove[i], 1);
+    renderInventory(); updateUI();
+  }
+
+  // SOURCE: src/engine.js
+  // === Core Loops & AI ===
+  let chestStates = {}; // track chest interaction state "x,y" -> hits
+
+  function advanceTurn(steps = 1) {
+    if(isDead) return;
+    
+    // Running & Exhaustion (v5.4.0)
+    if (player.isRunning) {
+      player.exhaustion += steps;
+      if (player.exhaustion > 20) {
+        player.hp -= (0.2 * steps);
+        player.mp = Math.max(0, player.mp - (0.1 * steps));
+        if (player.exhaustion % 10 === 0) logMsg("<span style='color:var(--warning)'>You are exhausted! Stop running!</span>");
+      }
+    } else {
+      player.exhaustion = Math.max(0, player.exhaustion - steps);
+    }
+
+    player.hunger = Math.min(100, player.hunger + (CONSTANTS.HUNGER_RATE * steps));
+    if(lightTurns > 0) lightTurns = Math.max(0, lightTurns - steps);
+    
+    if(player.totalHealPending > 0) {
+      let tick = Math.min(player.totalHealPending, 1 * steps);
+      player.hp = Math.min(player.maxHp, player.hp + tick);
+      player.totalHealPending -= tick;
+    }
+
+    if(darkMap[player.y][player.x] && lightTurns <= 0) {
+      player.darkSteps += steps;
+      if(player.darkSteps === 1) {
+        document.getElementById('modal-content').innerHTML = `<h2>🌑 Pitch Black</h2><p>The room is dark. You should light a candle.</p><button onclick="document.getElementById('overlay').style.display='none'">OK</button>`;
+        document.getElementById('overlay').style.display = 'flex';
+      }
+      if(player.darkSteps === 3) logMsg("<span style='color:var(--warning)'>You may be eaten by a grue.</span>");
+      if(player.darkSteps >= 5) {
+        Sound.gurgle();
+        if(Math.random() < 0.50) {
+          logMsg("<span style='color:var(--error)'>YOU WERE EATEN BY A GRUE!</span>");
+          die(); return;
+        }
+      }
+    } else {
+      player.darkSteps = 0;
+    }
+
+    if(player.statusTurns > 0) {
+      player.statusTurns -= steps;
+      if(player.statusType === 'disease') player.hp -= (CONSTANTS.DISEASE_DAMAGE * steps);
+      if(player.statusTurns <= 0) { 
+        logMsg("Status effect ended."); 
+        player.statusType = null; 
+        document.getElementById('game').style.animation = 'none';
+      }
+    }
+
+    if(player.hunger >= 100) {
+      player.hp -= (CONSTANTS.HUNGER_DAMAGE * steps);
+      logMsg("<span class='log-new'>You are starving!</span>");
+    } else if (player.hunger < 50 && player.hp < player.maxHp) {
+      player.hp = Math.min(player.maxHp, player.hp + (CONSTANTS.HUNGER_HEAL * steps));
+    }
+
+    if(player.hp <= 0) { die(); return; }
+
+    if(Math.random() < CONSTANTS.SPAWN_RATE * steps) {
+      let pos = getRandomFloor();
+      if(Math.abs(pos.x - player.x) + Math.abs(pos.y - player.y) > 15) {
+        enemies.push({ x: pos.x, y: pos.y, type: "chipmunk", stats: {...MONSTER_DEF["chipmunk"]}, actionTimer: 0 });
+      }
+    }
+
+    let flowMap = Array(mapH).fill().map(()=>Array(mapW).fill(9999));
+    let q = [{x: player.x, y: player.y, d: 0}];
+    flowMap[player.y][player.x] = 0;
+    let head = 0;
+    while(head < q.length) {
+      let curr = q[head++];
+      if (curr.d > 20) continue; 
+      let dirs = [[0,-1],[1,0],[0,1],[-1,0]];
+      for(let i=0; i<4; i++) {
+        let nx=curr.x+dirs[i][0], ny=curr.y+dirs[i][1];
+        if(nx>0 && nx<mapW && ny>0 && ny<mapH) {
+          if(theMap[ny][nx] !== TILES.WALL || enemies.some(e => e.stats && e.stats.throughWalls)) {
+            if(flowMap[ny][nx] > curr.d + 1) {
+              flowMap[ny][nx] = curr.d + 1;
+              q.push({x:nx, y:ny, d:curr.d+1});
+            }
+          }
+        }
+      }
+    }
+
+    enemies.forEach((e, eIdx) => {
+      if(!e.stats) return;
+      if(e.stats.quest) return; // Quest monsters don't move or attack
+      if(e.type === 'master' || e.type === 'pirate') return; // Handled specially
+
+      e.actionTimer += (e.stats.speed * steps);
+      while(e.actionTimer >= 1) {
+        e.actionTimer -= 1;
+        
+        let nx = e.x, ny = e.y;
+        let isAdj = Math.abs(e.x - player.x) <= 1 && Math.abs(e.y - player.y) <= 1;
+        
+        if(isAdj) {
+           monsterAttack(eIdx);
+        } else if(e.stats.throughWalls) {
+          let dx = Math.sign(player.x - e.x); let dy = Math.sign(player.y - e.y);
+          let moveX = Math.random() > 0.5;
+          nx = e.x + (moveX ? dx : 0); ny = e.y + (moveX ? 0 : dy);
+          if(!moveX && dy === 0) nx = e.x + dx; 
+          if(moveX && dx === 0) ny = e.y + dy;
+        } else {
+          let best = 9999;
+          let dirs = [[0,-1],[1,0],[0,1],[-1,0]];
+          dirs.sort(() => Math.random() - 0.5);
+          for(let i=0; i<4; i++) {
+            let cx = e.x + dirs[i][0], cy = e.y + dirs[i][1];
+            if(theMap[cy][cx] !== TILES.WALL && flowMap[cy][cx] < best) {
+              let blocked = enemies.some(other => other !== e && other.x === cx && other.y === cy);
+              if(!blocked) { best = flowMap[cy][cx]; nx = cx; ny = cy; }
+            }
+          }
+        }
+        
+        if(nx === player.x && ny === player.y) {
+           monsterAttack(eIdx);
+        } else {
+           if(theMap[ny][nx] !== TILES.WALL || e.stats.throughWalls) { e.x = nx; e.y = ny; }
+        }
+      }
+    });
+
+    calculateFOV(); drawMap(); updateUI();
+  }
+
+  function restPlayer() {
+    document.getElementById('overlay').style.display = 'flex';
+    document.getElementById('modal-content').innerHTML = `<h2>💤 Sleeping...</h2>
+      <p>Your HP and MP are recovering slowly.</p>
+      <button onclick="wakeUp()">Wake Up</button>`;
+    
+    const snoreLoop = setInterval(() => {
+      if (document.getElementById('overlay').style.display === 'none') {
+        clearInterval(snoreLoop);
+        return;
+      }
+      Sound.playTone(60, 'sawtooth', 0.8, 0.05, 40); // Snore synth
+      player.hp = Math.min(player.maxHp, player.hp + 2);
+      player.mp = Math.min(player.maxMp, player.mp + 1);
+      updateUI();
+    }, 1500);
+  }
+
+  window.wakeUp = () => {
+    document.getElementById('overlay').style.display = 'none';
+    let nearby = enemies.filter(e => Math.abs(e.x - player.x) + Math.abs(e.y - player.y) <= 5);
+    
+    if(nearby.length > 0 && Math.random() < 0.6) {
+       logMsg("<span style='color:red'>AMBUSHED!</span>");
+       player.hp -= 15;
+       addFloatingText(player.x, player.y, "-15", "#f00", 24);
+    } else {
+       advanceTurn(10);
+       logMsg("You feel refreshed.");
+    }
+    if(player.hp <= 0) die();
+    updateUI(); drawMap();
+  };
+
+  function die() {
+    isDead = true; Sound.scream();
+    drawMap(); 
+    
+    setTimeout(() => {
+      document.getElementById('overlay').style.display = 'flex';
+      document.getElementById('modal-content').innerHTML = `
+        <h2 style="color:var(--error)">YOU DIED</h2>
+        <p>Floor: ${currentLevel} | GP: ${player.gp}</p>
+        <button onclick="location.reload()">Restart</button>`;
+    }, 600);
+  }
+
+  function checkLevelUp() {
+    let requiredXp = CONSTANTS.XP_BASE * Math.pow(CONSTANTS.XP_MULT, player.level - 1);
+    if (player.xp >= requiredXp) {
+      player.xp -= requiredXp;
+      player.level++;
+      player.statPoints += 3;
+      player.hp = player.maxHp;
+      player.mp = player.maxMp;
+      logMsg(`<span style='color:var(--success)'>LEVEL UP! You are now level ${player.level}.</span>`);
+      
+      if (player.level % 5 === 0) {
+        logMsg(`<span style='color:var(--primary)'>Wow, level ${player.level}. Don't let it go to your head, you're still just a sprite in a canvas.</span>`);
+      }
+
+      triggerLevelUpVisuals();
+      checkLevelUp(); 
+    }
+  }
+
+  function triggerLevelUpVisuals() {
+    Sound.playTone(800, 'sine', 0.2, 0.1, 1200);
+    setTimeout(() => Sound.playTone(1200, 'sine', 0.3, 0.1, 2000), 200);
+    
+    let fw = document.createElement('div');
+    fw.innerHTML = "🎆🎇✨ LEVEL UP ✨🎇🎆";
+    fw.style.position = 'fixed';
+    fw.style.top = '40%';
+    fw.style.left = '-100%';
+    fw.style.fontSize = '48px';
+    fw.style.fontWeight = 'bold';
+    fw.style.color = 'var(--warning)';
+    fw.style.zIndex = '999';
+    fw.style.whiteSpace = 'nowrap';
+    fw.style.transition = 'left 1s cubic-bezier(0.1, 0.7, 0.1, 1)';
+    document.body.appendChild(fw);
+    
+    setTimeout(() => { fw.style.left = '20%'; }, 10);
+    setTimeout(() => { fw.style.left = '150%'; }, 1500);
+    setTimeout(() => { fw.remove(); }, 2500);
+
+    // Flash light logic handled in render loop via global levelUpFlash variable
+    window.levelUpFlash = 1.0;
+  }
+
+  function doCombat(enemyIndex) {
+    let enemy = enemies[enemyIndex];
+    if(!enemy) return;
+    let p = player, e = enemy.stats;
+
+    if(e.isBoss && enemy.type === 'master' || enemy.type === 'pirate') {
+      insultBattle(enemyIndex);
+      return;
+    }
+
+    Sound.step();
+
+    let hitMod = p.statusType === 'sugar' ? 1.0 : p.hitRate;
+    if(Math.random() > e.dodge && Math.random() <= hitMod) {
+      let isCrit = Math.random() <= p.critRate;
+      let dmg = p.baseDmg * (isCrit ? 2 : 1);
+      e.hp -= dmg;
+      Sound.grunt();
+      logMsg(`Hit ${e.icon} for ${dmg}${isCrit ? ' (CRIT)' : ''}.`);
+      addFloatingText(enemy.x, enemy.y, `-${dmg}`, "#f00", isCrit ? 24 : 16);
+    } else { logMsg(`Missed the ${e.icon}.`); }
+
+    if (e.hp <= 0) {
+      logMsg(`Defeated ${e.icon}!`);
+      
+      // King Drops Ring
+      if(enemy.type === 'king' && Math.random() < 0.50) {
+        itemsOnGround.push({x: enemy.x, y: enemy.y, icon: '💍'});
+        logMsg("<span style='color:var(--primary)'>The King dropped his ring!</span>");
+      }
+
+      let effectiveHp = Math.max(0, enemy.stats.maxHp || enemy.stats.hp);
+      let grantedXp = Math.floor((effectiveHp + enemy.stats.dmg) * 2);
+      if(enemy.stats.isBoss) grantedXp = 1000;
+      player.xp += grantedXp;
+      logMsg(`Gained ${grantedXp} XP.`);
+      checkLevelUp();
+      
+      let dropRoll = Math.random();
+
+      // MIDAS LOGIC (v6.1.0)
+      if(player.statusType === 'midas') {
+        if(dropRoll < 0.50) { 
+           itemsOnGround.push({x: enemy.x, y: enemy.y, icon: '💰'});
+           logMsg("<span style='color:var(--warning)'>The monster turned into a bag of gold!</span>");
+        }
+        advanceTurn(1);
+        enemies.splice(enemyIndex, 1);
+        return; 
+      }
+
+      if(enemy.type === 'chipmunk' && dropRoll < 0.35) {
+        itemsOnGround.push({x: enemy.x, y: enemy.y, icon: '🍖'});
+      } else if(enemy.type === 'wet_rat' && dropRoll < 0.80) {
+        itemsOnGround.push({x: enemy.x, y: enemy.y, icon: '🧀'});
+      } else if(enemy.type === 'shark') {
+        if(dropRoll < 0.30) itemsOnGround.push({x: enemy.x, y: enemy.y, icon: '🕴️'});
+        else itemsOnGround.push({x: enemy.x, y: enemy.y, icon: '🦷'});
+      } else if (enemy.stats.isBoss) {
+        logMsg("<span style='color:var(--success)'>You claimed the Pirate Treasure!</span>");
+        for(let i=0; i<10; i++) itemsOnGround.push({x: enemy.x, y: enemy.y, icon: '💎'});
+        player.gp += 10000;
+      } else if (dropRoll < 0.05) {
+        let bags = ['🎒', '💼', '📦'];
+        itemsOnGround.push({x: enemy.x, y: enemy.y, icon: bags[Math.floor(Math.random()*bags.length)]});
+      } else if (dropRoll < 0.065) { 
+        let scrolls = ['🔥', '📜⚡', '🏪', '💡'];
+        itemsOnGround.push({x: enemy.x, y: enemy.y, icon: scrolls[Math.floor(Math.random()*scrolls.length)]});
+      } else if (dropRoll < 0.40) {
+        spawnLoot(enemy.x, enemy.y, false, true); 
+      }
+      if(Math.random() < 0.1) itemsOnGround.push({x: enemy.x, y: enemy.y, icon: '🗝️'});
+      
+      enemies.splice(enemyIndex, 1);
+    }
+    advanceTurn(1);
+  }
+
+  function monsterAttack(enemyIndex) {
+    let enemy = enemies[enemyIndex];
+    let p = player, e = enemy.stats;
+    if(Math.random() > p.dodgeRate && Math.random() <= e.hit) {
+      let isCrit = Math.random() <= e.crit;
+      let dmg = e.dmg * (isCrit ? 2 : 1);
+      p.hp -= dmg; Sound.grunt();
+      addFloatingText(player.x, player.y, `-${dmg}`, "#f00", isCrit ? 24 : 16);
+      logMsg(`${e.icon} hits you for ${dmg}.`);
+      if(p.hp <= 0) { die(); return; }
+      
+      if(e.effect && Math.random() < e.effectChance) {
+        player.statusType = e.effect;
+        player.statusTurns = e.effect === 'freeze' ? CONSTANTS.FREEZE_TURNS : CONSTANTS.DIZZY_TURNS;
+        logMsg(`<span style='color:var(--error)'>You are afflicted with ${e.effect}!</span>`);
+        
+        if(e.effect === 'dizzy') {
+           document.getElementById('game').style.animation = 'rockViewport 2s infinite ease-in-out';
+        }
+      }
+    } else { logMsg(`${e.icon} missed.`); }
+  }
+
+  function placePlayerOn(tileType) {
+    for(let y=0; y<mapH; y++) {
+      for(let x=0; x<mapW; x++) {
+        if(theMap[y][x] === tileType) { player.x = x; player.y = y; return; }
+      }
+    }
+  }
+
+  function movePlayer(dx, dy) {
+    if(isDead) return;
+    player.facing = {dx, dy};
+    
+    let nx = player.x + dx, ny = player.y + dy;
+    let tile = theMap[ny][nx];
+    
+    let enemyIdx = enemies.findIndex(e => e.x === nx && e.y === ny);
+    if (enemyIdx !== -1) { doCombat(enemyIdx); return; }
+
+    if (tile === TILES.WALL) { Sound.oof(); advanceTurn(1); return; }
+
+    if (tile === TILES.CHEST) {
+      let keyStr = `${nx},${ny}`;
+      let hits = chestStates[keyStr] || 0;
+      hits++;
+      chestStates[keyStr] = hits;
+
+      if (hits % 2 !== 0) { // 1st, 3rd, etc -> Attempt unlock
+        let keyIdx = inventory.findIndex(i => i && i.icon === '🗝️');
+        if(keyIdx !== -1) {
+          decrementItem(keyIdx);
+          theMap[ny][nx] = TILES.FLOOR; logMsg("Unlocked chest!"); 
+          let beforeCount = enemies.length;
+          spawnLoot(nx, ny, true);
+          if(enemies.length > beforeCount) {
+             logMsg("<span style='color:var(--error)'>IT'S AN AMBUSH!</span>");
+             let e = enemies[enemies.length-1];
+             player.hp -= (e.stats.dmg * 2);
+             addFloatingText(player.x, player.y, `-${e.stats.dmg*2}`, "#f00", 24);
+             logMsg(`${e.stats.icon} crits you for ${e.stats.dmg * 2}!`);
+             if(player.hp <= 0) { die(); return; }
+          }
+        } else { 
+          logMsg("Locked. (Bump again to walk over)"); 
+        }
+        advanceTurn(1); return;
+      } else {
+        // 2nd, 4th hit -> Pass through, but keep chest
+        logMsg("(Passing through chest)");
+      }
+    }
+
+    if (tile === TILES.STORE) { openStore('apu'); return; }
+    if (tile === TILES.LEFTYS) { openStore('leftys'); return; }
+    if (tile === TILES.BOOKSTORE) { openStore('bookstore'); return; }
+
+    player.x = nx; player.y = ny; 
+    if(tile === TILES.WATER) Sound.splash(); else Sound.step();
+    pickupItems();
+    
+    if(tile === TILES.STAIR_DOWN) {
+      levelCache[currentLevel] = { theMap, explored, visible, enemies, itemsOnGround, mapW, mapH };
+      currentLevel++; logMsg(`Descended to Floor ${currentLevel}.`); 
+      
+      if(levelCache[currentLevel]) {
+        let c = levelCache[currentLevel];
+        theMap=c.theMap; explored=c.explored; visible=c.visible; enemies=c.enemies; itemsOnGround=c.itemsOnGround; mapW=c.mapW; mapH=c.mapH;
+        placePlayerOn(TILES.STAIR_UP);
+      } else { initMap(50); }
+      
+    } else if(tile === TILES.STAIR_UP && currentLevel > 1) {
+      levelCache[currentLevel] = { theMap, explored, visible, enemies, itemsOnGround, mapW, mapH };
+      currentLevel--; logMsg(`Ascended to Floor ${currentLevel}.`); 
+      
+      let c = levelCache[currentLevel];
+      theMap=c.theMap; explored=c.explored; visible=c.visible; enemies=c.enemies; itemsOnGround=c.itemsOnGround; mapW=c.mapW; mapH=c.mapH;
+      placePlayerOn(TILES.STAIR_DOWN);
+    }
+    
+    advanceTurn(1);
+  }
+
+  const INSULTS = [
+    { i: "You fight like a Dairy Farmer!", r: "How appropriate. You fight like a cow!" },
+    { i: "I've spoken with apes more polite than you!", r: "I'm glad to hear you attended your family reunion!" },
+    { i: "Soon you'll be wearing my sword like a shish kebab!", r: "First you better stop waving it like a feather duster." },
+    { i: "People fall at my feet when they see me coming!", r: "Even BEFORE they smell your breath?" }
+  ];
+
+  window.insultBattle = (enemyIdx) => {
+    let e = enemies[enemyIdx];
+    if(!e) return;
+    
+    let insult = INSULTS[Math.floor(Math.random() * INSULTS.length)];
+    logMsg(`Master: "${insult.i}"`);
+    Sound.sword();
+    
+    let html = `<h2>⚔️ Insult Sword Fighting!</h2><p style="font-size: 80px; margin: 10px 0;">🤺</p><p>Master: "${insult.i}"</p><div style="display:flex; flex-direction:column; gap:8px;">`;
+    let choices = [...INSULTS].sort(()=>Math.random()-0.5);
+    choices.forEach(c => {
+       html += `<button style="width:100%; text-align:left; font-size:12px; padding:8px;" onclick="replyInsult(${enemyIdx}, \`${c.r}\`, \`${insult.r}\`)">${c.r}</button>`;
+    });
+    document.getElementById('modal-content').innerHTML = html;
+    document.getElementById('overlay').style.display = 'flex';
+  };
+
+  window.replyInsult = (enemyIdx, playerReply, correctReply) => {
+    document.getElementById('overlay').style.display = 'none';
+    logMsg(`You: "${playerReply}"`);
+    Sound.sword();
+    
+    setTimeout(() => {
+      let e = enemies[enemyIdx];
+      if(!e) return;
+      if(playerReply === correctReply) {
+         logMsg("<span style='color:var(--success)'>Master: 'Curses! Foiled again!'</span>");
+         e.stats.hp -= 40; 
+         addFloatingText(e.x, e.y, "-40", "#f00", 24);
+         if(e.stats.hp <= 0) {
+            e.stats.isBoss = false; 
+            e.type = "master_defeated"; // Ensure doCombat kills it normally
+            doCombat(enemyIdx);
+         } else { advanceTurn(1); }
+      } else {
+         logMsg("<span style='color:var(--error)'>Master: 'Ha! Is that the best you can do?'</span>");
+         player.hp -= 20; 
+         Sound.grunt(); 
+         addFloatingText(player.x, player.y, "-20", "#f00", 24);
+         if(player.hp <= 0) die();
+         else advanceTurn(1);
+      }
+      updateUI(); drawMap();
+    }, 500);
+  };
+
+  // SOURCE: src/shop.js
+  // === Shop System & Easter Egg ===
+  function larryEasterEgg(step, desc="") {
+    let m = document.getElementById('modal-content');
+    Sound.gibberish();
+    if(step === 0) {
+      m.innerHTML = `<h2>🏪 Apu's Mart</h2><p>🧔🏿‍♂️ "Ah, the 🧴! A wise choice, my friend. Will that be Plain or Ribbed?"</p>
+        <button class="egg-btn" onclick="larryEasterEgg(1, 'Plain')">Plain</button> <button class="egg-btn" onclick="larryEasterEgg(1, 'Ribbed')">Ribbed</button>`;
+    } else if (step === 1) {
+      m.innerHTML = `<h2>🏪 Apu's Mart</h2><p>🧔🏿‍♂️ "Excellent. Colored or Clear?"</p>
+        <button class="egg-btn" onclick="larryEasterEgg(2, '${desc}, Colored')">Colored</button> <button class="egg-btn" onclick="larryEasterEgg(2, '${desc}, Clear')">Clear</button>`;
+    } else if (step === 2) {
+      m.innerHTML = `<h2>🏪 Apu's Mart</h2><p>🧔🏿‍♂️ "Very well. Lubricated or Dry?"</p>
+        <button class="egg-btn" onclick="larryEasterEgg(3, '${desc}, Lubricated')">Lubricated</button> <button class="egg-btn" onclick="larryEasterEgg(3, '${desc}, Dry')">Dry</button>`;
+    } else if (step === 3) {
+      Sound.scream(); // Loudspeaker screech
+      m.innerHTML = `<h2>📢 LOUDSPEAKER</h2><p style="color:var(--error); font-weight:bold; font-size:18px; text-transform:uppercase;">
+        "ATTENTION SHOPPERS! PRICE CHECK AT REGISTER 1! ONE 🧴, ${desc.toUpperCase()}! THAT'S ONE 🧴 FOR THE GENTLEMAN IN THE LEISURE SUIT!"</p>
+        <button class="egg-btn" style="background:var(--surface-container)" onclick="finishLarryEgg()">Hide in shame...</button>`;
+    }
+  }
+
+  function finishLarryEgg() {
+    logMsg("<span style='color:var(--warning)'>Unseen customers poke their heads out and yell: 'Pervert!'</span>");
+    
+    let emptyIdx = inventory.findIndex(i => i === null);
+    if(emptyIdx !== -1) {
+      player.gp -= 1; 
+      inventory[emptyIdx] = {icon:'🧴', qty:1};
+      Sound.clink(); renderInventory(); updateUI();
+    }
+    openStore('apu'); 
+  }
+
+  function askApu() {
+    let m = document.getElementById('modal-content');
+    Sound.gibberish();
+    if(player.storesVisited === 2) {
+      m.innerHTML = `<h2>🏪 Apu's Mart</h2>
+        <p>🙋 "Hey Apu, how did you get down here? I just saw you on the other floor!"</p>
+        <p>🧔🏿‍♂️ "Oh, that was not me! That was my brother, Sanji! He looks exactly like me. Very confusing, I know!"</p>
+        <button style="margin-top:16px; background:var(--surface-container)" onclick="openStore('apu')">Go back to shopping</button>`;
+    } else if(player.storesVisited === 3) {
+      m.innerHTML = `<h2>🏪 Apu's Mart</h2>
+        <p>🙋 "Another one? Is this Sanji again?"</p>
+        <p>🧔🏿‍♂️ "No, no! This is my other brother, Manjula! We are a very large family. All in the convenience business!"</p>
+        <button style="margin-top:16px; background:var(--surface-container)" onclick="openStore('apu')">Sure...</button>`;
+    } else {
+      m.innerHTML = `<h2>🏪 Apu's Mart</h2>
+        <p>🙋 "Wait, how many of you ARE there??"</p>
+        <p>🧔🏿‍♂️ "I have eight brothers, three sisters, and a cousin named Dave. We have a very efficient franchise model for deep-dungeon logistics."</p>
+        <p>🧔🏿‍♂️ "Also, stop asking questions and buy more Slurpees."</p>
+        <button style="margin-top:16px; background:var(--surface-container)" onclick="openStore('apu')">Buy Slurpees</button>`;
+    }
+  }
+
+  function larryEncounter() {
+    let m = document.getElementById('modal-content');
+    let hasProp = inventory.some(i => i && i.icon === '🧴');
+    
+    let html = `<h2>🫦 Mystery Lady</h2>
+      <p style="font-size:80px">💃</p>
+      <p>"Hello there, sailor. Care for a little... company?"</p>`;
+    
+    if(hasProp) {
+      html += `<button class="egg-btn" style="background:var(--success)" onclick="finishLarryEncounter(true)">Use 🧴 and proceed</button>`;
+    } else {
+      html += `<button class="egg-btn" style="background:var(--error)" onclick="finishLarryEncounter(false)">Proceed anyway...</button>`;
+    }
+    html += `<button class="egg-btn" onclick="openStore('leftys')">Nevermind</button>`;
+    
+    m.innerHTML = html;
+  }
+
+  window.finishLarryEncounter = (safe) => {
+    if(safe) {
+      let idx = inventory.findIndex(i => i && i.icon === '🧴');
+      decrementItem(idx);
+      player.xp += 500;
+      logMsg("<span style='color:var(--success)'>You survived the encounter and gained 500 XP! Safety first!</span>");
+      checkLevelUp();
+      document.getElementById('overlay').style.display = 'none';
+    } else {
+      logMsg("<span style='color:var(--error)'>You caught an incurable social disease!</span>");
+      document.getElementById('modal-content').innerHTML = `<h2>🤢 GAME OVER</h2><p>You should have visited Apu first. Safety is no accident.</p><button onclick="location.reload()">Restart</button>`;
+      isDead = true; Sound.scream();
+    }
+  };
+
+  function openStore(type = 'apu') {
+    let o = document.getElementById('overlay');
+    let m = document.getElementById('modal-content');
+    let html = "";
+    let items = [];
+
+    html += `<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #555; padding-bottom:8px; margin-bottom:12px;">
+               <span style="font-size:12px; color:var(--primary);">Your GP: ${player.gp}</span>
+               <button style="width:auto; padding:2px 8px; font-size:10px;" onclick="document.getElementById('overlay').style.display='none'">Exit</button>
+             </div>`;
+
+    if(type === 'apu') {
+      let line = APU_LINES[Math.floor(Math.random()*APU_LINES.length)];
+      html = `<h2>🏪 Apu's Mart</h2><p style="font-size: 120px; margin: 10px 0;">🧔🏿‍♂️</p><p>🧔🏿‍♂️ "${line}"</p>`;
+      if(player.lastStoreFloor !== currentLevel) { player.storesVisited++; player.lastStoreFloor = currentLevel; }
+      items = [
+        {icon:'👜', name:'Small Bag', cost:20}, {icon:'📃', name:'Scroll of Identify', cost:30},
+        {icon:'🔥', name:'Scroll of Fireball', cost:50}, {icon:'📘', name:'Tome of Fireball', cost:500},
+        {icon:'🧴', name:'Prophylactic', cost:1}, {icon:'🍛', name:'Curry', cost:5}, 
+        {icon:'🥤', name:'Slurpee', cost:5}, {icon:'🎩', name:'Top Hat', cost:200}
+      ];
+    } else if(type === 'leftys') {
+      html = `<h2>🍺 Lefty's Bar</h2><p style="font-size: 80px; margin: 10px 0;">🍻</p><p>Lefty: "What'll it be, Larry? Uh, I mean, stranger?"</p>`;
+      items = [
+        {icon:'🥃', name:'Whiskey', cost:15}, {icon:'🍺', name:'Watered Down Beer', cost:5}
+      ];
+      html += `<button class="egg-btn" style="background:var(--secondary); color:black; margin-bottom:10px;" onclick="larryEncounter()">Talk to the Lady in the corner</button>`;
+    } else if(type === 'bookstore') {
+      html = `<h2>📚 The Ancient Tome</h2><p style="font-size: 80px; margin: 10px 0;">🧙‍♂️</p><p>Wizard: "Knowledge has a heavy price..."</p>`;
+      items = [
+        {icon:'⚡📘', name:'Tome of Lightning', cost:800}, {icon:'❄️📘', name:'Tome of Ice Bolt', cost:600},
+        {icon:'💪📘', name:'Tome of Strength', cost:1000}, {icon:'🛡️📘', name:'Tome of Shield', cost:1000},
+        {icon:'💖📘', name:'Tome of Heal', cost:1200}, {icon:'👟📘', name:'Tome of Haste', cost:1500}
+      ];
+    }
+
+    Sound.gibberish();
+
+    items.forEach(i => {
+      html += `<div class="shop-item"><span>${i.icon} ${i.name} (${i.cost}g)</span> <button onclick="buy('${i.icon}', ${i.cost}, '${type}')">Buy</button></div>`;
+    });
+
+    html += `<hr><h3 style="margin:8px 0">Sell Items</h3>`;
+    inventory.forEach((i, idx) => {
+      if(i) {
+        let def = ITEM_DEF[i.icon];
+        if(def && def.maxGP > 0) {
+          html += `<div class="shop-item"><span>${i.icon} ${def.name} (+${def.maxGP}g)</span> <button onclick="sell(${idx}, '${type}')">Sell</button></div>`;
+        }
+      }
+    });
+
+    if(type === 'apu' && player.storesVisited > 1) {
+      html += `<button style="margin-top:16px; background:var(--secondary); color:var(--on-primary)" onclick="askApu()">Ask about his double...</button>`;
+    }
+
+    html += `<button style="margin-top:16px; background:var(--surface-container)" onclick="document.getElementById('overlay').style.display='none'; advanceTurn(1);">Leave</button>`;
+    m.innerHTML = html; o.style.display = 'flex';
+  }
+
+  window.buy = (icon, cost, type) => {
+    if(player.gp >= cost) {
+      let emptyIdx = inventory.findIndex(i => i === null);
+      if(emptyIdx !== -1) {
+        if(icon === '🧴') { larryEasterEgg(0); return; }
+        player.gp -= cost; inventory[emptyIdx] = {icon, qty:1};
+        Sound.clink(); openStore(type); renderInventory(); updateUI();
+      } else alert("Inventory Full!");
+    } else alert("Not enough GP!");
+  };
+
+  window.sell = (idx, type) => {
+    let item = inventory[idx];
+    if(item) {
+      let def = ITEM_DEF[item.icon];
+      if(def && def.maxGP > 0) {
+        player.gp += def.maxGP;
+        Sound.clink(); decrementItem(idx); openStore(type); updateUI();
+      }
+    }
+  };
+
+  // SOURCE: src/render.js
+  // === Renderer ===
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    VIEW_COLS = Math.ceil(canvas.width / TILE_SIZE);
+    VIEW_ROWS = Math.ceil(canvas.height / TILE_SIZE);
+    if(theMap.length > 0) drawMap();
+  }
+  window.addEventListener('resize', resizeCanvas);
+  
+  function calculateFOV() {
+    for(let y=0; y<mapH; y++) visible[y].fill(false);
+    let sightLimit = lightTurns > 0 ? 15 : 5;
+    
+    if(darkMap[player.y] && darkMap[player.y][player.x] && lightTurns <= 0) {
+      visible[player.y][player.x] = true; explored[player.y][player.x] = true;
+      return; 
+    }
+
+    visible[player.y][player.x] = true; explored[player.y][player.x] = true;
+
+    for(let angle=0; angle<360; angle+=2) {
+      let rad = angle * Math.PI / 180;
+      let dx = Math.cos(rad), dy = Math.sin(rad);
+      let cx = player.x + 0.5, cy = player.y + 0.5;
+
+      for(let r=1; r<=sightLimit; r++) {
+        cx += dx; cy += dy;
+        let mapX = Math.floor(cx), mapY = Math.floor(cy);
+        if(mapX < 0 || mapY < 0 || mapX >= mapW || mapY >= mapH) break;
+        visible[mapY][mapX] = true; explored[mapY][mapX] = true;
+        if(theMap[mapY][mapX] === TILES.WALL) break;
+        if(darkMap[mapY][mapX] && lightTurns <= 0) break;
+      }
+    }
+  }
+
+  function drawMap() {
+    if(!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let cx = Math.floor(VIEW_COLS / 2), cy = Math.floor(VIEW_ROWS / 2);
+    let wallColors = ['#4A4458', '#2e4536', '#45322e', '#2e3845', '#452e41'];
+    let wCol = wallColors[(currentLevel - 1) % wallColors.length];
+
+    for (let y = 0; y < VIEW_ROWS; y++) {
+      let mapY = player.y + y - cy; 
+      for (let x = 0; x < VIEW_COLS; x++) {
+        let mapX = player.x + x - cx; 
+
+        if (mapY >=0 && mapY < mapH && mapX >= 0 && mapX < mapW) {
+          if (!explored[mapY][mapX]) continue;
+
+          let tile = theMap[mapY][mapX];
+          let isVis = visible[mapY][mapX];
+          let isDark = darkMap[mapY][mapX];
+
+          if(isVis) {
+            if(tile === TILES.WALL) {
+              if(window.useSprites && assets.sprites['wall']) {
+                ctx.drawImage(assets.sprites['wall'], x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+              } else {
+                ctx.fillStyle = wCol;
+                ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                ctx.fillStyle = 'rgba(0,0,0,0.2)';
+                ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, 2);
+                ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE + TILE_SIZE/2, TILE_SIZE, 2);
+                ctx.fillRect(x * TILE_SIZE + TILE_SIZE/2, y * TILE_SIZE, 2, TILE_SIZE/2);
+                ctx.fillRect(x * TILE_SIZE + TILE_SIZE/4, y * TILE_SIZE + TILE_SIZE/2, 2, TILE_SIZE/2);
+              }
+            }
+            else if(tile === TILES.STAIR_UP) ctx.fillStyle = '#D0BCFF';
+            else if(tile === TILES.STAIR_DOWN) ctx.fillStyle = '#F2B8B5';
+            else if(tile === TILES.CHEST) ctx.fillStyle = '#ffb74d';
+            else if(tile === TILES.STORE || tile === TILES.LEFTYS || tile === TILES.BOOKSTORE) ctx.fillStyle = '#4db6ac';
+            else if(tile === TILES.WATER) ctx.fillStyle = '#2196F3';
+            else {
+              ctx.fillStyle = isDark && lightTurns <= 0 ? '#000' : '#312D3A';
+              ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+              if(!(isDark && lightTurns <= 0)) {
+                ctx.fillStyle = 'rgba(255,255,255,0.03)';
+                ctx.beginPath();
+                ctx.arc(x * TILE_SIZE + TILE_SIZE/2, y * TILE_SIZE + TILE_SIZE/2, 2, 0, Math.PI*2);
+                ctx.fill();
+              }
+            }
+            
+            // Draw overlays
+            if(tile === TILES.CHEST) { ctx.font='20px sans-serif'; ctx.fillText('📦', x*TILE_SIZE+4, y*TILE_SIZE+24); }
+            if(tile === TILES.STORE) { ctx.font='20px sans-serif'; ctx.fillText('🏪', x*TILE_SIZE+4, y*TILE_SIZE+24); }
+            if(tile === TILES.LEFTYS) { ctx.font='20px sans-serif'; ctx.fillText('🍺', x*TILE_SIZE+4, y*TILE_SIZE+24); }
+            if(tile === TILES.BOOKSTORE) { ctx.font='20px sans-serif'; ctx.fillText('📚', x*TILE_SIZE+4, y*TILE_SIZE+24); }
+            if(tile === TILES.STAIR_UP) { ctx.font='20px sans-serif'; ctx.fillText('⬆️', x*TILE_SIZE+4, y*TILE_SIZE+24); }
+            if(tile === TILES.STAIR_DOWN) { ctx.font='20px sans-serif'; ctx.fillText('⬇️', x*TILE_SIZE+4, y*TILE_SIZE+24); }
+            
+            if(tile === TILES.FLOOR || tile === TILES.WATER) {
+              let item = itemsOnGround.find(i => i.x === mapX && i.y === mapY);
+              if(item) { ctx.font = '20px sans-serif'; ctx.fillText(item.icon, x * TILE_SIZE + 4, y * TILE_SIZE + 24); }
+            }
+          } else {
+            if(tile === TILES.WALL) ctx.fillStyle = '#111';
+            else ctx.fillStyle = '#0a0a0a';
+            ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+          }
+        }
+      }
+    }
+
+    enemies.forEach(enemy => {
+      if(visible[enemy.y][enemy.x]) {
+        let drawX = (enemy.x - player.x + cx) * TILE_SIZE;
+        let drawY = (enemy.y - player.y + cy) * TILE_SIZE;
+        let size = (enemy.type === 'genie') ? 64 : 24;
+        let offset = (enemy.type === 'genie') ? -16 : 0;
+        
+        if(window.useSprites && assets.sprites[enemy.type]) {
+           ctx.drawImage(assets.sprites[enemy.type], drawX, drawY, size, size);
+        } else {
+           ctx.font = `${size}px sans-serif`; 
+           ctx.fillText(enemy.stats.icon, drawX + 2 + offset, drawY + 24);
+        }
+
+        if (enemy.stats.hp < (enemy.stats.maxHp || MONSTER_DEF[enemy.type].hp)) {
+          let max = enemy.stats.maxHp || MONSTER_DEF[enemy.type].hp;
+          let percent = Math.max(0, enemy.stats.hp / max);
+          ctx.fillStyle = "#000";
+          ctx.fillRect(drawX + 4, drawY, TILE_SIZE - 8, 4);
+          ctx.fillStyle = percent > 0.5 ? "#0f0" : (percent > 0.2 ? "#ff0" : "#f00");
+          ctx.fillRect(drawX + 4, drawY, (TILE_SIZE - 8) * percent, 4);
+        }
+      }
+    });
+
+    ctx.font = '24px sans-serif';
+    let playerIcon = isDead ? '💀' : (player.isRunning ? '🏃' : '🧍');
+    
+    if(window.useSprites && assets.sprites['player']) {
+       ctx.drawImage(assets.sprites['player'], cx * TILE_SIZE, cy * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+    } else {
+       ctx.fillText(playerIcon, cx * TILE_SIZE + 2, cy * TILE_SIZE + 24);
+    }
+
+    // Draw Effects (Lightning trails, etc)
+    activeEffects.forEach((eff, i) => {
+      if(eff.type === 'lightning') {
+        ctx.strokeStyle = eff.color || '#0ff';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        let x1 = (eff.x1 - player.x + cx) * TILE_SIZE + 16;
+        let y1 = (eff.y1 - player.y + cy) * TILE_SIZE + 16;
+        let x2 = (eff.x2 - player.x + cx) * TILE_SIZE + 16;
+        let y2 = (eff.y2 - player.y + cy) * TILE_SIZE + 16;
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+      }
+      eff.life -= 0.1;
+      if(eff.life <= 0) activeEffects.splice(i, 1);
+    });
+
+    // Smooth Radial Light Gradient
+    let sightLimit = lightTurns > 0 ? 15 : 5;
+    let radius = sightLimit * TILE_SIZE;
+    let grad = ctx.createRadialGradient(
+      cx * TILE_SIZE + TILE_SIZE/2, cy * TILE_SIZE + TILE_SIZE/2, radius * 0.5,
+      cx * TILE_SIZE + TILE_SIZE/2, cy * TILE_SIZE + TILE_SIZE/2, radius
+    );
+    grad.addColorStop(0, 'rgba(0,0,0,0)');
+    grad.addColorStop(1, 'rgba(0,0,0,1)');
+    
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = 'rgba(0,0,0,1)';
+    ctx.beginPath();
+    ctx.arc(cx * TILE_SIZE + TILE_SIZE/2, cy * TILE_SIZE + TILE_SIZE/2, radius, 0, Math.PI*2, true);
+    ctx.rect(0, 0, canvas.width, canvas.height);
+    ctx.fill();
+
+    if(damageTint > 0) {
+      ctx.fillStyle = `rgba(255, 0, 0, ${damageTint/30})`;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    
+    if(window.levelUpFlash > 0) {
+      if(window.levelUpFlash === 1.0) {
+         Sound.playTone(100, 'square', 0.5, 0.2, 50); // Boom
+         for(let i=0; i<5; i++) setTimeout(()=>Sound.playTone(400 + Math.random()*1000, 'sine', 0.1, 0.05), 100 + i*100);
+      }
+      ctx.fillStyle = `rgba(255, 255, 200, ${window.levelUpFlash})`;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      window.levelUpFlash -= 0.05;
+      let hue = (Date.now() / 10) % 360;
+      ctx.filter = `hue-rotate(${hue}deg)`;
+    } else { ctx.filter = 'none'; }
+
+    for(let i = floatingTexts.length - 1; i >= 0; i--) {
+      let ft = floatingTexts[i];
+      let drawX = (ft.x - player.x + cx) * TILE_SIZE + TILE_SIZE/2;
+      let drawY = (ft.y - player.y + cy) * TILE_SIZE - (1.0 - ft.life/ft.maxLife) * 30;
+      ctx.font = `bold ${ft.size}px sans-serif`;
+      ctx.fillStyle = ft.color;
+      ctx.globalAlpha = Math.max(0, ft.life / ft.maxLife);
+      ctx.textAlign = 'center';
+      ctx.fillText(ft.text, drawX, drawY);
+      ft.life -= 0.05;
+      if(ft.life <= 0) floatingTexts.splice(i, 1);
+    }
+    ctx.globalAlpha = 1.0;
+    ctx.textAlign = 'left';
+    drawMinimap();
+  }
+
+  function drawMinimap() {
+    let minCanvas = document.getElementById('minimap');
+    if(!minCanvas) return;
+    let mCtx = minCanvas.getContext('2d');
+    mCtx.clearRect(0, 0, 150, 150);
+    let scale = 150 / mapW;
+    for(let y=0; y<mapH; y++) {
+      for(let x=0; x<mapW; x++) {
+        if(explored[y][x]) {
+          if(theMap[y][x] === TILES.WALL) mCtx.fillStyle = '#555';
+          else if(theMap[y][x] === TILES.STORE || theMap[y][x] === TILES.LEFTYS || theMap[y][x] === TILES.BOOKSTORE) mCtx.fillStyle = '#0ff';
+          else if(theMap[y][x] === TILES.STAIR_DOWN || theMap[y][x] === TILES.STAIR_UP) mCtx.fillStyle = '#f0f';
+          else mCtx.fillStyle = '#333';
+          mCtx.fillRect(x*scale, y*scale, scale, scale);
+        }
+      }
+    }
+    mCtx.fillStyle = '#0f0';
+    mCtx.fillRect(player.x*scale, player.y*scale, scale, scale);
+  }
+  
+  setInterval(() => {
+    if(floatingTexts.length > 0 || activeEffects.length > 0 || window.levelUpFlash > 0) drawMap();
+  }, 50);
+
+  // SOURCE: src/input.js
+  document.getElementById('hamburgerBtn').addEventListener('click', () => {
+    let menu = document.getElementById('hamburger-menu');
+    menu.style.display = menu.style.display === 'none' ? 'flex' : 'none';
+  });
+
+  document.getElementById('startBtn').addEventListener('click', () => {
+    document.getElementById('start-overlay').style.display = 'none';
+    Sound.init();
+    try {
+      initMap(50); calculateFOV(); renderInventory(); drawMap(); updateUI();
+      // Time-based damage tint decay
+      setInterval(() => {
+        if(damageTint > 0) {
+          damageTint = Math.max(0, damageTint - 5);
+          drawMap();
+        }
+      }, 50);
+    } catch (err) {
+      document.getElementById('log').innerHTML = `<span style="color:var(--error)">Fatal Boot Error: ${err.message}</span>`;
+    }
+  });
+
+  window.addEventListener('keydown', (e) => { if(e.key === 'Shift') player.isRunning = true; });
+  window.addEventListener('keyup', (e) => { if(e.key === 'Shift') player.isRunning = false; });
+
+  document.addEventListener('keydown', function(event) {
+    if(document.getElementById('start-overlay').style.display !== 'none') return;
+    
+    // Close modals with Enter
+    if(event.key === 'Enter' && document.getElementById('overlay').style.display === 'flex') {
+      document.getElementById('overlay').style.display = 'none';
+      return;
+    }
+
+    if(document.getElementById('overlay').style.display === 'flex') return;
+    Sound.init();
+
+    let key = event.key.toLowerCase();
+
+    // Movement Rate Limiting
+    const now = Date.now();
+    let moveDelay = player.statusType === 'sugar' ? CONSTANTS.SUGAR_RUSH_SPEED : CONSTANTS.NORMAL_SPEED;
+    if(player.isRunning) moveDelay = Math.max(50, moveDelay - 100); 
+
+    if(['w', 'arrowup', 's', 'arrowdown', 'a', 'arrowleft', 'd', 'arrowright'].includes(key)) {
+      if(now - lastMoveTime < moveDelay) return;
+      lastMoveTime = now;
+  ...
+      if(player.statusType === 'freeze') {
+        logMsg("You are frozen and cannot move!");
+        return;
+      }
+      
+      if(player.statusType === 'dizzy') {
+        const dirs = ['w', 's', 'a', 'd'];
+        key = dirs[Math.floor(Math.random() * dirs.length)];
+      }
+    }
+
+    if(['w', 'arrowup'].includes(key)) movePlayer(0, -1);
+    else if(['s', 'arrowdown'].includes(key)) movePlayer(0, 1);
+    else if(['a', 'arrowleft'].includes(key)) movePlayer(-1, 0);
+    else if(['d', 'arrowright'].includes(key)) movePlayer(1, 0);
+    else if(key === 'escape') toggleMenu();
+    else if(key === 'i') toggleModal('inv-modal');
+    else if(key === 'e') toggleModal('equip-modal');
+    else if(key === 'c') toggleModal('stats-modal');
+    else if(key === 'm') toggleModal('magic-modal');
+    else if(key === 'y') toggleModal('achieve-modal');
+    else if(key === 'z') restPlayer();
+    else if(key === ' ') meleeAttack();
+    else if(key === 'f') castEquippedSpell();
+    
+    let num = parseInt(key);
+    if(!isNaN(num)) { let idx = num === 0 ? 9 : num - 1; handleItemClick(idx); }
+  });
+
+  // === Boot Sequence ===
+  // Initialization now happens via Enter the Dungeon button
+</script>
+</body>
+</html>
+

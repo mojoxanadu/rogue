@@ -1,0 +1,1534 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Roguelike Asset Selector</title>
+<style>
+body { font-family: sans-serif; margin: 20px; }
+table { border-collapse: collapse; width: 100%; margin-bottom: 30px; }
+th, td { border: 1px solid #ccc; padding: 8px; text-align: left; vertical-align: top; }
+.thumb { cursor: pointer; border: 2px solid transparent; margin: 2px; }
+img.thumb { width: 32px; height: 32px; image-rendering: pixelated; }
+.emoji { font-size: 24px; display: inline-block; text-align: center; line-height: 32px; width: 32px; height: 32px; }
+.color-square { width: 32px; height: 32px; }
+.suggestions { display: flex; flex-wrap: wrap; align-items: center; }
+.category { margin-bottom: 40px; }
+</style>
+</head><body>
+<h1>Roguelike Asset Selector</h1>
+<p>Click on a suggestion image to select it for each asset. Then click Generate Mapping at the bottom.</p>
+<div class="category"><h2>Monsters</h2>
+<table><thead><tr><th>Asset Key</th><th>Name</th><th>Current</th><th>LPC Suggestions</th><th>DCSS Suggestions</th><th>Selected</th></tr></thead><tbody>
+<tr data-key="player">
+<td><code>player</code></td>
+<td>Player</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #FF6B6B; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#FF6B6B" title="Current color: #FF6B6B"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/player/boots/middle_gold.png" data-source="crawl" data-path="player/boots/middle_gold.png" title="player/boots/middle_gold.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/player/boots/middle_brown3.png" data-source="crawl" data-path="player/boots/middle_brown3.png" title="player/boots/middle_brown3.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/player/boots/middle_ybrown.png" data-source="crawl" data-path="player/boots/middle_ybrown.png" title="player/boots/middle_ybrown.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/player/boots/middle_gray.png" data-source="crawl" data-path="player/boots/middle_gray.png" title="player/boots/middle_gray.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/player/boots/slippers.png" data-source="crawl" data-path="player/boots/slippers.png" title="player/boots/slippers.png"></td>
+<td class="selected-cell" id="selected-player">-</td>
+</tr>
+<tr data-key="slime">
+<td><code>slime</code></td>
+<td>Slime</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #4ECDC4; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#4ECDC4" title="Current color: #4ECDC4"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/gem/slime_found_whole.png" data-source="crawl" data-path="item/gem/slime_found_whole.png" title="item/gem/slime_found_whole.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/gem/slime_found_broken.png" data-source="crawl" data-path="item/gem/slime_found_broken.png" title="item/gem/slime_found_broken.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/misc/runes/rune_slime.png" data-source="crawl" data-path="item/misc/runes/rune_slime.png" title="item/misc/runes/rune_slime.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/misc/uncollected_runes/rune_slime.png" data-source="crawl" data-path="item/misc/uncollected_runes/rune_slime.png" title="item/misc/uncollected_runes/rune_slime.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/gui/mutations/slime_shroud.png" data-source="crawl" data-path="gui/mutations/slime_shroud.png" title="gui/mutations/slime_shroud.png"></td>
+<td class="selected-cell" id="selected-slime">-</td>
+</tr>
+<tr data-key="skeleton">
+<td><code>skeleton</code></td>
+<td>Skeleton</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #C7C7C7; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#C7C7C7" title="Current color: #C7C7C7"></div></td>
+<td class="suggestions"><img class="thumb" src="external/lpc-spritesheet/weapons/left hand/either/arrow_skeleton.png" data-source="lpc" data-path="weapons/left hand/either/arrow_skeleton.png" title="weapons/left hand/either/arrow_skeleton.png"> <img class="thumb" src="external/lpc-spritesheet/weapons/right hand/either/bow_skeleton.png" data-source="lpc" data-path="weapons/right hand/either/bow_skeleton.png" title="weapons/right hand/either/bow_skeleton.png"> <img class="thumb" src="external/lpc-spritesheet/body/male/skeleton.png" data-source="lpc" data-path="body/male/skeleton.png" title="body/male/skeleton.png"> <img class="thumb" src="external/lpc-spritesheet/body/male/eyes/casting_eyeglow_skeleton.png" data-source="lpc" data-path="body/male/eyes/casting_eyeglow_skeleton.png" title="body/male/eyes/casting_eyeglow_skeleton.png"></td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/vaults/brick_dark_skeleton.png" data-source="crawl" data-path="dngn/vaults/brick_dark_skeleton.png" title="dngn/vaults/brick_dark_skeleton.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/UNUSED/spells/animate_skeleton.png" data-source="crawl" data-path="UNUSED/spells/animate_skeleton.png" title="UNUSED/spells/animate_skeleton.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/UNUSED/monsters/skeletons/skeleton_quadruped_large.png" data-source="crawl" data-path="UNUSED/monsters/skeletons/skeleton_quadruped_large.png" title="UNUSED/monsters/skeletons/skeleton_quadruped_large.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/UNUSED/monsters/skeletons/skeleton_hydra1.png" data-source="crawl" data-path="UNUSED/monsters/skeletons/skeleton_hydra1.png" title="UNUSED/monsters/skeletons/skeleton_hydra1.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/UNUSED/monsters/skeletons/skeleton_humanoid_large.png" data-source="crawl" data-path="UNUSED/monsters/skeletons/skeleton_humanoid_large.png" title="UNUSED/monsters/skeletons/skeleton_humanoid_large.png"></td>
+<td class="selected-cell" id="selected-skeleton">-</td>
+</tr>
+<tr data-key="bat">
+<td><code>bat</code></td>
+<td>Bat</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #6C5B7B; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#6C5B7B" title="Current color: #6C5B7B"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/cloud_bat_mist3.png" data-source="crawl" data-path="effect/cloud_bat_mist3.png" title="effect/cloud_bat_mist3.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/cloud_bat_mist2.png" data-source="crawl" data-path="effect/cloud_bat_mist2.png" title="effect/cloud_bat_mist2.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/cloud_bat_mist0.png" data-source="crawl" data-path="effect/cloud_bat_mist0.png" title="effect/cloud_bat_mist0.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/cloud_bat_mist1.png" data-source="crawl" data-path="effect/cloud_bat_mist1.png" title="effect/cloud_bat_mist1.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/amulet/i-acrobat.png" data-source="crawl" data-path="item/amulet/i-acrobat.png" title="item/amulet/i-acrobat.png"></td>
+<td class="selected-cell" id="selected-bat">-</td>
+</tr>
+<tr data-key="ghost">
+<td><code>ghost</code></td>
+<td>Ghost</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #F8F9FA; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#F8F9FA" title="Current color: #F8F9FA"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/ghostfire1.png" data-source="crawl" data-path="effect/ghostfire1.png" title="effect/ghostfire1.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/ghostfire0.png" data-source="crawl" data-path="effect/ghostfire0.png" title="effect/ghostfire0.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/misc/ghost_threat_easy.png" data-source="crawl" data-path="misc/ghost_threat_easy.png" title="misc/ghost_threat_easy.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/misc/ghost_threat_nasty.png" data-source="crawl" data-path="misc/ghost_threat_nasty.png" title="misc/ghost_threat_nasty.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/misc/ghost_threat_trivial.png" data-source="crawl" data-path="misc/ghost_threat_trivial.png" title="misc/ghost_threat_trivial.png"></td>
+<td class="selected-cell" id="selected-ghost">-</td>
+</tr>
+<tr data-key="robot">
+<td><code>robot</code></td>
+<td>Robot</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #45B7D1; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#45B7D1" title="Current color: #45B7D1"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-robot">-</td>
+</tr>
+<tr data-key="dragon">
+<td><code>dragon</code></td>
+<td>Dragon</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #FF9A76; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#FF9A76" title="Current color: #FF9A76"></div></td>
+<td class="suggestions"><img class="thumb" src="external/lpc-spritesheet/weapons/oversize/two hand/either/dragonspear.png" data-source="lpc" data-path="weapons/oversize/two hand/either/dragonspear.png" title="weapons/oversize/two hand/either/dragonspear.png"></td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/fire_dragon_armour.png" data-source="crawl" data-path="item/armour/fire_dragon_armour.png" title="item/armour/fire_dragon_armour.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/fire_dragon_armour_art.png" data-source="crawl" data-path="item/armour/fire_dragon_armour_art.png" title="item/armour/fire_dragon_armour_art.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/golden_dragon_armour.png" data-source="crawl" data-path="item/armour/golden_dragon_armour.png" title="item/armour/golden_dragon_armour.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/shadow_dragon_armour.png" data-source="crawl" data-path="item/armour/shadow_dragon_armour.png" title="item/armour/shadow_dragon_armour.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/swamp_dragon_armour.png" data-source="crawl" data-path="item/armour/swamp_dragon_armour.png" title="item/armour/swamp_dragon_armour.png"></td>
+<td class="selected-cell" id="selected-dragon">-</td>
+</tr>
+<tr data-key="snake">
+<td><code>snake</code></td>
+<td>Snake</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #96CEB4; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#96CEB4" title="Current color: #96CEB4"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/gem/snake_found_whole.png" data-source="crawl" data-path="item/gem/snake_found_whole.png" title="item/gem/snake_found_whole.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/gem/snake_found_broken.png" data-source="crawl" data-path="item/gem/snake_found_broken.png" title="item/gem/snake_found_broken.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/talisman/snake.png" data-source="crawl" data-path="item/talisman/snake.png" title="item/talisman/snake.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/weapon/artefact/urand_snakebite.png" data-source="crawl" data-path="item/weapon/artefact/urand_snakebite.png" title="item/weapon/artefact/urand_snakebite.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/ring/randarts/snake.png" data-source="crawl" data-path="item/ring/randarts/snake.png" title="item/ring/randarts/snake.png"></td>
+<td class="selected-cell" id="selected-snake">-</td>
+</tr>
+<tr data-key="troll">
+<td><code>troll</code></td>
+<td>Troll</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #588C7E; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#588C7E" title="Current color: #588C7E"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/troll_leather_armour_art.png" data-source="crawl" data-path="item/armour/troll_leather_armour_art.png" title="item/armour/troll_leather_armour_art.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/troll_leather_armour.png" data-source="crawl" data-path="item/armour/troll_leather_armour.png" title="item/armour/troll_leather_armour.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/iron_troll_leather.png" data-source="crawl" data-path="item/armour/iron_troll_leather.png" title="item/armour/iron_troll_leather.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/deep_troll_leather.png" data-source="crawl" data-path="item/armour/deep_troll_leather.png" title="item/armour/deep_troll_leather.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/artefact/urand_moon_troll_leather_armour.png" data-source="crawl" data-path="item/armour/artefact/urand_moon_troll_leather_armour.png" title="item/armour/artefact/urand_moon_troll_leather_armour.png"></td>
+<td class="selected-cell" id="selected-troll">-</td>
+</tr>
+<tr data-key="medusa">
+<td><code>medusa</code></td>
+<td>Medusa</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #9E579D; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#9E579D" title="Current color: #9E579D"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/talisman/medusa.png" data-source="crawl" data-path="item/talisman/medusa.png" title="item/talisman/medusa.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/player/transform/medusa_form_humanoid_front.png" data-source="crawl" data-path="player/transform/medusa_form_humanoid_front.png" title="player/transform/medusa_form_humanoid_front.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/player/transform/medusa_form_gale_centaur_back.png" data-source="crawl" data-path="player/transform/medusa_form_gale_centaur_back.png" title="player/transform/medusa_form_gale_centaur_back.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/player/transform/medusa_form_humanoid_back.png" data-source="crawl" data-path="player/transform/medusa_form_humanoid_back.png" title="player/transform/medusa_form_humanoid_back.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/player/transform/medusa_form_octopode.png" data-source="crawl" data-path="player/transform/medusa_form_octopode.png" title="player/transform/medusa_form_octopode.png"></td>
+<td class="selected-cell" id="selected-medusa">-</td>
+</tr>
+<tr data-key="assassin">
+<td><code>assassin</code></td>
+<td>Assassin</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #2C3E50; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#2C3E50" title="Current color: #2C3E50"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/artefact/urand_assassin.png" data-source="crawl" data-path="item/armour/artefact/urand_assassin.png" title="item/armour/artefact/urand_assassin.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/artefact/urand_hood_assassin.png" data-source="crawl" data-path="item/armour/artefact/urand_hood_assassin.png" title="item/armour/artefact/urand_hood_assassin.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/player/head/hood_assassin.png" data-source="crawl" data-path="player/head/hood_assassin.png" title="player/head/hood_assassin.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/player/hand1/artefact/blowgun_assassin.png" data-source="crawl" data-path="player/hand1/artefact/blowgun_assassin.png" title="player/hand1/artefact/blowgun_assassin.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/UNUSED/monsters/spriggan_assassin.png" data-source="crawl" data-path="UNUSED/monsters/spriggan_assassin.png" title="UNUSED/monsters/spriggan_assassin.png"></td>
+<td class="selected-cell" id="selected-assassin">-</td>
+</tr>
+<tr data-key="killer_rabbit">
+<td><code>killer_rabbit</code></td>
+<td>Rabbit</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #FFEAA7; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#FFEAA7" title="Current color: #FFEAA7"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/UNUSED/other/rabbitfoot.png" data-source="crawl" data-path="UNUSED/other/rabbitfoot.png" title="UNUSED/other/rabbitfoot.png"></td>
+<td class="selected-cell" id="selected-killer_rabbit">-</td>
+</tr>
+<tr data-key="chipmunk">
+<td><code>chipmunk</code></td>
+<td>Chipmunk</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #D63031; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#D63031" title="Current color: #D63031"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-chipmunk">-</td>
+</tr>
+<tr data-key="duck">
+<td><code>duck</code></td>
+<td>Duck</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #FFD700; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#FFD700" title="Current color: #FFD700"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-duck">-</td>
+</tr>
+<tr data-key="shark">
+<td><code>shark</code></td>
+<td>Shark</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #2196F3; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#2196F3" title="Current color: #2196F3"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/animals/skyshark.png" data-source="crawl" data-path="mon/animals/skyshark.png" title="mon/animals/skyshark.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/player/crawling_zombie_skyshark.png" data-source="crawl" data-path="mon/player/crawling_zombie_skyshark.png" title="mon/player/crawling_zombie_skyshark.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/undead/zombies/zombie_skyshark.png" data-source="crawl" data-path="mon/undead/zombies/zombie_skyshark.png" title="mon/undead/zombies/zombie_skyshark.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/UNUSED/monsters/shark.png" data-source="crawl" data-path="UNUSED/monsters/shark.png" title="UNUSED/monsters/shark.png"></td>
+<td class="selected-cell" id="selected-shark">-</td>
+</tr>
+<tr data-key="wet_rat">
+<td><code>wet_rat</code></td>
+<td>Wet Rat</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #795548; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#795548" title="Current color: #795548"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-wet_rat">-</td>
+</tr>
+<tr data-key="duck_hunt_dog">
+<td><code>duck_hunt_dog</code></td>
+<td>Duck Hunt Dog</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #D2691E; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#D2691E" title="Current color: #D2691E"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-duck_hunt_dog">-</td>
+</tr>
+</tbody></table></div>
+<div class="category"><h2>Npcs</h2>
+<table><thead><tr><th>Asset Key</th><th>Name</th><th>Current</th><th>LPC Suggestions</th><th>DCSS Suggestions</th><th>Selected</th></tr></thead><tbody>
+<tr data-key="thief">
+<td><code>thief</code></td>
+<td>Thief</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #636E72; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#636E72" title="Current color: #636E72"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/artefact/urand_thief.png" data-source="crawl" data-path="item/armour/artefact/urand_thief.png" title="item/armour/artefact/urand_thief.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/player/hand1/sword_thief.png" data-source="crawl" data-path="player/hand1/sword_thief.png" title="player/hand1/sword_thief.png"></td>
+<td class="selected-cell" id="selected-thief">-</td>
+</tr>
+<tr data-key="fence">
+<td><code>fence</code></td>
+<td>Fence</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #A29BFE; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#A29BFE" title="Current color: #A29BFE"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/artefact/urand_fencer.png" data-source="crawl" data-path="item/armour/artefact/urand_fencer.png" title="item/armour/artefact/urand_fencer.png"></td>
+<td class="selected-cell" id="selected-fence">-</td>
+</tr>
+<tr data-key="fence_flasher">
+<td><code>fence_flasher</code></td>
+<td>Fence Flasher</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #A29BFE; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#A29BFE" title="Current color: #A29BFE"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-fence_flasher">-</td>
+</tr>
+<tr data-key="cain">
+<td><code>cain</code></td>
+<td>Cain</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #FDCB6E; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#FDCB6E" title="Current color: #FDCB6E"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-cain">-</td>
+</tr>
+<tr data-key="pirate">
+<td><code>pirate</code></td>
+<td>Pirate</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #00B894; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#00B894" title="Current color: #00B894"></div></td>
+<td class="suggestions"><img class="thumb" src="external/lpc-spritesheet/accessories/necklaces_female_ no_th-sh/pirate_wc_sc_only.png" data-source="lpc" data-path="accessories/necklaces_female_ no_th-sh/pirate_wc_sc_only.png" title="accessories/necklaces_female_ no_th-sh/pirate_wc_sc_only.png"> <img class="thumb" src="external/lpc-spritesheet/torso/shirts/sleeveless/female/teal_pirate.png" data-source="lpc" data-path="torso/shirts/sleeveless/female/teal_pirate.png" title="torso/shirts/sleeveless/female/teal_pirate.png"> <img class="thumb" src="external/lpc-spritesheet/torso/shirts/sleeveless/female/maroon_pirate.png" data-source="lpc" data-path="torso/shirts/sleeveless/female/maroon_pirate.png" title="torso/shirts/sleeveless/female/maroon_pirate.png"> <img class="thumb" src="external/lpc-spritesheet/torso/shirts/sleeveless/female/white_pirate.png" data-source="lpc" data-path="torso/shirts/sleeveless/female/white_pirate.png" title="torso/shirts/sleeveless/female/white_pirate.png"> <img class="thumb" src="external/lpc-spritesheet/torso/shirts/sleeveless/female/brown_pirate.png" data-source="lpc" data-path="torso/shirts/sleeveless/female/brown_pirate.png" title="torso/shirts/sleeveless/female/brown_pirate.png"></td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-pirate">-</td>
+</tr>
+<tr data-key="master">
+<td><code>master</code></td>
+<td>Master</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #E17055; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#E17055" title="Current color: #E17055"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/gui/skills/mastered-fg.png" data-source="crawl" data-path="gui/skills/mastered-fg.png" title="gui/skills/mastered-fg.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/gui/skills/mastered-base.png" data-source="crawl" data-path="gui/skills/mastered-base.png" title="gui/skills/mastered-base.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/vault/master_elementalist.png" data-source="crawl" data-path="mon/vault/master_elementalist.png" title="mon/vault/master_elementalist.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/humanoids/elves/deep_elf_blademaster.png" data-source="crawl" data-path="mon/humanoids/elves/deep_elf_blademaster.png" title="mon/humanoids/elves/deep_elf_blademaster.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/humanoids/elves/deep_elf_master_archer.png" data-source="crawl" data-path="mon/humanoids/elves/deep_elf_master_archer.png" title="mon/humanoids/elves/deep_elf_master_archer.png"></td>
+<td class="selected-cell" id="selected-master">-</td>
+</tr>
+<tr data-key="cat">
+<td><code>cat</code></td>
+<td>Cat</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #FF7675; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#FF7675" title="Current color: #FF7675"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/indicator_8.png" data-source="crawl" data-path="effect/indicator_8.png" title="effect/indicator_8.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/indicator_5.png" data-source="crawl" data-path="effect/indicator_5.png" title="effect/indicator_5.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/indicator_3.png" data-source="crawl" data-path="effect/indicator_3.png" title="effect/indicator_3.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/indicator_1.png" data-source="crawl" data-path="effect/indicator_1.png" title="effect/indicator_1.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/indicator_4.png" data-source="crawl" data-path="effect/indicator_4.png" title="effect/indicator_4.png"></td>
+<td class="selected-cell" id="selected-cat">-</td>
+</tr>
+<tr data-key="genie">
+<td><code>genie</code></td>
+<td>Genie</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #74B9FF; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#74B9FF" title="Current color: #74B9FF"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-genie">-</td>
+</tr>
+<tr data-key="king">
+<td><code>king</code></td>
+<td>King</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #FDCB6E; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#FDCB6E" title="Current color: #FDCB6E"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/scroll/i-blinking.png" data-source="crawl" data-path="item/scroll/i-blinking.png" title="item/scroll/i-blinking.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/weapon/artefact/urand_octopus_king.png" data-source="crawl" data-path="item/weapon/artefact/urand_octopus_king.png" title="item/weapon/artefact/urand_octopus_king.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/artefact/urand_dragon_king.png" data-source="crawl" data-path="item/armour/artefact/urand_dragon_king.png" title="item/armour/artefact/urand_dragon_king.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/gui/spells/forgecraft/walking_alembic.png" data-source="crawl" data-path="gui/spells/forgecraft/walking_alembic.png" title="gui/spells/forgecraft/walking_alembic.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/player/head/viking_gold.png" data-source="crawl" data-path="player/head/viking_gold.png" title="player/head/viking_gold.png"></td>
+<td class="selected-cell" id="selected-king">-</td>
+</tr>
+<tr data-key="eagle">
+<td><code>eagle</code></td>
+<td>Eagle</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #636E72; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#636E72" title="Current color: #636E72"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-eagle">-</td>
+</tr>
+<tr data-key="gurgi">
+<td><code>gurgi</code></td>
+<td>Gurgi</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #A29BFE; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#A29BFE" title="Current color: #A29BFE"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-gurgi">-</td>
+</tr>
+<tr data-key="erasmus">
+<td><code>erasmus</code></td>
+<td>Erasmus</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #6C5B7B; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#6C5B7B" title="Current color: #6C5B7B"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-erasmus">-</td>
+</tr>
+<tr data-key="cow">
+<td><code>cow</code></td>
+<td>Cow</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #FFFFFF; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#FFFFFF" title="Current color: #FFFFFF"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/panlord/demon_head_cow_skull.png" data-source="crawl" data-path="mon/panlord/demon_head_cow_skull.png" title="mon/panlord/demon_head_cow_skull.png"></td>
+<td class="selected-cell" id="selected-cow">-</td>
+</tr>
+<tr data-key="black_knight">
+<td><code>black_knight</code></td>
+<td>Knight</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #2D3436; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#2D3436" title="Current color: #2D3436"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/weapon/artefact/urand_dread_knight.png" data-source="crawl" data-path="item/weapon/artefact/urand_dread_knight.png" title="item/weapon/artefact/urand_dread_knight.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/gui/invocations/hep_knight.png" data-source="crawl" data-path="gui/invocations/hep_knight.png" title="gui/invocations/hep_knight.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/player/hand2/kite_shield_knight_rw.png" data-source="crawl" data-path="player/hand2/kite_shield_knight_rw.png" title="player/hand2/kite_shield_knight_rw.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/player/hand2/kite_shield_knight_blue.png" data-source="crawl" data-path="player/hand2/kite_shield_knight_blue.png" title="player/hand2/kite_shield_knight_blue.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/player/hand2/kite_shield_knight_gray.png" data-source="crawl" data-path="player/hand2/kite_shield_knight_gray.png" title="player/hand2/kite_shield_knight_gray.png"></td>
+<td class="selected-cell" id="selected-black_knight">-</td>
+</tr>
+<tr data-key="black_knight_4limbs">
+<td><code>black_knight_4limbs</code></td>
+<td>Knight 4 Limbs</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #2D3436; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#2D3436" title="Current color: #2D3436"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-black_knight_4limbs">-</td>
+</tr>
+<tr data-key="black_knight_3limbs">
+<td><code>black_knight_3limbs</code></td>
+<td>Knight 3 Limbs</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #2D3436; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#2D3436" title="Current color: #2D3436"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-black_knight_3limbs">-</td>
+</tr>
+<tr data-key="black_knight_2limbs">
+<td><code>black_knight_2limbs</code></td>
+<td>Knight 2 Limbs</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #2D3436; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#2D3436" title="Current color: #2D3436"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-black_knight_2limbs">-</td>
+</tr>
+<tr data-key="black_knight_1limb">
+<td><code>black_knight_1limb</code></td>
+<td>Knight 1 Limb</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #2D3436; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#2D3436" title="Current color: #2D3436"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-black_knight_1limb">-</td>
+</tr>
+<tr data-key="black_knight_0limbs">
+<td><code>black_knight_0limbs</code></td>
+<td>Knight 0 Limbs</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #2D3436; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#2D3436" title="Current color: #2D3436"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-black_knight_0limbs">-</td>
+</tr>
+<tr data-key="french_taunter">
+<td><code>french_taunter</code></td>
+<td>Taunter</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #0984E3; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#0984E3" title="Current color: #0984E3"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-french_taunter">-</td>
+</tr>
+<tr data-key="dennis">
+<td><code>dennis</code></td>
+<td>Dennis</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #00B894; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#00B894" title="Current color: #00B894"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-dennis">-</td>
+</tr>
+<tr data-key="bridge_keeper">
+<td><code>bridge_keeper</code></td>
+<td>Keeper</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #6C5B7B; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#6C5B7B" title="Current color: #6C5B7B"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/nonliving/peacekeeper.png" data-source="crawl" data-path="mon/nonliving/peacekeeper.png" title="mon/nonliving/peacekeeper.png"></td>
+<td class="selected-cell" id="selected-bridge_keeper">-</td>
+</tr>
+</tbody></table></div>
+<div class="category"><h2>Tiles</h2>
+<table><thead><tr><th>Asset Key</th><th>Name</th><th>Current</th><th>LPC Suggestions</th><th>DCSS Suggestions</th><th>Selected</th></tr></thead><tbody>
+<tr data-key="wall">
+<td><code>wall</code></td>
+<td>Wall</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #636E72; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#636E72" title="Current color: #636E72"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/gui/invocations/fedhas_wall_of_briars.png" data-source="crawl" data-path="gui/invocations/fedhas_wall_of_briars.png" title="gui/invocations/fedhas_wall_of_briars.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/gui/invocations/wu_jian_wall_jump.png" data-source="crawl" data-path="gui/invocations/wu_jian_wall_jump.png" title="gui/invocations/wu_jian_wall_jump.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/gui/spells/earth/passwall.png" data-source="crawl" data-path="gui/spells/earth/passwall.png" title="gui/spells/earth/passwall.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/gui/spells/monster/wall_of_brambles.png" data-source="crawl" data-path="gui/spells/monster/wall_of_brambles.png" title="gui/spells/monster/wall_of_brambles.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/misc/blood/wall_blood05_n.png" data-source="crawl" data-path="misc/blood/wall_blood05_n.png" title="misc/blood/wall_blood05_n.png"></td>
+<td class="selected-cell" id="selected-wall">-</td>
+</tr>
+<tr data-key="floor">
+<td><code>floor</code></td>
+<td>Floor</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #DFE6E9; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#DFE6E9" title="Current color: #DFE6E9"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/mosaic8.png" data-source="crawl" data-path="dngn/floor/mosaic8.png" title="dngn/floor/mosaic8.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/grey_dirt7.png" data-source="crawl" data-path="dngn/floor/grey_dirt7.png" title="dngn/floor/grey_dirt7.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/spider09.png" data-source="crawl" data-path="dngn/floor/spider09.png" title="dngn/floor/spider09.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/frozen6.png" data-source="crawl" data-path="dngn/floor/frozen6.png" title="dngn/floor/frozen6.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/studio3.png" data-source="crawl" data-path="dngn/floor/studio3.png" title="dngn/floor/studio3.png"></td>
+<td class="selected-cell" id="selected-floor">-</td>
+</tr>
+<tr data-key="water">
+<td><code>water</code></td>
+<td>Water</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #74B9FF; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#74B9FF" title="Current color: #74B9FF"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/misc/mask_shallow_water_murky.png" data-source="crawl" data-path="misc/mask_shallow_water_murky.png" title="misc/mask_shallow_water_murky.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/misc/mask_shallow_water.png" data-source="crawl" data-path="misc/mask_shallow_water.png" title="misc/mask_shallow_water.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/misc/mask_deep_water_murky.png" data-source="crawl" data-path="misc/mask_deep_water_murky.png" title="misc/mask_deep_water_murky.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/misc/mask_deep_water.png" data-source="crawl" data-path="misc/mask_deep_water.png" title="misc/mask_deep_water.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/misc/mask_shallow_water_shoals.png" data-source="crawl" data-path="misc/mask_shallow_water_shoals.png" title="misc/mask_shallow_water_shoals.png"></td>
+<td class="selected-cell" id="selected-water">-</td>
+</tr>
+<tr data-key="sand">
+<td><code>sand</code></td>
+<td>Sand</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #FFEAA7; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#FFEAA7" title="Current color: #FFEAA7"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/sandblast2.png" data-source="crawl" data-path="effect/sandblast2.png" title="effect/sandblast2.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/sandblast0.png" data-source="crawl" data-path="effect/sandblast0.png" title="effect/sandblast0.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/sandblast1.png" data-source="crawl" data-path="effect/sandblast1.png" title="effect/sandblast1.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/gui/spells/earth/sandblast.png" data-source="crawl" data-path="gui/spells/earth/sandblast.png" title="gui/spells/earth/sandblast.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/unique/cassandra.png" data-source="crawl" data-path="mon/unique/cassandra.png" title="mon/unique/cassandra.png"></td>
+<td class="selected-cell" id="selected-sand">-</td>
+</tr>
+<tr data-key="grass">
+<td><code>grass</code></td>
+<td>Grass</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #00B894; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#00B894" title="Current color: #00B894"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/necropolis_tile_grass_3.png" data-source="crawl" data-path="dngn/floor/necropolis_tile_grass_3.png" title="dngn/floor/necropolis_tile_grass_3.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/necropolis_grass_2.png" data-source="crawl" data-path="dngn/floor/necropolis_grass_2.png" title="dngn/floor/necropolis_grass_2.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/necropolis_square_grass_1.png" data-source="crawl" data-path="dngn/floor/necropolis_square_grass_1.png" title="dngn/floor/necropolis_square_grass_1.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/necropolis_grass_3.png" data-source="crawl" data-path="dngn/floor/necropolis_grass_3.png" title="dngn/floor/necropolis_grass_3.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/necropolis_grass_4.png" data-source="crawl" data-path="dngn/floor/necropolis_grass_4.png" title="dngn/floor/necropolis_grass_4.png"></td>
+<td class="selected-cell" id="selected-grass">-</td>
+</tr>
+<tr data-key="tree">
+<td><code>tree</code></td>
+<td>Tree</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #00B894; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#00B894" title="Current color: #00B894"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/player/transform/tree_form.png" data-source="crawl" data-path="player/transform/tree_form.png" title="player/transform/tree_form.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/trees/tree_demonic14.png" data-source="crawl" data-path="dngn/trees/tree_demonic14.png" title="dngn/trees/tree_demonic14.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/trees/tree4.png" data-source="crawl" data-path="dngn/trees/tree4.png" title="dngn/trees/tree4.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/trees/mangrove3.png" data-source="crawl" data-path="dngn/trees/mangrove3.png" title="dngn/trees/mangrove3.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/trees/tree_demonic5.png" data-source="crawl" data-path="dngn/trees/tree_demonic5.png" title="dngn/trees/tree_demonic5.png"></td>
+<td class="selected-cell" id="selected-tree">-</td>
+</tr>
+<tr data-key="rock">
+<td><code>rock</code></td>
+<td>Rock</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #636E72; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#636E72" title="Current color: #636E72"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/rock0.png" data-source="crawl" data-path="effect/rock0.png" title="effect/rock0.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/weapon/ranged/rock.png" data-source="crawl" data-path="item/weapon/ranged/rock.png" title="item/weapon/ranged/rock.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/amorphous/rockslime.png" data-source="crawl" data-path="mon/amorphous/rockslime.png" title="mon/amorphous/rockslime.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/aquatic/rock_fish.png" data-source="crawl" data-path="mon/aquatic/rock_fish.png" title="mon/aquatic/rock_fish.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/floor/seismorock0.png" data-source="crawl" data-path="dngn/floor/seismorock0.png" title="dngn/floor/seismorock0.png"></td>
+<td class="selected-cell" id="selected-rock">-</td>
+</tr>
+<tr data-key="chest_closed">
+<td><code>chest_closed</code></td>
+<td>Chest Closed</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #8B4513; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#8B4513" title="Current color: #8B4513"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-chest_closed">-</td>
+</tr>
+<tr data-key="chest_open">
+<td><code>chest_open</code></td>
+<td>Chest Open</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #8B4513; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#8B4513" title="Current color: #8B4513"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-chest_open">-</td>
+</tr>
+<tr data-key="bookstore">
+<td><code>bookstore</code></td>
+<td>Bookstore</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #8B4513; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#8B4513" title="Current color: #8B4513"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-bookstore">-</td>
+</tr>
+</tbody></table></div>
+<div class="category"><h2>Items</h2>
+<table><thead><tr><th>Asset Key</th><th>Name</th><th>Current</th><th>LPC Suggestions</th><th>DCSS Suggestions</th><th>Selected</th></tr></thead><tbody>
+<tr data-key="💣🌟">
+<td><code>💣🌟</code></td>
+<td>Grenade</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="💣🌟">💣🌟</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/bomblet_launch0.png" data-source="crawl" data-path="effect/bomblet_launch0.png" title="effect/bomblet_launch0.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/bomblet_blast0.png" data-source="crawl" data-path="effect/bomblet_blast0.png" title="effect/bomblet_blast0.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/bomblet_blast1.png" data-source="crawl" data-path="effect/bomblet_blast1.png" title="effect/bomblet_blast1.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/bomblet_launch1.png" data-source="crawl" data-path="effect/bomblet_launch1.png" title="effect/bomblet_launch1.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/gui/spells/monster/launch_bomblet.png" data-source="crawl" data-path="gui/spells/monster/launch_bomblet.png" title="gui/spells/monster/launch_bomblet.png"></td>
+<td class="selected-cell" id="selected-💣🌟">-</td>
+</tr>
+<tr data-key="🧪">
+<td><code>🧪</code></td>
+<td>Potion</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🧪">🧪</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/potion_petition4.png" data-source="crawl" data-path="effect/potion_petition4.png" title="effect/potion_petition4.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/meph_flask0.png" data-source="crawl" data-path="effect/meph_flask0.png" title="effect/meph_flask0.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/alembic_potion4.png" data-source="crawl" data-path="effect/alembic_potion4.png" title="effect/alembic_potion4.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/alembic_potion2.png" data-source="crawl" data-path="effect/alembic_potion2.png" title="effect/alembic_potion2.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/potion_petition2.png" data-source="crawl" data-path="effect/potion_petition2.png" title="effect/potion_petition2.png"></td>
+<td class="selected-cell" id="selected-🧪">-</td>
+</tr>
+<tr data-key="🗡️">
+<td><code>🗡️</code></td>
+<td>Sword</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🗡️">🗡️</span></td>
+<td class="suggestions"><img class="thumb" src="external/lpc-spritesheet/weapons/oversize/right hand/female/longsword_female.png" data-source="lpc" data-path="weapons/oversize/right hand/female/longsword_female.png" title="weapons/oversize/right hand/female/longsword_female.png"> <img class="thumb" src="external/lpc-spritesheet/weapons/oversize/right hand/male/longsword_male.png" data-source="lpc" data-path="weapons/oversize/right hand/male/longsword_male.png" title="weapons/oversize/right hand/male/longsword_male.png"> <img class="thumb" src="external/lpc-spritesheet/weapons/right hand/female/dagger_female.png" data-source="lpc" data-path="weapons/right hand/female/dagger_female.png" title="weapons/right hand/female/dagger_female.png"> <img class="thumb" src="external/lpc-spritesheet/weapons/right hand/male/dagger_male.png" data-source="lpc" data-path="weapons/right hand/male/dagger_male.png" title="weapons/right hand/male/dagger_male.png"></td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/talisman/blade.png" data-source="crawl" data-path="item/talisman/blade.png" title="item/talisman/blade.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/weapon/double_sword.png" data-source="crawl" data-path="item/weapon/double_sword.png" title="item/weapon/double_sword.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/weapon/demon_blade2.png" data-source="crawl" data-path="item/weapon/demon_blade2.png" title="item/weapon/demon_blade2.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/weapon/quickblade3.png" data-source="crawl" data-path="item/weapon/quickblade3.png" title="item/weapon/quickblade3.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/weapon/triple_sword.png" data-source="crawl" data-path="item/weapon/triple_sword.png" title="item/weapon/triple_sword.png"></td>
+<td class="selected-cell" id="selected-🗡️">-</td>
+</tr>
+<tr data-key="🛡️">
+<td><code>🛡️</code></td>
+<td>Shield</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🛡️">🛡️</span></td>
+<td class="suggestions"><img class="thumb" src="external/lpc-spritesheet/weapons/left hand/male/shield_male_cutoutforbody.png" data-source="lpc" data-path="weapons/left hand/male/shield_male_cutoutforbody.png" title="weapons/left hand/male/shield_male_cutoutforbody.png"> <img class="thumb" src="external/lpc-spritesheet/weapons/left hand/male/shield_male_cutoutforhat.png" data-source="lpc" data-path="weapons/left hand/male/shield_male_cutoutforhat.png" title="weapons/left hand/male/shield_male_cutoutforhat.png"></td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/amulet/artefact/urand_brooch_of_shielding.png" data-source="crawl" data-path="item/amulet/artefact/urand_brooch_of_shielding.png" title="item/amulet/artefact/urand_brooch_of_shielding.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/shields/tower_shield2.png" data-source="crawl" data-path="item/armour/shields/tower_shield2.png" title="item/armour/shields/tower_shield2.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/shields/kite_shield_donald.png" data-source="crawl" data-path="item/armour/shields/kite_shield_donald.png" title="item/armour/shields/kite_shield_donald.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/shields/kite_shield_dd.png" data-source="crawl" data-path="item/armour/shields/kite_shield_dd.png" title="item/armour/shields/kite_shield_dd.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/shields/buckler3.png" data-source="crawl" data-path="item/armour/shields/buckler3.png" title="item/armour/shields/buckler3.png"></td>
+<td class="selected-cell" id="selected-🛡️">-</td>
+</tr>
+<tr data-key="💰">
+<td><code>💰</code></td>
+<td>Gold</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="💰">💰</span></td>
+<td class="suggestions"><img class="thumb" src="external/lpc-spritesheet/facial/male/bigstache/gold.png" data-source="lpc" data-path="facial/male/bigstache/gold.png" title="facial/male/bigstache/gold.png"> <img class="thumb" src="external/lpc-spritesheet/facial/male/fiveoclock/gold.png" data-source="lpc" data-path="facial/male/fiveoclock/gold.png" title="facial/male/fiveoclock/gold.png"> <img class="thumb" src="external/lpc-spritesheet/facial/male/beard/gold.png" data-source="lpc" data-path="facial/male/beard/gold.png" title="facial/male/beard/gold.png"> <img class="thumb" src="external/lpc-spritesheet/facial/male/frenchstache/gold.png" data-source="lpc" data-path="facial/male/frenchstache/gold.png" title="facial/male/frenchstache/gold.png"> <img class="thumb" src="external/lpc-spritesheet/facial/male/mustache/gold.png" data-source="lpc" data-path="facial/male/mustache/gold.png" title="facial/male/mustache/gold.png"></td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/cloud_gold_dust2.png" data-source="crawl" data-path="effect/cloud_gold_dust2.png" title="effect/cloud_gold_dust2.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/cloud_gold_dust1.png" data-source="crawl" data-path="effect/cloud_gold_dust1.png" title="effect/cloud_gold_dust1.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/cloud_gold_dust3.png" data-source="crawl" data-path="effect/cloud_gold_dust3.png" title="effect/cloud_gold_dust3.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/cloud_gold_dust0.png" data-source="crawl" data-path="effect/cloud_gold_dust0.png" title="effect/cloud_gold_dust0.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/wand/gem_gold.png" data-source="crawl" data-path="item/wand/gem_gold.png" title="item/wand/gem_gold.png"></td>
+<td class="selected-cell" id="selected-💰">-</td>
+</tr>
+</tbody></table></div>
+<div class="category"><h2>Additional_Monsters</h2>
+<table><thead><tr><th>Asset Key</th><th>Name</th><th>Current</th><th>LPC Suggestions</th><th>DCSS Suggestions</th><th>Selected</th></tr></thead><tbody>
+<tr data-key="castle_rat">
+<td><code>castle_rat</code></td>
+<td>castle_rat</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #CCC; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#CCC" title="Current color: #CCC"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-castle_rat">-</td>
+</tr>
+<tr data-key="horned_king">
+<td><code>horned_king</code></td>
+<td>horned_king</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #CCC; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#CCC" title="Current color: #CCC"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-horned_king">-</td>
+</tr>
+<tr data-key="cauldron_born">
+<td><code>cauldron_born</code></td>
+<td>cauldron_born</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #CCC; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#CCC" title="Current color: #CCC"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-cauldron_born">-</td>
+</tr>
+<tr data-key="morva_witch">
+<td><code>morva_witch</code></td>
+<td>morva_witch</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #CCC; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#CCC" title="Current color: #CCC"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-morva_witch">-</td>
+</tr>
+<tr data-key="mouse">
+<td><code>mouse</code></td>
+<td>mouse</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #CCC; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#CCC" title="Current color: #CCC"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/gui/tab_mouseover.png" data-source="crawl" data-path="gui/tab_mouseover.png" title="gui/tab_mouseover.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/panlord/demon_head_mouse.png" data-source="crawl" data-path="mon/panlord/demon_head_mouse.png" title="mon/panlord/demon_head_mouse.png"></td>
+<td class="selected-cell" id="selected-mouse">-</td>
+</tr>
+<tr data-key="cockroach">
+<td><code>cockroach</code></td>
+<td>cockroach</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #CCC; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#CCC" title="Current color: #CCC"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/animals/giant_cockroach.png" data-source="crawl" data-path="mon/animals/giant_cockroach.png" title="mon/animals/giant_cockroach.png"></td>
+<td class="selected-cell" id="selected-cockroach">-</td>
+</tr>
+<tr data-key="mimic">
+<td><code>mimic</code></td>
+<td>mimic</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #CCC; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#CCC" title="Current color: #CCC"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/UNUSED/monsters/ravenous_mimic.png" data-source="crawl" data-path="UNUSED/monsters/ravenous_mimic.png" title="UNUSED/monsters/ravenous_mimic.png"></td>
+<td class="selected-cell" id="selected-mimic">-</td>
+</tr>
+<tr data-key="ifrit">
+<td><code>ifrit</code></td>
+<td>ifrit</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #CCC; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#CCC" title="Current color: #CCC"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-ifrit">-</td>
+</tr>
+<tr data-key="chaplain">
+<td><code>chaplain</code></td>
+<td>chaplain</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #CCC; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#CCC" title="Current color: #CCC"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-chaplain">-</td>
+</tr>
+<tr data-key="grue">
+<td><code>grue</code></td>
+<td>grue</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #CCC; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#CCC" title="Current color: #CCC"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-grue">-</td>
+</tr>
+<tr data-key="orc">
+<td><code>orc</code></td>
+<td>orc</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #CCC; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#CCC" title="Current color: #CCC"></div></td>
+<td class="suggestions"><img class="thumb" src="external/lpc-spritesheet/body/female/red_orc.png" data-source="lpc" data-path="body/female/red_orc.png" title="body/female/red_orc.png"> <img class="thumb" src="external/lpc-spritesheet/body/female/orc.png" data-source="lpc" data-path="body/female/orc.png" title="body/female/orc.png"> <img class="thumb" src="external/lpc-spritesheet/body/male/red_orc.png" data-source="lpc" data-path="body/male/red_orc.png" title="body/male/red_orc.png"> <img class="thumb" src="external/lpc-spritesheet/body/male/orc.png" data-source="lpc" data-path="body/male/orc.png" title="body/male/orc.png"></td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/force_lance2.png" data-source="crawl" data-path="effect/force_lance2.png" title="effect/force_lance2.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/force_lance5.png" data-source="crawl" data-path="effect/force_lance5.png" title="effect/force_lance5.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/force_lance4.png" data-source="crawl" data-path="effect/force_lance4.png" title="effect/force_lance4.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/umbral_torchlight.png" data-source="crawl" data-path="effect/umbral_torchlight.png" title="effect/umbral_torchlight.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/force_lance7.png" data-source="crawl" data-path="effect/force_lance7.png" title="effect/force_lance7.png"></td>
+<td class="selected-cell" id="selected-orc">-</td>
+</tr>
+<tr data-key="pacifist_orc">
+<td><code>pacifist_orc</code></td>
+<td>pacifist_orc</td>
+<td class="suggestions"><div class="thumb color-square" style="width: 32px; height: 32px; background: #CCC; cursor: pointer; border: 2px solid transparent;" data-source="color" data-path="#CCC" title="Current color: #CCC"></div></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-pacifist_orc">-</td>
+</tr>
+</tbody></table></div>
+<div class="category"><h2>Additional_Items</h2>
+<table><thead><tr><th>Asset Key</th><th>Name</th><th>Current</th><th>LPC Suggestions</th><th>DCSS Suggestions</th><th>Selected</th></tr></thead><tbody>
+<tr data-key="🥥">
+<td><code>🥥</code></td>
+<td>🥥</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🥥">🥥</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🥥">-</td>
+</tr>
+<tr data-key="📜📜">
+<td><code>📜📜</code></td>
+<td>📜📜</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="📜📜">📜📜</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/scroll/i-identify.png" data-source="crawl" data-path="item/scroll/i-identify.png" title="item/scroll/i-identify.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/scroll/scroll-red.png" data-source="crawl" data-path="item/scroll/scroll-red.png" title="item/scroll/scroll-red.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/scroll/scroll-green.png" data-source="crawl" data-path="item/scroll/scroll-green.png" title="item/scroll/scroll-green.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/scroll/i-blinking.png" data-source="crawl" data-path="item/scroll/i-blinking.png" title="item/scroll/i-blinking.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/scroll/i-magic_mapping.png" data-source="crawl" data-path="item/scroll/i-magic_mapping.png" title="item/scroll/i-magic_mapping.png"></td>
+<td class="selected-cell" id="selected-📜📜">-</td>
+</tr>
+<tr data-key="🧪🦎">
+<td><code>🧪🦎</code></td>
+<td>🧪🦎</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🧪🦎">🧪🦎</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/potion_petition4.png" data-source="crawl" data-path="effect/potion_petition4.png" title="effect/potion_petition4.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/alembic_potion4.png" data-source="crawl" data-path="effect/alembic_potion4.png" title="effect/alembic_potion4.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/alembic_potion2.png" data-source="crawl" data-path="effect/alembic_potion2.png" title="effect/alembic_potion2.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/potion_petition2.png" data-source="crawl" data-path="effect/potion_petition2.png" title="effect/potion_petition2.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/potion_petition0.png" data-source="crawl" data-path="effect/potion_petition0.png" title="effect/potion_petition0.png"></td>
+<td class="selected-cell" id="selected-🧪🦎">-</td>
+</tr>
+<tr data-key="💎💠">
+<td><code>💎💠</code></td>
+<td>💎💠</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="💎💠">💎💠</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/crystal_spear4.png" data-source="crawl" data-path="effect/crystal_spear4.png" title="effect/crystal_spear4.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/crystal_spear3.png" data-source="crawl" data-path="effect/crystal_spear3.png" title="effect/crystal_spear3.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/crystal_spear6.png" data-source="crawl" data-path="effect/crystal_spear6.png" title="effect/crystal_spear6.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/crystal_spear0.png" data-source="crawl" data-path="effect/crystal_spear0.png" title="effect/crystal_spear0.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/crystal_spear1.png" data-source="crawl" data-path="effect/crystal_spear1.png" title="effect/crystal_spear1.png"></td>
+<td class="selected-cell" id="selected-💎💠">-</td>
+</tr>
+<tr data-key="📿">
+<td><code>📿</code></td>
+<td>📿</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="📿">📿</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-📿">-</td>
+</tr>
+<tr data-key="🪙">
+<td><code>🪙</code></td>
+<td>🪙</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🪙">🪙</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/unique/dispater.png" data-source="crawl" data-path="mon/unique/dispater.png" title="mon/unique/dispater.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/unique/royal_jelly.png" data-source="crawl" data-path="mon/unique/royal_jelly.png" title="mon/unique/royal_jelly.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/unique/enchantress.png" data-source="crawl" data-path="mon/unique/enchantress.png" title="mon/unique/enchantress.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/unique/snorg.png" data-source="crawl" data-path="mon/unique/snorg.png" title="mon/unique/snorg.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/mon/unique/norris.png" data-source="crawl" data-path="mon/unique/norris.png" title="mon/unique/norris.png"></td>
+<td class="selected-cell" id="selected-🪙">-</td>
+</tr>
+<tr data-key="🏅">
+<td><code>🏅</code></td>
+<td>🏅</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🏅">🏅</span></td>
+<td class="suggestions"><img class="thumb" src="external/lpc-spritesheet/facial/male/bigstache/gold.png" data-source="lpc" data-path="facial/male/bigstache/gold.png" title="facial/male/bigstache/gold.png"> <img class="thumb" src="external/lpc-spritesheet/facial/male/fiveoclock/gold.png" data-source="lpc" data-path="facial/male/fiveoclock/gold.png" title="facial/male/fiveoclock/gold.png"> <img class="thumb" src="external/lpc-spritesheet/facial/male/beard/gold.png" data-source="lpc" data-path="facial/male/beard/gold.png" title="facial/male/beard/gold.png"> <img class="thumb" src="external/lpc-spritesheet/facial/male/frenchstache/gold.png" data-source="lpc" data-path="facial/male/frenchstache/gold.png" title="facial/male/frenchstache/gold.png"> <img class="thumb" src="external/lpc-spritesheet/facial/male/mustache/gold.png" data-source="lpc" data-path="facial/male/mustache/gold.png" title="facial/male/mustache/gold.png"></td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/cloud_gold_dust2.png" data-source="crawl" data-path="effect/cloud_gold_dust2.png" title="effect/cloud_gold_dust2.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/cloud_gold_dust1.png" data-source="crawl" data-path="effect/cloud_gold_dust1.png" title="effect/cloud_gold_dust1.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/cloud_gold_dust3.png" data-source="crawl" data-path="effect/cloud_gold_dust3.png" title="effect/cloud_gold_dust3.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/cloud_gold_dust0.png" data-source="crawl" data-path="effect/cloud_gold_dust0.png" title="effect/cloud_gold_dust0.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/wand/gem_gold.png" data-source="crawl" data-path="item/wand/gem_gold.png" title="item/wand/gem_gold.png"></td>
+<td class="selected-cell" id="selected-🏅">-</td>
+</tr>
+<tr data-key="🪕">
+<td><code>🪕</code></td>
+<td>🪕</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🪕">🪕</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/harpoon_shot0.png" data-source="crawl" data-path="effect/harpoon_shot0.png" title="effect/harpoon_shot0.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/harpoon_shot1.png" data-source="crawl" data-path="effect/harpoon_shot1.png" title="effect/harpoon_shot1.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/harpoon_shot2.png" data-source="crawl" data-path="effect/harpoon_shot2.png" title="effect/harpoon_shot2.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/harpoon_shot6.png" data-source="crawl" data-path="effect/harpoon_shot6.png" title="effect/harpoon_shot6.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/harpoon_shot7.png" data-source="crawl" data-path="effect/harpoon_shot7.png" title="effect/harpoon_shot7.png"></td>
+<td class="selected-cell" id="selected-🪕">-</td>
+</tr>
+<tr data-key="🍲">
+<td><code>🍲</code></td>
+<td>🍲</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🍲">🍲</span></td>
+<td class="suggestions"><img class="thumb" src="external/lpc-spritesheet/facial/male/bigstache/black.png" data-source="lpc" data-path="facial/male/bigstache/black.png" title="facial/male/bigstache/black.png"> <img class="thumb" src="external/lpc-spritesheet/facial/male/fiveoclock/black.png" data-source="lpc" data-path="facial/male/fiveoclock/black.png" title="facial/male/fiveoclock/black.png"> <img class="thumb" src="external/lpc-spritesheet/facial/male/beard/black.png" data-source="lpc" data-path="facial/male/beard/black.png" title="facial/male/beard/black.png"> <img class="thumb" src="external/lpc-spritesheet/facial/male/frenchstache/black.png" data-source="lpc" data-path="facial/male/frenchstache/black.png" title="facial/male/frenchstache/black.png"> <img class="thumb" src="external/lpc-spritesheet/facial/male/mustache/black.png" data-source="lpc" data-path="facial/male/mustache/black.png" title="facial/male/mustache/black.png"></td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/cloud_black_smoke.png" data-source="crawl" data-path="effect/cloud_black_smoke.png" title="effect/cloud_black_smoke.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/potion/black.png" data-source="crawl" data-path="item/potion/black.png" title="item/potion/black.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/ring/plain_black.png" data-source="crawl" data-path="item/ring/plain_black.png" title="item/ring/plain_black.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/gui/mutations/black_mark.png" data-source="crawl" data-path="gui/mutations/black_mark.png" title="gui/mutations/black_mark.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/player/boots/mesh_black.png" data-source="crawl" data-path="player/boots/mesh_black.png" title="player/boots/mesh_black.png"></td>
+<td class="selected-cell" id="selected-🍲">-</td>
+</tr>
+<tr data-key="🐔">
+<td><code>🐔</code></td>
+<td>🐔</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🐔">🐔</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🐔">-</td>
+</tr>
+<tr data-key="⚙️">
+<td><code>⚙️</code></td>
+<td>⚙️</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="⚙️">⚙️</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-⚙️">-</td>
+</tr>
+<tr data-key="👢⚡">
+<td><code>👢⚡</code></td>
+<td>👢⚡</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="👢⚡">👢⚡</span></td>
+<td class="suggestions"><img class="thumb" src="external/lpc-spritesheet/feet/armor/female/metal_boots_female.png" data-source="lpc" data-path="feet/armor/female/metal_boots_female.png" title="feet/armor/female/metal_boots_female.png"> <img class="thumb" src="external/lpc-spritesheet/feet/armor/female/golden_boots_female.png" data-source="lpc" data-path="feet/armor/female/golden_boots_female.png" title="feet/armor/female/golden_boots_female.png"> <img class="thumb" src="external/lpc-spritesheet/feet/armor/male/golden_boots_male.png" data-source="lpc" data-path="feet/armor/male/golden_boots_male.png" title="feet/armor/male/golden_boots_male.png"> <img class="thumb" src="external/lpc-spritesheet/feet/armor/male/metal_boots_male.png" data-source="lpc" data-path="feet/armor/male/metal_boots_male.png" title="feet/armor/male/metal_boots_male.png"></td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/boots_ego2.png" data-source="crawl" data-path="item/armour/boots_ego2.png" title="item/armour/boots_ego2.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/boots_art2.png" data-source="crawl" data-path="item/armour/boots_art2.png" title="item/armour/boots_art2.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/boots1.png" data-source="crawl" data-path="item/armour/boots1.png" title="item/armour/boots1.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/boots_art1.png" data-source="crawl" data-path="item/armour/boots_art1.png" title="item/armour/boots_art1.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/boots2.png" data-source="crawl" data-path="item/armour/boots2.png" title="item/armour/boots2.png"></td>
+<td class="selected-cell" id="selected-👢⚡">-</td>
+</tr>
+<tr data-key="👺">
+<td><code>👺</code></td>
+<td>👺</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="👺">👺</span></td>
+<td class="suggestions"><img class="thumb" src="external/lpc-spritesheet/_build/hair/masks_male.png" data-source="lpc" data-path="_build/hair/masks_male.png" title="_build/hair/masks_male.png"> <img class="thumb" src="external/lpc-spritesheet/_build/hair/masks_female.png" data-source="lpc" data-path="_build/hair/masks_female.png" title="_build/hair/masks_female.png"> <img class="thumb" src="external/lpc-spritesheet/_build/facial/masks_male.png" data-source="lpc" data-path="_build/facial/masks_male.png" title="_build/facial/masks_male.png"> <img class="thumb" src="external/lpc-spritesheet/_build/facial/masks_female.png" data-source="lpc" data-path="_build/facial/masks_female.png" title="_build/facial/masks_female.png"></td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/misc/mask_shallow_water_murky.png" data-source="crawl" data-path="misc/mask_shallow_water_murky.png" title="misc/mask_shallow_water_murky.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/misc/mask_shallow_water.png" data-source="crawl" data-path="misc/mask_shallow_water.png" title="misc/mask_shallow_water.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/misc/mask_lava.png" data-source="crawl" data-path="misc/mask_lava.png" title="misc/mask_lava.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/misc/mask_deep_water_murky.png" data-source="crawl" data-path="misc/mask_deep_water_murky.png" title="misc/mask_deep_water_murky.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/misc/mask_deep_water.png" data-source="crawl" data-path="misc/mask_deep_water.png" title="misc/mask_deep_water.png"></td>
+<td class="selected-cell" id="selected-👺">-</td>
+</tr>
+<tr data-key="🛡️🏛️">
+<td><code>🛡️🏛️</code></td>
+<td>🛡️🏛️</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🛡️🏛️">🛡️🏛️</span></td>
+<td class="suggestions"><img class="thumb" src="external/lpc-spritesheet/weapons/left hand/male/shield_male_cutoutforbody.png" data-source="lpc" data-path="weapons/left hand/male/shield_male_cutoutforbody.png" title="weapons/left hand/male/shield_male_cutoutforbody.png"> <img class="thumb" src="external/lpc-spritesheet/weapons/left hand/male/shield_male_cutoutforhat.png" data-source="lpc" data-path="weapons/left hand/male/shield_male_cutoutforhat.png" title="weapons/left hand/male/shield_male_cutoutforhat.png"></td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/amulet/artefact/urand_brooch_of_shielding.png" data-source="crawl" data-path="item/amulet/artefact/urand_brooch_of_shielding.png" title="item/amulet/artefact/urand_brooch_of_shielding.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/shields/tower_shield2.png" data-source="crawl" data-path="item/armour/shields/tower_shield2.png" title="item/armour/shields/tower_shield2.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/shields/kite_shield_donald.png" data-source="crawl" data-path="item/armour/shields/kite_shield_donald.png" title="item/armour/shields/kite_shield_donald.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/shields/kite_shield_dd.png" data-source="crawl" data-path="item/armour/shields/kite_shield_dd.png" title="item/armour/shields/kite_shield_dd.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/shields/buckler3.png" data-source="crawl" data-path="item/armour/shields/buckler3.png" title="item/armour/shields/buckler3.png"></td>
+<td class="selected-cell" id="selected-🛡️🏛️">-</td>
+</tr>
+<tr data-key="💍">
+<td><code>💍</code></td>
+<td>💍</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="💍">💍</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/searing_ray4.png" data-source="crawl" data-path="effect/searing_ray4.png" title="effect/searing_ray4.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/searing_ray3.png" data-source="crawl" data-path="effect/searing_ray3.png" title="effect/searing_ray3.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/sundering0.png" data-source="crawl" data-path="effect/sundering0.png" title="effect/sundering0.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/percussive_tempering.png" data-source="crawl" data-path="effect/percussive_tempering.png" title="effect/percussive_tempering.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/searing_ray2.png" data-source="crawl" data-path="effect/searing_ray2.png" title="effect/searing_ray2.png"></td>
+<td class="selected-cell" id="selected-💍">-</td>
+</tr>
+<tr data-key="🥾">
+<td><code>🥾</code></td>
+<td>🥾</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🥾">🥾</span></td>
+<td class="suggestions"><img class="thumb" src="external/lpc-spritesheet/facial/male/bigstache/gold.png" data-source="lpc" data-path="facial/male/bigstache/gold.png" title="facial/male/bigstache/gold.png"> <img class="thumb" src="external/lpc-spritesheet/facial/male/fiveoclock/gold.png" data-source="lpc" data-path="facial/male/fiveoclock/gold.png" title="facial/male/fiveoclock/gold.png"> <img class="thumb" src="external/lpc-spritesheet/facial/male/beard/gold.png" data-source="lpc" data-path="facial/male/beard/gold.png" title="facial/male/beard/gold.png"> <img class="thumb" src="external/lpc-spritesheet/facial/male/frenchstache/gold.png" data-source="lpc" data-path="facial/male/frenchstache/gold.png" title="facial/male/frenchstache/gold.png"> <img class="thumb" src="external/lpc-spritesheet/facial/male/mustache/gold.png" data-source="lpc" data-path="facial/male/mustache/gold.png" title="facial/male/mustache/gold.png"></td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/cloud_gold_dust2.png" data-source="crawl" data-path="effect/cloud_gold_dust2.png" title="effect/cloud_gold_dust2.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/cloud_cold1.png" data-source="crawl" data-path="effect/cloud_cold1.png" title="effect/cloud_cold1.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/cloud_gold_dust1.png" data-source="crawl" data-path="effect/cloud_gold_dust1.png" title="effect/cloud_gold_dust1.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/geist_lash_boot.png" data-source="crawl" data-path="effect/geist_lash_boot.png" title="effect/geist_lash_boot.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/cloud_cold2.png" data-source="crawl" data-path="effect/cloud_cold2.png" title="effect/cloud_cold2.png"></td>
+<td class="selected-cell" id="selected-🥾">-</td>
+</tr>
+<tr data-key="🦯">
+<td><code>🦯</code></td>
+<td>🦯</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🦯">🦯</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/staff/i-staff_conjuration.png" data-source="crawl" data-path="item/staff/i-staff_conjuration.png" title="item/staff/i-staff_conjuration.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/staff/staff-artefact7.png" data-source="crawl" data-path="item/staff/staff-artefact7.png" title="item/staff/staff-artefact7.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/staff/i-staff_power.png" data-source="crawl" data-path="item/staff/i-staff_power.png" title="item/staff/i-staff_power.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/staff/i-staff_enchantment.png" data-source="crawl" data-path="item/staff/i-staff_enchantment.png" title="item/staff/i-staff_enchantment.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/staff/staff05.png" data-source="crawl" data-path="item/staff/staff05.png" title="item/staff/staff05.png"></td>
+<td class="selected-cell" id="selected-🦯">-</td>
+</tr>
+<tr data-key="🪗">
+<td><code>🪗</code></td>
+<td>🪗</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🪗">🪗</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🪗">-</td>
+</tr>
+<tr data-key="🏹">
+<td><code>🏹</code></td>
+<td>🏹</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🏹">🏹</span></td>
+<td class="suggestions"><img class="thumb" src="external/lpc-spritesheet/formal_male_no_th-sh/bowtie.png" data-source="lpc" data-path="formal_male_no_th-sh/bowtie.png" title="formal_male_no_th-sh/bowtie.png"> <img class="thumb" src="external/lpc-spritesheet/weapons/right hand/either/greatbow.png" data-source="lpc" data-path="weapons/right hand/either/greatbow.png" title="weapons/right hand/either/greatbow.png"> <img class="thumb" src="external/lpc-spritesheet/weapons/right hand/either/recurvebow.png" data-source="lpc" data-path="weapons/right hand/either/recurvebow.png" title="weapons/right hand/either/recurvebow.png"> <img class="thumb" src="external/lpc-spritesheet/weapons/right hand/either/bow.png" data-source="lpc" data-path="weapons/right hand/either/bow.png" title="weapons/right hand/either/bow.png"> <img class="thumb" src="external/lpc-spritesheet/weapons/right hand/either/bow_skeleton.png" data-source="lpc" data-path="weapons/right hand/either/bow_skeleton.png" title="weapons/right hand/either/bow_skeleton.png"></td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/weapon/ranged/orcbow2.png" data-source="crawl" data-path="item/weapon/ranged/orcbow2.png" title="item/weapon/ranged/orcbow2.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/weapon/ranged/crossbow_bolt1.png" data-source="crawl" data-path="item/weapon/ranged/crossbow_bolt1.png" title="item/weapon/ranged/crossbow_bolt1.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/weapon/ranged/longbow3.png" data-source="crawl" data-path="item/weapon/ranged/longbow3.png" title="item/weapon/ranged/longbow3.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/weapon/ranged/silver_crossbow_bolt2.png" data-source="crawl" data-path="item/weapon/ranged/silver_crossbow_bolt2.png" title="item/weapon/ranged/silver_crossbow_bolt2.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/weapon/ranged/silver_crossbow_bolt1.png" data-source="crawl" data-path="item/weapon/ranged/silver_crossbow_bolt1.png" title="item/weapon/ranged/silver_crossbow_bolt1.png"></td>
+<td class="selected-cell" id="selected-🏹">-</td>
+</tr>
+<tr data-key="➶">
+<td><code>➶</code></td>
+<td>➶</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="➶">➶</span></td>
+<td class="suggestions"><img class="thumb" src="external/lpc-spritesheet/weapons/left hand/either/arrow.png" data-source="lpc" data-path="weapons/left hand/either/arrow.png" title="weapons/left hand/either/arrow.png"> <img class="thumb" src="external/lpc-spritesheet/weapons/left hand/either/arrow_skeleton.png" data-source="lpc" data-path="weapons/left hand/either/arrow_skeleton.png" title="weapons/left hand/either/arrow_skeleton.png"></td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/stone_arrow7.png" data-source="crawl" data-path="effect/stone_arrow7.png" title="effect/stone_arrow7.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/blood_arrow2.png" data-source="crawl" data-path="effect/blood_arrow2.png" title="effect/blood_arrow2.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/stone_arrow0.png" data-source="crawl" data-path="effect/stone_arrow0.png" title="effect/stone_arrow0.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/arrow7.png" data-source="crawl" data-path="effect/arrow7.png" title="effect/arrow7.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/arrow2.png" data-source="crawl" data-path="effect/arrow2.png" title="effect/arrow2.png"></td>
+<td class="selected-cell" id="selected-➶">-</td>
+</tr>
+<tr data-key="🏺">
+<td><code>🏺</code></td>
+<td>🏺</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🏺">🏺</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/wand/gem_brass.png" data-source="crawl" data-path="item/wand/gem_brass.png" title="item/wand/gem_brass.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/misc/misc_bottle.png" data-source="crawl" data-path="item/misc/misc_bottle.png" title="item/misc/misc_bottle.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/amulet/brass.png" data-source="crawl" data-path="item/amulet/brass.png" title="item/amulet/brass.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/ring/brass.png" data-source="crawl" data-path="item/ring/brass.png" title="item/ring/brass.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/vaults/bottled_spirits.png" data-source="crawl" data-path="dngn/vaults/bottled_spirits.png" title="dngn/vaults/bottled_spirits.png"></td>
+<td class="selected-cell" id="selected-🏺">-</td>
+</tr>
+<tr data-key="🕯️">
+<td><code>🕯️</code></td>
+<td>🕯️</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🕯️">🕯️</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🕯️">-</td>
+</tr>
+<tr data-key="📃">
+<td><code>📃</code></td>
+<td>📃</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="📃">📃</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/scroll/i-identify.png" data-source="crawl" data-path="item/scroll/i-identify.png" title="item/scroll/i-identify.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/scroll/scroll-red.png" data-source="crawl" data-path="item/scroll/scroll-red.png" title="item/scroll/scroll-red.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/scroll/scroll-green.png" data-source="crawl" data-path="item/scroll/scroll-green.png" title="item/scroll/scroll-green.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/scroll/i-blinking.png" data-source="crawl" data-path="item/scroll/i-blinking.png" title="item/scroll/i-blinking.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/scroll/i-magic_mapping.png" data-source="crawl" data-path="item/scroll/i-magic_mapping.png" title="item/scroll/i-magic_mapping.png"></td>
+<td class="selected-cell" id="selected-📃">-</td>
+</tr>
+<tr data-key="🌀">
+<td><code>🌀</code></td>
+<td>🌀</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🌀">🌀</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/scroll/i-identify.png" data-source="crawl" data-path="item/scroll/i-identify.png" title="item/scroll/i-identify.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/scroll/scroll-red.png" data-source="crawl" data-path="item/scroll/scroll-red.png" title="item/scroll/scroll-red.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/scroll/scroll-green.png" data-source="crawl" data-path="item/scroll/scroll-green.png" title="item/scroll/scroll-green.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/scroll/i-blinking.png" data-source="crawl" data-path="item/scroll/i-blinking.png" title="item/scroll/i-blinking.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/scroll/i-magic_mapping.png" data-source="crawl" data-path="item/scroll/i-magic_mapping.png" title="item/scroll/i-magic_mapping.png"></td>
+<td class="selected-cell" id="selected-🌀">-</td>
+</tr>
+<tr data-key="⛏️">
+<td><code>⛏️</code></td>
+<td>⛏️</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="⛏️">⛏️</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/scroll/i-identify.png" data-source="crawl" data-path="item/scroll/i-identify.png" title="item/scroll/i-identify.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/scroll/scroll-red.png" data-source="crawl" data-path="item/scroll/scroll-red.png" title="item/scroll/scroll-red.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/scroll/scroll-green.png" data-source="crawl" data-path="item/scroll/scroll-green.png" title="item/scroll/scroll-green.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/scroll/i-blinking.png" data-source="crawl" data-path="item/scroll/i-blinking.png" title="item/scroll/i-blinking.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/scroll/i-magic_mapping.png" data-source="crawl" data-path="item/scroll/i-magic_mapping.png" title="item/scroll/i-magic_mapping.png"></td>
+<td class="selected-cell" id="selected-⛏️">-</td>
+</tr>
+<tr data-key="🔥📘">
+<td><code>🔥📘</code></td>
+<td>🔥📘</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🔥📘">🔥📘</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/book/pink.png" data-source="crawl" data-path="item/book/pink.png" title="item/book/pink.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/book/gold.png" data-source="crawl" data-path="item/book/gold.png" title="item/book/gold.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/book/dark_gray.png" data-source="crawl" data-path="item/book/dark_gray.png" title="item/book/dark_gray.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/book/silver.png" data-source="crawl" data-path="item/book/silver.png" title="item/book/silver.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/book/yellow.png" data-source="crawl" data-path="item/book/yellow.png" title="item/book/yellow.png"></td>
+<td class="selected-cell" id="selected-🔥📘">-</td>
+</tr>
+<tr data-key="🕯️💨">
+<td><code>🕯️💨</code></td>
+<td>🕯️💨</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🕯️💨">🕯️💨</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🕯️💨">-</td>
+</tr>
+<tr data-key="🐀💦">
+<td><code>🐀💦</code></td>
+<td>🐀💦</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🐀💦">🐀💦</span></td>
+<td class="suggestions"><img class="thumb" src="external/lpc-spritesheet/_build/hair/ponytail2/w.png" data-source="lpc" data-path="_build/hair/ponytail2/w.png" title="_build/hair/ponytail2/w.png"> <img class="thumb" src="external/lpc-spritesheet/_build/hair/ponytail2/bg-e.png" data-source="lpc" data-path="_build/hair/ponytail2/bg-e.png" title="_build/hair/ponytail2/bg-e.png"> <img class="thumb" src="external/lpc-spritesheet/_build/hair/ponytail2/s-hurt2.png" data-source="lpc" data-path="_build/hair/ponytail2/s-hurt2.png" title="_build/hair/ponytail2/s-hurt2.png"> <img class="thumb" src="external/lpc-spritesheet/_build/hair/ponytail2/s-hurt1.png" data-source="lpc" data-path="_build/hair/ponytail2/s-hurt1.png" title="_build/hair/ponytail2/s-hurt1.png"> <img class="thumb" src="external/lpc-spritesheet/_build/hair/ponytail2/n.png" data-source="lpc" data-path="_build/hair/ponytail2/n.png" title="_build/hair/ponytail2/n.png"></td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/dngn/grate.png" data-source="crawl" data-path="dngn/grate.png" title="dngn/grate.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/cloud_degeneration.png" data-source="crawl" data-path="effect/cloud_degeneration.png" title="effect/cloud_degeneration.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/misc/mdam_moderately_damaged.png" data-source="crawl" data-path="misc/mdam_moderately_damaged.png" title="misc/mdam_moderately_damaged.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/staff/i-staff_conjuration.png" data-source="crawl" data-path="item/staff/i-staff_conjuration.png" title="item/staff/i-staff_conjuration.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/food/bread_ration.png" data-source="crawl" data-path="item/food/bread_ration.png" title="item/food/bread_ration.png"></td>
+<td class="selected-cell" id="selected-🐀💦">-</td>
+</tr>
+<tr data-key="💳">
+<td><code>💳</code></td>
+<td>💳</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="💳">💳</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/weapon/club2.png" data-source="crawl" data-path="item/weapon/club2.png" title="item/weapon/club2.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/weapon/giant_club3.png" data-source="crawl" data-path="item/weapon/giant_club3.png" title="item/weapon/giant_club3.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/weapon/club.png" data-source="crawl" data-path="item/weapon/club.png" title="item/weapon/club.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/weapon/giant_club2.png" data-source="crawl" data-path="item/weapon/giant_club2.png" title="item/weapon/giant_club2.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/weapon/giant_spiked_club.png" data-source="crawl" data-path="item/weapon/giant_spiked_club.png" title="item/weapon/giant_spiked_club.png"></td>
+<td class="selected-cell" id="selected-💳">-</td>
+</tr>
+<tr data-key="💍⚡">
+<td><code>💍⚡</code></td>
+<td>💍⚡</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="💍⚡">💍⚡</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/searing_ray4.png" data-source="crawl" data-path="effect/searing_ray4.png" title="effect/searing_ray4.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/searing_ray3.png" data-source="crawl" data-path="effect/searing_ray3.png" title="effect/searing_ray3.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/sundering0.png" data-source="crawl" data-path="effect/sundering0.png" title="effect/sundering0.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/percussive_tempering.png" data-source="crawl" data-path="effect/percussive_tempering.png" title="effect/percussive_tempering.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/searing_ray2.png" data-source="crawl" data-path="effect/searing_ray2.png" title="effect/searing_ray2.png"></td>
+<td class="selected-cell" id="selected-💍⚡">-</td>
+</tr>
+<tr data-key="🧪💎">
+<td><code>🧪💎</code></td>
+<td>🧪💎</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🧪💎">🧪💎</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/potion_petition4.png" data-source="crawl" data-path="effect/potion_petition4.png" title="effect/potion_petition4.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/alembic_potion4.png" data-source="crawl" data-path="effect/alembic_potion4.png" title="effect/alembic_potion4.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/alembic_potion2.png" data-source="crawl" data-path="effect/alembic_potion2.png" title="effect/alembic_potion2.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/potion_petition2.png" data-source="crawl" data-path="effect/potion_petition2.png" title="effect/potion_petition2.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/potion_petition0.png" data-source="crawl" data-path="effect/potion_petition0.png" title="effect/potion_petition0.png"></td>
+<td class="selected-cell" id="selected-🧪💎">-</td>
+</tr>
+<tr data-key="🫖">
+<td><code>🫖</code></td>
+<td>🫖</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🫖">🫖</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/cloud_magic_trail0.png" data-source="crawl" data-path="effect/cloud_magic_trail0.png" title="effect/cloud_magic_trail0.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/cloud_magic_trail2.png" data-source="crawl" data-path="effect/cloud_magic_trail2.png" title="effect/cloud_magic_trail2.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/magic_dart4.png" data-source="crawl" data-path="effect/magic_dart4.png" title="effect/magic_dart4.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/magic_dart2.png" data-source="crawl" data-path="effect/magic_dart2.png" title="effect/magic_dart2.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/effect/cloud_magic_trail1.png" data-source="crawl" data-path="effect/cloud_magic_trail1.png" title="effect/cloud_magic_trail1.png"></td>
+<td class="selected-cell" id="selected-🫖">-</td>
+</tr>
+<tr data-key="📚🔥">
+<td><code>📚🔥</code></td>
+<td>📚🔥</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="📚🔥">📚🔥</span></td>
+<td class="suggestions"><img class="thumb" src="external/lpc-spritesheet/torso/chain/mail_male.png" data-source="lpc" data-path="torso/chain/mail_male.png" title="torso/chain/mail_male.png"> <img class="thumb" src="external/lpc-spritesheet/torso/chain/mail_female.png" data-source="lpc" data-path="torso/chain/mail_female.png" title="torso/chain/mail_female.png"> <img class="thumb" src="external/lpc-spritesheet/torso/chain/tabard/jacket_male.png" data-source="lpc" data-path="torso/chain/tabard/jacket_male.png" title="torso/chain/tabard/jacket_male.png"> <img class="thumb" src="external/lpc-spritesheet/torso/chain/tabard/jacket_female.png" data-source="lpc" data-path="torso/chain/tabard/jacket_female.png" title="torso/chain/tabard/jacket_female.png"> <img class="thumb" src="external/lpc-spritesheet/head/hoods/female/chain_hood_female.png" data-source="lpc" data-path="head/hoods/female/chain_hood_female.png" title="head/hoods/female/chain_hood_female.png"></td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/wand/i-lightning.png" data-source="crawl" data-path="item/wand/i-lightning.png" title="item/wand/i-lightning.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/misc/misc_lightning_rod.png" data-source="crawl" data-path="item/misc/misc_lightning_rod.png" title="item/misc/misc_lightning_rod.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/misc/misc_lightning_rod_inert.png" data-source="crawl" data-path="item/misc/misc_lightning_rod_inert.png" title="item/misc/misc_lightning_rod_inert.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/chain_mail2.png" data-source="crawl" data-path="item/armour/chain_mail2.png" title="item/armour/chain_mail2.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/chain_mail3.png" data-source="crawl" data-path="item/armour/chain_mail3.png" title="item/armour/chain_mail3.png"></td>
+<td class="selected-cell" id="selected-📚🔥">-</td>
+</tr>
+<tr data-key="🪄">
+<td><code>🪄</code></td>
+<td>🪄</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🪄">🪄</span></td>
+<td class="suggestions"><img class="thumb" src="external/lpc-spritesheet/weapons/right hand/female/steelwand_female.png" data-source="lpc" data-path="weapons/right hand/female/steelwand_female.png" title="weapons/right hand/female/steelwand_female.png"> <img class="thumb" src="external/lpc-spritesheet/weapons/right hand/female/woodwand_female.png" data-source="lpc" data-path="weapons/right hand/female/woodwand_female.png" title="weapons/right hand/female/woodwand_female.png"> <img class="thumb" src="external/lpc-spritesheet/weapons/right hand/male/woodwand_male.png" data-source="lpc" data-path="weapons/right hand/male/woodwand_male.png" title="weapons/right hand/male/woodwand_male.png"></td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/wand/i-quicksilver.png" data-source="crawl" data-path="item/wand/i-quicksilver.png" title="item/wand/i-quicksilver.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/wand/i-clouds.png" data-source="crawl" data-path="item/wand/i-clouds.png" title="item/wand/i-clouds.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/wand/gem_lead.png" data-source="crawl" data-path="item/wand/gem_lead.png" title="item/wand/gem_lead.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/wand/i-charming.png" data-source="crawl" data-path="item/wand/i-charming.png" title="item/wand/i-charming.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/wand/i-scattershot.png" data-source="crawl" data-path="item/wand/i-scattershot.png" title="item/wand/i-scattershot.png"></td>
+<td class="selected-cell" id="selected-🪄">-</td>
+</tr>
+<tr data-key="🦯✨">
+<td><code>🦯✨</code></td>
+<td>🦯✨</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🦯✨">🦯✨</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/staff/i-staff_conjuration.png" data-source="crawl" data-path="item/staff/i-staff_conjuration.png" title="item/staff/i-staff_conjuration.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/staff/staff-artefact7.png" data-source="crawl" data-path="item/staff/staff-artefact7.png" title="item/staff/staff-artefact7.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/staff/i-staff_power.png" data-source="crawl" data-path="item/staff/i-staff_power.png" title="item/staff/i-staff_power.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/staff/i-staff_enchantment.png" data-source="crawl" data-path="item/staff/i-staff_enchantment.png" title="item/staff/i-staff_enchantment.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/staff/staff05.png" data-source="crawl" data-path="item/staff/staff05.png" title="item/staff/staff05.png"></td>
+<td class="selected-cell" id="selected-🦯✨">-</td>
+</tr>
+<tr data-key="👑🌿">
+<td><code>👑🌿</code></td>
+<td>👑🌿</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="👑🌿">👑🌿</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/artefact/urand_crown_of_vainglory.png" data-source="crawl" data-path="item/armour/artefact/urand_crown_of_vainglory.png" title="item/armour/artefact/urand_crown_of_vainglory.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/player/head/crown_gold1.png" data-source="crawl" data-path="player/head/crown_gold1.png" title="player/head/crown_gold1.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/player/head/crown_gold3.png" data-source="crawl" data-path="player/head/crown_gold3.png" title="player/head/crown_gold3.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/player/head/crown_gold2.png" data-source="crawl" data-path="player/head/crown_gold2.png" title="player/head/crown_gold2.png"></td>
+<td class="selected-cell" id="selected-👑🌿">-</td>
+</tr>
+<tr data-key="🗡️✨">
+<td><code>🗡️✨</code></td>
+<td>🗡️✨</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🗡️✨">🗡️✨</span></td>
+<td class="suggestions"><img class="thumb" src="external/lpc-spritesheet/weapons/oversize/right hand/female/longsword_female.png" data-source="lpc" data-path="weapons/oversize/right hand/female/longsword_female.png" title="weapons/oversize/right hand/female/longsword_female.png"> <img class="thumb" src="external/lpc-spritesheet/weapons/oversize/right hand/male/longsword_male.png" data-source="lpc" data-path="weapons/oversize/right hand/male/longsword_male.png" title="weapons/oversize/right hand/male/longsword_male.png"></td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/weapon/double_sword.png" data-source="crawl" data-path="item/weapon/double_sword.png" title="item/weapon/double_sword.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/weapon/triple_sword.png" data-source="crawl" data-path="item/weapon/triple_sword.png" title="item/weapon/triple_sword.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/weapon/short_sword3.png" data-source="crawl" data-path="item/weapon/short_sword3.png" title="item/weapon/short_sword3.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/weapon/triple_sword3.png" data-source="crawl" data-path="item/weapon/triple_sword3.png" title="item/weapon/triple_sword3.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/weapon/greatsword1.png" data-source="crawl" data-path="item/weapon/greatsword1.png" title="item/weapon/greatsword1.png"></td>
+<td class="selected-cell" id="selected-🗡️✨">-</td>
+</tr>
+<tr data-key="🛡️🌟">
+<td><code>🛡️🌟</code></td>
+<td>🛡️🌟</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🛡️🌟">🛡️🌟</span></td>
+<td class="suggestions"><img class="thumb" src="external/lpc-spritesheet/weapons/left hand/male/shield_male_cutoutforbody.png" data-source="lpc" data-path="weapons/left hand/male/shield_male_cutoutforbody.png" title="weapons/left hand/male/shield_male_cutoutforbody.png"> <img class="thumb" src="external/lpc-spritesheet/weapons/left hand/male/shield_male_cutoutforhat.png" data-source="lpc" data-path="weapons/left hand/male/shield_male_cutoutforhat.png" title="weapons/left hand/male/shield_male_cutoutforhat.png"></td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/amulet/artefact/urand_brooch_of_shielding.png" data-source="crawl" data-path="item/amulet/artefact/urand_brooch_of_shielding.png" title="item/amulet/artefact/urand_brooch_of_shielding.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/shields/tower_shield2.png" data-source="crawl" data-path="item/armour/shields/tower_shield2.png" title="item/armour/shields/tower_shield2.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/shields/kite_shield_donald.png" data-source="crawl" data-path="item/armour/shields/kite_shield_donald.png" title="item/armour/shields/kite_shield_donald.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/shields/kite_shield_dd.png" data-source="crawl" data-path="item/armour/shields/kite_shield_dd.png" title="item/armour/shields/kite_shield_dd.png"> <img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/armour/shields/buckler3.png" data-source="crawl" data-path="item/armour/shields/buckler3.png" title="item/armour/shields/buckler3.png"></td>
+<td class="selected-cell" id="selected-🛡️🌟">-</td>
+</tr>
+<tr data-key="🍕">
+<td><code>🍕</code></td>
+<td>🍕</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🍕">🍕</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions"><img class="thumb" src="external/crawl/crawl-ref/source/rltiles/item/food/pizza.png" data-source="crawl" data-path="item/food/pizza.png" title="item/food/pizza.png"></td>
+<td class="selected-cell" id="selected-🍕">-</td>
+</tr>
+<tr data-key="🎒">
+<td><code>🎒</code></td>
+<td>🎒</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🎒">🎒</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🎒">-</td>
+</tr>
+<tr data-key="👜">
+<td><code>👜</code></td>
+<td>👜</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="👜">👜</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-👜">-</td>
+</tr>
+<tr data-key="🛍️">
+<td><code>🛍️</code></td>
+<td>🛍️</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🛍️">🛍️</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🛍️">-</td>
+</tr>
+<tr data-key="📦">
+<td><code>📦</code></td>
+<td>📦</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="📦">📦</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-📦">-</td>
+</tr>
+<tr data-key="🫙">
+<td><code>🫙</code></td>
+<td>🫙</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🫙">🫙</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🫙">-</td>
+</tr>
+<tr data-key="🧳">
+<td><code>🧳</code></td>
+<td>🧳</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🧳">🧳</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🧳">-</td>
+</tr>
+<tr data-key="💼">
+<td><code>💼</code></td>
+<td>💼</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="💼">💼</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-💼">-</td>
+</tr>
+<tr data-key="🧰">
+<td><code>🧰</code></td>
+<td>🧰</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🧰">🧰</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🧰">-</td>
+</tr>
+<tr data-key="👝">
+<td><code>👝</code></td>
+<td>👝</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="👝">👝</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-👝">-</td>
+</tr>
+<tr data-key="🎒🔥">
+<td><code>🎒🔥</code></td>
+<td>🎒🔥</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🎒🔥">🎒🔥</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🎒🔥">-</td>
+</tr>
+<tr data-key="🧳✨">
+<td><code>🧳✨</code></td>
+<td>🧳✨</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🧳✨">🧳✨</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🧳✨">-</td>
+</tr>
+<tr data-key="💼🌟">
+<td><code>💼🌟</code></td>
+<td>💼🌟</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="💼🌟">💼🌟</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-💼🌟">-</td>
+</tr>
+<tr data-key="🎒💫">
+<td><code>🎒💫</code></td>
+<td>🎒💫</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🎒💫">🎒💫</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🎒💫">-</td>
+</tr>
+<tr data-key="🎒🌈">
+<td><code>🎒🌈</code></td>
+<td>🎒🌈</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🎒🌈">🎒🌈</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🎒🌈">-</td>
+</tr>
+<tr data-key="🎽">
+<td><code>🎽</code></td>
+<td>🎽</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🎽">🎽</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🎽">-</td>
+</tr>
+<tr data-key="𩲩">
+<td><code>𩲩</code></td>
+<td>𩲩</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="𩲩">𩲩</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-𩲩">-</td>
+</tr>
+<tr data-key="🩴">
+<td><code>🩴</code></td>
+<td>🩴</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🩴">🩴</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🩴">-</td>
+</tr>
+<tr data-key="🦴">
+<td><code>🦴</code></td>
+<td>🦴</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🦴">🦴</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🦴">-</td>
+</tr>
+<tr data-key="💩">
+<td><code>💩</code></td>
+<td>💩</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="💩">💩</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-💩">-</td>
+</tr>
+<tr data-key="📎">
+<td><code>📎</code></td>
+<td>📎</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="📎">📎</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-📎">-</td>
+</tr>
+<tr data-key="🧶">
+<td><code>🧶</code></td>
+<td>🧶</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🧶">🧶</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🧶">-</td>
+</tr>
+<tr data-key="🧀">
+<td><code>🧀</code></td>
+<td>🧀</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🧀">🧀</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🧀">-</td>
+</tr>
+<tr data-key="📋">
+<td><code>📋</code></td>
+<td>📋</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="📋">📋</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-📋">-</td>
+</tr>
+<tr data-key="🦗">
+<td><code>🦗</code></td>
+<td>🦗</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🦗">🦗</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🦗">-</td>
+</tr>
+<tr data-key="🧵">
+<td><code>🧵</code></td>
+<td>🧵</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🧵">🧵</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🧵">-</td>
+</tr>
+<tr data-key="📰">
+<td><code>📰</code></td>
+<td>📰</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="📰">📰</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-📰">-</td>
+</tr>
+<tr data-key="🧤">
+<td><code>🧤</code></td>
+<td>🧤</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🧤">🧤</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🧤">-</td>
+</tr>
+<tr data-key="🧱">
+<td><code>🧱</code></td>
+<td>🧱</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🧱">🧱</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🧱">-</td>
+</tr>
+<tr data-key="🧼">
+<td><code>🧼</code></td>
+<td>🧼</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🧼">🧼</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🧼">-</td>
+</tr>
+<tr data-key="🐟">
+<td><code>🐟</code></td>
+<td>🐟</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🐟">🐟</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🐟">-</td>
+</tr>
+<tr data-key="🦷">
+<td><code>🦷</code></td>
+<td>🦷</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🦷">🦷</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🦷">-</td>
+</tr>
+<tr data-key="🍗">
+<td><code>🍗</code></td>
+<td>🍗</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🍗">🍗</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🍗">-</td>
+</tr>
+<tr data-key="👔🦈">
+<td><code>👔🦈</code></td>
+<td>👔🦈</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="👔🦈">👔🦈</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-👔🦈">-</td>
+</tr>
+<tr data-key="🗝️">
+<td><code>🗝️</code></td>
+<td>🗝️</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🗝️">🗝️</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🗝️">-</td>
+</tr>
+<tr data-key="🥤">
+<td><code>🥤</code></td>
+<td>🥤</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🥤">🥤</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🥤">-</td>
+</tr>
+<tr data-key="🥃">
+<td><code>🥃</code></td>
+<td>🥃</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🥃">🥃</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🥃">-</td>
+</tr>
+<tr data-key="🍺">
+<td><code>🍺</code></td>
+<td>🍺</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🍺">🍺</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🍺">-</td>
+</tr>
+<tr data-key="🍛">
+<td><code>🍛</code></td>
+<td>🍛</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🍛">🍛</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🍛">-</td>
+</tr>
+<tr data-key="🍖">
+<td><code>🍖</code></td>
+<td>🍖</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🍖">🍖</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🍖">-</td>
+</tr>
+<tr data-key="⚡📘">
+<td><code>⚡📘</code></td>
+<td>⚡📘</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="⚡📘">⚡📘</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-⚡📘">-</td>
+</tr>
+<tr data-key="❄️📘">
+<td><code>❄️📘</code></td>
+<td>❄️📘</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="❄️📘">❄️📘</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-❄️📘">-</td>
+</tr>
+<tr data-key="💪📘">
+<td><code>💪📘</code></td>
+<td>💪📘</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="💪📘">💪📘</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-💪📘">-</td>
+</tr>
+<tr data-key="🛡️📘">
+<td><code>🛡️📘</code></td>
+<td>🛡️📘</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🛡️📘">🛡️📘</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🛡️📘">-</td>
+</tr>
+<tr data-key="💖📘">
+<td><code>💖📘</code></td>
+<td>💖📘</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="💖📘">💖📘</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-💖📘">-</td>
+</tr>
+<tr data-key="👟📘">
+<td><code>👟📘</code></td>
+<td>👟📘</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="👟📘">👟📘</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-👟📘">-</td>
+</tr>
+<tr data-key="💇">
+<td><code>💇</code></td>
+<td>💇</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="💇">💇</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-💇">-</td>
+</tr>
+<tr data-key="🪨">
+<td><code>🪨</code></td>
+<td>🪨</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🪨">🪨</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🪨">-</td>
+</tr>
+<tr data-key="🧿">
+<td><code>🧿</code></td>
+<td>🧿</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🧿">🧿</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🧿">-</td>
+</tr>
+<tr data-key="🦷💀">
+<td><code>🦷💀</code></td>
+<td>🦷💀</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🦷💀">🦷💀</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🦷💀">-</td>
+</tr>
+<tr data-key="🧲">
+<td><code>🧲</code></td>
+<td>🧲</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🧲">🧲</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🧲">-</td>
+</tr>
+<tr data-key="🟠">
+<td><code>🟠</code></td>
+<td>🟠</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🟠">🟠</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🟠">-</td>
+</tr>
+<tr data-key="🫧">
+<td><code>🫧</code></td>
+<td>🫧</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🫧">🫧</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🫧">-</td>
+</tr>
+<tr data-key="🪶">
+<td><code>🪶</code></td>
+<td>🪶</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🪶">🪶</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🪶">-</td>
+</tr>
+<tr data-key="🔘">
+<td><code>🔘</code></td>
+<td>🔘</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🔘">🔘</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🔘">-</td>
+</tr>
+<tr data-key="🪡">
+<td><code>🪡</code></td>
+<td>🪡</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🪡">🪡</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🪡">-</td>
+</tr>
+<tr data-key="🫘">
+<td><code>🫘</code></td>
+<td>🫘</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🫘">🫘</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🫘">-</td>
+</tr>
+<tr data-key="🌫️">
+<td><code>🌫️</code></td>
+<td>🌫️</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🌫️">🌫️</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🌫️">-</td>
+</tr>
+<tr data-key="📜">
+<td><code>📜</code></td>
+<td>📜</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="📜">📜</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-📜">-</td>
+</tr>
+<tr data-key="🏴‍☠️">
+<td><code>🏴‍☠️</code></td>
+<td>🏴‍☠️</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🏴‍☠️">🏴‍☠️</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🏴‍☠️">-</td>
+</tr>
+<tr data-key="⛵">
+<td><code>⛵</code></td>
+<td>⛵</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="⛵">⛵</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-⛵">-</td>
+</tr>
+<tr data-key="🍝">
+<td><code>🍝</code></td>
+<td>🍝</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🍝">🍝</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🍝">-</td>
+</tr>
+<tr data-key="🧢">
+<td><code>🧢</code></td>
+<td>🧢</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🧢">🧢</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🧢">-</td>
+</tr>
+<tr data-key="🌊">
+<td><code>🌊</code></td>
+<td>🌊</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🌊">🌊</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🌊">-</td>
+</tr>
+<tr data-key="⚓">
+<td><code>⚓</code></td>
+<td>⚓</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="⚓">⚓</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-⚓">-</td>
+</tr>
+<tr data-key="🦜">
+<td><code>🦜</code></td>
+<td>🦜</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🦜">🦜</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🦜">-</td>
+</tr>
+<tr data-key="🍜">
+<td><code>🍜</code></td>
+<td>🍜</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="🍜">🍜</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-🍜">-</td>
+</tr>
+<tr data-key="👑">
+<td><code>👑</code></td>
+<td>👑</td>
+<td class="suggestions"><span class="thumb emoji" style="font-size: 24px; cursor: pointer; border: 2px solid transparent; padding: 2px;" data-source="emoji" data-path="👑">👑</span></td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-👑">-</td>
+</tr>
+</tbody></table></div>
+<div class="category"><h2>Warrior_Sheets</h2>
+<table><thead><tr><th>Asset Key</th><th>Name</th><th>Current</th><th>LPC Suggestions</th><th>DCSS Suggestions</th><th>Selected</th></tr></thead><tbody>
+<tr data-key="warrior_walk">
+<td><code>warrior_walk</code></td>
+<td>Warrior Walk</td>
+<td>?</td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-warrior_walk">-</td>
+</tr>
+<tr data-key="warrior_run">
+<td><code>warrior_run</code></td>
+<td>Warrior Run</td>
+<td>?</td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-warrior_run">-</td>
+</tr>
+<tr data-key="warrior_sleep">
+<td><code>warrior_sleep</code></td>
+<td>Warrior Sleep</td>
+<td>?</td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-warrior_sleep">-</td>
+</tr>
+<tr data-key="warrior_fight">
+<td><code>warrior_fight</code></td>
+<td>Warrior Fight</td>
+<td>?</td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-warrior_fight">-</td>
+</tr>
+</tbody></table></div>
+<div class="category"><h2>Heads</h2>
+<table><thead><tr><th>Asset Key</th><th>Name</th><th>Current</th><th>LPC Suggestions</th><th>DCSS Suggestions</th><th>Selected</th></tr></thead><tbody>
+<tr data-key="npc_apu">
+<td><code>npc_apu</code></td>
+<td>Apu</td>
+<td>?</td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-npc_apu">-</td>
+</tr>
+<tr data-key="npc_wizard">
+<td><code>npc_wizard</code></td>
+<td>Wizard</td>
+<td>?</td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-npc_wizard">-</td>
+</tr>
+<tr data-key="npc_chaplain">
+<td><code>npc_chaplain</code></td>
+<td>Chaplain</td>
+<td>?</td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-npc_chaplain">-</td>
+</tr>
+</tbody></table></div>
+<div class="category"><h2>Backgrounds</h2>
+<table><thead><tr><th>Asset Key</th><th>Name</th><th>Current</th><th>LPC Suggestions</th><th>DCSS Suggestions</th><th>Selected</th></tr></thead><tbody>
+<tr data-key="bg_eagle_s_crag">
+<td><code>bg_eagle_s_crag</code></td>
+<td>Eagle's Crag</td>
+<td>?</td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-bg_eagle_s_crag">-</td>
+</tr>
+<tr data-key="bg_hall_of_champions">
+<td><code>bg_hall_of_champions</code></td>
+<td>Hall of Champions</td>
+<td>?</td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-bg_hall_of_champions">-</td>
+</tr>
+<tr data-key="bg_roc_nest">
+<td><code>bg_roc_nest</code></td>
+<td>Roc Nest</td>
+<td>?</td>
+<td class="suggestions">none</td>
+<td class="suggestions">none</td>
+<td class="selected-cell" id="selected-bg_roc_nest">-</td>
+</tr>
+</tbody></table></div>
+<hr><button id="generate">Generate Mapping JSON</button>
+<pre id="output" style="background: #eee; padding: 10px; max-height: 300px; overflow: auto;"></pre>
+<script>
+const selections = {};
+function handleThumbClick(element) {
+  const row = element.closest("tr");
+  const key = row.dataset.key;
+  selections[key] = {
+    source: element.dataset.source,
+    path: element.dataset.path
+  };
+  // Update selected cell
+  const selectedCell = row.querySelector(".selected-cell");
+  if (element.dataset.source === "emoji") {
+    selectedCell.textContent = element.textContent + " (emoji)";
+  } else if (element.dataset.source === "color") {
+    selectedCell.textContent = element.dataset.path + " (color)";
+  } else {
+    selectedCell.textContent = element.dataset.path;
+  }
+  // Visual feedback
+  row.querySelectorAll(".thumb").forEach(i => i.style.borderColor = "transparent");
+  element.style.borderColor = "blue";
+}
+document.querySelectorAll(".thumb").forEach(el => {
+  el.addEventListener("click", function() {
+    handleThumbClick(this);
+  });
+});
+document.getElementById("generate").addEventListener("click", () => {
+  const output = JSON.stringify(selections, null, 2);
+  document.getElementById("output").textContent = output;
+});
+</script>
+</body></html>

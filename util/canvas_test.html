@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>Canvas Test</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#0a0a0f}
+canvas{display:block;width:100vw;height:100vh;border:2px solid red}
+#info{position:fixed;top:10px;left:10px;color:#fff;font:14px monospace;background:#000;padding:10px;z-index:999}
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<div id="info">Testing...</div>
+<script type="module">
+const info = document.getElementById('info');
+const canvas = document.getElementById('canvas');
+
+// Wait for layout
+await new Promise(r => requestAnimationFrame(r));
+await new Promise(r => setTimeout(r, 200));
+
+const dpr = window.devicePixelRatio || 1;
+const w = window.innerWidth;
+const h = window.innerHeight;
+
+canvas.width = Math.floor(w * dpr);
+canvas.height = Math.floor(h * dpr);
+
+info.textContent = `Window: ${w}x${h}\nDPR: ${dpr}\nCanvas: ${canvas.width}x${canvas.height}\nCSS: ${canvas.clientWidth}x${canvas.clientHeight}`;
+
+// Draw a red rectangle to verify
+const ctx = canvas.getContext('2d');
+ctx.fillStyle = '#00ff00';
+ctx.fillRect(0, 0, canvas.width, canvas.height);
+ctx.fillStyle = '#000';
+ctx.font = '48px monospace';
+ctx.fillText('CANVAS TEST', 50, 100);
+</script>
+</body>
+</html>

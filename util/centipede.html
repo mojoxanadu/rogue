@@ -1,0 +1,697 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Centipede Canvas Game - Timestep & Pathing Update</title>
+    <style>
+        body {
+            background-color: #111;
+            color: #fff;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        #game-container {
+            position: relative;
+            width: 480px;
+            height: 600px;
+            background-color: #000;
+            border: 2px solid #444;
+        }
+        canvas {
+            display: block;
+        }
+        .overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            z-index: 10;
+        }
+        .hidden {
+            display: none !important;
+        }
+        h1 { color: #ff00ff; margin-bottom: 10px; }
+        p { margin: 5px 0; font-size: 14px; color: #aaa; }
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 18px;
+            font-family: inherit;
+            background-color: #0f0;
+            color: #000;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover { background-color: #0a0; }
+        #hud {
+            position: absolute;
+            top: 5px; left: 10px; width: 460px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 16px;
+            font-weight: bold;
+            color: red;
+            pointer-events: none;
+        }
+        .floating-score {
+            position: absolute;
+            color: yellow;
+            font-weight: bold;
+            font-size: 14px;
+            pointer-events: none;
+            animation: floatUp 1s ease-out forwards;
+        }
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-20px); }
+        }
+    </style>
+    
+    <script>
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            var errDiv = document.createElement('div');
+            errDiv.style.position = 'absolute';
+            errDiv.style.top = '10px'; errDiv.style.left = '10px';
+            errDiv.style.color = '#fff'; errDiv.style.backgroundColor = 'red';
+            errDiv.style.padding = '15px'; errDiv.style.zIndex = '99999';
+            errDiv.style.fontFamily = 'monospace'; errDiv.style.fontWeight = 'bold';
+            errDiv.style.border = '3px solid white'; errDiv.style.maxWidth = '90%';
+            errDiv.innerHTML = "CRITICAL JAVASCRIPT ERROR:<br><br>" + msg + "<br><br>Line: " + lineNo + " | Column: " + columnNo;
+            document.body.appendChild(errDiv);
+            return false;
+        };
+    </script>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="hud">
+        <span id="score-display">SCORE: 0</span>
+        <span id="wave-display">WAVE: 1</span>
+        <span id="lives-display">LIVES: 3</span>
+    </div>
+    <canvas id="gameCanvas" width="480" height="600"></canvas>
+    
+    <div id="start-screen" class="overlay">
+        <h1>CENTIPEDE</h1>
+        <p>W/A/S/D or Arrows to Move</p>
+        <p>SPACE to Fire | P to Pause</p>
+        <button id="start-btn">Start Game</button>
+    </div>
+
+    <div id="pause-screen" class="overlay hidden">
+        <h1>PAUSED</h1>
+        <p>Press 'R' to Resume</p>
+    </div>
+
+    <div id="game-over-screen" class="overlay hidden">
+        <h1>GAME OVER</h1>
+        <p id="final-score">Score: 0</p>
+        <button id="restart-btn">Play Again</button>
+    </div>
+</div>
+
+<script>
+/** * AUDIO SYNTHESIS ENGINE */
+const AudioEngine = {
+    ctx: null,
+    tempoInterval: null,
+    tempoSpeed: 600,
+    tempoTick: true,
+    init() {
+        if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+    },
+    playTone(freq, type, duration, vol = 0.1) {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+        gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        osc.start(); osc.stop(this.ctx.currentTime + duration);
+    },
+    shoot() { this.playTone(800, 'square', 0.1, 0.05); },
+    hit() { this.playTone(150, 'sawtooth', 0.15, 0.1); },
+    spider() { this.playTone(300, 'triangle', 0.05, 0.05); },
+    extraLife() {
+        if(!this.ctx) return;
+        const now = this.ctx.currentTime;
+        [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.frequency.value = freq; osc.type = 'square';
+            gain.gain.value = 0.1;
+            osc.connect(gain); gain.connect(this.ctx.destination);
+            osc.start(now + i * 0.1); osc.stop(now + i * 0.1 + 0.1);
+        });
+    },
+    startTempo() {
+        this.stopTempo();
+        this.tempoSpeed = 600;
+        this.tickTempo();
+    },
+    stopTempo() {
+        if(this.tempoInterval) clearTimeout(this.tempoInterval);
+    },
+    tickTempo() {
+        if (!this.ctx) return;
+        this.playTone(this.tempoTick ? 120 : 100, 'triangle', 0.1, 0.1);
+        this.tempoTick = !this.tempoTick;
+        this.tempoInterval = setTimeout(() => this.tickTempo(), this.tempoSpeed);
+    },
+    increaseTempo() {
+        this.tempoSpeed = Math.max(150, this.tempoSpeed - 20);
+    }
+};
+
+/** * GAME ENGINE & LOGIC */
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const gameContainer = document.getElementById('game-container');
+
+// Constants
+const GRID = 20;
+const COLS = canvas.width / GRID;
+const ROWS = canvas.height / GRID;
+const PLAYER_ZONE_Y = ROWS - 6; 
+
+// Strict Unicode Emojis
+const E_MUSHROOM = '\u{1F344}';
+const E_POISON = '\u{1F344}\u{200D}\u{1F7EB}';
+const E_PLAYER = '\u{1F5FC}'; 
+const E_SPIDER = '\u{1F577}\u{FE0F}';
+const E_FLEA = '\u{1FAB2}';
+const E_SCORPION = '\u{1F982}';
+const E_C_HEAD = '\u{1F41B}';
+const E_C_BODY = '\u{1F7E2}';
+
+// State Variables
+let state = 'START'; 
+let score = 0;
+let lives = 3;
+let wave = 1;
+let extraLifeThreshold = 12000;
+let keys = {};
+
+// Fixed Timestep Variables
+let frameCount = 0;
+let lastTime = 0;
+let accumulator = 0;
+const TIME_STEP = 1000 / 60; // strictly 60 logic ticks per second
+
+// State Machine Timers
+let spiderRespawnTimer = 0;
+let scorpionRespawnTimer = 0;
+
+// Entities
+let player;
+let bullets = [];
+let mushrooms = []; 
+let centipedes = [];
+let spider = null;
+let flea = null;
+let scorpion = null;
+
+// DOM Elements
+const screenStart = document.getElementById('start-screen');
+const screenPause = document.getElementById('pause-screen');
+const screenOver = document.getElementById('game-over-screen');
+const dispScore = document.getElementById('score-display');
+const dispLives = document.getElementById('lives-display');
+const dispWave = document.getElementById('wave-display');
+
+// Input Handling
+window.addEventListener('keydown', e => {
+    keys[e.key.toLowerCase()] = true;
+    if (e.key === ' ') e.preventDefault(); 
+    
+    if (state === 'PLAY' && e.key.toLowerCase() === 'p') {
+        state = 'PAUSE';
+        screenPause.classList.remove('hidden');
+        AudioEngine.stopTempo();
+    } else if (state === 'PAUSE' && e.key.toLowerCase() === 'r') {
+        state = 'PLAY';
+        screenPause.classList.add('hidden');
+        lastTime = performance.now(); // Reset delta timer to prevent jump
+        AudioEngine.tickTempo();
+        requestAnimationFrame(gameLoop);
+    }
+});
+window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+
+document.getElementById('start-btn').addEventListener('click', startGame);
+document.getElementById('restart-btn').addEventListener('click', startGame);
+
+function initGrid() {
+    mushrooms = Array.from({length: COLS}, () => Array(ROWS).fill(null));
+    for (let i = 0; i < 50; i++) {
+        let rx = Math.floor(Math.random() * COLS);
+        let ry = Math.floor(Math.random() * (ROWS - 8)) + 2;
+        if (!mushrooms[rx][ry]) mushrooms[rx][ry] = { hp: 4, poison: false };
+    }
+}
+
+function spawnWaveStateMachine() {
+    let numFastHeads = (wave - 1) % 12; 
+    let mainLength = 12 - numFastHeads;
+    
+    centipedes = [];
+    
+    if (mainLength > 0) {
+        let segs = [];
+        for (let i = 0; i < mainLength; i++) {
+            segs.push({ x: Math.floor(COLS/2), y: 0 - i, dx: 1, dy: 0, head: i === 0, diving: false });
+        }
+        centipedes.push(segs);
+    }
+    
+    for (let h = 0; h < numFastHeads; h++) {
+        centipedes.push([{ 
+            x: Math.floor(Math.random() * COLS), 
+            y: 0 - Math.floor(Math.random() * 10), 
+            dx: Math.random() < 0.5 ? 1 : -1, 
+            dy: 0, head: true, diving: false 
+        }]);
+    }
+    
+    spiderRespawnTimer = Math.max(120, 300 - (wave * 15)); 
+    scorpionRespawnTimer = wave === 1 ? 9999 : Math.max(300, 800 - (wave * 40)); 
+}
+
+function startGame() {
+    AudioEngine.init();
+    state = 'PLAY';
+    score = 0;
+    lives = 3;
+    wave = 1;
+    extraLifeThreshold = 12000;
+    
+    // Reset Timing
+    frameCount = 0;
+    lastTime = 0;
+    accumulator = 0;
+    
+    screenStart.classList.add('hidden');
+    screenOver.classList.add('hidden');
+    
+    player = { x: canvas.width / 2, y: canvas.height - 30, w: GRID, h: GRID, speed: 4, cooldown: 0 };
+    bullets = [];
+    spider = null;
+    flea = null;
+    scorpion = null;
+    
+    initGrid();
+    spawnWaveStateMachine();
+    updateHUD();
+    AudioEngine.startTempo();
+    requestAnimationFrame(gameLoop);
+}
+
+function showFloatingScore(pts, x, y) {
+    const el = document.createElement('div');
+    el.className = 'floating-score';
+    el.innerText = pts;
+    el.style.left = `${x}px`;
+    el.style.top = `${y}px`;
+    gameContainer.appendChild(el);
+    setTimeout(() => el.remove(), 1000);
+}
+
+function addScore(pts, x = null, y = null) {
+    score += pts;
+    if (x !== null && y !== null) showFloatingScore(pts, x, y);
+    
+    if (score >= extraLifeThreshold) {
+        lives++;
+        extraLifeThreshold += 12000;
+        AudioEngine.extraLife();
+    }
+    updateHUD();
+}
+
+function updateHUD() {
+    dispScore.innerText = `SCORE: ${score}`;
+    dispWave.innerText = `WAVE: ${wave}`;
+    dispLives.innerText = `LIVES: ${lives}`;
+}
+
+function playerDeath() {
+    AudioEngine.playTone(100, 'sawtooth', 0.5, 0.2);
+    lives--;
+    updateHUD();
+    if (lives <= 0) {
+        state = 'OVER';
+        document.getElementById('final-score').innerText = `Score: ${score}`;
+        screenOver.classList.remove('hidden');
+        AudioEngine.stopTempo();
+    } else {
+        player.x = canvas.width / 2;
+        player.y = canvas.height - 30;
+        spider = null; flea = null; scorpion = null; bullets = [];
+        spiderRespawnTimer = 180; 
+        
+        for(let c=0; c<COLS; c++) {
+            for(let r=0; r<ROWS; r++) {
+                if(mushrooms[c][r]) {
+                    if (mushrooms[c][r].hp < 4 || mushrooms[c][r].poison) {
+                        addScore(5); 
+                    }
+                    mushrooms[c][r].hp = 4;
+                    mushrooms[c][r].poison = false;
+                }
+            }
+        }
+        if (centipedes.length === 0) spawnWaveStateMachine();
+    }
+}
+
+function countPlayerZoneMushrooms() {
+    let count = 0;
+    for (let c = 0; c < COLS; c++) {
+        for (let r = PLAYER_ZONE_Y; r < ROWS; r++) {
+            if (mushrooms[c][r]) count++;
+        }
+    }
+    return count;
+}
+
+function updatePlayer() {
+    if (keys['w'] || keys['arrowup']) player.y = Math.max(PLAYER_ZONE_Y * GRID, player.y - player.speed);
+    if (keys['s'] || keys['arrowdown']) player.y = Math.min(canvas.height - player.h, player.y + player.speed);
+    if (keys['a'] || keys['arrowleft']) player.x = Math.max(0, player.x - player.speed);
+    if (keys['d'] || keys['arrowright']) player.x = Math.min(canvas.width - player.w, player.x + player.speed);
+
+    if (player.cooldown > 0) player.cooldown--;
+    if (keys[' '] && player.cooldown === 0) {
+        bullets.push({ x: player.x + player.w/2 - 2, y: player.y, w: 4, h: 10, speed: 12 });
+        player.cooldown = 12; 
+        AudioEngine.shoot();
+    }
+}
+
+function updateBullets() {
+    for (let i = bullets.length - 1; i >= 0; i--) {
+        let b = bullets[i];
+        b.y -= b.speed;
+        
+        if (b.y < 0) {
+            bullets.splice(i, 1);
+            continue;
+        }
+
+        let gx = Math.floor(b.x / GRID);
+        let gy = Math.floor(b.y / GRID);
+        if (gx >= 0 && gx < COLS && gy >= 0 && gy < ROWS && mushrooms[gx][gy]) {
+            mushrooms[gx][gy].hp--;
+            if (mushrooms[gx][gy].hp <= 0) {
+                addScore(mushrooms[gx][gy].poison ? 50 : 1);
+                mushrooms[gx][gy] = null;
+            }
+            AudioEngine.hit();
+            bullets.splice(i, 1);
+            continue;
+        }
+
+        let hit = false;
+        for (let c = 0; c < centipedes.length; c++) {
+            let cent = centipedes[c];
+            for (let s = 0; s < cent.length; s++) {
+                let seg = cent[s];
+                let sx = seg.x * GRID;
+                let sy = seg.y * GRID;
+                if (b.x > sx && b.x < sx + GRID && b.y > sy && b.y < sy + GRID) {
+                    addScore(seg.head ? 100 : 10);
+                    AudioEngine.hit();
+                    AudioEngine.increaseTempo();
+                    
+                    if (seg.y >= 0 && seg.y < ROWS) {
+                        mushrooms[seg.x][seg.y] = { hp: 4, poison: false };
+                    }
+                    
+                    let tail = cent.splice(s + 1);
+                    cent.pop(); 
+                    
+                    if (tail.length > 0) {
+                        tail[0].head = true;
+                        centipedes.push(tail);
+                    }
+                    if (cent.length === 0) {
+                        centipedes.splice(c, 1);
+                    } else {
+                        cent[0].head = true;
+                    }
+                    
+                    bullets.splice(i, 1);
+                    hit = true;
+                    break;
+                }
+            }
+            if (hit) break;
+        }
+    }
+}
+
+function checkCollision(x, y, w, h) {
+    return (player.x < x + w && player.x + player.w > x &&
+            player.y < y + h && player.y + player.h > y);
+}
+
+function updateEnemies() {
+    for (let c = 0; c < centipedes.length; c++) {
+        let cent = centipedes[c];
+        let isFastHead = cent.length === 1 && cent[0].head;
+        let speedCheck = isFastHead ? 3 : 6;
+
+        if (frameCount % speedCheck === 0) {
+            let head = cent[0];
+            let nextX = head.x + head.dx;
+            let nextY = head.y;
+            
+            let hitWall = nextX < 0 || nextX >= COLS;
+            let hitMushroom = !hitWall && nextY >= 0 && mushrooms[nextX][nextY];
+            
+            if (head.diving) {
+                if (head.y >= ROWS - 1) head.diving = false;
+                else nextY++;
+            } else if (hitWall || hitMushroom) {
+                head.dy = 1;
+                head.dx *= -1;
+                nextX = head.x;
+                nextY = head.y + 1;
+                
+                if (hitMushroom && mushrooms[nextX] && mushrooms[nextX][nextY] && mushrooms[nextX][nextY].poison) {
+                    head.diving = true;
+                }
+                
+                if (nextY >= ROWS) { 
+                    nextY = ROWS - 2;
+                    head.dy = -1;
+                }
+
+                // UNSTICK LOGIC: If the new target cell is blocked, eat the mushroom to break free
+                if (nextY >= 0 && nextY < ROWS && mushrooms[nextX][nextY]) {
+                    mushrooms[nextX][nextY] = null;
+                }
+            } else {
+                head.dy = 0;
+            }
+
+            for (let s = cent.length - 1; s > 0; s--) {
+                cent[s].x = cent[s-1].x;
+                cent[s].y = cent[s-1].y;
+            }
+            head.x = nextX;
+            head.y = nextY;
+
+            for (let s = 0; s < cent.length; s++) {
+                if (checkCollision(cent[s].x * GRID, cent[s].y * GRID, GRID, GRID)) {
+                    playerDeath();
+                    return;
+                }
+            }
+        }
+    }
+    
+    if (centipedes.length === 0) {
+        wave++;
+        spawnWaveStateMachine();
+        AudioEngine.startTempo();
+        updateHUD();
+    }
+
+    if (!spider) {
+        spiderRespawnTimer--;
+        if (spiderRespawnTimer <= 0) {
+            let side = Math.random() < 0.5 ? 0 : canvas.width;
+            spider = { x: side, y: canvas.height - 100, dx: side === 0 ? 3 : -3, dy: 3 };
+        }
+    } else {
+        spider.x += spider.dx;
+        spider.y += spider.dy;
+        if (frameCount % 30 === 0) spider.dy *= -1; 
+        if (spider.y > canvas.height - GRID || spider.y < PLAYER_ZONE_Y * GRID) spider.dy *= -1;
+        
+        if (checkCollision(spider.x, spider.y, GRID, GRID)) playerDeath();
+        
+        for (let i = 0; i < bullets.length; i++) {
+            let b = bullets[i];
+            if (b.x > spider.x && b.x < spider.x + GRID && b.y > spider.y && b.y < spider.y + GRID) {
+                let dist = Math.abs(spider.y - player.y);
+                let pts = dist < GRID * 1.5 ? 900 : (dist < GRID * 4 ? 600 : 300);
+                addScore(pts, spider.x, spider.y);
+                
+                spider = null;
+                spiderRespawnTimer = Math.max(120, 300 - (wave * 15));
+                AudioEngine.hit();
+                bullets.splice(i, 1);
+                break;
+            }
+        }
+        if (spider && (spider.x < -GRID || spider.x > canvas.width)) {
+            spider = null;
+            spiderRespawnTimer = Math.max(120, 300 - (wave * 15));
+        }
+    }
+
+    if (!flea) {
+        if (countPlayerZoneMushrooms() < 5 && Math.random() < 0.05) {
+            flea = { x: Math.floor(Math.random() * COLS) * GRID, y: 0, hp: 2 };
+        }
+    } else {
+        flea.y += 4;
+        if (Math.random() < 0.15) {
+            let gx = Math.floor(flea.x / GRID);
+            let gy = Math.floor(flea.y / GRID);
+            if (gy >= 0 && gy < ROWS && !mushrooms[gx][gy]) {
+                mushrooms[gx][gy] = { hp: 4, poison: false };
+            }
+        }
+        if (checkCollision(flea.x, flea.y, GRID, GRID)) playerDeath();
+        
+        for (let i = 0; i < bullets.length; i++) {
+            let b = bullets[i];
+            if (b.x > flea.x && b.x < flea.x + GRID && b.y > flea.y && b.y < flea.y + GRID) {
+                flea.hp--;
+                bullets.splice(i, 1);
+                AudioEngine.hit();
+                if(flea.hp <= 0) {
+                    addScore(200, flea.x, flea.y);
+                    flea = null;
+                    break;
+                }
+            }
+        }
+        if (flea && flea.y > canvas.height) flea = null;
+    }
+
+    if (!scorpion && wave > 1) {
+        scorpionRespawnTimer--;
+        if (scorpionRespawnTimer <= 0) {
+            let side = Math.random() < 0.5 ? 0 : COLS - 1;
+            let row = Math.floor(Math.random() * (PLAYER_ZONE_Y - 5)) + 2;
+            scorpion = { gx: side, gy: row, x: side * GRID, y: row * GRID, dx: side === 0 ? 2 : -2 };
+        }
+    }
+    if (scorpion) {
+        scorpion.x += scorpion.dx;
+        let gx = Math.floor(scorpion.x / GRID);
+        if (gx >= 0 && gx < COLS && mushrooms[gx][scorpion.gy]) {
+            mushrooms[gx][scorpion.gy].poison = true;
+        }
+        
+        for (let i = 0; i < bullets.length; i++) {
+            let b = bullets[i];
+            if (b.x > scorpion.x && b.x < scorpion.x + GRID && b.y > scorpion.y && b.y < scorpion.y + GRID) {
+                addScore(1000, scorpion.x, scorpion.y);
+                scorpion = null;
+                scorpionRespawnTimer = Math.max(300, 800 - (wave * 40));
+                AudioEngine.hit();
+                bullets.splice(i, 1);
+                break;
+            }
+        }
+        if (scorpion && (scorpion.x < -GRID || scorpion.x > canvas.width)) {
+            scorpion = null;
+            scorpionRespawnTimer = Math.max(300, 800 - (wave * 40));
+        }
+    }
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.font = '18px Arial';
+    ctx.textBaseline = 'top';
+
+    for (let c = 0; c < COLS; c++) {
+        for (let r = 0; r < ROWS; r++) {
+            let m = mushrooms[c][r];
+            if (m) {
+                ctx.globalAlpha = m.hp / 4;
+                ctx.fillText(m.poison ? E_POISON : E_MUSHROOM, c * GRID, r * GRID);
+                ctx.globalAlpha = 1.0;
+            }
+        }
+    }
+
+    for (let c = 0; c < centipedes.length; c++) {
+        let cent = centipedes[c];
+        for (let s = 0; s < cent.length; s++) {
+            let seg = cent[s];
+            if(seg.y >= 0) {
+                ctx.fillText(seg.head ? E_C_HEAD : E_C_BODY, seg.x * GRID, seg.y * GRID);
+            }
+        }
+    }
+
+    ctx.fillStyle = '#ff0';
+    for (let b of bullets) {
+        ctx.fillRect(b.x, b.y, b.w, b.h);
+    }
+
+    ctx.fillText(E_PLAYER, player.x, player.y);
+
+    if (spider) ctx.fillText(E_SPIDER, spider.x, spider.y);
+    if (flea) ctx.fillText(E_FLEA, flea.x, flea.y);
+    if (scorpion) ctx.fillText(E_SCORPION, scorpion.x, scorpion.y);
+}
+
+// Fixed Time Step Game Loop
+function gameLoop(timestamp) {
+    if (state !== 'PLAY') return;
+    
+    if (!lastTime) lastTime = timestamp;
+    let deltaTime = timestamp - lastTime;
+    lastTime = timestamp;
+
+    // Cap deltaTime to prevent "catch-up" spiral if you tab out
+    if (deltaTime > 250) deltaTime = 250;
+
+    accumulator += deltaTime;
+    
+    while (accumulator >= TIME_STEP) {
+        frameCount++;
+        updatePlayer();
+        updateBullets();
+        updateEnemies();
+        accumulator -= TIME_STEP;
+    }
+    
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+</script>
+</body>
+</html>

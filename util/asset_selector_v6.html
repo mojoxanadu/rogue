@@ -1,0 +1,1681 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Roguelike Asset Selector v6</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+* { box-sizing: border-box; }
+body { font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 20px; background: #1a1a2e; color: #e0e0e0; }
+h1 { text-align: center; color: #f39c12; margin-bottom: 10px; }
+.subtitle { text-align: center; color: #aaa; margin-bottom: 30px; }
+.category { background: rgba(255,255,255,0.05); border-radius: 10px; padding: 20px; margin-bottom: 25px; }
+.category h2 { margin-top: 0; color: #3498db; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+th, td { border: 1px solid #444; padding: 10px; text-align: center; vertical-align: middle; }
+th { background: #2c3e50; position: sticky; top: 0; }
+tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+.col-key { width: 10%; font-family: monospace; color: #f1c40f; word-break: break-all; font-size: 0.8em; }
+.col-name { width: 15%; text-align: left; font-size: 0.9em; }
+.col-current { width: 10%; }
+.col-lpc { width: 20%; }
+.col-andor { width: 20%; background: rgba(52, 152, 219, 0.1); }
+.col-dcss { width: 15%; }
+.col-selected { width: 10%; color: #2ecc71; font-size: 0.8em; word-break: break-all; }
+.thumb { cursor: pointer; border: 2px solid transparent; border-radius: 4px; padding: 2px; transition: 0.1s; display: inline-block; }
+.thumb:hover { transform: scale(1.1); border-color: #f39c12; }
+.thumb.selected { border-color: #2ecc71; }
+.thumb img { display: block; width: 32px; height: 32px; image-rendering: pixelated; }
+.emoji-thumb { font-size: 28px; line-height: 32px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); }
+.color-thumb { width: 32px; height: 32px; border-radius: 4px; display: inline-block; }
+.suggestions { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; min-height: 36px; align-items: center; }
+#generate-btn { display: block; margin: 30px auto; padding: 15px 40px; font-size: 1.2em; background: #e74c3c; color: white; border: none; border-radius: 50px; cursor: pointer; }
+#output { width: 100%; height: 150px; background: #1e1e1e; color: #00ff00; border: 1px solid #444; padding: 15px; font-family: monospace; border-radius: 5px; margin-top: 10px; resize: vertical; }
+</style>
+</head><body>
+<h1>🎮 Roguelike Asset Selector v6</h1>
+<p class="subtitle">Includes Andor's Trail assets (new column). Click to select sprites.</p>
+<div class="category">
+<h2>Monsters</h2>
+<table>
+<thead><tr>
+<th class="col-key">Key</th>
+<th class="col-name">Name</th>
+<th class="col-current">Current</th>
+<th class="col-lpc">LPC</th>
+<th class="col-andor">Andor's Trail</th>
+<th class="col-dcss">DCSS</th>
+<th class="col-selected">Selected</th>
+</tr></thead><tbody>
+<tr data-key="player">
+<td class="col-key" title="player"><code>player</code></td>
+<td class="col-name">Player</td>
+<td class="col-current"><div class="thumb color-thumb" style="background: #FF6B6B;" data-source="color" data-path="#FF6B6B"></div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="player/boots/middle_gold.png" title="player/boots/middle_gold.png"><img src="external/crawl/crawl-ref/source/rltiles/player/boots/middle_gold.png"></div> <div class="thumb" data-source="crawl" data-path="player/boots/middle_brown3.png" title="player/boots/middle_brown3.png"><img src="external/crawl/crawl-ref/source/rltiles/player/boots/middle_brown3.png"></div> <div class="thumb" data-source="crawl" data-path="player/boots/middle_ybrown.png" title="player/boots/middle_ybrown.png"><img src="external/crawl/crawl-ref/source/rltiles/player/boots/middle_ybrown.png"></div></div></td>
+<td class="col-selected" id="selected-player">-</td>
+</tr>
+<tr data-key="slime">
+<td class="col-key" title="slime"><code>slime</code></td>
+<td class="col-name">Slime</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🫧">🫧</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="item/gem/slime_found_whole.png" title="item/gem/slime_found_whole.png"><img src="external/crawl/crawl-ref/source/rltiles/item/gem/slime_found_whole.png"></div> <div class="thumb" data-source="crawl" data-path="item/gem/slime_found_broken.png" title="item/gem/slime_found_broken.png"><img src="external/crawl/crawl-ref/source/rltiles/item/gem/slime_found_broken.png"></div> <div class="thumb" data-source="crawl" data-path="item/misc/runes/rune_slime.png" title="item/misc/runes/rune_slime.png"><img src="external/crawl/crawl-ref/source/rltiles/item/misc/runes/rune_slime.png"></div></div></td>
+<td class="col-selected" id="selected-slime">-</td>
+</tr>
+<tr data-key="skeleton">
+<td class="col-key" title="skeleton"><code>skeleton</code></td>
+<td class="col-name">Skeleton</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="💀">💀</div></td>
+<td class="col-lpc"><div class="suggestions"><div class="thumb" data-source="lpc" data-path="weapons/left hand/either/arrow_skeleton.png" title="weapons/left hand/either/arrow_skeleton.png"><img src="external/lpc-spritesheet/weapons/left hand/either/arrow_skeleton.png"></div> <div class="thumb" data-source="lpc" data-path="weapons/right hand/either/bow_skeleton.png" title="weapons/right hand/either/bow_skeleton.png"><img src="external/lpc-spritesheet/weapons/right hand/either/bow_skeleton.png"></div> <div class="thumb" data-source="lpc" data-path="body/male/skeleton.png" title="body/male/skeleton.png"><img src="external/lpc-spritesheet/body/male/skeleton.png"></div></div></td>
+<td class="col-andor"><div class="suggestions"><div class="thumb" data-source="andor" data-path="monsters_skeleton1.png" title="monsters_skeleton1.png"><img src="external/andors-trail/AndorsTrail/res/drawable/monsters_skeleton1.png"></div> <div class="thumb" data-source="andor" data-path="monsters_skeleton2.png" title="monsters_skeleton2.png"><img src="external/andors-trail/AndorsTrail/res/drawable/monsters_skeleton2.png"></div></div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="item/wand/gem_bone.png" title="item/wand/gem_bone.png"><img src="external/crawl/crawl-ref/source/rltiles/item/wand/gem_bone.png"></div> <div class="thumb" data-source="crawl" data-path="item/food/bone1.png" title="item/food/bone1.png"><img src="external/crawl/crawl-ref/source/rltiles/item/food/bone1.png"></div> <div class="thumb" data-source="crawl" data-path="item/food/bone3.png" title="item/food/bone3.png"><img src="external/crawl/crawl-ref/source/rltiles/item/food/bone3.png"></div></div></td>
+<td class="col-selected" id="selected-skeleton">-</td>
+</tr>
+<tr data-key="bat">
+<td class="col-key" title="bat"><code>bat</code></td>
+<td class="col-name">Bat</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🦇">🦇</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions"><div class="thumb" data-source="andor" data-path="ui_icon_combat.png" title="ui_icon_combat.png"><img src="external/andors-trail/AndorsTrail/res/drawable/ui_icon_combat.png"></div></div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="effect/cloud_bat_mist3.png" title="effect/cloud_bat_mist3.png"><img src="external/crawl/crawl-ref/source/rltiles/effect/cloud_bat_mist3.png"></div> <div class="thumb" data-source="crawl" data-path="effect/cloud_bat_mist2.png" title="effect/cloud_bat_mist2.png"><img src="external/crawl/crawl-ref/source/rltiles/effect/cloud_bat_mist2.png"></div> <div class="thumb" data-source="crawl" data-path="effect/cloud_bat_mist0.png" title="effect/cloud_bat_mist0.png"><img src="external/crawl/crawl-ref/source/rltiles/effect/cloud_bat_mist0.png"></div></div></td>
+<td class="col-selected" id="selected-bat">-</td>
+</tr>
+<tr data-key="ghost">
+<td class="col-key" title="ghost"><code>ghost</code></td>
+<td class="col-name">Ghost</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="👻">👻</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions"><div class="thumb" data-source="andor" data-path="monsters_ghost1.png" title="monsters_ghost1.png"><img src="external/andors-trail/AndorsTrail/res/drawable/monsters_ghost1.png"></div></div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="effect/ghostfire1.png" title="effect/ghostfire1.png"><img src="external/crawl/crawl-ref/source/rltiles/effect/ghostfire1.png"></div> <div class="thumb" data-source="crawl" data-path="effect/ghostfire0.png" title="effect/ghostfire0.png"><img src="external/crawl/crawl-ref/source/rltiles/effect/ghostfire0.png"></div> <div class="thumb" data-source="crawl" data-path="effect/phantom_blitz.png" title="effect/phantom_blitz.png"><img src="external/crawl/crawl-ref/source/rltiles/effect/phantom_blitz.png"></div></div></td>
+<td class="col-selected" id="selected-ghost">-</td>
+</tr>
+<tr data-key="robot">
+<td class="col-key" title="robot"><code>robot</code></td>
+<td class="col-name">Robot</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🤖">🤖</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-robot">-</td>
+</tr>
+<tr data-key="dragon">
+<td class="col-key" title="dragon"><code>dragon</code></td>
+<td class="col-name">Dragon</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🐉">🐉</div></td>
+<td class="col-lpc"><div class="suggestions"><div class="thumb" data-source="lpc" data-path="weapons/oversize/two hand/either/dragonspear.png" title="weapons/oversize/two hand/either/dragonspear.png"><img src="external/lpc-spritesheet/weapons/oversize/two hand/either/dragonspear.png"></div></div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="item/armour/fire_dragon_armour.png" title="item/armour/fire_dragon_armour.png"><img src="external/crawl/crawl-ref/source/rltiles/item/armour/fire_dragon_armour.png"></div> <div class="thumb" data-source="crawl" data-path="item/armour/fire_dragon_armour_art.png" title="item/armour/fire_dragon_armour_art.png"><img src="external/crawl/crawl-ref/source/rltiles/item/armour/fire_dragon_armour_art.png"></div> <div class="thumb" data-source="crawl" data-path="item/armour/golden_dragon_armour.png" title="item/armour/golden_dragon_armour.png"><img src="external/crawl/crawl-ref/source/rltiles/item/armour/golden_dragon_armour.png"></div></div></td>
+<td class="col-selected" id="selected-dragon">-</td>
+</tr>
+<tr data-key="snake">
+<td class="col-key" title="snake"><code>snake</code></td>
+<td class="col-name">Snake</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🐍">🐍</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions"><div class="thumb" data-source="andor" data-path="monsters_snakes.png" title="monsters_snakes.png"><img src="external/andors-trail/AndorsTrail/res/drawable/monsters_snakes.png"></div></div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="item/gem/snake_found_whole.png" title="item/gem/snake_found_whole.png"><img src="external/crawl/crawl-ref/source/rltiles/item/gem/snake_found_whole.png"></div> <div class="thumb" data-source="crawl" data-path="item/gem/snake_found_broken.png" title="item/gem/snake_found_broken.png"><img src="external/crawl/crawl-ref/source/rltiles/item/gem/snake_found_broken.png"></div> <div class="thumb" data-source="crawl" data-path="item/talisman/snake.png" title="item/talisman/snake.png"><img src="external/crawl/crawl-ref/source/rltiles/item/talisman/snake.png"></div></div></td>
+<td class="col-selected" id="selected-snake">-</td>
+</tr>
+<tr data-key="troll">
+<td class="col-key" title="troll"><code>troll</code></td>
+<td class="col-name">Troll</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧌">🧌</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions"><div class="thumb" data-source="andor" data-path="monsters_giantbasilisk.png" title="monsters_giantbasilisk.png"><img src="external/andors-trail/AndorsTrail/res/drawable/monsters_giantbasilisk.png"></div></div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="item/armour/troll_leather_armour_art.png" title="item/armour/troll_leather_armour_art.png"><img src="external/crawl/crawl-ref/source/rltiles/item/armour/troll_leather_armour_art.png"></div> <div class="thumb" data-source="crawl" data-path="item/armour/troll_leather_armour.png" title="item/armour/troll_leather_armour.png"><img src="external/crawl/crawl-ref/source/rltiles/item/armour/troll_leather_armour.png"></div> <div class="thumb" data-source="crawl" data-path="item/armour/iron_troll_leather.png" title="item/armour/iron_troll_leather.png"><img src="external/crawl/crawl-ref/source/rltiles/item/armour/iron_troll_leather.png"></div></div></td>
+<td class="col-selected" id="selected-troll">-</td>
+</tr>
+<tr data-key="medusa">
+<td class="col-key" title="medusa"><code>medusa</code></td>
+<td class="col-name">Medusa</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🐍👩">🐍👩</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions"><div class="thumb" data-source="andor" data-path="monsters_snakes.png" title="monsters_snakes.png"><img src="external/andors-trail/AndorsTrail/res/drawable/monsters_snakes.png"></div></div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="item/gem/snake_found_whole.png" title="item/gem/snake_found_whole.png"><img src="external/crawl/crawl-ref/source/rltiles/item/gem/snake_found_whole.png"></div> <div class="thumb" data-source="crawl" data-path="item/gem/snake_found_broken.png" title="item/gem/snake_found_broken.png"><img src="external/crawl/crawl-ref/source/rltiles/item/gem/snake_found_broken.png"></div> <div class="thumb" data-source="crawl" data-path="item/talisman/medusa.png" title="item/talisman/medusa.png"><img src="external/crawl/crawl-ref/source/rltiles/item/talisman/medusa.png"></div></div></td>
+<td class="col-selected" id="selected-medusa">-</td>
+</tr>
+<tr data-key="assassin">
+<td class="col-key" title="assassin"><code>assassin</code></td>
+<td class="col-name">Assassin</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🥷">🥷</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions"><div class="thumb" data-source="andor" data-path="monsters_rogue1.png" title="monsters_rogue1.png"><img src="external/andors-trail/AndorsTrail/res/drawable/monsters_rogue1.png"></div></div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="item/armour/artefact/urand_assassin.png" title="item/armour/artefact/urand_assassin.png"><img src="external/crawl/crawl-ref/source/rltiles/item/armour/artefact/urand_assassin.png"></div> <div class="thumb" data-source="crawl" data-path="item/armour/artefact/urand_hood_assassin.png" title="item/armour/artefact/urand_hood_assassin.png"><img src="external/crawl/crawl-ref/source/rltiles/item/armour/artefact/urand_hood_assassin.png"></div> <div class="thumb" data-source="crawl" data-path="player/head/hood_assassin.png" title="player/head/hood_assassin.png"><img src="external/crawl/crawl-ref/source/rltiles/player/head/hood_assassin.png"></div></div></td>
+<td class="col-selected" id="selected-assassin">-</td>
+</tr>
+<tr data-key="killer_rabbit">
+<td class="col-key" title="killer_rabbit"><code>killer_rabbit</code></td>
+<td class="col-name">Killer_Rabbit</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🐰">🐰</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-killer_rabbit">-</td>
+</tr>
+<tr data-key="fence">
+<td class="col-key" title="fence"><code>fence</code></td>
+<td class="col-name">Fence</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧥">🧥</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions"><div class="thumb" data-source="andor" data-path="map_fence_4.png" title="map_fence_4.png"><img src="external/andors-trail/AndorsTrail/res/drawable/map_fence_4.png"></div> <div class="thumb" data-source="andor" data-path="map_fence_1.png" title="map_fence_1.png"><img src="external/andors-trail/AndorsTrail/res/drawable/map_fence_1.png"></div> <div class="thumb" data-source="andor" data-path="map_fence_2.png" title="map_fence_2.png"><img src="external/andors-trail/AndorsTrail/res/drawable/map_fence_2.png"></div></div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="item/armour/artefact/urand_fencer.png" title="item/armour/artefact/urand_fencer.png"><img src="external/crawl/crawl-ref/source/rltiles/item/armour/artefact/urand_fencer.png"></div></div></td>
+<td class="col-selected" id="selected-fence">-</td>
+</tr>
+<tr data-key="fence_flasher">
+<td class="col-key" title="fence_flasher"><code>fence_flasher</code></td>
+<td class="col-name">Fence Flasher</td>
+<td class="col-current"><div class="thumb color-thumb" style="background: #A29BFE;" data-source="color" data-path="#A29BFE"></div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-fence_flasher">-</td>
+</tr>
+<tr data-key="cain">
+<td class="col-key" title="cain"><code>cain</code></td>
+<td class="col-name">Cain</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧔">🧔</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-cain">-</td>
+</tr>
+<tr data-key="pirate">
+<td class="col-key" title="pirate"><code>pirate</code></td>
+<td class="col-name">Pirate</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🏴‍☠️">🏴‍☠️</div></td>
+<td class="col-lpc"><div class="suggestions"><div class="thumb" data-source="lpc" data-path="accessories/necklaces_female_ no_th-sh/pirate_wc_sc_only.png" title="accessories/necklaces_female_ no_th-sh/pirate_wc_sc_only.png"><img src="external/lpc-spritesheet/accessories/necklaces_female_ no_th-sh/pirate_wc_sc_only.png"></div> <div class="thumb" data-source="lpc" data-path="torso/shirts/sleeveless/female/teal_pirate.png" title="torso/shirts/sleeveless/female/teal_pirate.png"><img src="external/lpc-spritesheet/torso/shirts/sleeveless/female/teal_pirate.png"></div> <div class="thumb" data-source="lpc" data-path="torso/shirts/sleeveless/female/maroon_pirate.png" title="torso/shirts/sleeveless/female/maroon_pirate.png"><img src="external/lpc-spritesheet/torso/shirts/sleeveless/female/maroon_pirate.png"></div></div></td>
+<td class="col-andor"><div class="suggestions"><div class="thumb" data-source="andor" data-path="map_boats_1.png" title="map_boats_1.png"><img src="external/andors-trail/AndorsTrail/res/drawable/map_boats_1.png"></div></div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-pirate">-</td>
+</tr>
+<tr data-key="master">
+<td class="col-key" title="master"><code>master</code></td>
+<td class="col-name">Master</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🤺">🤺</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="gui/skills/mastered-fg.png" title="gui/skills/mastered-fg.png"><img src="external/crawl/crawl-ref/source/rltiles/gui/skills/mastered-fg.png"></div> <div class="thumb" data-source="crawl" data-path="gui/skills/mastered-base.png" title="gui/skills/mastered-base.png"><img src="external/crawl/crawl-ref/source/rltiles/gui/skills/mastered-base.png"></div> <div class="thumb" data-source="crawl" data-path="mon/vault/master_elementalist.png" title="mon/vault/master_elementalist.png"><img src="external/crawl/crawl-ref/source/rltiles/mon/vault/master_elementalist.png"></div></div></td>
+<td class="col-selected" id="selected-master">-</td>
+</tr>
+<tr data-key="genie">
+<td class="col-key" title="genie"><code>genie</code></td>
+<td class="col-name">Genie</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧞">🧞</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-genie">-</td>
+</tr>
+<tr data-key="king">
+<td class="col-key" title="king"><code>king</code></td>
+<td class="col-name">King</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🤴">🤴</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="item/scroll/i-blinking.png" title="item/scroll/i-blinking.png"><img src="external/crawl/crawl-ref/source/rltiles/item/scroll/i-blinking.png"></div> <div class="thumb" data-source="crawl" data-path="item/weapon/artefact/urand_octopus_king.png" title="item/weapon/artefact/urand_octopus_king.png"><img src="external/crawl/crawl-ref/source/rltiles/item/weapon/artefact/urand_octopus_king.png"></div> <div class="thumb" data-source="crawl" data-path="item/armour/artefact/urand_dragon_king.png" title="item/armour/artefact/urand_dragon_king.png"><img src="external/crawl/crawl-ref/source/rltiles/item/armour/artefact/urand_dragon_king.png"></div></div></td>
+<td class="col-selected" id="selected-king">-</td>
+</tr>
+<tr data-key="black_knight">
+<td class="col-key" title="black_knight"><code>black_knight</code></td>
+<td class="col-name">Black_Knight</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🤺">🤺</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="player/barding/black_knight.png" title="player/barding/black_knight.png"><img src="external/crawl/crawl-ref/source/rltiles/player/barding/black_knight.png"></div></div></td>
+<td class="col-selected" id="selected-black_knight">-</td>
+</tr>
+<tr data-key="black_knight_4limbs">
+<td class="col-key" title="black_knight_4limbs"><code>black_knight_4limbs</code></td>
+<td class="col-name">Knight 4 Limbs</td>
+<td class="col-current"><div class="thumb color-thumb" style="background: #2D3436;" data-source="color" data-path="#2D3436"></div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-black_knight_4limbs">-</td>
+</tr>
+<tr data-key="black_knight_3limbs">
+<td class="col-key" title="black_knight_3limbs"><code>black_knight_3limbs</code></td>
+<td class="col-name">Knight 3 Limbs</td>
+<td class="col-current"><div class="thumb color-thumb" style="background: #2D3436;" data-source="color" data-path="#2D3436"></div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-black_knight_3limbs">-</td>
+</tr>
+<tr data-key="black_knight_2limbs">
+<td class="col-key" title="black_knight_2limbs"><code>black_knight_2limbs</code></td>
+<td class="col-name">Knight 2 Limbs</td>
+<td class="col-current"><div class="thumb color-thumb" style="background: #2D3436;" data-source="color" data-path="#2D3436"></div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-black_knight_2limbs">-</td>
+</tr>
+<tr data-key="black_knight_1limb">
+<td class="col-key" title="black_knight_1limb"><code>black_knight_1limb</code></td>
+<td class="col-name">Knight 1 Limb</td>
+<td class="col-current"><div class="thumb color-thumb" style="background: #2D3436;" data-source="color" data-path="#2D3436"></div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-black_knight_1limb">-</td>
+</tr>
+<tr data-key="black_knight_0limbs">
+<td class="col-key" title="black_knight_0limbs"><code>black_knight_0limbs</code></td>
+<td class="col-name">Knight 0 Limbs</td>
+<td class="col-current"><div class="thumb color-thumb" style="background: #2D3436;" data-source="color" data-path="#2D3436"></div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-black_knight_0limbs">-</td>
+</tr>
+<tr data-key="french_taunter">
+<td class="col-key" title="french_taunter"><code>french_taunter</code></td>
+<td class="col-name">French_Taunter</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🏰🇫🇷">🏰🇫🇷</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-french_taunter">-</td>
+</tr>
+<tr data-key="bridge_keeper">
+<td class="col-key" title="bridge_keeper"><code>bridge_keeper</code></td>
+<td class="col-name">Bridge_Keeper</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧙‍♂️">🧙‍♂️</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-bridge_keeper">-</td>
+</tr>
+<tr data-key="chipmunk">
+<td class="col-key" title="chipmunk"><code>chipmunk</code></td>
+<td class="col-name">Chipmunk</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🐿️">🐿️</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-chipmunk">-</td>
+</tr>
+<tr data-key="duck">
+<td class="col-key" title="duck"><code>duck</code></td>
+<td class="col-name">Duck</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🦆">🦆</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-duck">-</td>
+</tr>
+<tr data-key="shark">
+<td class="col-key" title="shark"><code>shark</code></td>
+<td class="col-name">Shark</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🦈">🦈</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="mon/animals/skyshark.png" title="mon/animals/skyshark.png"><img src="external/crawl/crawl-ref/source/rltiles/mon/animals/skyshark.png"></div> <div class="thumb" data-source="crawl" data-path="mon/player/crawling_zombie_skyshark.png" title="mon/player/crawling_zombie_skyshark.png"><img src="external/crawl/crawl-ref/source/rltiles/mon/player/crawling_zombie_skyshark.png"></div> <div class="thumb" data-source="crawl" data-path="mon/undead/zombies/zombie_skyshark.png" title="mon/undead/zombies/zombie_skyshark.png"><img src="external/crawl/crawl-ref/source/rltiles/mon/undead/zombies/zombie_skyshark.png"></div></div></td>
+<td class="col-selected" id="selected-shark">-</td>
+</tr>
+<tr data-key="wet_rat">
+<td class="col-key" title="wet_rat"><code>wet_rat</code></td>
+<td class="col-name">Wet_Rat</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🐀">🐀</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-wet_rat">-</td>
+</tr>
+<tr data-key="duck_hunt_dog">
+<td class="col-key" title="duck_hunt_dog"><code>duck_hunt_dog</code></td>
+<td class="col-name">Duck Hunt Dog</td>
+<td class="col-current"><div class="thumb color-thumb" style="background: #D2691E;" data-source="color" data-path="#D2691E"></div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-duck_hunt_dog">-</td>
+</tr>
+<tr data-key="water">
+<td class="col-key" title="water"><code>water</code></td>
+<td class="col-name">Water</td>
+<td class="col-current"><div class="thumb color-thumb" style="background: #74B9FF;" data-source="color" data-path="#74B9FF"></div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="misc/mask_shallow_water_murky.png" title="misc/mask_shallow_water_murky.png"><img src="external/crawl/crawl-ref/source/rltiles/misc/mask_shallow_water_murky.png"></div> <div class="thumb" data-source="crawl" data-path="misc/mask_shallow_water.png" title="misc/mask_shallow_water.png"><img src="external/crawl/crawl-ref/source/rltiles/misc/mask_shallow_water.png"></div> <div class="thumb" data-source="crawl" data-path="misc/mask_deep_water_murky.png" title="misc/mask_deep_water_murky.png"><img src="external/crawl/crawl-ref/source/rltiles/misc/mask_deep_water_murky.png"></div></div></td>
+<td class="col-selected" id="selected-water">-</td>
+</tr>
+<tr data-key="sand">
+<td class="col-key" title="sand"><code>sand</code></td>
+<td class="col-name">Sand</td>
+<td class="col-current"><div class="thumb color-thumb" style="background: #FFEAA7;" data-source="color" data-path="#FFEAA7"></div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="effect/sandblast2.png" title="effect/sandblast2.png"><img src="external/crawl/crawl-ref/source/rltiles/effect/sandblast2.png"></div> <div class="thumb" data-source="crawl" data-path="effect/sandblast0.png" title="effect/sandblast0.png"><img src="external/crawl/crawl-ref/source/rltiles/effect/sandblast0.png"></div> <div class="thumb" data-source="crawl" data-path="effect/sandblast1.png" title="effect/sandblast1.png"><img src="external/crawl/crawl-ref/source/rltiles/effect/sandblast1.png"></div></div></td>
+<td class="col-selected" id="selected-sand">-</td>
+</tr>
+<tr data-key="chest_closed">
+<td class="col-key" title="chest_closed"><code>chest_closed</code></td>
+<td class="col-name">Chest Closed</td>
+<td class="col-current"><div class="thumb color-thumb" style="background: #8B4513;" data-source="color" data-path="#8B4513"></div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-chest_closed">-</td>
+</tr>
+<tr data-key="chest_open">
+<td class="col-key" title="chest_open"><code>chest_open</code></td>
+<td class="col-name">Chest Open</td>
+<td class="col-current"><div class="thumb color-thumb" style="background: #8B4513;" data-source="color" data-path="#8B4513"></div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-chest_open">-</td>
+</tr>
+<tr data-key="bookstore">
+<td class="col-key" title="bookstore"><code>bookstore</code></td>
+<td class="col-name">Bookstore</td>
+<td class="col-current"><div class="thumb color-thumb" style="background: #8B4513;" data-source="color" data-path="#8B4513"></div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-bookstore">-</td>
+</tr>
+</tbody></table></div>
+<div class="category">
+<h2>NPCs</h2>
+<table>
+<thead><tr>
+<th class="col-key">Key</th>
+<th class="col-name">Name</th>
+<th class="col-current">Current</th>
+<th class="col-lpc">LPC</th>
+<th class="col-andor">Andor's Trail</th>
+<th class="col-dcss">DCSS</th>
+<th class="col-selected">Selected</th>
+</tr></thead><tbody>
+<tr data-key="thief">
+<td class="col-key" title="thief"><code>thief</code></td>
+<td class="col-name">Thief</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="👤">👤</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="item/armour/artefact/urand_thief.png" title="item/armour/artefact/urand_thief.png"><img src="external/crawl/crawl-ref/source/rltiles/item/armour/artefact/urand_thief.png"></div> <div class="thumb" data-source="crawl" data-path="player/hand1/sword_thief.png" title="player/hand1/sword_thief.png"><img src="external/crawl/crawl-ref/source/rltiles/player/hand1/sword_thief.png"></div></div></td>
+<td class="col-selected" id="selected-thief">-</td>
+</tr>
+<tr data-key="fence">
+<td class="col-key" title="fence"><code>fence</code></td>
+<td class="col-name">Fence</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧥">🧥</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions"><div class="thumb" data-source="andor" data-path="map_fence_4.png" title="map_fence_4.png"><img src="external/andors-trail/AndorsTrail/res/drawable/map_fence_4.png"></div> <div class="thumb" data-source="andor" data-path="map_fence_1.png" title="map_fence_1.png"><img src="external/andors-trail/AndorsTrail/res/drawable/map_fence_1.png"></div> <div class="thumb" data-source="andor" data-path="map_fence_2.png" title="map_fence_2.png"><img src="external/andors-trail/AndorsTrail/res/drawable/map_fence_2.png"></div></div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="item/armour/artefact/urand_fencer.png" title="item/armour/artefact/urand_fencer.png"><img src="external/crawl/crawl-ref/source/rltiles/item/armour/artefact/urand_fencer.png"></div></div></td>
+<td class="col-selected" id="selected-fence">-</td>
+</tr>
+<tr data-key="fence_flasher">
+<td class="col-key" title="fence_flasher"><code>fence_flasher</code></td>
+<td class="col-name">Fence Flasher</td>
+<td class="col-current"><div class="thumb color-thumb" style="background: #A29BFE;" data-source="color" data-path="#A29BFE"></div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-fence_flasher">-</td>
+</tr>
+<tr data-key="cain">
+<td class="col-key" title="cain"><code>cain</code></td>
+<td class="col-name">Cain</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧔">🧔</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-cain">-</td>
+</tr>
+<tr data-key="pirate">
+<td class="col-key" title="pirate"><code>pirate</code></td>
+<td class="col-name">Pirate</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🏴‍☠️">🏴‍☠️</div></td>
+<td class="col-lpc"><div class="suggestions"><div class="thumb" data-source="lpc" data-path="accessories/necklaces_female_ no_th-sh/pirate_wc_sc_only.png" title="accessories/necklaces_female_ no_th-sh/pirate_wc_sc_only.png"><img src="external/lpc-spritesheet/accessories/necklaces_female_ no_th-sh/pirate_wc_sc_only.png"></div> <div class="thumb" data-source="lpc" data-path="torso/shirts/sleeveless/female/teal_pirate.png" title="torso/shirts/sleeveless/female/teal_pirate.png"><img src="external/lpc-spritesheet/torso/shirts/sleeveless/female/teal_pirate.png"></div> <div class="thumb" data-source="lpc" data-path="torso/shirts/sleeveless/female/maroon_pirate.png" title="torso/shirts/sleeveless/female/maroon_pirate.png"><img src="external/lpc-spritesheet/torso/shirts/sleeveless/female/maroon_pirate.png"></div></div></td>
+<td class="col-andor"><div class="suggestions"><div class="thumb" data-source="andor" data-path="map_boats_1.png" title="map_boats_1.png"><img src="external/andors-trail/AndorsTrail/res/drawable/map_boats_1.png"></div></div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-pirate">-</td>
+</tr>
+<tr data-key="master">
+<td class="col-key" title="master"><code>master</code></td>
+<td class="col-name">Master</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🤺">🤺</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="gui/skills/mastered-fg.png" title="gui/skills/mastered-fg.png"><img src="external/crawl/crawl-ref/source/rltiles/gui/skills/mastered-fg.png"></div> <div class="thumb" data-source="crawl" data-path="gui/skills/mastered-base.png" title="gui/skills/mastered-base.png"><img src="external/crawl/crawl-ref/source/rltiles/gui/skills/mastered-base.png"></div> <div class="thumb" data-source="crawl" data-path="mon/vault/master_elementalist.png" title="mon/vault/master_elementalist.png"><img src="external/crawl/crawl-ref/source/rltiles/mon/vault/master_elementalist.png"></div></div></td>
+<td class="col-selected" id="selected-master">-</td>
+</tr>
+<tr data-key="cat">
+<td class="col-key" title="cat"><code>cat</code></td>
+<td class="col-name">Cat</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🐱">🐱</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions"><div class="thumb" data-source="andor" data-path="monsters_cats.png" title="monsters_cats.png"><img src="external/andors-trail/AndorsTrail/res/drawable/monsters_cats.png"></div> <div class="thumb" data-source="andor" data-path="ui_blue_submenu_indicator.9.png" title="ui_blue_submenu_indicator.9.png"><img src="external/andors-trail/AndorsTrail/res/drawable/ui_blue_submenu_indicator.9.png"></div> <div class="thumb" data-source="andor" data-path="ui_charcoal_submenu_indicator.9.png" title="ui_charcoal_submenu_indicator.9.png"><img src="external/andors-trail/AndorsTrail/res/drawable/ui_charcoal_submenu_indicator.9.png"></div></div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="effect/indicator_8.png" title="effect/indicator_8.png"><img src="external/crawl/crawl-ref/source/rltiles/effect/indicator_8.png"></div> <div class="thumb" data-source="crawl" data-path="effect/indicator_5.png" title="effect/indicator_5.png"><img src="external/crawl/crawl-ref/source/rltiles/effect/indicator_5.png"></div> <div class="thumb" data-source="crawl" data-path="effect/indicator_3.png" title="effect/indicator_3.png"><img src="external/crawl/crawl-ref/source/rltiles/effect/indicator_3.png"></div></div></td>
+<td class="col-selected" id="selected-cat">-</td>
+</tr>
+<tr data-key="genie">
+<td class="col-key" title="genie"><code>genie</code></td>
+<td class="col-name">Genie</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧞">🧞</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-genie">-</td>
+</tr>
+<tr data-key="king">
+<td class="col-key" title="king"><code>king</code></td>
+<td class="col-name">King</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🤴">🤴</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="item/scroll/i-blinking.png" title="item/scroll/i-blinking.png"><img src="external/crawl/crawl-ref/source/rltiles/item/scroll/i-blinking.png"></div> <div class="thumb" data-source="crawl" data-path="item/weapon/artefact/urand_octopus_king.png" title="item/weapon/artefact/urand_octopus_king.png"><img src="external/crawl/crawl-ref/source/rltiles/item/weapon/artefact/urand_octopus_king.png"></div> <div class="thumb" data-source="crawl" data-path="item/armour/artefact/urand_dragon_king.png" title="item/armour/artefact/urand_dragon_king.png"><img src="external/crawl/crawl-ref/source/rltiles/item/armour/artefact/urand_dragon_king.png"></div></div></td>
+<td class="col-selected" id="selected-king">-</td>
+</tr>
+<tr data-key="eagle">
+<td class="col-key" title="eagle"><code>eagle</code></td>
+<td class="col-name">Eagle</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🦅">🦅</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-eagle">-</td>
+</tr>
+<tr data-key="gurgi">
+<td class="col-key" title="gurgi"><code>gurgi</code></td>
+<td class="col-name">Gurgi</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🐵">🐵</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-gurgi">-</td>
+</tr>
+<tr data-key="erasmus">
+<td class="col-key" title="erasmus"><code>erasmus</code></td>
+<td class="col-name">Erasmus</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧙‍♂️">🧙‍♂️</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-erasmus">-</td>
+</tr>
+<tr data-key="cow">
+<td class="col-key" title="cow"><code>cow</code></td>
+<td class="col-name">Cow</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🐄">🐄</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="mon/panlord/demon_head_cow_skull.png" title="mon/panlord/demon_head_cow_skull.png"><img src="external/crawl/crawl-ref/source/rltiles/mon/panlord/demon_head_cow_skull.png"></div></div></td>
+<td class="col-selected" id="selected-cow">-</td>
+</tr>
+<tr data-key="black_knight">
+<td class="col-key" title="black_knight"><code>black_knight</code></td>
+<td class="col-name">Black_Knight</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🤺">🤺</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="player/barding/black_knight.png" title="player/barding/black_knight.png"><img src="external/crawl/crawl-ref/source/rltiles/player/barding/black_knight.png"></div></div></td>
+<td class="col-selected" id="selected-black_knight">-</td>
+</tr>
+<tr data-key="french_taunter">
+<td class="col-key" title="french_taunter"><code>french_taunter</code></td>
+<td class="col-name">French_Taunter</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🏰🇫🇷">🏰🇫🇷</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-french_taunter">-</td>
+</tr>
+<tr data-key="dennis">
+<td class="col-key" title="dennis"><code>dennis</code></td>
+<td class="col-name">Dennis</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="👨‍🌾">👨‍🌾</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-dennis">-</td>
+</tr>
+<tr data-key="bridge_keeper">
+<td class="col-key" title="bridge_keeper"><code>bridge_keeper</code></td>
+<td class="col-name">Bridge_Keeper</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧙‍♂️">🧙‍♂️</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-bridge_keeper">-</td>
+</tr>
+</tbody></table></div>
+<div class="category">
+<h2>Tiles</h2>
+<table>
+<thead><tr>
+<th class="col-key">Key</th>
+<th class="col-name">Name</th>
+<th class="col-current">Current</th>
+<th class="col-lpc">LPC</th>
+<th class="col-andor">Andor's Trail</th>
+<th class="col-dcss">DCSS</th>
+<th class="col-selected">Selected</th>
+</tr></thead><tbody>
+<tr data-key="wall">
+<td class="col-key" title="wall"><code>wall</code></td>
+<td class="col-name">Wall</td>
+<td class="col-current"><div class="thumb color-thumb" style="background: #636E72;" data-source="color" data-path="#636E72"></div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions"><div class="thumb" data-source="andor" data-path="map_wall_2.png" title="map_wall_2.png"><img src="external/andors-trail/AndorsTrail/res/drawable/map_wall_2.png"></div> <div class="thumb" data-source="andor" data-path="map_wall_3.png" title="map_wall_3.png"><img src="external/andors-trail/AndorsTrail/res/drawable/map_wall_3.png"></div> <div class="thumb" data-source="andor" data-path="map_cavewall_5.png" title="map_cavewall_5.png"><img src="external/andors-trail/AndorsTrail/res/drawable/map_cavewall_5.png"></div></div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="gui/invocations/fedhas_wall_of_briars.png" title="gui/invocations/fedhas_wall_of_briars.png"><img src="external/crawl/crawl-ref/source/rltiles/gui/invocations/fedhas_wall_of_briars.png"></div> <div class="thumb" data-source="crawl" data-path="gui/invocations/wu_jian_wall_jump.png" title="gui/invocations/wu_jian_wall_jump.png"><img src="external/crawl/crawl-ref/source/rltiles/gui/invocations/wu_jian_wall_jump.png"></div> <div class="thumb" data-source="crawl" data-path="gui/spells/earth/passwall.png" title="gui/spells/earth/passwall.png"><img src="external/crawl/crawl-ref/source/rltiles/gui/spells/earth/passwall.png"></div></div></td>
+<td class="col-selected" id="selected-wall">-</td>
+</tr>
+<tr data-key="floor">
+<td class="col-key" title="floor"><code>floor</code></td>
+<td class="col-name">Floor</td>
+<td class="col-current"><div class="thumb color-thumb" style="background: #DFE6E9;" data-source="color" data-path="#DFE6E9"></div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="dngn/floor/mosaic8.png" title="dngn/floor/mosaic8.png"><img src="external/crawl/crawl-ref/source/rltiles/dngn/floor/mosaic8.png"></div> <div class="thumb" data-source="crawl" data-path="dngn/floor/grey_dirt7.png" title="dngn/floor/grey_dirt7.png"><img src="external/crawl/crawl-ref/source/rltiles/dngn/floor/grey_dirt7.png"></div> <div class="thumb" data-source="crawl" data-path="dngn/floor/spider09.png" title="dngn/floor/spider09.png"><img src="external/crawl/crawl-ref/source/rltiles/dngn/floor/spider09.png"></div></div></td>
+<td class="col-selected" id="selected-floor">-</td>
+</tr>
+<tr data-key="water">
+<td class="col-key" title="water"><code>water</code></td>
+<td class="col-name">Water</td>
+<td class="col-current"><div class="thumb color-thumb" style="background: #74B9FF;" data-source="color" data-path="#74B9FF"></div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="misc/mask_shallow_water_murky.png" title="misc/mask_shallow_water_murky.png"><img src="external/crawl/crawl-ref/source/rltiles/misc/mask_shallow_water_murky.png"></div> <div class="thumb" data-source="crawl" data-path="misc/mask_shallow_water.png" title="misc/mask_shallow_water.png"><img src="external/crawl/crawl-ref/source/rltiles/misc/mask_shallow_water.png"></div> <div class="thumb" data-source="crawl" data-path="misc/mask_deep_water_murky.png" title="misc/mask_deep_water_murky.png"><img src="external/crawl/crawl-ref/source/rltiles/misc/mask_deep_water_murky.png"></div></div></td>
+<td class="col-selected" id="selected-water">-</td>
+</tr>
+<tr data-key="sand">
+<td class="col-key" title="sand"><code>sand</code></td>
+<td class="col-name">Sand</td>
+<td class="col-current"><div class="thumb color-thumb" style="background: #FFEAA7;" data-source="color" data-path="#FFEAA7"></div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="effect/sandblast2.png" title="effect/sandblast2.png"><img src="external/crawl/crawl-ref/source/rltiles/effect/sandblast2.png"></div> <div class="thumb" data-source="crawl" data-path="effect/sandblast0.png" title="effect/sandblast0.png"><img src="external/crawl/crawl-ref/source/rltiles/effect/sandblast0.png"></div> <div class="thumb" data-source="crawl" data-path="effect/sandblast1.png" title="effect/sandblast1.png"><img src="external/crawl/crawl-ref/source/rltiles/effect/sandblast1.png"></div></div></td>
+<td class="col-selected" id="selected-sand">-</td>
+</tr>
+<tr data-key="grass">
+<td class="col-key" title="grass"><code>grass</code></td>
+<td class="col-name">Grass</td>
+<td class="col-current"><div class="thumb color-thumb" style="background: #00B894;" data-source="color" data-path="#00B894"></div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="dngn/floor/necropolis_tile_grass_3.png" title="dngn/floor/necropolis_tile_grass_3.png"><img src="external/crawl/crawl-ref/source/rltiles/dngn/floor/necropolis_tile_grass_3.png"></div> <div class="thumb" data-source="crawl" data-path="dngn/floor/necropolis_grass_2.png" title="dngn/floor/necropolis_grass_2.png"><img src="external/crawl/crawl-ref/source/rltiles/dngn/floor/necropolis_grass_2.png"></div> <div class="thumb" data-source="crawl" data-path="dngn/floor/necropolis_square_grass_1.png" title="dngn/floor/necropolis_square_grass_1.png"><img src="external/crawl/crawl-ref/source/rltiles/dngn/floor/necropolis_square_grass_1.png"></div></div></td>
+<td class="col-selected" id="selected-grass">-</td>
+</tr>
+<tr data-key="tree">
+<td class="col-key" title="tree"><code>tree</code></td>
+<td class="col-name">Tree</td>
+<td class="col-current"><div class="thumb color-thumb" style="background: #00B894;" data-source="color" data-path="#00B894"></div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions"><div class="thumb" data-source="andor" data-path="map_tree_2.png" title="map_tree_2.png"><img src="external/andors-trail/AndorsTrail/res/drawable/map_tree_2.png"></div> <div class="thumb" data-source="andor" data-path="map_tree_4.png" title="map_tree_4.png"><img src="external/andors-trail/AndorsTrail/res/drawable/map_tree_4.png"></div> <div class="thumb" data-source="andor" data-path="map_tree_1.png" title="map_tree_1.png"><img src="external/andors-trail/AndorsTrail/res/drawable/map_tree_1.png"></div></div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="player/transform/tree_form.png" title="player/transform/tree_form.png"><img src="external/crawl/crawl-ref/source/rltiles/player/transform/tree_form.png"></div> <div class="thumb" data-source="crawl" data-path="dngn/trees/tree_demonic14.png" title="dngn/trees/tree_demonic14.png"><img src="external/crawl/crawl-ref/source/rltiles/dngn/trees/tree_demonic14.png"></div> <div class="thumb" data-source="crawl" data-path="dngn/trees/tree4.png" title="dngn/trees/tree4.png"><img src="external/crawl/crawl-ref/source/rltiles/dngn/trees/tree4.png"></div></div></td>
+<td class="col-selected" id="selected-tree">-</td>
+</tr>
+<tr data-key="rock">
+<td class="col-key" title="rock"><code>rock</code></td>
+<td class="col-name">Rock</td>
+<td class="col-current"><div class="thumb color-thumb" style="background: #636E72;" data-source="color" data-path="#636E72"></div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions"><div class="thumb" data-source="andor" data-path="map_rock_2.png" title="map_rock_2.png"><img src="external/andors-trail/AndorsTrail/res/drawable/map_rock_2.png"></div> <div class="thumb" data-source="andor" data-path="map_rock_1.png" title="map_rock_1.png"><img src="external/andors-trail/AndorsTrail/res/drawable/map_rock_1.png"></div> <div class="thumb" data-source="andor" data-path="map_rock_3.png" title="map_rock_3.png"><img src="external/andors-trail/AndorsTrail/res/drawable/map_rock_3.png"></div></div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="effect/rock0.png" title="effect/rock0.png"><img src="external/crawl/crawl-ref/source/rltiles/effect/rock0.png"></div> <div class="thumb" data-source="crawl" data-path="item/weapon/ranged/rock.png" title="item/weapon/ranged/rock.png"><img src="external/crawl/crawl-ref/source/rltiles/item/weapon/ranged/rock.png"></div> <div class="thumb" data-source="crawl" data-path="mon/amorphous/rockslime.png" title="mon/amorphous/rockslime.png"><img src="external/crawl/crawl-ref/source/rltiles/mon/amorphous/rockslime.png"></div></div></td>
+<td class="col-selected" id="selected-rock">-</td>
+</tr>
+<tr data-key="chest_closed">
+<td class="col-key" title="chest_closed"><code>chest_closed</code></td>
+<td class="col-name">Chest Closed</td>
+<td class="col-current"><div class="thumb color-thumb" style="background: #8B4513;" data-source="color" data-path="#8B4513"></div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-chest_closed">-</td>
+</tr>
+<tr data-key="chest_open">
+<td class="col-key" title="chest_open"><code>chest_open</code></td>
+<td class="col-name">Chest Open</td>
+<td class="col-current"><div class="thumb color-thumb" style="background: #8B4513;" data-source="color" data-path="#8B4513"></div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-chest_open">-</td>
+</tr>
+<tr data-key="bookstore">
+<td class="col-key" title="bookstore"><code>bookstore</code></td>
+<td class="col-name">Bookstore</td>
+<td class="col-current"><div class="thumb color-thumb" style="background: #8B4513;" data-source="color" data-path="#8B4513"></div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-bookstore">-</td>
+</tr>
+</tbody></table></div>
+<div class="category">
+<h2>All Items</h2>
+<table>
+<thead><tr>
+<th class="col-key">Key</th>
+<th class="col-name">Name</th>
+<th class="col-current">Current</th>
+<th class="col-lpc">LPC</th>
+<th class="col-andor">Andor's Trail</th>
+<th class="col-dcss">DCSS</th>
+<th class="col-selected">Selected</th>
+</tr></thead><tbody>
+<tr data-key="💣🌟">
+<td class="col-key" title="💣🌟"><code>💣🌟</code></td>
+<td class="col-name">💣🌟</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="💣🌟">💣🌟</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-💣🌟">-</td>
+</tr>
+<tr data-key="🥥">
+<td class="col-key" title="🥥"><code>🥥</code></td>
+<td class="col-name">🥥</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🥥">🥥</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🥥">-</td>
+</tr>
+<tr data-key="📜📜">
+<td class="col-key" title="📜📜"><code>📜📜</code></td>
+<td class="col-name">📜📜</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="📜📜">📜📜</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-📜📜">-</td>
+</tr>
+<tr data-key="🧪🦎">
+<td class="col-key" title="🧪🦎"><code>🧪🦎</code></td>
+<td class="col-name">🧪🦎</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧪🦎">🧪🦎</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🧪🦎">-</td>
+</tr>
+<tr data-key="💎💠">
+<td class="col-key" title="💎💠"><code>💎💠</code></td>
+<td class="col-name">💎💠</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="💎💠">💎💠</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-💎💠">-</td>
+</tr>
+<tr data-key="📿">
+<td class="col-key" title="📿"><code>📿</code></td>
+<td class="col-name">📿</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="📿">📿</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-📿">-</td>
+</tr>
+<tr data-key="🪙">
+<td class="col-key" title="🪙"><code>🪙</code></td>
+<td class="col-name">🪙</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🪙">🪙</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🪙">-</td>
+</tr>
+<tr data-key="🏅">
+<td class="col-key" title="🏅"><code>🏅</code></td>
+<td class="col-name">🏅</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🏅">🏅</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🏅">-</td>
+</tr>
+<tr data-key="🪕">
+<td class="col-key" title="🪕"><code>🪕</code></td>
+<td class="col-name">🪕</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🪕">🪕</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🪕">-</td>
+</tr>
+<tr data-key="🍲">
+<td class="col-key" title="🍲"><code>🍲</code></td>
+<td class="col-name">🍲</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🍲">🍲</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🍲">-</td>
+</tr>
+<tr data-key="🐔">
+<td class="col-key" title="🐔"><code>🐔</code></td>
+<td class="col-name">🐔</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🐔">🐔</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🐔">-</td>
+</tr>
+<tr data-key="⚙️">
+<td class="col-key" title="⚙️"><code>⚙️</code></td>
+<td class="col-name">⚙️</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="⚙️">⚙️</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-⚙️">-</td>
+</tr>
+<tr data-key="👢⚡">
+<td class="col-key" title="👢⚡"><code>👢⚡</code></td>
+<td class="col-name">👢⚡</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="👢⚡">👢⚡</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-👢⚡">-</td>
+</tr>
+<tr data-key="👺">
+<td class="col-key" title="👺"><code>👺</code></td>
+<td class="col-name">👺</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="👺">👺</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-👺">-</td>
+</tr>
+<tr data-key="🛡️🏛️">
+<td class="col-key" title="🛡️🏛️"><code>🛡️🏛️</code></td>
+<td class="col-name">🛡️🏛️</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🛡️🏛️">🛡️🏛️</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🛡️🏛️">-</td>
+</tr>
+<tr data-key="💍">
+<td class="col-key" title="💍"><code>💍</code></td>
+<td class="col-name">💍</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="💍">💍</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-💍">-</td>
+</tr>
+<tr data-key="🥾">
+<td class="col-key" title="🥾"><code>🥾</code></td>
+<td class="col-name">🥾</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🥾">🥾</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🥾">-</td>
+</tr>
+<tr data-key="🦯">
+<td class="col-key" title="🦯"><code>🦯</code></td>
+<td class="col-name">🦯</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🦯">🦯</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🦯">-</td>
+</tr>
+<tr data-key="🪗">
+<td class="col-key" title="🪗"><code>🪗</code></td>
+<td class="col-name">🪗</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🪗">🪗</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🪗">-</td>
+</tr>
+<tr data-key="🏹">
+<td class="col-key" title="🏹"><code>🏹</code></td>
+<td class="col-name">🏹</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🏹">🏹</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🏹">-</td>
+</tr>
+<tr data-key="➶">
+<td class="col-key" title="➶"><code>➶</code></td>
+<td class="col-name">➶</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="➶">➶</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-➶">-</td>
+</tr>
+<tr data-key="🏺">
+<td class="col-key" title="🏺"><code>🏺</code></td>
+<td class="col-name">🏺</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🏺">🏺</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🏺">-</td>
+</tr>
+<tr data-key="🧪">
+<td class="col-key" title="🧪"><code>🧪</code></td>
+<td class="col-name">🧪</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧪">🧪</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🧪">-</td>
+</tr>
+<tr data-key="🕯️">
+<td class="col-key" title="🕯️"><code>🕯️</code></td>
+<td class="col-name">🕯️</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🕯️">🕯️</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🕯️">-</td>
+</tr>
+<tr data-key="📃">
+<td class="col-key" title="📃"><code>📃</code></td>
+<td class="col-name">📃</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="📃">📃</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-📃">-</td>
+</tr>
+<tr data-key="🌀">
+<td class="col-key" title="🌀"><code>🌀</code></td>
+<td class="col-name">🌀</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🌀">🌀</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🌀">-</td>
+</tr>
+<tr data-key="⛏️">
+<td class="col-key" title="⛏️"><code>⛏️</code></td>
+<td class="col-name">⛏️</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="⛏️">⛏️</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-⛏️">-</td>
+</tr>
+<tr data-key="🔥📘">
+<td class="col-key" title="🔥📘"><code>🔥📘</code></td>
+<td class="col-name">🔥📘</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🔥📘">🔥📘</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🔥📘">-</td>
+</tr>
+<tr data-key="🕯️💨">
+<td class="col-key" title="🕯️💨"><code>🕯️💨</code></td>
+<td class="col-name">🕯️💨</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🕯️💨">🕯️💨</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🕯️💨">-</td>
+</tr>
+<tr data-key="🐀💦">
+<td class="col-key" title="🐀💦"><code>🐀💦</code></td>
+<td class="col-name">🐀💦</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🐀💦">🐀💦</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🐀💦">-</td>
+</tr>
+<tr data-key="💳">
+<td class="col-key" title="💳"><code>💳</code></td>
+<td class="col-name">💳</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="💳">💳</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-💳">-</td>
+</tr>
+<tr data-key="💍⚡">
+<td class="col-key" title="💍⚡"><code>💍⚡</code></td>
+<td class="col-name">💍⚡</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="💍⚡">💍⚡</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-💍⚡">-</td>
+</tr>
+<tr data-key="🧪💎">
+<td class="col-key" title="🧪💎"><code>🧪💎</code></td>
+<td class="col-name">🧪💎</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧪💎">🧪💎</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🧪💎">-</td>
+</tr>
+<tr data-key="🫖">
+<td class="col-key" title="🫖"><code>🫖</code></td>
+<td class="col-name">🫖</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🫖">🫖</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🫖">-</td>
+</tr>
+<tr data-key="📚🔥">
+<td class="col-key" title="📚🔥"><code>📚🔥</code></td>
+<td class="col-name">📚🔥</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="📚🔥">📚🔥</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-📚🔥">-</td>
+</tr>
+<tr data-key="🪄">
+<td class="col-key" title="🪄"><code>🪄</code></td>
+<td class="col-name">🪄</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🪄">🪄</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🪄">-</td>
+</tr>
+<tr data-key="🦯✨">
+<td class="col-key" title="🦯✨"><code>🦯✨</code></td>
+<td class="col-name">🦯✨</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🦯✨">🦯✨</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🦯✨">-</td>
+</tr>
+<tr data-key="👑🌿">
+<td class="col-key" title="👑🌿"><code>👑🌿</code></td>
+<td class="col-name">👑🌿</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="👑🌿">👑🌿</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-👑🌿">-</td>
+</tr>
+<tr data-key="🗡️✨">
+<td class="col-key" title="🗡️✨"><code>🗡️✨</code></td>
+<td class="col-name">🗡️✨</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🗡️✨">🗡️✨</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🗡️✨">-</td>
+</tr>
+<tr data-key="🛡️🌟">
+<td class="col-key" title="🛡️🌟"><code>🛡️🌟</code></td>
+<td class="col-name">🛡️🌟</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🛡️🌟">🛡️🌟</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🛡️🌟">-</td>
+</tr>
+<tr data-key="🍕">
+<td class="col-key" title="🍕"><code>🍕</code></td>
+<td class="col-name">🍕</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🍕">🍕</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🍕">-</td>
+</tr>
+<tr data-key="💰">
+<td class="col-key" title="💰"><code>💰</code></td>
+<td class="col-name">💰</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="💰">💰</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-💰">-</td>
+</tr>
+<tr data-key="🎒">
+<td class="col-key" title="🎒"><code>🎒</code></td>
+<td class="col-name">🎒</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🎒">🎒</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🎒">-</td>
+</tr>
+<tr data-key="👜">
+<td class="col-key" title="👜"><code>👜</code></td>
+<td class="col-name">👜</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="👜">👜</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-👜">-</td>
+</tr>
+<tr data-key="🛍️">
+<td class="col-key" title="🛍️"><code>🛍️</code></td>
+<td class="col-name">🛍️</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🛍️">🛍️</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🛍️">-</td>
+</tr>
+<tr data-key="📦">
+<td class="col-key" title="📦"><code>📦</code></td>
+<td class="col-name">📦</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="📦">📦</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-📦">-</td>
+</tr>
+<tr data-key="🫙">
+<td class="col-key" title="🫙"><code>🫙</code></td>
+<td class="col-name">🫙</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🫙">🫙</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🫙">-</td>
+</tr>
+<tr data-key="🧳">
+<td class="col-key" title="🧳"><code>🧳</code></td>
+<td class="col-name">🧳</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧳">🧳</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🧳">-</td>
+</tr>
+<tr data-key="💼">
+<td class="col-key" title="💼"><code>💼</code></td>
+<td class="col-name">💼</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="💼">💼</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-💼">-</td>
+</tr>
+<tr data-key="🧰">
+<td class="col-key" title="🧰"><code>🧰</code></td>
+<td class="col-name">🧰</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧰">🧰</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🧰">-</td>
+</tr>
+<tr data-key="👝">
+<td class="col-key" title="👝"><code>👝</code></td>
+<td class="col-name">👝</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="👝">👝</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-👝">-</td>
+</tr>
+<tr data-key="🎒🔥">
+<td class="col-key" title="🎒🔥"><code>🎒🔥</code></td>
+<td class="col-name">🎒🔥</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🎒🔥">🎒🔥</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🎒🔥">-</td>
+</tr>
+<tr data-key="🧳✨">
+<td class="col-key" title="🧳✨"><code>🧳✨</code></td>
+<td class="col-name">🧳✨</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧳✨">🧳✨</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🧳✨">-</td>
+</tr>
+<tr data-key="💼🌟">
+<td class="col-key" title="💼🌟"><code>💼🌟</code></td>
+<td class="col-name">💼🌟</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="💼🌟">💼🌟</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-💼🌟">-</td>
+</tr>
+<tr data-key="🎒💫">
+<td class="col-key" title="🎒💫"><code>🎒💫</code></td>
+<td class="col-name">🎒💫</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🎒💫">🎒💫</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🎒💫">-</td>
+</tr>
+<tr data-key="🎒🌈">
+<td class="col-key" title="🎒🌈"><code>🎒🌈</code></td>
+<td class="col-name">🎒🌈</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🎒🌈">🎒🌈</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🎒🌈">-</td>
+</tr>
+<tr data-key="🗡️">
+<td class="col-key" title="🗡️"><code>🗡️</code></td>
+<td class="col-name">🗡️</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🗡️">🗡️</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🗡️">-</td>
+</tr>
+<tr data-key="🛡️">
+<td class="col-key" title="🛡️"><code>🛡️</code></td>
+<td class="col-name">🛡️</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🛡️">🛡️</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🛡️">-</td>
+</tr>
+<tr data-key="🎽">
+<td class="col-key" title="🎽"><code>🎽</code></td>
+<td class="col-name">🎽</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🎽">🎽</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🎽">-</td>
+</tr>
+<tr data-key="𩲩">
+<td class="col-key" title="𩲩"><code>𩲩</code></td>
+<td class="col-name">𩲩</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="𩲩">𩲩</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-𩲩">-</td>
+</tr>
+<tr data-key="🩴">
+<td class="col-key" title="🩴"><code>🩴</code></td>
+<td class="col-name">🩴</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🩴">🩴</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🩴">-</td>
+</tr>
+<tr data-key="🦴">
+<td class="col-key" title="🦴"><code>🦴</code></td>
+<td class="col-name">🦴</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🦴">🦴</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🦴">-</td>
+</tr>
+<tr data-key="💩">
+<td class="col-key" title="💩"><code>💩</code></td>
+<td class="col-name">💩</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="💩">💩</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-💩">-</td>
+</tr>
+<tr data-key="📎">
+<td class="col-key" title="📎"><code>📎</code></td>
+<td class="col-name">📎</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="📎">📎</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-📎">-</td>
+</tr>
+<tr data-key="🧶">
+<td class="col-key" title="🧶"><code>🧶</code></td>
+<td class="col-name">🧶</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧶">🧶</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🧶">-</td>
+</tr>
+<tr data-key="🧀">
+<td class="col-key" title="🧀"><code>🧀</code></td>
+<td class="col-name">🧀</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧀">🧀</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🧀">-</td>
+</tr>
+<tr data-key="📋">
+<td class="col-key" title="📋"><code>📋</code></td>
+<td class="col-name">📋</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="📋">📋</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-📋">-</td>
+</tr>
+<tr data-key="🦗">
+<td class="col-key" title="🦗"><code>🦗</code></td>
+<td class="col-name">🦗</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🦗">🦗</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🦗">-</td>
+</tr>
+<tr data-key="🧵">
+<td class="col-key" title="🧵"><code>🧵</code></td>
+<td class="col-name">🧵</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧵">🧵</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🧵">-</td>
+</tr>
+<tr data-key="📰">
+<td class="col-key" title="📰"><code>📰</code></td>
+<td class="col-name">📰</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="📰">📰</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-📰">-</td>
+</tr>
+<tr data-key="🧤">
+<td class="col-key" title="🧤"><code>🧤</code></td>
+<td class="col-name">🧤</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧤">🧤</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🧤">-</td>
+</tr>
+<tr data-key="🧱">
+<td class="col-key" title="🧱"><code>🧱</code></td>
+<td class="col-name">🧱</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧱">🧱</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🧱">-</td>
+</tr>
+<tr data-key="🧼">
+<td class="col-key" title="🧼"><code>🧼</code></td>
+<td class="col-name">🧼</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧼">🧼</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🧼">-</td>
+</tr>
+<tr data-key="🐟">
+<td class="col-key" title="🐟"><code>🐟</code></td>
+<td class="col-name">🐟</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🐟">🐟</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🐟">-</td>
+</tr>
+<tr data-key="🦷">
+<td class="col-key" title="🦷"><code>🦷</code></td>
+<td class="col-name">🦷</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🦷">🦷</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🦷">-</td>
+</tr>
+<tr data-key="🍗">
+<td class="col-key" title="🍗"><code>🍗</code></td>
+<td class="col-name">🍗</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🍗">🍗</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🍗">-</td>
+</tr>
+<tr data-key="👔🦈">
+<td class="col-key" title="👔🦈"><code>👔🦈</code></td>
+<td class="col-name">👔🦈</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="👔🦈">👔🦈</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-👔🦈">-</td>
+</tr>
+<tr data-key="🗝️">
+<td class="col-key" title="🗝️"><code>🗝️</code></td>
+<td class="col-name">🗝️</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🗝️">🗝️</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🗝️">-</td>
+</tr>
+<tr data-key="🥤">
+<td class="col-key" title="🥤"><code>🥤</code></td>
+<td class="col-name">🥤</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🥤">🥤</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🥤">-</td>
+</tr>
+<tr data-key="🥃">
+<td class="col-key" title="🥃"><code>🥃</code></td>
+<td class="col-name">🥃</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🥃">🥃</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🥃">-</td>
+</tr>
+<tr data-key="🍺">
+<td class="col-key" title="🍺"><code>🍺</code></td>
+<td class="col-name">🍺</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🍺">🍺</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🍺">-</td>
+</tr>
+<tr data-key="🍛">
+<td class="col-key" title="🍛"><code>🍛</code></td>
+<td class="col-name">🍛</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🍛">🍛</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🍛">-</td>
+</tr>
+<tr data-key="🍖">
+<td class="col-key" title="🍖"><code>🍖</code></td>
+<td class="col-name">🍖</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🍖">🍖</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🍖">-</td>
+</tr>
+<tr data-key="⚡📘">
+<td class="col-key" title="⚡📘"><code>⚡📘</code></td>
+<td class="col-name">⚡📘</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="⚡📘">⚡📘</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-⚡📘">-</td>
+</tr>
+<tr data-key="❄️📘">
+<td class="col-key" title="❄️📘"><code>❄️📘</code></td>
+<td class="col-name">❄️📘</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="❄️📘">❄️📘</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-❄️📘">-</td>
+</tr>
+<tr data-key="💪📘">
+<td class="col-key" title="💪📘"><code>💪📘</code></td>
+<td class="col-name">💪📘</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="💪📘">💪📘</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-💪📘">-</td>
+</tr>
+<tr data-key="🛡️📘">
+<td class="col-key" title="🛡️📘"><code>🛡️📘</code></td>
+<td class="col-name">🛡️📘</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🛡️📘">🛡️📘</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🛡️📘">-</td>
+</tr>
+<tr data-key="💖📘">
+<td class="col-key" title="💖📘"><code>💖📘</code></td>
+<td class="col-name">💖📘</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="💖📘">💖📘</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-💖📘">-</td>
+</tr>
+<tr data-key="👟📘">
+<td class="col-key" title="👟📘"><code>👟📘</code></td>
+<td class="col-name">👟📘</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="👟📘">👟📘</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-👟📘">-</td>
+</tr>
+<tr data-key="💇">
+<td class="col-key" title="💇"><code>💇</code></td>
+<td class="col-name">💇</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="💇">💇</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-💇">-</td>
+</tr>
+<tr data-key="🪨">
+<td class="col-key" title="🪨"><code>🪨</code></td>
+<td class="col-name">🪨</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🪨">🪨</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🪨">-</td>
+</tr>
+<tr data-key="🧿">
+<td class="col-key" title="🧿"><code>🧿</code></td>
+<td class="col-name">🧿</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧿">🧿</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🧿">-</td>
+</tr>
+<tr data-key="🦷💀">
+<td class="col-key" title="🦷💀"><code>🦷💀</code></td>
+<td class="col-name">🦷💀</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🦷💀">🦷💀</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🦷💀">-</td>
+</tr>
+<tr data-key="🧲">
+<td class="col-key" title="🧲"><code>🧲</code></td>
+<td class="col-name">🧲</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧲">🧲</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🧲">-</td>
+</tr>
+<tr data-key="🟠">
+<td class="col-key" title="🟠"><code>🟠</code></td>
+<td class="col-name">🟠</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🟠">🟠</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🟠">-</td>
+</tr>
+<tr data-key="🫧">
+<td class="col-key" title="🫧"><code>🫧</code></td>
+<td class="col-name">🫧</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🫧">🫧</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🫧">-</td>
+</tr>
+<tr data-key="🪶">
+<td class="col-key" title="🪶"><code>🪶</code></td>
+<td class="col-name">🪶</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🪶">🪶</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🪶">-</td>
+</tr>
+<tr data-key="🔘">
+<td class="col-key" title="🔘"><code>🔘</code></td>
+<td class="col-name">🔘</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🔘">🔘</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🔘">-</td>
+</tr>
+<tr data-key="🪡">
+<td class="col-key" title="🪡"><code>🪡</code></td>
+<td class="col-name">🪡</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🪡">🪡</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🪡">-</td>
+</tr>
+<tr data-key="🫘">
+<td class="col-key" title="🫘"><code>🫘</code></td>
+<td class="col-name">🫘</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🫘">🫘</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🫘">-</td>
+</tr>
+<tr data-key="🌫️">
+<td class="col-key" title="🌫️"><code>🌫️</code></td>
+<td class="col-name">🌫️</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🌫️">🌫️</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🌫️">-</td>
+</tr>
+<tr data-key="📜">
+<td class="col-key" title="📜"><code>📜</code></td>
+<td class="col-name">📜</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="📜">📜</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-📜">-</td>
+</tr>
+<tr data-key="🏴‍☠️">
+<td class="col-key" title="🏴‍☠️"><code>🏴‍☠️</code></td>
+<td class="col-name">🏴‍☠️</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🏴‍☠️">🏴‍☠️</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🏴‍☠️">-</td>
+</tr>
+<tr data-key="⛵">
+<td class="col-key" title="⛵"><code>⛵</code></td>
+<td class="col-name">⛵</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="⛵">⛵</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-⛵">-</td>
+</tr>
+<tr data-key="🍝">
+<td class="col-key" title="🍝"><code>🍝</code></td>
+<td class="col-name">🍝</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🍝">🍝</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🍝">-</td>
+</tr>
+<tr data-key="🧢">
+<td class="col-key" title="🧢"><code>🧢</code></td>
+<td class="col-name">🧢</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧢">🧢</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🧢">-</td>
+</tr>
+<tr data-key="🌊">
+<td class="col-key" title="🌊"><code>🌊</code></td>
+<td class="col-name">🌊</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🌊">🌊</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🌊">-</td>
+</tr>
+<tr data-key="⚓">
+<td class="col-key" title="⚓"><code>⚓</code></td>
+<td class="col-name">⚓</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="⚓">⚓</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-⚓">-</td>
+</tr>
+<tr data-key="🦜">
+<td class="col-key" title="🦜"><code>🦜</code></td>
+<td class="col-name">🦜</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🦜">🦜</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🦜">-</td>
+</tr>
+<tr data-key="🍜">
+<td class="col-key" title="🍜"><code>🍜</code></td>
+<td class="col-name">🍜</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🍜">🍜</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🍜">-</td>
+</tr>
+<tr data-key="👑">
+<td class="col-key" title="👑"><code>👑</code></td>
+<td class="col-name">👑</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="👑">👑</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-andor"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-👑">-</td>
+</tr>
+</tbody></table></div>
+<div style="text-align:center">
+<button id="generate-btn">Generate Mapping JSON</button>
+<textarea id="output"></textarea>
+</div>
+<script>
+const selections = {};
+document.querySelectorAll(".thumb").forEach(el => {
+  el.addEventListener("click", function() {
+    const row = this.closest("tr");
+    const key = row.dataset.key;
+    selections[key] = { source: this.dataset.source, path: this.dataset.path };
+    row.querySelector(".col-selected").textContent = this.dataset.path || this.textContent;
+    row.querySelectorAll(".thumb").forEach(t => t.classList.remove("selected"));
+    this.classList.add("selected");
+  });
+});
+document.getElementById("generate-btn").addEventListener("click", () => {
+  document.getElementById("output").value = JSON.stringify(selections, null, 2);
+});
+</script></body></html>

@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Roguelike Asset Selector v5</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+* { box-sizing: border-box; }
+body { font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 20px; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: #e0e0e0; }
+h1 { text-align: center; color: #f39c12; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); margin-bottom: 10px; }
+.subtitle { text-align: center; color: #aaa; margin-bottom: 30px; }
+.category { background: rgba(255,255,255,0.05); border-radius: 10px; padding: 20px; margin-bottom: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+.category h2 { margin-top: 0; color: #3498db; border-bottom: 2px solid #3498db; padding-bottom: 10px; font-size: 1.4em; }
+table { width: 100%; border-collapse: collapse; margin-top: 15px; table-layout: fixed; }
+th, td { border: 1px solid #444; padding: 10px; text-align: center; vertical-align: middle; }
+th { background: #2c3e50; color: #ecf0f1; position: sticky; top: 0; }
+tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+tr:hover { background: rgba(52, 152, 219, 0.1); }
+.col-key { width: 12%; font-family: monospace; color: #f1c40f; word-break: break-all; }
+.col-name { width: 18%; text-align: left; font-size: 0.9em; }
+.col-current { width: 12%; }
+.col-lpc { width: 28%; }
+.col-dcss { width: 28%; }
+.col-selected { width: 10%; color: #2ecc71; font-size: 0.85em; word-break: break-all; }
+.thumb { cursor: pointer; border: 2px solid transparent; border-radius: 4px; padding: 2px; transition: transform 0.1s, border-color 0.2s; display: inline-block; vertical-align: middle; }
+.thumb:hover { transform: scale(1.1); border-color: #f39c12; }
+.thumb.selected { border-color: #2ecc71; box-shadow: 0 0 10px #2ecc71; }
+.thumb img { display: block; width: 32px; height: 32px; image-rendering: pixelated; }
+.emoji-thumb { font-size: 28px; line-height: 32px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); border-radius: 4px; }
+.color-thumb { width: 32px; height: 32px; border-radius: 4px; display: inline-block; }
+.suggestions { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; min-height: 36px; align-items: center; }
+.section-info { font-size: 0.85em; color: #95a5a6; margin-bottom: 15px; }
+#generate-btn { display: block; margin: 30px auto; padding: 15px 40px; font-size: 1.2em; background: #e74c3c; color: white; border: none; border-radius: 50px; cursor: pointer; box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4); transition: transform 0.2s, box-shadow 0.2s; }
+#generate-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(231, 76, 60, 0.6); }
+#output { width: 100%; height: 150px; background: #1e1e1e; color: #00ff00; border: 1px solid #444; padding: 15px; font-family: monospace; border-radius: 5px; margin-top: 10px; resize: vertical; }
+.legend { text-align: center; margin-top: 20px; font-size: 0.9em; color: #7f8c8d; }
+.emoji-cell { font-size: 2em; line-height: 1; }
+</style>
+</head><body>
+<h1>🎮 Roguelike Asset Selector v5</h1>
+<p class="subtitle">Click an image to select it for each asset. Click the emoji/color in "Current" to keep it as is.</p>
+<div class="category" id="cat-All Items">
+<h2>All Items</h2>
+<p class="section-info">111 assets in this category</p>
+<table>
+<thead><tr>
+<th class="col-key">Key</th>
+<th class="col-name">Name</th>
+<th class="col-current">Current</th>
+<th class="col-lpc">LPC Suggestions</th>
+<th class="col-dcss">DCSS Suggestions</th>
+<th class="col-selected">Selected</th>
+</tr></thead>
+<tbody>
+<tr data-key="💣🌟" data-type="item">
+<td class="col-key" title="💣🌟"><code>💣🌟</code></td>
+<td class="col-name">💣🌟</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="💣🌟">💣🌟</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-💣🌟">-</td>
+</tr>
+<tr data-key="🥥" data-type="item">
+<td class="col-key" title="🥥"><code>🥥</code></td>
+<td class="col-name">🥥</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🥥">🥥</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🥥">-</td>
+</tr>
+<tr data-key="📜📜" data-type="item">
+<td class="col-key" title="📜📜"><code>📜📜</code></td>
+<td class="col-name">📜📜</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="📜📜">📜📜</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-📜📜">-</td>
+</tr>
+<tr data-key="🧪🦎" data-type="item">
+<td class="col-key" title="🧪🦎"><code>🧪🦎</code></td>
+<td class="col-name">🧪🦎</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧪🦎">🧪🦎</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🧪🦎">-</td>
+</tr>
+<tr data-key="💎💠" data-type="item">
+<td class="col-key" title="💎💠"><code>💎💠</code></td>
+<td class="col-name">💎💠</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="💎💠">💎💠</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-💎💠">-</td>
+</tr>
+<tr data-key="📿" data-type="item">
+<td class="col-key" title="📿"><code>📿</code></td>
+<td class="col-name">📿</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="📿">📿</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-📿">-</td>
+</tr>
+<tr data-key="🪙" data-type="item">
+<td class="col-key" title="🪙"><code>🪙</code></td>
+<td class="col-name">🪙</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🪙">🪙</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🪙">-</td>
+</tr>
+<tr data-key="🏅" data-type="item">
+<td class="col-key" title="🏅"><code>🏅</code></td>
+<td class="col-name">🏅</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🏅">🏅</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🏅">-</td>
+</tr>
+<tr data-key="🪕" data-type="item">
+<td class="col-key" title="🪕"><code>🪕</code></td>
+<td class="col-name">🪕</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🪕">🪕</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🪕">-</td>
+</tr>
+<tr data-key="🍲" data-type="item">
+<td class="col-key" title="🍲"><code>🍲</code></td>
+<td class="col-name">🍲</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🍲">🍲</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🍲">-</td>
+</tr>
+<tr data-key="🐔" data-type="item">
+<td class="col-key" title="🐔"><code>🐔</code></td>
+<td class="col-name">🐔</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🐔">🐔</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🐔">-</td>
+</tr>
+<tr data-key="⚙️" data-type="item">
+<td class="col-key" title="⚙️"><code>⚙️</code></td>
+<td class="col-name">⚙️</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="⚙️">⚙️</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-⚙️">-</td>
+</tr>
+<tr data-key="👢⚡" data-type="item">
+<td class="col-key" title="👢⚡"><code>👢⚡</code></td>
+<td class="col-name">👢⚡</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="👢⚡">👢⚡</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-👢⚡">-</td>
+</tr>
+<tr data-key="👺" data-type="item">
+<td class="col-key" title="👺"><code>👺</code></td>
+<td class="col-name">👺</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="👺">👺</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-👺">-</td>
+</tr>
+<tr data-key="🛡️🏛️" data-type="item">
+<td class="col-key" title="🛡️🏛️"><code>🛡️🏛️</code></td>
+<td class="col-name">🛡️🏛️</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🛡️🏛️">🛡️🏛️</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🛡️🏛️">-</td>
+</tr>
+<tr data-key="💍" data-type="item">
+<td class="col-key" title="💍"><code>💍</code></td>
+<td class="col-name">💍</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="💍">💍</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-💍">-</td>
+</tr>
+<tr data-key="🥾" data-type="item">
+<td class="col-key" title="🥾"><code>🥾</code></td>
+<td class="col-name">🥾</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🥾">🥾</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🥾">-</td>
+</tr>
+<tr data-key="🦯" data-type="item">
+<td class="col-key" title="🦯"><code>🦯</code></td>
+<td class="col-name">🦯</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🦯">🦯</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🦯">-</td>
+</tr>
+<tr data-key="🪗" data-type="item">
+<td class="col-key" title="🪗"><code>🪗</code></td>
+<td class="col-name">🪗</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🪗">🪗</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🪗">-</td>
+</tr>
+<tr data-key="🏹" data-type="item">
+<td class="col-key" title="🏹"><code>🏹</code></td>
+<td class="col-name">🏹</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🏹">🏹</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🏹">-</td>
+</tr>
+<tr data-key="➶" data-type="item">
+<td class="col-key" title="➶"><code>➶</code></td>
+<td class="col-name">➶</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="➶">➶</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-➶">-</td>
+</tr>
+<tr data-key="🏺" data-type="item">
+<td class="col-key" title="🏺"><code>🏺</code></td>
+<td class="col-name">🏺</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🏺">🏺</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🏺">-</td>
+</tr>
+<tr data-key="🧪" data-type="item">
+<td class="col-key" title="🧪"><code>🧪</code></td>
+<td class="col-name">🧪</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧪">🧪</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🧪">-</td>
+</tr>
+<tr data-key="🕯️" data-type="item">
+<td class="col-key" title="🕯️"><code>🕯️</code></td>
+<td class="col-name">🕯️</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🕯️">🕯️</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🕯️">-</td>
+</tr>
+<tr data-key="📃" data-type="item">
+<td class="col-key" title="📃"><code>📃</code></td>
+<td class="col-name">📃</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="📃">📃</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-📃">-</td>
+</tr>
+<tr data-key="🌀" data-type="item">
+<td class="col-key" title="🌀"><code>🌀</code></td>
+<td class="col-name">🌀</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🌀">🌀</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🌀">-</td>
+</tr>
+<tr data-key="⛏️" data-type="item">
+<td class="col-key" title="⛏️"><code>⛏️</code></td>
+<td class="col-name">⛏️</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="⛏️">⛏️</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-⛏️">-</td>
+</tr>
+<tr data-key="🔥📘" data-type="item">
+<td class="col-key" title="🔥📘"><code>🔥📘</code></td>
+<td class="col-name">🔥📘</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🔥📘">🔥📘</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🔥📘">-</td>
+</tr>
+<tr data-key="🕯️💨" data-type="item">
+<td class="col-key" title="🕯️💨"><code>🕯️💨</code></td>
+<td class="col-name">🕯️💨</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🕯️💨">🕯️💨</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🕯️💨">-</td>
+</tr>
+<tr data-key="🐀💦" data-type="item">
+<td class="col-key" title="🐀💦"><code>🐀💦</code></td>
+<td class="col-name">🐀💦</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🐀💦">🐀💦</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🐀💦">-</td>
+</tr>
+<tr data-key="💳" data-type="item">
+<td class="col-key" title="💳"><code>💳</code></td>
+<td class="col-name">💳</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="💳">💳</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-💳">-</td>
+</tr>
+<tr data-key="💍⚡" data-type="item">
+<td class="col-key" title="💍⚡"><code>💍⚡</code></td>
+<td class="col-name">💍⚡</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="💍⚡">💍⚡</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-💍⚡">-</td>
+</tr>
+<tr data-key="🧪💎" data-type="item">
+<td class="col-key" title="🧪💎"><code>🧪💎</code></td>
+<td class="col-name">🧪💎</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧪💎">🧪💎</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🧪💎">-</td>
+</tr>
+<tr data-key="🫖" data-type="item">
+<td class="col-key" title="🫖"><code>🫖</code></td>
+<td class="col-name">🫖</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🫖">🫖</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🫖">-</td>
+</tr>
+<tr data-key="📚🔥" data-type="item">
+<td class="col-key" title="📚🔥"><code>📚🔥</code></td>
+<td class="col-name">📚🔥</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="📚🔥">📚🔥</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-📚🔥">-</td>
+</tr>
+<tr data-key="🪄" data-type="item">
+<td class="col-key" title="🪄"><code>🪄</code></td>
+<td class="col-name">🪄</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🪄">🪄</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🪄">-</td>
+</tr>
+<tr data-key="🦯✨" data-type="item">
+<td class="col-key" title="🦯✨"><code>🦯✨</code></td>
+<td class="col-name">🦯✨</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🦯✨">🦯✨</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🦯✨">-</td>
+</tr>
+<tr data-key="👑🌿" data-type="item">
+<td class="col-key" title="👑🌿"><code>👑🌿</code></td>
+<td class="col-name">👑🌿</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="👑🌿">👑🌿</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-👑🌿">-</td>
+</tr>
+<tr data-key="🗡️✨" data-type="item">
+<td class="col-key" title="🗡️✨"><code>🗡️✨</code></td>
+<td class="col-name">🗡️✨</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🗡️✨">🗡️✨</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🗡️✨">-</td>
+</tr>
+<tr data-key="🛡️🌟" data-type="item">
+<td class="col-key" title="🛡️🌟"><code>🛡️🌟</code></td>
+<td class="col-name">🛡️🌟</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🛡️🌟">🛡️🌟</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🛡️🌟">-</td>
+</tr>
+<tr data-key="🍕" data-type="item">
+<td class="col-key" title="🍕"><code>🍕</code></td>
+<td class="col-name">🍕</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🍕">🍕</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🍕">-</td>
+</tr>
+<tr data-key="💰" data-type="item">
+<td class="col-key" title="💰"><code>💰</code></td>
+<td class="col-name">💰</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="💰">💰</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-💰">-</td>
+</tr>
+<tr data-key="🎒" data-type="item">
+<td class="col-key" title="🎒"><code>🎒</code></td>
+<td class="col-name">🎒</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🎒">🎒</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🎒">-</td>
+</tr>
+<tr data-key="👜" data-type="item">
+<td class="col-key" title="👜"><code>👜</code></td>
+<td class="col-name">👜</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="👜">👜</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-👜">-</td>
+</tr>
+<tr data-key="🛍️" data-type="item">
+<td class="col-key" title="🛍️"><code>🛍️</code></td>
+<td class="col-name">🛍️</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🛍️">🛍️</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🛍️">-</td>
+</tr>
+<tr data-key="📦" data-type="item">
+<td class="col-key" title="📦"><code>📦</code></td>
+<td class="col-name">📦</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="📦">📦</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-📦">-</td>
+</tr>
+<tr data-key="🫙" data-type="item">
+<td class="col-key" title="🫙"><code>🫙</code></td>
+<td class="col-name">🫙</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🫙">🫙</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🫙">-</td>
+</tr>
+<tr data-key="🧳" data-type="item">
+<td class="col-key" title="🧳"><code>🧳</code></td>
+<td class="col-name">🧳</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧳">🧳</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🧳">-</td>
+</tr>
+<tr data-key="💼" data-type="item">
+<td class="col-key" title="💼"><code>💼</code></td>
+<td class="col-name">💼</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="💼">💼</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-💼">-</td>
+</tr>
+<tr data-key="🧰" data-type="item">
+<td class="col-key" title="🧰"><code>🧰</code></td>
+<td class="col-name">🧰</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧰">🧰</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🧰">-</td>
+</tr>
+<tr data-key="👝" data-type="item">
+<td class="col-key" title="👝"><code>👝</code></td>
+<td class="col-name">👝</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="👝">👝</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-👝">-</td>
+</tr>
+<tr data-key="🎒🔥" data-type="item">
+<td class="col-key" title="🎒🔥"><code>🎒🔥</code></td>
+<td class="col-name">🎒🔥</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🎒🔥">🎒🔥</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🎒🔥">-</td>
+</tr>
+<tr data-key="🧳✨" data-type="item">
+<td class="col-key" title="🧳✨"><code>🧳✨</code></td>
+<td class="col-name">🧳✨</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧳✨">🧳✨</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🧳✨">-</td>
+</tr>
+<tr data-key="💼🌟" data-type="item">
+<td class="col-key" title="💼🌟"><code>💼🌟</code></td>
+<td class="col-name">💼🌟</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="💼🌟">💼🌟</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-💼🌟">-</td>
+</tr>
+<tr data-key="🎒💫" data-type="item">
+<td class="col-key" title="🎒💫"><code>🎒💫</code></td>
+<td class="col-name">🎒💫</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🎒💫">🎒💫</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🎒💫">-</td>
+</tr>
+<tr data-key="🎒🌈" data-type="item">
+<td class="col-key" title="🎒🌈"><code>🎒🌈</code></td>
+<td class="col-name">🎒🌈</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🎒🌈">🎒🌈</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🎒🌈">-</td>
+</tr>
+<tr data-key="🗡️" data-type="item">
+<td class="col-key" title="🗡️"><code>🗡️</code></td>
+<td class="col-name">🗡️</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🗡️">🗡️</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🗡️">-</td>
+</tr>
+<tr data-key="🛡️" data-type="item">
+<td class="col-key" title="🛡️"><code>🛡️</code></td>
+<td class="col-name">🛡️</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🛡️">🛡️</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🛡️">-</td>
+</tr>
+<tr data-key="🎽" data-type="item">
+<td class="col-key" title="🎽"><code>🎽</code></td>
+<td class="col-name">🎽</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🎽">🎽</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🎽">-</td>
+</tr>
+<tr data-key="𩲩" data-type="item">
+<td class="col-key" title="𩲩"><code>𩲩</code></td>
+<td class="col-name">𩲩</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="𩲩">𩲩</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-𩲩">-</td>
+</tr>
+<tr data-key="🩴" data-type="item">
+<td class="col-key" title="🩴"><code>🩴</code></td>
+<td class="col-name">🩴</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🩴">🩴</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🩴">-</td>
+</tr>
+<tr data-key="🦴" data-type="item">
+<td class="col-key" title="🦴"><code>🦴</code></td>
+<td class="col-name">🦴</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🦴">🦴</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🦴">-</td>
+</tr>
+<tr data-key="💩" data-type="item">
+<td class="col-key" title="💩"><code>💩</code></td>
+<td class="col-name">💩</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="💩">💩</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-💩">-</td>
+</tr>
+<tr data-key="📎" data-type="item">
+<td class="col-key" title="📎"><code>📎</code></td>
+<td class="col-name">📎</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="📎">📎</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-📎">-</td>
+</tr>
+<tr data-key="🧶" data-type="item">
+<td class="col-key" title="🧶"><code>🧶</code></td>
+<td class="col-name">🧶</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧶">🧶</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🧶">-</td>
+</tr>
+<tr data-key="🧀" data-type="item">
+<td class="col-key" title="🧀"><code>🧀</code></td>
+<td class="col-name">🧀</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧀">🧀</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🧀">-</td>
+</tr>
+<tr data-key="📋" data-type="item">
+<td class="col-key" title="📋"><code>📋</code></td>
+<td class="col-name">📋</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="📋">📋</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-📋">-</td>
+</tr>
+<tr data-key="🦗" data-type="item">
+<td class="col-key" title="🦗"><code>🦗</code></td>
+<td class="col-name">🦗</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🦗">🦗</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🦗">-</td>
+</tr>
+<tr data-key="🧵" data-type="item">
+<td class="col-key" title="🧵"><code>🧵</code></td>
+<td class="col-name">🧵</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧵">🧵</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🧵">-</td>
+</tr>
+<tr data-key="📰" data-type="item">
+<td class="col-key" title="📰"><code>📰</code></td>
+<td class="col-name">📰</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="📰">📰</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-📰">-</td>
+</tr>
+<tr data-key="🧤" data-type="item">
+<td class="col-key" title="🧤"><code>🧤</code></td>
+<td class="col-name">🧤</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧤">🧤</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🧤">-</td>
+</tr>
+<tr data-key="🧱" data-type="item">
+<td class="col-key" title="🧱"><code>🧱</code></td>
+<td class="col-name">🧱</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧱">🧱</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🧱">-</td>
+</tr>
+<tr data-key="🧼" data-type="item">
+<td class="col-key" title="🧼"><code>🧼</code></td>
+<td class="col-name">🧼</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧼">🧼</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🧼">-</td>
+</tr>
+<tr data-key="🐟" data-type="item">
+<td class="col-key" title="🐟"><code>🐟</code></td>
+<td class="col-name">🐟</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🐟">🐟</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🐟">-</td>
+</tr>
+<tr data-key="🦷" data-type="item">
+<td class="col-key" title="🦷"><code>🦷</code></td>
+<td class="col-name">🦷</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🦷">🦷</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🦷">-</td>
+</tr>
+<tr data-key="🍗" data-type="item">
+<td class="col-key" title="🍗"><code>🍗</code></td>
+<td class="col-name">🍗</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🍗">🍗</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🍗">-</td>
+</tr>
+<tr data-key="👔🦈" data-type="item">
+<td class="col-key" title="👔🦈"><code>👔🦈</code></td>
+<td class="col-name">👔🦈</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="👔🦈">👔🦈</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-👔🦈">-</td>
+</tr>
+<tr data-key="🗝️" data-type="item">
+<td class="col-key" title="🗝️"><code>🗝️</code></td>
+<td class="col-name">🗝️</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🗝️">🗝️</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🗝️">-</td>
+</tr>
+<tr data-key="🥤" data-type="item">
+<td class="col-key" title="🥤"><code>🥤</code></td>
+<td class="col-name">🥤</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🥤">🥤</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🥤">-</td>
+</tr>
+<tr data-key="🥃" data-type="item">
+<td class="col-key" title="🥃"><code>🥃</code></td>
+<td class="col-name">🥃</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🥃">🥃</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🥃">-</td>
+</tr>
+<tr data-key="🍺" data-type="item">
+<td class="col-key" title="🍺"><code>🍺</code></td>
+<td class="col-name">🍺</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🍺">🍺</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🍺">-</td>
+</tr>
+<tr data-key="🍛" data-type="item">
+<td class="col-key" title="🍛"><code>🍛</code></td>
+<td class="col-name">🍛</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🍛">🍛</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🍛">-</td>
+</tr>
+<tr data-key="🍖" data-type="item">
+<td class="col-key" title="🍖"><code>🍖</code></td>
+<td class="col-name">🍖</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🍖">🍖</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🍖">-</td>
+</tr>
+<tr data-key="⚡📘" data-type="item">
+<td class="col-key" title="⚡📘"><code>⚡📘</code></td>
+<td class="col-name">⚡📘</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="⚡📘">⚡📘</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-⚡📘">-</td>
+</tr>
+<tr data-key="❄️📘" data-type="item">
+<td class="col-key" title="❄️📘"><code>❄️📘</code></td>
+<td class="col-name">❄️📘</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="❄️📘">❄️📘</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-❄️📘">-</td>
+</tr>
+<tr data-key="💪📘" data-type="item">
+<td class="col-key" title="💪📘"><code>💪📘</code></td>
+<td class="col-name">💪📘</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="💪📘">💪📘</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-💪📘">-</td>
+</tr>
+<tr data-key="🛡️📘" data-type="item">
+<td class="col-key" title="🛡️📘"><code>🛡️📘</code></td>
+<td class="col-name">🛡️📘</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🛡️📘">🛡️📘</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🛡️📘">-</td>
+</tr>
+<tr data-key="💖📘" data-type="item">
+<td class="col-key" title="💖📘"><code>💖📘</code></td>
+<td class="col-name">💖📘</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="💖📘">💖📘</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-💖📘">-</td>
+</tr>
+<tr data-key="👟📘" data-type="item">
+<td class="col-key" title="👟📘"><code>👟📘</code></td>
+<td class="col-name">👟📘</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="👟📘">👟📘</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-👟📘">-</td>
+</tr>
+<tr data-key="💇" data-type="item">
+<td class="col-key" title="💇"><code>💇</code></td>
+<td class="col-name">💇</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="💇">💇</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-💇">-</td>
+</tr>
+<tr data-key="🪨" data-type="item">
+<td class="col-key" title="🪨"><code>🪨</code></td>
+<td class="col-name">🪨</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🪨">🪨</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🪨">-</td>
+</tr>
+<tr data-key="🧿" data-type="item">
+<td class="col-key" title="🧿"><code>🧿</code></td>
+<td class="col-name">🧿</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧿">🧿</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🧿">-</td>
+</tr>
+<tr data-key="🦷💀" data-type="item">
+<td class="col-key" title="🦷💀"><code>🦷💀</code></td>
+<td class="col-name">🦷💀</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🦷💀">🦷💀</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🦷💀">-</td>
+</tr>
+<tr data-key="🧲" data-type="item">
+<td class="col-key" title="🧲"><code>🧲</code></td>
+<td class="col-name">🧲</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧲">🧲</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🧲">-</td>
+</tr>
+<tr data-key="🟠" data-type="item">
+<td class="col-key" title="🟠"><code>🟠</code></td>
+<td class="col-name">🟠</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🟠">🟠</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🟠">-</td>
+</tr>
+<tr data-key="🫧" data-type="item">
+<td class="col-key" title="🫧"><code>🫧</code></td>
+<td class="col-name">🫧</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🫧">🫧</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🫧">-</td>
+</tr>
+<tr data-key="🪶" data-type="item">
+<td class="col-key" title="🪶"><code>🪶</code></td>
+<td class="col-name">🪶</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🪶">🪶</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🪶">-</td>
+</tr>
+<tr data-key="🔘" data-type="item">
+<td class="col-key" title="🔘"><code>🔘</code></td>
+<td class="col-name">🔘</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🔘">🔘</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🔘">-</td>
+</tr>
+<tr data-key="🪡" data-type="item">
+<td class="col-key" title="🪡"><code>🪡</code></td>
+<td class="col-name">🪡</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🪡">🪡</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🪡">-</td>
+</tr>
+<tr data-key="🫘" data-type="item">
+<td class="col-key" title="🫘"><code>🫘</code></td>
+<td class="col-name">🫘</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🫘">🫘</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🫘">-</td>
+</tr>
+<tr data-key="🌫️" data-type="item">
+<td class="col-key" title="🌫️"><code>🌫️</code></td>
+<td class="col-name">🌫️</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🌫️">🌫️</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🌫️">-</td>
+</tr>
+<tr data-key="📜" data-type="item">
+<td class="col-key" title="📜"><code>📜</code></td>
+<td class="col-name">📜</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="📜">📜</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-📜">-</td>
+</tr>
+<tr data-key="🏴‍☠️" data-type="item">
+<td class="col-key" title="🏴‍☠️"><code>🏴‍☠️</code></td>
+<td class="col-name">🏴‍☠️</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🏴‍☠️">🏴‍☠️</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🏴‍☠️">-</td>
+</tr>
+<tr data-key="⛵" data-type="item">
+<td class="col-key" title="⛵"><code>⛵</code></td>
+<td class="col-name">⛵</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="⛵">⛵</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-⛵">-</td>
+</tr>
+<tr data-key="🍝" data-type="item">
+<td class="col-key" title="🍝"><code>🍝</code></td>
+<td class="col-name">🍝</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🍝">🍝</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🍝">-</td>
+</tr>
+<tr data-key="🧢" data-type="item">
+<td class="col-key" title="🧢"><code>🧢</code></td>
+<td class="col-name">🧢</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧢">🧢</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🧢">-</td>
+</tr>
+<tr data-key="🌊" data-type="item">
+<td class="col-key" title="🌊"><code>🌊</code></td>
+<td class="col-name">🌊</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🌊">🌊</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🌊">-</td>
+</tr>
+<tr data-key="⚓" data-type="item">
+<td class="col-key" title="⚓"><code>⚓</code></td>
+<td class="col-name">⚓</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="⚓">⚓</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-⚓">-</td>
+</tr>
+<tr data-key="🦜" data-type="item">
+<td class="col-key" title="🦜"><code>🦜</code></td>
+<td class="col-name">🦜</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🦜">🦜</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🦜">-</td>
+</tr>
+<tr data-key="🍜" data-type="item">
+<td class="col-key" title="🍜"><code>🍜</code></td>
+<td class="col-name">🍜</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🍜">🍜</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-🍜">-</td>
+</tr>
+<tr data-key="👑" data-type="item">
+<td class="col-key" title="👑"><code>👑</code></td>
+<td class="col-name">👑</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="👑">👑</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-👑">-</td>
+</tr>
+</tbody></table></div>
+<div class="category" id="cat-Extra Monsters">
+<h2>Extra Monsters</h2>
+<p class="section-info">43 assets in this category</p>
+<table>
+<thead><tr>
+<th class="col-key">Key</th>
+<th class="col-name">Name</th>
+<th class="col-current">Current</th>
+<th class="col-lpc">LPC Suggestions</th>
+<th class="col-dcss">DCSS Suggestions</th>
+<th class="col-selected">Selected</th>
+</tr></thead>
+<tbody>
+<tr data-key="chipmunk" data-type="monster">
+<td class="col-key" title="chipmunk"><code>chipmunk</code></td>
+<td class="col-name">Chipmunk</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🐿️">🐿️</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-chipmunk">-</td>
+</tr>
+<tr data-key="slime" data-type="monster">
+<td class="col-key" title="slime"><code>slime</code></td>
+<td class="col-name">Slime</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🫧">🫧</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="item/gem/slime_found_whole.png" title="item/gem/slime_found_whole.png"><img src="external/crawl/crawl-ref/source/rltiles/item/gem/slime_found_whole.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="item/gem/slime_found_broken.png" title="item/gem/slime_found_broken.png"><img src="external/crawl/crawl-ref/source/rltiles/item/gem/slime_found_broken.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="item/misc/runes/rune_slime.png" title="item/misc/runes/rune_slime.png"><img src="external/crawl/crawl-ref/source/rltiles/item/misc/runes/rune_slime.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="item/misc/uncollected_runes/rune_slime.png" title="item/misc/uncollected_runes/rune_slime.png"><img src="external/crawl/crawl-ref/source/rltiles/item/misc/uncollected_runes/rune_slime.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="gui/mutations/slime_shroud.png" title="gui/mutations/slime_shroud.png"><img src="external/crawl/crawl-ref/source/rltiles/gui/mutations/slime_shroud.png" alt=""></div></div></td>
+<td class="col-selected" id="selected-slime">-</td>
+</tr>
+<tr data-key="bat" data-type="monster">
+<td class="col-key" title="bat"><code>bat</code></td>
+<td class="col-name">Bat</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🦇">🦇</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="effect/cloud_bat_mist3.png" title="effect/cloud_bat_mist3.png"><img src="external/crawl/crawl-ref/source/rltiles/effect/cloud_bat_mist3.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="effect/cloud_bat_mist2.png" title="effect/cloud_bat_mist2.png"><img src="external/crawl/crawl-ref/source/rltiles/effect/cloud_bat_mist2.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="effect/cloud_bat_mist0.png" title="effect/cloud_bat_mist0.png"><img src="external/crawl/crawl-ref/source/rltiles/effect/cloud_bat_mist0.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="effect/cloud_bat_mist1.png" title="effect/cloud_bat_mist1.png"><img src="external/crawl/crawl-ref/source/rltiles/effect/cloud_bat_mist1.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="item/amulet/i-acrobat.png" title="item/amulet/i-acrobat.png"><img src="external/crawl/crawl-ref/source/rltiles/item/amulet/i-acrobat.png" alt=""></div></div></td>
+<td class="col-selected" id="selected-bat">-</td>
+</tr>
+<tr data-key="skeleton" data-type="monster">
+<td class="col-key" title="skeleton"><code>skeleton</code></td>
+<td class="col-name">Skeleton</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="💀">💀</div></td>
+<td class="col-lpc"><div class="suggestions"><div class="thumb" data-source="lpc" data-path="weapons/left hand/either/arrow_skeleton.png" title="weapons/left hand/either/arrow_skeleton.png"><img src="external/lpc-spritesheet/weapons/left hand/either/arrow_skeleton.png" alt=""></div> <div class="thumb" data-source="lpc" data-path="weapons/right hand/either/bow_skeleton.png" title="weapons/right hand/either/bow_skeleton.png"><img src="external/lpc-spritesheet/weapons/right hand/either/bow_skeleton.png" alt=""></div> <div class="thumb" data-source="lpc" data-path="body/male/skeleton.png" title="body/male/skeleton.png"><img src="external/lpc-spritesheet/body/male/skeleton.png" alt=""></div> <div class="thumb" data-source="lpc" data-path="body/male/eyes/casting_eyeglow_skeleton.png" title="body/male/eyes/casting_eyeglow_skeleton.png"><img src="external/lpc-spritesheet/body/male/eyes/casting_eyeglow_skeleton.png" alt=""></div></div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="item/wand/gem_bone.png" title="item/wand/gem_bone.png"><img src="external/crawl/crawl-ref/source/rltiles/item/wand/gem_bone.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="item/food/bone1.png" title="item/food/bone1.png"><img src="external/crawl/crawl-ref/source/rltiles/item/food/bone1.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="item/food/bone3.png" title="item/food/bone3.png"><img src="external/crawl/crawl-ref/source/rltiles/item/food/bone3.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="item/food/bone_humanoid1.png" title="item/food/bone_humanoid1.png"><img src="external/crawl/crawl-ref/source/rltiles/item/food/bone_humanoid1.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="item/food/bone_humanoid3.png" title="item/food/bone_humanoid3.png"><img src="external/crawl/crawl-ref/source/rltiles/item/food/bone_humanoid3.png" alt=""></div></div></td>
+<td class="col-selected" id="selected-skeleton">-</td>
+</tr>
+<tr data-key="ghost" data-type="monster">
+<td class="col-key" title="ghost"><code>ghost</code></td>
+<td class="col-name">Ghost</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="👻">👻</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="effect/ghostfire1.png" title="effect/ghostfire1.png"><img src="external/crawl/crawl-ref/source/rltiles/effect/ghostfire1.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="effect/ghostfire0.png" title="effect/ghostfire0.png"><img src="external/crawl/crawl-ref/source/rltiles/effect/ghostfire0.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="effect/phantom_blitz.png" title="effect/phantom_blitz.png"><img src="external/crawl/crawl-ref/source/rltiles/effect/phantom_blitz.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="misc/ghost_threat_easy.png" title="misc/ghost_threat_easy.png"><img src="external/crawl/crawl-ref/source/rltiles/misc/ghost_threat_easy.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="misc/ghost_threat_nasty.png" title="misc/ghost_threat_nasty.png"><img src="external/crawl/crawl-ref/source/rltiles/misc/ghost_threat_nasty.png" alt=""></div></div></td>
+<td class="col-selected" id="selected-ghost">-</td>
+</tr>
+<tr data-key="robot" data-type="monster">
+<td class="col-key" title="robot"><code>robot</code></td>
+<td class="col-name">Robot</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🤖">🤖</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-robot">-</td>
+</tr>
+<tr data-key="thief" data-type="monster">
+<td class="col-key" title="thief"><code>thief</code></td>
+<td class="col-name">Thief</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="👤">👤</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="item/armour/artefact/urand_thief.png" title="item/armour/artefact/urand_thief.png"><img src="external/crawl/crawl-ref/source/rltiles/item/armour/artefact/urand_thief.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="player/hand1/sword_thief.png" title="player/hand1/sword_thief.png"><img src="external/crawl/crawl-ref/source/rltiles/player/hand1/sword_thief.png" alt=""></div></div></td>
+<td class="col-selected" id="selected-thief">-</td>
+</tr>
+<tr data-key="fence" data-type="monster">
+<td class="col-key" title="fence"><code>fence</code></td>
+<td class="col-name">Fence</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧥">🧥</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="item/armour/artefact/urand_fencer.png" title="item/armour/artefact/urand_fencer.png"><img src="external/crawl/crawl-ref/source/rltiles/item/armour/artefact/urand_fencer.png" alt=""></div></div></td>
+<td class="col-selected" id="selected-fence">-</td>
+</tr>
+<tr data-key="cain" data-type="monster">
+<td class="col-key" title="cain"><code>cain</code></td>
+<td class="col-name">Cain</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧔">🧔</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-cain">-</td>
+</tr>
+<tr data-key="dragon" data-type="monster">
+<td class="col-key" title="dragon"><code>dragon</code></td>
+<td class="col-name">Dragon</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🐉">🐉</div></td>
+<td class="col-lpc"><div class="suggestions"><div class="thumb" data-source="lpc" data-path="weapons/oversize/two hand/either/dragonspear.png" title="weapons/oversize/two hand/either/dragonspear.png"><img src="external/lpc-spritesheet/weapons/oversize/two hand/either/dragonspear.png" alt=""></div></div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="item/armour/fire_dragon_armour.png" title="item/armour/fire_dragon_armour.png"><img src="external/crawl/crawl-ref/source/rltiles/item/armour/fire_dragon_armour.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="item/armour/fire_dragon_armour_art.png" title="item/armour/fire_dragon_armour_art.png"><img src="external/crawl/crawl-ref/source/rltiles/item/armour/fire_dragon_armour_art.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="item/armour/golden_dragon_armour.png" title="item/armour/golden_dragon_armour.png"><img src="external/crawl/crawl-ref/source/rltiles/item/armour/golden_dragon_armour.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="item/armour/shadow_dragon_armour.png" title="item/armour/shadow_dragon_armour.png"><img src="external/crawl/crawl-ref/source/rltiles/item/armour/shadow_dragon_armour.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="item/armour/swamp_dragon_armour.png" title="item/armour/swamp_dragon_armour.png"><img src="external/crawl/crawl-ref/source/rltiles/item/armour/swamp_dragon_armour.png" alt=""></div></div></td>
+<td class="col-selected" id="selected-dragon">-</td>
+</tr>
+<tr data-key="snake" data-type="monster">
+<td class="col-key" title="snake"><code>snake</code></td>
+<td class="col-name">Snake</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🐍">🐍</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="item/gem/snake_found_whole.png" title="item/gem/snake_found_whole.png"><img src="external/crawl/crawl-ref/source/rltiles/item/gem/snake_found_whole.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="item/gem/snake_found_broken.png" title="item/gem/snake_found_broken.png"><img src="external/crawl/crawl-ref/source/rltiles/item/gem/snake_found_broken.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="item/talisman/snake.png" title="item/talisman/snake.png"><img src="external/crawl/crawl-ref/source/rltiles/item/talisman/snake.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="item/weapon/artefact/urand_snakebite.png" title="item/weapon/artefact/urand_snakebite.png"><img src="external/crawl/crawl-ref/source/rltiles/item/weapon/artefact/urand_snakebite.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="item/ring/randarts/snake.png" title="item/ring/randarts/snake.png"><img src="external/crawl/crawl-ref/source/rltiles/item/ring/randarts/snake.png" alt=""></div></div></td>
+<td class="col-selected" id="selected-snake">-</td>
+</tr>
+<tr data-key="troll" data-type="monster">
+<td class="col-key" title="troll"><code>troll</code></td>
+<td class="col-name">Troll</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧌">🧌</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="item/armour/troll_leather_armour_art.png" title="item/armour/troll_leather_armour_art.png"><img src="external/crawl/crawl-ref/source/rltiles/item/armour/troll_leather_armour_art.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="item/armour/troll_leather_armour.png" title="item/armour/troll_leather_armour.png"><img src="external/crawl/crawl-ref/source/rltiles/item/armour/troll_leather_armour.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="item/armour/iron_troll_leather.png" title="item/armour/iron_troll_leather.png"><img src="external/crawl/crawl-ref/source/rltiles/item/armour/iron_troll_leather.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="item/armour/deep_troll_leather.png" title="item/armour/deep_troll_leather.png"><img src="external/crawl/crawl-ref/source/rltiles/item/armour/deep_troll_leather.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="item/weapon/giant_club3.png" title="item/weapon/giant_club3.png"><img src="external/crawl/crawl-ref/source/rltiles/item/weapon/giant_club3.png" alt=""></div></div></td>
+<td class="col-selected" id="selected-troll">-</td>
+</tr>
+<tr data-key="medusa" data-type="monster">
+<td class="col-key" title="medusa"><code>medusa</code></td>
+<td class="col-name">Medusa</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🐍👩">🐍👩</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="item/gem/snake_found_whole.png" title="item/gem/snake_found_whole.png"><img src="external/crawl/crawl-ref/source/rltiles/item/gem/snake_found_whole.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="item/gem/snake_found_broken.png" title="item/gem/snake_found_broken.png"><img src="external/crawl/crawl-ref/source/rltiles/item/gem/snake_found_broken.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="item/talisman/medusa.png" title="item/talisman/medusa.png"><img src="external/crawl/crawl-ref/source/rltiles/item/talisman/medusa.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="item/talisman/snake.png" title="item/talisman/snake.png"><img src="external/crawl/crawl-ref/source/rltiles/item/talisman/snake.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="item/weapon/artefact/urand_snakebite.png" title="item/weapon/artefact/urand_snakebite.png"><img src="external/crawl/crawl-ref/source/rltiles/item/weapon/artefact/urand_snakebite.png" alt=""></div></div></td>
+<td class="col-selected" id="selected-medusa">-</td>
+</tr>
+<tr data-key="pirate" data-type="monster">
+<td class="col-key" title="pirate"><code>pirate</code></td>
+<td class="col-name">Pirate</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🏴‍☠️">🏴‍☠️</div></td>
+<td class="col-lpc"><div class="suggestions"><div class="thumb" data-source="lpc" data-path="accessories/necklaces_female_ no_th-sh/pirate_wc_sc_only.png" title="accessories/necklaces_female_ no_th-sh/pirate_wc_sc_only.png"><img src="external/lpc-spritesheet/accessories/necklaces_female_ no_th-sh/pirate_wc_sc_only.png" alt=""></div> <div class="thumb" data-source="lpc" data-path="torso/shirts/sleeveless/female/teal_pirate.png" title="torso/shirts/sleeveless/female/teal_pirate.png"><img src="external/lpc-spritesheet/torso/shirts/sleeveless/female/teal_pirate.png" alt=""></div> <div class="thumb" data-source="lpc" data-path="torso/shirts/sleeveless/female/maroon_pirate.png" title="torso/shirts/sleeveless/female/maroon_pirate.png"><img src="external/lpc-spritesheet/torso/shirts/sleeveless/female/maroon_pirate.png" alt=""></div> <div class="thumb" data-source="lpc" data-path="torso/shirts/sleeveless/female/white_pirate.png" title="torso/shirts/sleeveless/female/white_pirate.png"><img src="external/lpc-spritesheet/torso/shirts/sleeveless/female/white_pirate.png" alt=""></div> <div class="thumb" data-source="lpc" data-path="torso/shirts/sleeveless/female/brown_pirate.png" title="torso/shirts/sleeveless/female/brown_pirate.png"><img src="external/lpc-spritesheet/torso/shirts/sleeveless/female/brown_pirate.png" alt=""></div></div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-pirate">-</td>
+</tr>
+<tr data-key="master" data-type="monster">
+<td class="col-key" title="master"><code>master</code></td>
+<td class="col-name">Master</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🤺">🤺</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="gui/skills/mastered-fg.png" title="gui/skills/mastered-fg.png"><img src="external/crawl/crawl-ref/source/rltiles/gui/skills/mastered-fg.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="gui/skills/mastered-base.png" title="gui/skills/mastered-base.png"><img src="external/crawl/crawl-ref/source/rltiles/gui/skills/mastered-base.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="mon/vault/master_elementalist.png" title="mon/vault/master_elementalist.png"><img src="external/crawl/crawl-ref/source/rltiles/mon/vault/master_elementalist.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="mon/humanoids/elves/deep_elf_blademaster.png" title="mon/humanoids/elves/deep_elf_blademaster.png"><img src="external/crawl/crawl-ref/source/rltiles/mon/humanoids/elves/deep_elf_blademaster.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="mon/humanoids/elves/deep_elf_master_archer.png" title="mon/humanoids/elves/deep_elf_master_archer.png"><img src="external/crawl/crawl-ref/source/rltiles/mon/humanoids/elves/deep_elf_master_archer.png" alt=""></div></div></td>
+<td class="col-selected" id="selected-master">-</td>
+</tr>
+<tr data-key="cat" data-type="monster">
+<td class="col-key" title="cat"><code>cat</code></td>
+<td class="col-name">Cat</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🐱">🐱</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="effect/indicator_8.png" title="effect/indicator_8.png"><img src="external/crawl/crawl-ref/source/rltiles/effect/indicator_8.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="effect/indicator_5.png" title="effect/indicator_5.png"><img src="external/crawl/crawl-ref/source/rltiles/effect/indicator_5.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="effect/indicator_3.png" title="effect/indicator_3.png"><img src="external/crawl/crawl-ref/source/rltiles/effect/indicator_3.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="effect/indicator_1.png" title="effect/indicator_1.png"><img src="external/crawl/crawl-ref/source/rltiles/effect/indicator_1.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="effect/indicator_4.png" title="effect/indicator_4.png"><img src="external/crawl/crawl-ref/source/rltiles/effect/indicator_4.png" alt=""></div></div></td>
+<td class="col-selected" id="selected-cat">-</td>
+</tr>
+<tr data-key="genie" data-type="monster">
+<td class="col-key" title="genie"><code>genie</code></td>
+<td class="col-name">Genie</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧞">🧞</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-genie">-</td>
+</tr>
+<tr data-key="king" data-type="monster">
+<td class="col-key" title="king"><code>king</code></td>
+<td class="col-name">King</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🤴">🤴</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="item/scroll/i-blinking.png" title="item/scroll/i-blinking.png"><img src="external/crawl/crawl-ref/source/rltiles/item/scroll/i-blinking.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="item/weapon/artefact/urand_octopus_king.png" title="item/weapon/artefact/urand_octopus_king.png"><img src="external/crawl/crawl-ref/source/rltiles/item/weapon/artefact/urand_octopus_king.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="item/armour/artefact/urand_dragon_king.png" title="item/armour/artefact/urand_dragon_king.png"><img src="external/crawl/crawl-ref/source/rltiles/item/armour/artefact/urand_dragon_king.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="gui/spells/forgecraft/walking_alembic.png" title="gui/spells/forgecraft/walking_alembic.png"><img src="external/crawl/crawl-ref/source/rltiles/gui/spells/forgecraft/walking_alembic.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="player/head/viking_gold.png" title="player/head/viking_gold.png"><img src="external/crawl/crawl-ref/source/rltiles/player/head/viking_gold.png" alt=""></div></div></td>
+<td class="col-selected" id="selected-king">-</td>
+</tr>
+<tr data-key="eagle" data-type="monster">
+<td class="col-key" title="eagle"><code>eagle</code></td>
+<td class="col-name">Eagle</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🦅">🦅</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-eagle">-</td>
+</tr>
+<tr data-key="gurgi" data-type="monster">
+<td class="col-key" title="gurgi"><code>gurgi</code></td>
+<td class="col-name">Gurgi</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🐵">🐵</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-gurgi">-</td>
+</tr>
+<tr data-key="erasmus" data-type="monster">
+<td class="col-key" title="erasmus"><code>erasmus</code></td>
+<td class="col-name">Erasmus</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧙‍♂️">🧙‍♂️</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-erasmus">-</td>
+</tr>
+<tr data-key="cow" data-type="monster">
+<td class="col-key" title="cow"><code>cow</code></td>
+<td class="col-name">Cow</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🐄">🐄</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="mon/panlord/demon_head_cow_skull.png" title="mon/panlord/demon_head_cow_skull.png"><img src="external/crawl/crawl-ref/source/rltiles/mon/panlord/demon_head_cow_skull.png" alt=""></div></div></td>
+<td class="col-selected" id="selected-cow">-</td>
+</tr>
+<tr data-key="castle_rat" data-type="monster">
+<td class="col-key" title="castle_rat"><code>castle_rat</code></td>
+<td class="col-name">Castle_Rat</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🐀">🐀</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-castle_rat">-</td>
+</tr>
+<tr data-key="horned_king" data-type="monster">
+<td class="col-key" title="horned_king"><code>horned_king</code></td>
+<td class="col-name">Horned_King</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="💀">💀</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-horned_king">-</td>
+</tr>
+<tr data-key="cauldron_born" data-type="monster">
+<td class="col-key" title="cauldron_born"><code>cauldron_born</code></td>
+<td class="col-name">Cauldron_Born</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧟">🧟</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-cauldron_born">-</td>
+</tr>
+<tr data-key="morva_witch" data-type="monster">
+<td class="col-key" title="morva_witch"><code>morva_witch</code></td>
+<td class="col-name">Morva_Witch</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧙‍♀️">🧙‍♀️</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-morva_witch">-</td>
+</tr>
+<tr data-key="assassin" data-type="monster">
+<td class="col-key" title="assassin"><code>assassin</code></td>
+<td class="col-name">Assassin</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🥷">🥷</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="item/armour/artefact/urand_assassin.png" title="item/armour/artefact/urand_assassin.png"><img src="external/crawl/crawl-ref/source/rltiles/item/armour/artefact/urand_assassin.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="item/armour/artefact/urand_hood_assassin.png" title="item/armour/artefact/urand_hood_assassin.png"><img src="external/crawl/crawl-ref/source/rltiles/item/armour/artefact/urand_hood_assassin.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="player/head/hood_assassin.png" title="player/head/hood_assassin.png"><img src="external/crawl/crawl-ref/source/rltiles/player/head/hood_assassin.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="player/hand1/artefact/blowgun_assassin.png" title="player/hand1/artefact/blowgun_assassin.png"><img src="external/crawl/crawl-ref/source/rltiles/player/hand1/artefact/blowgun_assassin.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="mon/animals/killer_bee.png" title="mon/animals/killer_bee.png"><img src="external/crawl/crawl-ref/source/rltiles/mon/animals/killer_bee.png" alt=""></div></div></td>
+<td class="col-selected" id="selected-assassin">-</td>
+</tr>
+<tr data-key="black_knight" data-type="monster">
+<td class="col-key" title="black_knight"><code>black_knight</code></td>
+<td class="col-name">Black_Knight</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🤺">🤺</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="player/barding/black_knight.png" title="player/barding/black_knight.png"><img src="external/crawl/crawl-ref/source/rltiles/player/barding/black_knight.png" alt=""></div></div></td>
+<td class="col-selected" id="selected-black_knight">-</td>
+</tr>
+<tr data-key="killer_rabbit" data-type="monster">
+<td class="col-key" title="killer_rabbit"><code>killer_rabbit</code></td>
+<td class="col-name">Killer_Rabbit</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🐰">🐰</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-killer_rabbit">-</td>
+</tr>
+<tr data-key="french_taunter" data-type="monster">
+<td class="col-key" title="french_taunter"><code>french_taunter</code></td>
+<td class="col-name">French_Taunter</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🏰🇫🇷">🏰🇫🇷</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-french_taunter">-</td>
+</tr>
+<tr data-key="dennis" data-type="monster">
+<td class="col-key" title="dennis"><code>dennis</code></td>
+<td class="col-name">Dennis</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="👨‍🌾">👨‍🌾</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-dennis">-</td>
+</tr>
+<tr data-key="bridge_keeper" data-type="monster">
+<td class="col-key" title="bridge_keeper"><code>bridge_keeper</code></td>
+<td class="col-name">Bridge_Keeper</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧙‍♂️">🧙‍♂️</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-bridge_keeper">-</td>
+</tr>
+<tr data-key="mouse" data-type="monster">
+<td class="col-key" title="mouse"><code>mouse</code></td>
+<td class="col-name">Mouse</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🐭">🐭</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="gui/tab_mouseover.png" title="gui/tab_mouseover.png"><img src="external/crawl/crawl-ref/source/rltiles/gui/tab_mouseover.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="mon/panlord/demon_head_mouse.png" title="mon/panlord/demon_head_mouse.png"><img src="external/crawl/crawl-ref/source/rltiles/mon/panlord/demon_head_mouse.png" alt=""></div></div></td>
+<td class="col-selected" id="selected-mouse">-</td>
+</tr>
+<tr data-key="cockroach" data-type="monster">
+<td class="col-key" title="cockroach"><code>cockroach</code></td>
+<td class="col-name">Cockroach</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🪳">🪳</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="mon/animals/giant_cockroach.png" title="mon/animals/giant_cockroach.png"><img src="external/crawl/crawl-ref/source/rltiles/mon/animals/giant_cockroach.png" alt=""></div></div></td>
+<td class="col-selected" id="selected-cockroach">-</td>
+</tr>
+<tr data-key="mimic" data-type="monster">
+<td class="col-key" title="mimic"><code>mimic</code></td>
+<td class="col-name">Mimic</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="📦">📦</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="UNUSED/monsters/ravenous_mimic.png" title="UNUSED/monsters/ravenous_mimic.png"><img src="external/crawl/crawl-ref/source/rltiles/UNUSED/monsters/ravenous_mimic.png" alt=""></div></div></td>
+<td class="col-selected" id="selected-mimic">-</td>
+</tr>
+<tr data-key="duck" data-type="monster">
+<td class="col-key" title="duck"><code>duck</code></td>
+<td class="col-name">Duck</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🦆">🦆</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-duck">-</td>
+</tr>
+<tr data-key="wet_rat" data-type="monster">
+<td class="col-key" title="wet_rat"><code>wet_rat</code></td>
+<td class="col-name">Wet_Rat</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🐀">🐀</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-wet_rat">-</td>
+</tr>
+<tr data-key="shark" data-type="monster">
+<td class="col-key" title="shark"><code>shark</code></td>
+<td class="col-name">Shark</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🦈">🦈</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="mon/animals/skyshark.png" title="mon/animals/skyshark.png"><img src="external/crawl/crawl-ref/source/rltiles/mon/animals/skyshark.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="mon/player/crawling_zombie_skyshark.png" title="mon/player/crawling_zombie_skyshark.png"><img src="external/crawl/crawl-ref/source/rltiles/mon/player/crawling_zombie_skyshark.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="mon/undead/zombies/zombie_skyshark.png" title="mon/undead/zombies/zombie_skyshark.png"><img src="external/crawl/crawl-ref/source/rltiles/mon/undead/zombies/zombie_skyshark.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="UNUSED/monsters/shark.png" title="UNUSED/monsters/shark.png"><img src="external/crawl/crawl-ref/source/rltiles/UNUSED/monsters/shark.png" alt=""></div></div></td>
+<td class="col-selected" id="selected-shark">-</td>
+</tr>
+<tr data-key="ifrit" data-type="monster">
+<td class="col-key" title="ifrit"><code>ifrit</code></td>
+<td class="col-name">Ifrit</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🔥">🔥</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-ifrit">-</td>
+</tr>
+<tr data-key="chaplain" data-type="monster">
+<td class="col-key" title="chaplain"><code>chaplain</code></td>
+<td class="col-name">Chaplain</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="⛪">⛪</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-chaplain">-</td>
+</tr>
+<tr data-key="grue" data-type="monster">
+<td class="col-key" title="grue"><code>grue</code></td>
+<td class="col-name">Grue</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="👁️">👁️</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-grue">-</td>
+</tr>
+<tr data-key="orc" data-type="monster">
+<td class="col-key" title="orc"><code>orc</code></td>
+<td class="col-name">Orc</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧌">🧌</div></td>
+<td class="col-lpc"><div class="suggestions"><div class="thumb" data-source="lpc" data-path="body/female/red_orc.png" title="body/female/red_orc.png"><img src="external/lpc-spritesheet/body/female/red_orc.png" alt=""></div> <div class="thumb" data-source="lpc" data-path="body/female/orc.png" title="body/female/orc.png"><img src="external/lpc-spritesheet/body/female/orc.png" alt=""></div> <div class="thumb" data-source="lpc" data-path="body/male/red_orc.png" title="body/male/red_orc.png"><img src="external/lpc-spritesheet/body/male/red_orc.png" alt=""></div> <div class="thumb" data-source="lpc" data-path="body/male/orc.png" title="body/male/orc.png"><img src="external/lpc-spritesheet/body/male/orc.png" alt=""></div></div></td>
+<td class="col-dcss"><div class="suggestions"><div class="thumb" data-source="crawl" data-path="effect/force_lance2.png" title="effect/force_lance2.png"><img src="external/crawl/crawl-ref/source/rltiles/effect/force_lance2.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="effect/force_lance5.png" title="effect/force_lance5.png"><img src="external/crawl/crawl-ref/source/rltiles/effect/force_lance5.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="effect/force_lance4.png" title="effect/force_lance4.png"><img src="external/crawl/crawl-ref/source/rltiles/effect/force_lance4.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="effect/umbral_torchlight.png" title="effect/umbral_torchlight.png"><img src="external/crawl/crawl-ref/source/rltiles/effect/umbral_torchlight.png" alt=""></div> <div class="thumb" data-source="crawl" data-path="effect/force_lance7.png" title="effect/force_lance7.png"><img src="external/crawl/crawl-ref/source/rltiles/effect/force_lance7.png" alt=""></div></div></td>
+<td class="col-selected" id="selected-orc">-</td>
+</tr>
+<tr data-key="pacifist_orc" data-type="monster">
+<td class="col-key" title="pacifist_orc"><code>pacifist_orc</code></td>
+<td class="col-name">Pacifist_Orc</td>
+<td class="col-current"><div class="thumb emoji-thumb" data-source="emoji" data-path="🧌">🧌</div></td>
+<td class="col-lpc"><div class="suggestions">No matches</div></td>
+<td class="col-dcss"><div class="suggestions">No matches</div></td>
+<td class="col-selected" id="selected-pacifist_orc">-</td>
+</tr>
+</tbody></table></div>
+<div style="text-align: center;">
+<button id="generate-btn">Generate Mapping JSON</button>
+<textarea id="output" readonly placeholder="JSON output will appear here..."></textarea>
+<div class="legend">Click images to select. Use JSON to update game assets.</div>
+</div>
+<script>
+const selections = {};
+document.querySelectorAll(".thumb").forEach(el => {
+  el.addEventListener("click", function() {
+    const row = this.closest("tr");
+    const key = row.dataset.key;
+    selections[key] = { source: this.dataset.source, path: this.dataset.path };
+    const selectedCell = row.querySelector(".col-selected");
+    selectedCell.textContent = this.dataset.path || this.textContent;
+    row.querySelectorAll(".thumb").forEach(t => t.classList.remove("selected"));
+    this.classList.add("selected");
+  });
+});
+document.getElementById("generate-btn").addEventListener("click", () => {
+  document.getElementById("output").value = JSON.stringify(selections, null, 2);
+});
+</script>
+</body></html>

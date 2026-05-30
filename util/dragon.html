@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>dragon-rs Feasibility Demo</title>
+  <style>
+    :root {
+      --bg: #06070d;
+      --panel: rgba(8, 10, 18, 0.82);
+      --border: rgba(255, 202, 121, 0.28);
+      --text: #f3d8b0;
+      --muted: #c6b085;
+      --accent: #ffd27a;
+      --warn: #ffb74d;
+    }
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: radial-gradient(circle at top, #111827 0%, #06070d 60%, #030408 100%);
+      color: var(--text);
+      font: 14px/1.45 system-ui, sans-serif;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      height: 100vh;
+    }
+    .sidebar {
+      padding: 18px;
+      background: linear-gradient(180deg, rgba(16,19,31,0.96), rgba(8,10,18,0.96));
+      border-right: 1px solid rgba(255,255,255,0.08);
+      overflow: auto;
+    }
+    .sidebar h1 {
+      margin: 0 0 8px;
+      font-size: 22px;
+      color: var(--accent);
+    }
+    .sidebar p { margin: 0 0 12px; color: var(--muted); }
+    .card {
+      margin: 14px 0;
+      padding: 14px 16px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.32);
+    }
+    .card strong {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--accent);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    button, a.button {
+      appearance: none;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: #1b2132;
+      color: #fff;
+      border-radius: 10px;
+      padding: 10px 12px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font: inherit;
+    }
+    button:hover, a.button:hover { filter: brightness(1.1); }
+    .viewer {
+      position: relative;
+      background: #030408;
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: #000;
+    }
+    .status {
+      color: var(--warn);
+      font-size: 12px;
+    }
+    .small { font-size: 12px; }
+    code { color: #fff; }
+    ul { margin: 8px 0 0 18px; padding: 0; }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <h1>dragon-rs Feasibility Demo</h1>
+      <p>This page uses the <strong>original live dragon-rs site</strong> as the render target to test whether its runtime is acceptable for our loading screen direction.</p>
+
+      <div class="card">
+        <strong>What This Tests</strong>
+        <ul>
+          <li>Visual quality of the original dragon-rs app</li>
+          <li>Whether it loads reliably in an embedded browser context</li>
+          <li>Whether WebGPU-heavy content is suitable for our offline/Edge target</li>
+          <li>Whether we should pursue a vendored integration later</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <strong>Important</strong>
+        <p class="small">This is a <em>feasibility harness</em>, not a production integration. It depends on the live remote site and internet access. The main game still does <strong>not</strong> embed dragon-rs.</p>
+        <p class="small">Original runtime source: <code>https://hucanco.de/dragon-rs</code></p>
+        <div class="button-row">
+          <button id="reload-btn" type="button">Reload Frame</button>
+          <a class="button" href="https://hucanco.de/dragon-rs" target="_blank" rel="noreferrer">Open dragon-rs</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <strong>Observed Constraints</strong>
+        <ul>
+          <li>Original app appears to be Svelte/WebGPU-based</li>
+          <li>Likely not suitable for direct single-file offline vendoring without significant work</li>
+          <li>Best next step, if approved, is separate asset/runtime experiment rather than folding into main build immediately</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <strong>Status</strong>
+        <div id="status" class="status">Attempting to load embedded dragon-rs…</div>
+      </div>
+    </aside>
+
+    <main class="viewer">
+      <iframe
+        id="dragon-frame"
+        src="https://hucanco.de/dragon-rs"
+        referrerpolicy="no-referrer"
+        allow="fullscreen; autoplay; clipboard-read; clipboard-write"
+        title="dragon-rs feasibility demo"
+      ></iframe>
+    </main>
+  </div>
+
+  <script>
+    const frame = document.getElementById('dragon-frame');
+    const status = document.getElementById('status');
+    const reloadBtn = document.getElementById('reload-btn');
+
+    let loaded = false;
+    const timeout = setTimeout(() => {
+      if (!loaded) {
+        status.textContent = 'The embedded frame did not confirm load quickly. If the right panel is blank or blocked, use “Open dragon-rs”.';
+      }
+    }, 4000);
+
+    frame.addEventListener('load', () => {
+      loaded = true;
+      clearTimeout(timeout);
+      status.textContent = 'Embedded dragon-rs loaded. If rendering is blank, your browser or GPU path may be blocking the demo.';
+    });
+
+    reloadBtn.addEventListener('click', () => {
+      loaded = false;
+      status.textContent = 'Reloading embedded dragon-rs…';
+      frame.src = 'about:blank';
+      setTimeout(() => {
+        frame.src = 'https://hucanco.de/dragon-rs';
+      }, 100);
+    });
+  </script>
+</body>
+</html>
