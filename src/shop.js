@@ -585,7 +585,7 @@
   }
 
   function canSellToStore(type) {
-    return ['apu', 'leftys', 'wizard', 'bookstore', 'dennis', 'fence', 'champion'].includes(type);
+    return ['apu', 'leftys', 'dennis', 'fence', 'champion'].includes(type);
   }
 
   // mendedDrumChat — DELETED. The 4 patrons (Vimes, Cohen, Librarian,
@@ -606,7 +606,6 @@
     // Supercenter in town uses Cousin Dave's video instead of Apu's
     let isDave = (type === 'apu' && currentScene === 'beach');
     let npcVideoType = isDave ? 'cousin_dave' : type;
-    if(type === 'wizard' || type === 'bookstore') npcVideoType = 'erasmus';
     if(type === 'leftys') npcVideoType = 'lefty';
     // Start NPC movie animation if a movie exists for this NPC type
     startNPCVideo(npcVideoType);
@@ -649,19 +648,6 @@
       html += `<button class="egg-btn" style="background:#FFD700; color:black; margin-bottom:6px; font-size:11px;"
                 onclick="typeof astrochickenGame==='function' ? astrochickenGame() : astrochickenBarGame()">🐔 Play Astrochicken (5g)</button>`;
       setTimeout(() => playVoiceClip('voice_lefty_greeting'), 30);
-    }
-    else if(type === 'wizard' || type === 'bookstore') {
-      Sound.gibberish();
-      const wizardGreetings = [
-        { text: "Ah, you found us! We were on the other side of town last time.", voice: 'voice_wizard_shop_greeting' },
-        { text: "Welcome! We move around a lot. Keeps the Grues guessing.", voice: 'voice_wizard_shop_greeting_2' },
-        { text: "You're lucky you caught us! We were in the dungeon last week.", voice: 'voice_wizard_shop_greeting_3' },
-      ];
-      const chosen = wizardGreetings[Math.floor(Math.random() * wizardGreetings.length)];
-      html += `<h2>📚 The Curiosity Shoppe</h2>
-        ${npcFaceHTML('npc_wizard', '🧙', 'erasmus')}
-        <p>Wizard: "${chosen.text}"</p>`;
-      setTimeout(() => playVoiceClip(chosen.voice), 30);
     }
     else if(type === 'cain') {
       html += `<h2>🧔 Deckard Cain</h2>
@@ -1095,13 +1081,12 @@
   // The new ShopDialog (shop_dialog.js) drives its own re-render and would
   // otherwise see the legacy shop modal pop in on top of/under it.
   window.buy = function(icon, cost, type, qty = 1, suppressReopen = false, useId = false) {
-    let shopType = type === 'bookstore' ? 'wizard' : type;
     let finalCost = cost;
     if(useId) {
       const id = icon;
       const def = typeof ItemDefs !== 'undefined' && ItemDefs[id];
       if (!def) { logMsg(`<span style='color:var(--error)'>Unknown item: ${id}</span>`); return; }
-      if(player.gp < finalCost) return showInsufficientFunds(shopType, finalCost, def.displayName);
+      if(player.gp < finalCost) return showInsufficientFunds(type, finalCost, def.displayName);
       const stack = new ItemStack(id, qty);
       if (typeof tryPlaceInInventory === 'function' && tryPlaceInInventory(stack)) {
         changeGold(-finalCost);
@@ -1111,7 +1096,7 @@
       if(!suppressReopen) openStore(type);
       return;
     }
-    if(player.gp < finalCost) return showInsufficientFunds(shopType, finalCost, ItemDef.byIcon(icon)?.displayName ?? 'that');
+    if(player.gp < finalCost) return showInsufficientFunds(type, finalCost, ItemDef.byIcon(icon)?.displayName ?? 'that');
     // Prophylactic easter egg
     if(icon === ItemDef.iconOf('prophylactic')) { larryEasterEgg(0); return; }
     if(!addPurchasedItem(icon, qty)) { logMsg("No room! (Inventory full)"); return; }
