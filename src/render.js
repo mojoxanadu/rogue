@@ -1290,45 +1290,13 @@ window.toggleMinimap = function() {
 };
 
 function drawMinimap() {
-  let minCanvas = document.getElementById('minimap');
-  if (!minCanvas) return;
-  if(window.minimapVisible === false) return;
+  const canvases = ['minimap', 'minimap-circle']
+    .map(id => document.getElementById(id))
+    .filter(Boolean);
+  if (canvases.length === 0) return;
+  if (window.minimapVisible === false) return;
   if (mapW === 0 || mapH === 0) return;
   const MW = 150, MH = 150;
-  if(minCanvas.width !== MW) minCanvas.width = MW;
-  if(minCanvas.height !== MH) minCanvas.height = MH;
-  let mCtx = minCanvas.getContext('2d');
-  mCtx.clearRect(0, 0, MW, MH);
-
-  // Bug 29: If swordmaster maze active and player is in maze area, scramble minimap
-  if(window._swordmasterMazeActive && window._swordmasterMazeBounds) {
-    let mb = window._swordmasterMazeBounds;
-    let inMaze = player.x >= mb.x1 && player.x <= mb.x2 && player.y >= mb.y1 && player.y <= mb.y2;
-    if(inMaze) {
-      for(let y = 0; y < MH; y += 2) {
-        for(let x = 0; x < MW; x += 2) {
-          let r = Math.random();
-          if(r < 0.3) mCtx.fillStyle = '#555';
-          else if(r < 0.5) mCtx.fillStyle = '#333';
-          else if(r < 0.55) mCtx.fillStyle = '#f0f';
-          else if(r < 0.6) mCtx.fillStyle = '#0ff';
-          else continue;
-          mCtx.fillRect(x, y, 2, 2);
-        }
-      }
-      if(!window._mazeCompassMsg || Date.now() - window._mazeCompassMsg > 15000) {
-        window._mazeCompassMsg = Date.now();
-        if(typeof logMsg !== 'undefined') {
-          logMsg("<span style='color:#888; font-style:italic;'>The Noodly Appendage of the Flying Spaghetti Monster reaches out and blesses your compass with confusion.</span>");
-        }
-      }
-      mCtx.fillStyle = '#0f0';
-      mCtx.fillRect(MW/2 + Math.floor(Math.random()*10)-5, MH/2 + Math.floor(Math.random()*10)-5, 3, 3);
-      return;
-    }
-  }
-
-  // #12: Zoom level (tile radius) — controlled by +/- buttons in UI
   const radiusTiles = window._minimapZoom ?? 8;
   const cells = radiusTiles * 2 + 1;
   const scale = MW / cells;
@@ -1336,82 +1304,117 @@ function drawMinimap() {
   const centerY = MH / 2;
   const circleR = MW / 2 - 4;
 
-  function minimapColor(tile, x, y) {
-    if(tile === TILES.STORE || tile === TILES.LEFTYS || tile === TILES.BOOKSTORE || tile === TILES.FORGE || tile === TILES.HALL) return '#d9b54a';
-    if(tile === TILES.STAIR_DOWN || tile === TILES.STAIR_UP || tile === TILES.PORTAL) return '#d26cff';
-    if(tile === TILES.BRIDGE) return '#8b6840';
-    if(tile === TILES.WATER || tile === TILES.MOAT) return '#2b87d1';
-    if(tile === TILES.DEEP_WATER && isEagleSkyTile(x, y)) return '#79c6ff';
-    if(tile === TILES.DEEP_WATER) return '#0d47a1';
-    if(tile === TILES.WALL || tile === TILES.ROCK || tile === TILES.TREE) return '#5a5a5a';
-    if(tile === TILES.GRASS || tile === TILES.BUSH) return '#2d5b28';
-    return '#4b4033';
-  }
+  canvases.forEach(c => {
+    if (c.width !== MW) c.width = MW;
+    if (c.height !== MH) c.height = MH;
+    const ctx = c.getContext('2d');
+    ctx.clearRect(0, 0, MW, MH);
 
-  mCtx.save();
-  mCtx.beginPath();
-  mCtx.arc(centerX, centerY, circleR, 0, Math.PI * 2);
-  mCtx.clip();
-  mCtx.fillStyle = '#071016';
-  mCtx.fillRect(0, 0, MW, MH);
+    // Bug 29: If swordmaster maze active and player is in maze area, scramble minimap
+    if (window._swordmasterMazeActive && window._swordmasterMazeBounds) {
+      _drawMazeMinimap(ctx, MW, MH);
+      return;
+    }
 
-  for(let dy = -radiusTiles; dy <= radiusTiles; dy++) {
-    for(let dx = -radiusTiles; dx <= radiusTiles; dx++) {
-      let mapX = player.x + dx;
-      let mapY = player.y + dy;
-      if(mapX < 0 || mapX >= mapW || mapY < 0 || mapY >= mapH) continue;
-      if(!explored[mapY][mapX] && !(window.debugFlags && debugFlags.revealMap)) continue;
-      let drawX = centerX + dx * scale - scale / 2;
-      let drawY = centerY + dy * scale - scale / 2;
-      mCtx.fillStyle = minimapColor(theMap[mapY][mapX], mapX, mapY);
-      mCtx.fillRect(drawX, drawY, Math.ceil(scale), Math.ceil(scale));
-      if(visible[mapY] && visible[mapY][mapX]) {
-        mCtx.fillStyle = 'rgba(255,255,255,0.08)';
-        mCtx.fillRect(drawX, drawY, Math.ceil(scale), Math.ceil(scale));
+    function minimapColor(tile, x, y) {
+      if(tile === TILES.STORE || tile === TILES.LEFTYS || tile === TILES.BOOKSTORE || tile === TILES.FORGE || tile === TILES.HALL) return '#d9b54a';
+      if(tile === TILES.STAIR_DOWN || tile === TILES.STAIR_UP || tile === TILES.PORTAL) return '#d26cff';
+      if(tile === TILES.BRIDGE) return '#8b6840';
+      if(tile === TILES.WATER || tile === TILES.MOAT) return '#2b87d1';
+      if(tile === TILES.DEEP_WATER && isEagleSkyTile(x, y)) return '#79c6ff';
+      if(tile === TILES.DEEP_WATER) return '#0d47a1';
+      if(tile === TILES.WALL || tile === TILES.ROCK || tile === TILES.TREE) return '#5a5a5a';
+      if(tile === TILES.GRASS || tile === TILES.BUSH) return '#2d5b28';
+      return '#4b4033';
+    }
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, circleR, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.fillStyle = '#071016';
+    ctx.fillRect(0, 0, MW, MH);
+
+    for(let dy = -radiusTiles; dy <= radiusTiles; dy++) {
+      for(let dx = -radiusTiles; dx <= radiusTiles; dx++) {
+        let mapX = player.x + dx;
+        let mapY = player.y + dy;
+        if(mapX < 0 || mapX >= mapW || mapY < 0 || mapY >= mapH) continue;
+        if(!explored[mapY][mapX] && !(window.debugFlags && debugFlags.revealMap)) continue;
+        let drawX = centerX + dx * scale - scale / 2;
+        let drawY = centerY + dy * scale - scale / 2;
+        ctx.fillStyle = minimapColor(theMap[mapY][mapX], mapX, mapY);
+        ctx.fillRect(drawX, drawY, Math.ceil(scale), Math.ceil(scale));
+        if(visible[mapY] && visible[mapY][mapX]) {
+          ctx.fillStyle = 'rgba(255,255,255,0.08)';
+          ctx.fillRect(drawX, drawY, Math.ceil(scale), Math.ceil(scale));
+        }
       }
     }
+    ctx.restore();
+
+    ctx.strokeStyle = 'rgba(180,160,220,0.5)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, circleR, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.fillStyle = '#0f0';
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    const faceDx = player.facing && (player.facing.dx || player.facing.dy) ? player.facing.dx : 0;
+    const faceDy = player.facing && (player.facing.dx || player.facing.dy) ? player.facing.dy : 1;
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY);
+    ctx.lineTo(centerX + faceDx * 7, centerY + faceDy * 7);
+    ctx.stroke();
+
+    const areaName = currentScene === 'town' ? 'Tristram'
+      : currentScene === 'mountain' ? 'Highlands'
+      : currentScene === 'champion' ? 'Hall of Champions'
+      : currentScene === 'nest' ? "Roc's Nest"
+      : currentScene === 'eagle_crag' ? "Eagle's Crag"
+      : currentScene === 'forest' ? 'Hedge Country'
+      : currentScene === 'beach' ? 'Beach'
+      : currentScene === 'desert' ? 'Desert'
+      : `Floor ${currentLevel}`;
+    ctx.save();
+    ctx.font = 'bold 9px sans-serif';
+    ctx.fillStyle = 'rgba(220,200,255,0.75)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(areaName, centerX, MH - 6);
+    ctx.restore();
+  });
+}
+
+function _drawMazeMinimap(ctx, MW, MH) {
+  let mb = window._swordmasterMazeBounds;
+  let inMaze = player.x >= mb.x1 && player.x <= mb.x2 && player.y >= mb.y1 && player.y <= mb.y2;
+  if(inMaze) {
+    for(let y = 0; y < MH; y += 2) {
+      for(let x = 0; x < MW; x += 2) {
+        let r = Math.random();
+        if(r < 0.3) ctx.fillStyle = '#555';
+        else if(r < 0.5) ctx.fillStyle = '#333';
+        else if(r < 0.55) ctx.fillStyle = '#f0f';
+        else if(r < 0.6) ctx.fillStyle = '#0ff';
+        else continue;
+        ctx.fillRect(x, y, 2, 2);
+      }
+    }
+    if(!window._mazeCompassMsg || Date.now() - window._mazeCompassMsg > 15000) {
+      window._mazeCompassMsg = Date.now();
+      if(typeof logMsg !== 'undefined') {
+        logMsg("<span style='color:#888; font-style:italic;'>The Noodly Appendage of the Flying Spaghetti Monster reaches out and blesses your compass with confusion.</span>");
+      }
+    }
+    ctx.fillStyle = '#0f0';
+    ctx.fillRect(MW/2 + Math.floor(Math.random()*10)-5, MH/2 + Math.floor(Math.random()*10)-5, 3, 3);
   }
-
-  mCtx.restore();
-
-  // #11 FIX: Canvas ring only — CSS border removed from #minimap-container
-  mCtx.strokeStyle = 'rgba(180,160,220,0.5)';
-  mCtx.lineWidth = 1.5;
-  mCtx.beginPath();
-  mCtx.arc(centerX, centerY, circleR, 0, Math.PI * 2);
-  mCtx.stroke();
-
-  // Player dot
-  mCtx.fillStyle = '#0f0';
-  mCtx.beginPath();
-  mCtx.arc(centerX, centerY, 4, 0, Math.PI * 2);
-  mCtx.fill();
-
-  const faceDx = player.facing && (player.facing.dx || player.facing.dy) ? player.facing.dx : 0;
-  const faceDy = player.facing && (player.facing.dx || player.facing.dy) ? player.facing.dy : 1;
-  mCtx.strokeStyle = 'rgba(255,255,255,0.35)';
-  mCtx.beginPath();
-  mCtx.moveTo(centerX, centerY);
-  mCtx.lineTo(centerX + faceDx * 7, centerY + faceDy * 7);
-  mCtx.stroke();
-
-  // #24: Area name along the bottom arc of the minimap
-  const areaName = currentScene === 'town' ? 'Tristram'
-    : currentScene === 'mountain' ? 'Highlands'
-    : currentScene === 'champion' ? 'Hall of Champions'
-    : currentScene === 'nest' ? "Roc's Nest"
-    : currentScene === 'eagle_crag' ? "Eagle's Crag"
-    : currentScene === 'forest' ? 'Hedge Country'
-    : currentScene === 'beach' ? 'Beach'
-    : currentScene === 'desert' ? 'Desert'
-    : `Floor ${currentLevel}`;
-  mCtx.save();
-  mCtx.font = 'bold 9px sans-serif';
-  mCtx.fillStyle = 'rgba(220,200,255,0.75)';
-  mCtx.textAlign = 'center';
-  mCtx.textBaseline = 'bottom';
-  mCtx.fillText(areaName, centerX, MH - 6);
-  mCtx.restore();
 }
 
 // #4: Map sweep transition — animates the map sliding under the player's feet

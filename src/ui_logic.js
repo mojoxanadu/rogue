@@ -159,6 +159,17 @@ function _writeAddr(addr, stack) {
   }
 }
 
+function _restartBurn(itemName, slots) {
+  if (!player._lightBurnData) player._lightBurnData = {};
+  const def = ItemDefs[itemName];
+  const saved = player._lightFuel && player._lightFuel[itemName];
+  const remaining = saved != null ? saved : (def && def.burnTime || 0);
+  if (player._lightFuel) delete player._lightFuel[itemName];
+  slots.forEach(s => {
+    player._lightBurnData[s] = { itemName, remaining, equippedAt: Date.now() };
+  });
+}
+
 function _performStickyMove(src, target) {
   // Equip targets: route through existing equip/unequip path. Source
   // must be inv (no bag-direct-equip yet — Phase 6 may unify).
@@ -168,9 +179,59 @@ function _performStickyMove(src, target) {
       return;
     }
     if (src.source === 'equip') {
-      if (typeof logMsg === 'function') {
-        logMsg(`<span style='color:#aaa'>To move an equipped item to another slot, tap an inventory slot to unequip first.</span>`);
+      // Equip slot → equip slot: swap items between slots.
+      const srcName = player.equipped[src.slot];
+      const dstName = player.equipped[target.slot];
+      if (!srcName) return;
+      const srcDef = ItemDefs[srcName];
+      if (!_equipSlotFits(target.slot, srcDef)) {
+        if (typeof logMsg === 'function')
+          logMsg(`<span style='color:#aaa'>${srcDef.label()} doesn't fit the ${target.slot} slot.</span>`);
+        return;
       }
+      if (dstName) {
+        const dstDef = ItemDefs[dstName];
+        if (!_equipSlotFits(src.slot, dstDef)) {
+          if (typeof logMsg === 'function')
+            logMsg(`<span style='color:#aaa'>${dstDef.label()} doesn't fit the ${src.slot} slot.</span>`);
+          return;
+        }
+      }
+      // Save light burn data before clearing
+      if (player._lightBurnData) {
+        [src.slot, target.slot].forEach(s => {
+          const burn = player._lightBurnData[s];
+          if (burn) {
+            const elapsed = (Date.now() - burn.equippedAt) / 1000;
+            const remaining = Math.max(0, burn.remaining - elapsed);
+            if (remaining > 0) {
+              if (!player._lightFuel) player._lightFuel = {};
+              player._lightFuel[burn.itemName] = remaining;
+            }
+            delete player._lightBurnData[s];
+          }
+        });
+      }
+      // Clear items from all linked slots
+      const srcLinks = linkedSlotsOf(src.slot);
+      const dstLinks = dstName ? linkedSlotsOf(target.slot) : [];
+      srcLinks.forEach(s => { player.equipped[s] = null; });
+      dstLinks.forEach(s => { player.equipped[s] = null; });
+      // Equip src item into target group
+      const srcGroup = srcDef.equipGroups.find(g => g.includes(target.slot)) || srcDef.equipGroups[0];
+      srcGroup.forEach(s => { player.equipped[s] = srcName; });
+      if (srcDef.type === 'light') _restartBurn(srcName, srcGroup);
+      // Equip dst item into src group
+      if (dstName) {
+        const dstDef = ItemDefs[dstName];
+        const dstGroup = dstDef.equipGroups.find(g => g.includes(src.slot)) || dstDef.equipGroups[0];
+        dstGroup.forEach(s => { player.equipped[s] = dstName; });
+        if (dstDef.type === 'light') _restartBurn(dstName, dstGroup);
+      }
+      // Recalc stats
+      if (typeof swapEquip === 'function') swapEquip(-1, target.slot);
+      if (typeof logMsg === 'function')
+        logMsg(`<span style='color:var(--success)'>Swapped equipment slots.</span>`);
       return;
     }
     // bag → equip: unsupported for now (would need to clear bag slot
@@ -455,19 +516,21 @@ function _performStickyMove(src, target) {
         const name  = player.equipped[slot];
         const def   = name ? ItemDefs[name] : null;
         const label = slotLabels[slot] || slot;
-        // Build via textContent rather than innerHTML — values come from
-        // ItemDefs (trusted) but the slot label could be any string; safer
-        // not to rely on string-template HTML construction here.
         el.replaceChildren();
-        const labelEl = document.createElement('div');
-        labelEl.className   = 'equip-label';
-        labelEl.textContent = label;
-        const iconEl = document.createElement('span');
-        iconEl.style.fontSize = '24px';
-        iconEl.textContent    = def ? def.icon : '';
-        el.appendChild(labelEl);
-        el.appendChild(iconEl);
-        el.title = def ? def.displayName : '';
+        if (def) {
+          const iconEl = document.createElement('span');
+          iconEl.style.fontSize = '28px';
+          iconEl.textContent = def.icon;
+          el.appendChild(iconEl);
+          el.title = def.displayName;
+          el.style.fontSize = '';
+        } else {
+          const ph = document.createElement('span');
+          ph.className = 'eq-placeholder';
+          ph.textContent = label;
+          el.appendChild(ph);
+          el.title = '';
+        }
         // K6: Make filled slots draggable; always accept drops from inventory
         el.draggable = !!name;
         el.ondragstart = name ? (e) => equipSlotDragStart(e, slot) : null;
@@ -488,6 +551,9 @@ function _performStickyMove(src, target) {
         }
       }
     });
+
+    // Populate right info panel in the equip dialog
+    _renderEquipInfo();
 
     const statsModal = document.getElementById('stats-modal');
     if(statsModal && statsModal.style.display === 'flex') {
@@ -2877,6 +2943,83 @@ function _performStickyMove(src, target) {
     `;
   };
 
+  function _renderEquipInfo() {
+    const infoEl = document.getElementById('equip-info');
+    if(!infoEl) return;
+
+    // Combat stats
+    const hitRate = player.effectiveHitRate();
+    const dodgeRate = player.dodgeRate ?? 0;
+    let baseDmg = CONSTANTS.PLAYER_UNARMED_BASE_DMG;
+    let weaponName = 'unarmed';
+    Object.values(player.equipped).forEach(name => {
+      if(name) {
+        const d = ItemDefs[name];
+        if(d && d.type === 'weapon') {
+          baseDmg = d.baseDmg ?? 0;
+          weaponName = d.displayName;
+        }
+      }
+    });
+    let statsHtml = `<strong>Combat Stats</strong>
+      <div>🎯 To-Hit: <strong>${Math.round(hitRate * 100)}%</strong></div>
+      <div>🛡️ Block: <strong>${Math.round(dodgeRate * 100)}%</strong></div>
+      <div>⚔️ Damage: <strong>1–${baseDmg}</strong> (${weaponName})</div>`;
+
+    // Weapon upgrade recommendations
+    let currentBaseDmg = CONSTANTS.PLAYER_UNARMED_BASE_DMG;
+    Object.values(player.equipped).forEach(name => {
+      if(name) {
+        const d = ItemDefs[name];
+        if(d && d.type === 'weapon') currentBaseDmg = d.baseDmg ?? 0;
+      }
+    });
+    const weaponRecs = [];
+    inventory.forEach(item => {
+      if(!item) return;
+      const def = item.def;
+      if(!def) return;
+      if(def.type === 'weapon' && def.baseDmg && def.baseDmg > currentBaseDmg) {
+        weaponRecs.push(def);
+      }
+    });
+    let recsHtml = '<strong style="margin-top:6px; display:block;">Recommendations</strong>';
+    if (weaponRecs.length > 0) {
+      recsHtml += '<div style="margin-top:2px; color:#aaa;"><em>Better weapon:</em> ';
+      recsHtml += weaponRecs.map(d => `${d.icon} ${d.displayName} (${d.baseDmg} dmg)`).join(', ');
+      recsHtml += '</div>';
+    } else {
+      recsHtml += '<div style="margin-top:2px; color:#666;">Weapon: no upgrade in inventory.</div>';
+    }
+
+    // Block/defense upgrade recommendations
+    const blockRecs = [];
+    inventory.forEach(item => {
+      if(!item) return;
+      const def = item.def;
+      if(!def) return;
+      const slot = def.slot;
+      if (!slot || def.type === 'weapon' || def.type === 'consumable') return;
+      const current = player.equipped[slot];
+      const currentDef = current ? ItemDefs[current] : null;
+      const currentEvade = currentDef ? (currentDef.evadePercent ?? 0) : 0;
+      const itemEvade = def.evadePercent ?? 0;
+      if (itemEvade > currentEvade) {
+        blockRecs.push({ def, delta: itemEvade - currentEvade });
+      }
+    });
+    blockRecs.sort((a, b) => b.delta - a.delta);
+    if (blockRecs.length > 0) {
+      recsHtml += '<div style="margin-top:2px; color:#aaa;"><em>Better block:</em> ';
+      recsHtml += blockRecs.map(r => `${r.def.icon} ${r.def.displayName} (+${r.delta}%)`).join(', ');
+      recsHtml += '</div>';
+    } else {
+      recsHtml += '<div style="margin-top:2px; color:#666;">Block: no upgrade in inventory.</div>';
+    }
+
+    infoEl.innerHTML = statsHtml + recsHtml;
+  }
+
   window.showStats = () => {
     const statsBody = document.getElementById('stats-body');
     if(!statsBody) return;
@@ -2906,50 +3049,7 @@ function _performStickyMove(src, target) {
     // Preview bar for pending stat changes
     html += `<div id="stat-preview-bar"></div>`;
     
-    // Calculate some basic combat stats from player stats
-    // combined with whatever they have equipped at the moment.
-    let currentBaseDmg = CONSTANTS.PLAYER_UNARMED_BASE_DMG;
-    let meleeDmgMsg = `${currentBaseDmg} (unarmed)`;
-    Object.values(player.equipped).forEach(name => {
-      if(name) {
-        let d = ItemDefs[name];
-        if(!d) return;
-        if(d.type === "weapon") {
-          currentBaseDmg = (d.baseDmg ?? 0);
-          meleeDmgMsg = `${currentBaseDmg} (${d.displayName})`;
-        }
-      }
-    });
-    if(player.meleeDmgBonus) meleeDmgMsg += `, plus ${player.meleeDmgBonus} from player bonus above`;
-
-    // See if player happens to be carrying anything unequipped
-    // that could improve their combat stats if it were.
-    let considerEquip = false;
-    [inventory, inventory].forEach(arr => {
-      arr.forEach(item => {
-        if(!item) return;
-        let def = item.def;
-        if(!def) return;
-        if(def.type === "weapon" && def.baseDmg && def.baseDmg > currentBaseDmg) {
-          if (considerEquip) {
-            meleeDmgMsg += `, or ${def.label()} for ${def.baseDmg}`;
-          }
-          else {
-            meleeDmgMsg += `. Consider equipping ${def.label()}, which would give you a higher base damage of ${def.baseDmg}`;
-            considerEquip = true;
-          }
-          return;
-        }
-      });
-    });
-    if (currentBaseDmg < CONSTANTS.PLAYER_UNARMED_BASE_DMG)
-      meleeDmgMsg += `. You would ${considerEquip ? "also " : ""}have a higher base damage of ${CONSTANTS.PLAYER_UNARMED_BASE_DMG} if you were unarmed`;
-
-    // Show the calculated stats (informational only).
-    html += `<div style="margin-top: 10px; text-align:left; font-size:12px; border-top:1px solid #555; padding-top:8px;">
-      <p><strong>Current Combat Stats</strong></p>
-      <p>Max Melee Damage: ${meleeDmgMsg}.</p>
-    </div>`;
+    // Combat stats & re-equip recommendations moved to the Equipment dialog.
     statsBody.innerHTML = html;
   };
 
