@@ -13,11 +13,11 @@
 // ============================================================
 
 const SPELL_DEFS = {
-  illuminate: { name: 'Illuminate',   level: 1, duration: 30, radius: 15 },
-  unlock:     { name: 'Unlock',       level: 1 },
-  lightning:  { name: 'Lightning',    level: 1 },
-  fireball:   { name: 'Fireball',     level: 1 },
-  haste:      { name: 'Haste',        level: 1 },
+	illuminate: { name: 'Illuminate',   level: 1, duration: 30, radius: 15, desc: 'Light the darkness for a short time.' },
+  unlock:     { name: 'Unlock',       level: 1, desc: 'Adds Cast Unlock option to locked doors and containers.' },
+  lightning:  { name: 'Lightning',    level: 3 },
+  fireball:   { name: 'Fireball',     level: 3 },
+  haste:      { name: 'Haste',        level: 2 },
   heal:       { name: 'Heal',         level: 1 },
   icebolt:    { name: 'Ice Bolt',     level: 1 },
   shield:     { name: 'Shield',       level: 1 },

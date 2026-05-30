@@ -429,9 +429,29 @@
   </div>
 </div>
 
-<div class="draggable-modal" id="magic-modal" style="top: 100px; left: 500px; width: 300px;">
-  <div class="modal-header"><span>✨ Magic</span><button class="modal-close" onclick="toggleModal('magic-modal')">✖</button></div>
-  <div class="modal-body" id="magic-body"></div>
+<div class="draggable-modal" id="magic-modal" style="top: 100px; left: 500px; width: 420px;">
+  <div class="modal-header" style="position:relative;">
+    <span>✨ Magic</span>
+    <div style="display:flex;gap:4px;align-items:center;">
+      <button class="modal-close" id="magic-menu-btn" onclick="toggleMagicMenu()">☰</button>
+      <button class="modal-close" onclick="toggleModal('magic-modal')">✖</button>
+    </div>
+    <div id="magic-menu" style="display:none; position:absolute; right:0; top:100%; background:#1a1a1a; border:1px solid #555; border-radius:6px; padding:8px 12px; z-index:1000; min-width:200px; font-size:12px; box-shadow:0 4px 12px rgba(0,0,0,0.6);">
+      <label style="display:block; padding:3px 0; cursor:pointer; user-select:none;">
+        <input type="radio" name="spell-view" value="names" checked onchange="setSpellBookView('names')">
+        Show Names Only
+      </label>
+      <label style="display:block; padding:3px 0; cursor:pointer; user-select:none;">
+        <input type="radio" name="spell-view" value="full" onchange="setSpellBookView('full')">
+        Show Full Info
+      </label>
+      <label style="display:block; padding:3px 0; cursor:pointer; user-select:none;">
+        <input type="radio" name="spell-view" value="all" onchange="setSpellBookView('all')">
+        Show All Spells
+      </label>
+    </div>
+  </div>
+  <div class="modal-body" id="magic-body" style="max-height:400px; overflow-y:auto;"></div>
 </div>
 
 <div class="draggable-modal" id="achieve-modal" style="top: 100px; left: 700px; width: 380px;">

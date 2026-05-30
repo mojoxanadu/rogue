@@ -3058,27 +3058,142 @@ function _performStickyMove(src, target) {
     return 0;
   };
 
+  window._spellBookView = 'names';
+
+  // Close magic view menu on outside click (added once)
+  document.addEventListener('click', (e) => {
+    const menu = document.getElementById('magic-menu');
+    const btn = document.getElementById('magic-menu-btn');
+    if (menu && menu.style.display === 'block' && !menu.contains(e.target) && e.target !== btn) {
+      menu.style.display = 'none';
+    }
+  });
+
+  window.toggleMagicMenu = () => {
+    const m = document.getElementById('magic-menu');
+    if (!m) return;
+    m.style.display = m.style.display === 'block' ? 'none' : 'block';
+  };
+
+  window.setSpellBookView = (val) => {
+    window._spellBookView = val;
+    const menu = document.getElementById('magic-menu');
+    if (menu) menu.style.display = 'none';
+    const magicBody = document.getElementById('magic-body');
+    if (magicBody) _renderSpellBook(magicBody);
+  };
+
+  function _renderSpellBook(body) {
+    if(!player.spells) player.spells = {};
+    const view = window._spellBookView;
+    const knownSet = new Set(Object.keys(player.spells));
+
+    // Build list of spells to show
+    let entries = [];
+    if (view === 'all') {
+      const allIds = Object.keys(SPELL_DEFS);
+      allIds.forEach(id => {
+        const def = SPELL_DEFS[id];
+        if (!def) return;
+        const known = knownSet.has(id);
+        entries.push({ id, def, known, level: def.level });
+      });
+    } else {
+      knownSet.forEach(id => {
+        const def = SPELL_DEFS[id];
+        if (!def) return;
+        entries.push({ id, def, known: true, level: def.level });
+      });
+    }
+
+    if (entries.length === 0) {
+      body.innerHTML = "<p style='color:#888;padding:12px;'>No spells known. Find spell tomes in shops!</p>";
+      return;
+    }
+
+    // Group by level, sort alphabetically within each level
+    const groups = {};
+    entries.forEach(e => {
+      const lv = e.level || 1;
+      if (!groups[lv]) groups[lv] = [];
+      groups[lv].push(e);
+    });
+    const levels = Object.keys(groups).map(Number).sort((a,b) => a - b);
+    levels.forEach(lv => {
+      groups[lv].sort((a,b) => {
+        const na = a.def.name || a.id;
+        const nb = b.def.name || b.id;
+        return na.localeCompare(nb);
+      });
+    });
+
+    let html = '<div style="display:flex;flex-direction:column;gap:2px;">';
+
+    levels.forEach(lv => {
+      html += `<div style="font-size:11px;color:#999;padding:6px 4px 2px 4px;font-weight:bold;border-bottom:1px solid #333;margin-bottom:2px;">Level ${lv} Spells</div>`;
+      groups[lv].forEach(e => {
+        const { id, def, known } = e;
+        const cdRem = known ? window._spellCooldownRemaining(id) : 0;
+        const onCd = cdRem > 0;
+        const icon = SPELL_ICONS[id] || '✨';
+        const showFullInfo = (view === 'full' || view === 'all');
+        const showCastBtn = known && !onCd && (view !== 'all');
+        const showAllCastBtn = known && !onCd && view === 'all';
+
+        let rowStyle = 'border-radius:6px; padding:8px 10px; margin-bottom:4px;';
+        if (view === 'all' && !known) {
+          rowStyle += 'background:rgba(255,255,255,0.03);opacity:0.55;';
+        } else if (onCd) {
+          rowStyle += 'background:var(--surface-container);opacity:0.7;position:relative;';
+        } else {
+          rowStyle += 'background:var(--surface-container);';
+        }
+
+        let htmlRow = `<div style="${rowStyle}">`;
+
+        // Cooldown overlay
+        if (onCd) {
+          htmlRow += `<div style="position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.45);border-radius:6px;display:flex;align-items:center;justify-content:center;z-index:1;pointer-events:none;"><span style="color:#FFD700;font-size:14px;font-weight:bold;">${cdRem.toFixed(0)}</span></div>`;
+        }
+
+        // Main row: icon + name + cast button
+        htmlRow += `<div style="display:flex;align-items:center;gap:8px;font-size:13px;position:relative;z-index:2;">`;
+        htmlRow += `<span style="font-size:16px;">${icon}</span>`;
+        htmlRow += `<strong style="color:#fff;">${def.name}</strong>`;
+
+        // Right side
+        // For "all" view with unknown spells: show level requirement
+        // For known spells: show cast button or cooldown indicator
+        htmlRow += `<span style="margin-left:auto;display:flex;gap:6px;align-items:center;">`;
+        if (view === 'all' && !known) {
+          htmlRow += `<span style="color:#777;font-size:11px;">(not known)</span>`;
+        }
+        if (showCastBtn || showAllCastBtn) {
+          htmlRow += `<button onclick="window._lastAction='_spell';window._lastSpellId='${id}';_updateActionButton();castSpell('${id}');" style="background:var(--primary);color:#000;border:none;border-radius:3px;padding:2px 8px;font-size:11px;cursor:pointer;font-weight:bold;">Cast</button>`;
+        } else if (onCd && known) {
+          htmlRow += `<span style="color:#FFD700;font-size:11px;">⏳</span>`;
+        }
+        htmlRow += `</span>`;
+        htmlRow += `</div>`; // end main flex row
+
+        // Description (full info or all)
+        if (showFullInfo && def.desc) {
+          htmlRow += `<div style="font-size:11px;color:#ccc;margin-top:5px;line-height:1.35;position:relative;z-index:2;">${def.desc}</div>`;
+        }
+
+        htmlRow += `</div>`;
+        html += htmlRow;
+      });
+    });
+
+    html += '</div>';
+    body.innerHTML = html;
+  }
+
   window.showMagic = () => {
     const magicBody = document.getElementById('magic-body');
     if(!magicBody) return;
-    if(!player.spells) player.spells = {};
-    let keys = Object.keys(player.spells);
-    if(keys.length === 0) {
-      magicBody.innerHTML = "<p style='color:#888;'>No spells known. Find spell tomes in shops!</p>";
-      return;
-    }
-    let html = "<div style='display:flex; flex-direction:column; gap:4px;'>";
-    keys.forEach(k => {
-      let sp = player.spells[k] || { level: 1 };
-      let cdRem = window._spellCooldownRemaining(k);
-      let onCd = cdRem > 0;
-      html += `<div style="background:var(--surface-container); padding:6px; border-radius:4px; display:flex; justify-content:space-between; align-items:center; position:relative; ${onCd ? 'opacity:0.7;' : ''}">
-        ${onCd ? `<div style="position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.45);border-radius:4px;display:flex;align-items:center;justify-content:center;z-index:1;pointer-events:none;"><span style="color:#FFD700;font-size:14px;font-weight:bold;">${cdRem.toFixed(0)}</span></div>` : ''}
-        <span style="font-size:12px; cursor:pointer; z-index:2;" onclick="castSpell('${k}')">${k.toUpperCase()} (Lv${sp.level ?? 1})${onCd ? ' ⏳' : ''}</span>
-        <button onclick="window._lastAction='_spell';window._lastSpellId='${k}';_updateActionButton();castSpell('${k}');" style="font-size:10px; padding:2px 8px; z-index:2;">Cast</button>
-      </div>`;
-    });
-    magicBody.innerHTML = html + "</div>";
+    _renderSpellBook(magicBody);
 
     // Start interval refresh when magic modal is open (clear previous)
     if(window._magicCdInterval) clearInterval(window._magicCdInterval);
