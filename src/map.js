@@ -608,7 +608,7 @@
         case '1': t = TILES.PORTAL; break;
         case '2': t = TILES.HALL; break;
         case '3': t = TILES.BOOKSTORE; break;
-        case '4': t = TILES.STORE; break;
+        case '4': t = TILES.FLOOR; break; // Apu's Mart — handled by NPC bump
         case '5': t = TILES.FORGE; break;
 
         case 'X': t = TILES.STAIR_DOWN; break;
@@ -656,6 +656,8 @@
       { x:  6, y: 25, type: 'goose',   stats: farmStats('🪿',  6, 0.6), isFarmAnimal: true },
       { x:  2, y: 24, type: 'pig',     stats: farmStats('🐷', 15, 0.2), isFarmAnimal: true },
       { x:  3, y: 23, type: 'pig',     stats: farmStats('🐷', 15, 0.2), isFarmAnimal: true },
+      // Apu's Mart — convenience store
+      { x:  9, y:  4, type: 'apu',   phraseId: 'apu_greet' },
       // Vermin around stores
       { x:  8, y:  7, type: 'mouse',     isVermin: true },
       { x: 27, y: 16, type: 'mouse',     isVermin: true },

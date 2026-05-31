@@ -520,6 +520,11 @@
       minLevel: 8,
       xp: 800,
       desc: "A prehistoric horror. Fast, relentless, and absolutely no dodge whatsoever."
+    },
+    "apu": {
+      emoji: '🧔🏿', icon: '🧔🏿', name: 'Apu', type: 'npc', friendly: true,
+      hp: 999, maxHp: 999, dmg: 0, hit: 0.0, crit: 0.0, dodge: 0.0, speed: 0.0, throughWalls: false,
+      quest: true, passive: true, blocking: false,
     }
   };
 

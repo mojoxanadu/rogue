@@ -349,6 +349,36 @@
       ],
     },
 
+    // ── Apu's Mart ──────────────────────────────────────────
+    'apu_greet': {
+      randomPhrases: [
+        { message: '"Thank you, come again!"' },
+        { message: '"I have eight brothers and a cousin named Dave."' },
+        { message: '"Cousin Dave says the hedge road east is safe enough, provided you don\'t ask what happened to aisle nine."' },
+        { message: '"You look like you could use a Slurpee. We have blue, red, and existential dread."' },
+        { message: '"Everything in this store is edible. Not everything is good for you. But it is edible."' },
+      ],
+      replies: [
+        { text: 'Browse your wares.', nextPhrase: '@shop', default: true },
+        { text: 'Ask about his family', nextPhrase: 'apu_family' },
+        { text: 'How do I get a franchise?', nextPhrase: 'apu_franchise_intro' },
+      ],
+    },
+
+    'apu_family': {
+      message: '"I have eight brothers! All named Apu. My mother was very traditional — and very tired by the end. Cousin Dave runs the Super Center on the coast. He is the rich one. I am the dungeon one."',
+      replies: [
+        { text: 'Go back to shopping', nextPhrase: 'apu_greet', default: true },
+      ],
+    },
+
+    'apu_franchise_intro': {
+      message: '"Ah, the Apu Franchise Opportunity! For a small fee of 10 cockroach legs, 3 burnt-out candles, one wet rat tail, and a dream — you too can run an Apu\'s Mart! Of course, you can never actually open a store. But you get a Club Card! It does nothing. But it is PRETTY!"',
+      replies: [
+        { text: 'Hmm, tempting. Maybe later.', nextPhrase: 'apu_greet', default: true },
+      ],
+    },
+
     // ── Vermin first sight (self-dialog) ─────────────────────
     'vermin_first_sight': {
       message: "Vermin! No shopkeeper has asked, but if I cull them the merchants will surely thank me.",
